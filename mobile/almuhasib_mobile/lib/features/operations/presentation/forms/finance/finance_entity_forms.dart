@@ -33,8 +33,25 @@ class CashBoxFormController extends GetxController {
   final formKey = GlobalKey<FormState>();
   final nameController = TextEditingController();
   final openingController = TextEditingController(text: '0');
+  final currency = 0.obs;
+  final multiCurrencyEnabled = false.obs;
   final saving = false.obs;
   bool get isEdit => syncId != null;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    try {
+      final settings = await AppServices.data.getBusinessSettings();
+      multiCurrencyEnabled.value = settings.multiCurrencyEnabled;
+    } catch (_) {
+      multiCurrencyEnabled.value = false;
+    }
+  }
 
   Future<void> save() async {
     if (!formKey.currentState!.validate()) return;
@@ -45,6 +62,7 @@ class CashBoxFormController extends GetxController {
           syncId: syncId,
           name: nameController.text.trim(),
           openingBalance: double.tryParse(openingController.text) ?? 0,
+          currency: multiCurrencyEnabled.value && !isEdit ? currency.value : 0,
         ),
       );
       if (response.conflicts.isNotEmpty) {
@@ -91,13 +109,42 @@ class CashBoxFormScreen extends GetView<CashBoxFormController> {
                   v == null || v.trim().isEmpty ? 'required_field'.tr() : null,
             ),
             const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              controller: controller.openingController,
-              label: 'opening_balance'.tr(),
-              prefixIcon: Icons.payments_outlined,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-            ),
+            if (!controller.isEdit)
+              AppTextField(
+                controller: controller.openingController,
+                label: 'opening_balance'.tr(),
+                prefixIcon: Icons.payments_outlined,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+              ),
+            Obx(() {
+              if (!controller.multiCurrencyEnabled.value ||
+                  controller.isEdit) {
+                return const SizedBox.shrink();
+              }
+              return Column(
+                children: [
+                  const SizedBox(height: AppSpacing.md),
+                  DropdownButtonFormField<int>(
+                    value: controller.currency.value,
+                    decoration: InputDecoration(labelText: 'currency'.tr()),
+                    items: [
+                      DropdownMenuItem(
+                        value: 0,
+                        child: Text(currencyCodeLabel(0)),
+                      ),
+                      DropdownMenuItem(
+                        value: 1,
+                        child: Text(currencyCodeLabel(1)),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) controller.currency.value = v;
+                    },
+                  ),
+                ],
+              );
+            }),
           ],
         ),
       ],
@@ -112,8 +159,25 @@ class BankAccountFormController extends GetxController {
   final nameController = TextEditingController();
   final accountController = TextEditingController();
   final openingController = TextEditingController(text: '0');
+  final currency = 0.obs;
+  final multiCurrencyEnabled = false.obs;
   final saving = false.obs;
   bool get isEdit => syncId != null;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    try {
+      final settings = await AppServices.data.getBusinessSettings();
+      multiCurrencyEnabled.value = settings.multiCurrencyEnabled;
+    } catch (_) {
+      multiCurrencyEnabled.value = false;
+    }
+  }
 
   Future<void> save() async {
     if (!formKey.currentState!.validate()) return;
@@ -127,6 +191,7 @@ class BankAccountFormController extends GetxController {
               ? null
               : accountController.text.trim(),
           openingBalance: double.tryParse(openingController.text) ?? 0,
+          currency: multiCurrencyEnabled.value && !isEdit ? currency.value : 0,
         ),
       );
       if (response.conflicts.isNotEmpty) {
@@ -182,13 +247,42 @@ class BankAccountFormScreen extends GetView<BankAccountFormController> {
               prefixIcon: Icons.numbers_outlined,
             ),
             const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              controller: controller.openingController,
-              label: 'opening_balance'.tr(),
-              prefixIcon: Icons.payments_outlined,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-            ),
+            if (!controller.isEdit)
+              AppTextField(
+                controller: controller.openingController,
+                label: 'opening_balance'.tr(),
+                prefixIcon: Icons.payments_outlined,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+              ),
+            Obx(() {
+              if (!controller.multiCurrencyEnabled.value ||
+                  controller.isEdit) {
+                return const SizedBox.shrink();
+              }
+              return Column(
+                children: [
+                  const SizedBox(height: AppSpacing.md),
+                  DropdownButtonFormField<int>(
+                    value: controller.currency.value,
+                    decoration: InputDecoration(labelText: 'currency'.tr()),
+                    items: [
+                      DropdownMenuItem(
+                        value: 0,
+                        child: Text(currencyCodeLabel(0)),
+                      ),
+                      DropdownMenuItem(
+                        value: 1,
+                        child: Text(currencyCodeLabel(1)),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      if (v != null) controller.currency.value = v;
+                    },
+                  ),
+                ],
+              );
+            }),
           ],
         ),
       ],
@@ -348,6 +442,7 @@ class VoucherFormController extends GetxController {
   final amountController = TextEditingController();
   final bankFeesController = TextEditingController(text: '0');
   final notesController = TextEditingController();
+  final fxRateController = TextEditingController();
   final voucherType = 0.obs;
   final date = DateTime.now().obs;
   final customer = Rxn<LookupItem>();
@@ -355,6 +450,8 @@ class VoucherFormController extends GetxController {
   final cashBox = Rxn<LookupItem>();
   final bankAccount = Rxn<LookupItem>();
   final saving = false.obs;
+
+  int get selectedCurrency => lookupCurrencyCode(cashBox.value?.extra);
 
   @override
   void onInit() {
@@ -393,14 +490,27 @@ class VoucherFormController extends GetxController {
       title: 'select_cashbox'.tr(),
       loadItems: (s) => AppServices.data.getCashBoxes(search: s),
     );
-    if (selected != null) cashBox.value = selected;
+    if (selected != null) {
+      cashBox.value = selected;
+      if (lookupCurrencyCode(selected.extra) == 0) {
+        fxRateController.clear();
+      }
+    }
   }
 
   Future<void> pickBank(BuildContext context) async {
     final selected = await showLookupPickerSheet<LookupItem>(
       context: context,
       title: 'select_bank_account'.tr(),
-      loadItems: (s) => AppServices.data.getBankAccounts(search: s),
+      loadItems: (s) async {
+        final banks = await AppServices.data.getBankAccounts(search: s);
+        final code = currencyCodeLabel(selectedCurrency);
+        return banks
+            .where((b) =>
+                (b.extra ?? 'IQD').toUpperCase() == code ||
+                selectedCurrency == 0 && (b.extra == null || b.extra!.isEmpty))
+            .toList();
+      },
     );
     if (selected != null) bankAccount.value = selected;
   }
@@ -426,11 +536,28 @@ class VoucherFormController extends GetxController {
       AppExceptionHandler.showError('invalid_amount'.tr());
       return;
     }
+    final currency = selectedCurrency;
+    final fxRate = currency == 1
+        ? (double.tryParse(fxRateController.text) ?? 0)
+        : 1.0;
+    if (currency == 1 && fxRate <= 0) {
+      AppExceptionHandler.showError('fx_rate_required'.tr());
+      return;
+    }
+    if (voucherType.value == 2 && bankAccount.value != null) {
+      final bankCurrency = lookupCurrencyCode(bankAccount.value!.extra);
+      if (bankCurrency != currency) {
+        AppExceptionHandler.showError('currency_mismatch'.tr());
+        return;
+      }
+    }
     saving.value = true;
     try {
       final response = await AppServices.operations.createVoucher(
         CreateVoucherRequest(
           voucherType: voucherType.value,
+          currency: currency,
+          fxRate: fxRate,
           amount: amount,
           bankFees: double.tryParse(bankFeesController.text) ?? 0,
           customerSyncId: customer.value?.syncId,
@@ -461,6 +588,7 @@ class VoucherFormController extends GetxController {
     amountController.dispose();
     bankFeesController.dispose();
     notesController.dispose();
+    fxRateController.dispose();
     super.onClose();
   }
 }
@@ -552,11 +680,39 @@ class VoucherFormScreen extends GetView<VoucherFormController> {
                 leading: const Icon(Icons.account_balance_wallet_outlined),
                 title: Text('cash_box'.tr()),
                 subtitle: Text(
-                  controller.cashBox.value?.name ?? 'select_cashbox'.tr(),
+                  controller.cashBox.value == null
+                      ? 'select_cashbox'.tr()
+                      : '${controller.cashBox.value!.name} (${currencyCodeLabel(controller.selectedCurrency)})',
                 ),
                 onTap: () => controller.pickCashBox(context),
               ),
             ),
+            Obx(() {
+              if (controller.selectedCurrency != 1) {
+                return const SizedBox.shrink();
+              }
+              return Column(
+                children: [
+                  const SizedBox(height: AppSpacing.md),
+                  AppTextField(
+                    controller: controller.fxRateController,
+                    label: 'fx_rate'.tr(),
+                    prefixIcon: Icons.currency_exchange,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (v) {
+                      if (controller.selectedCurrency != 1) return null;
+                      final parsed = double.tryParse(v ?? '');
+                      if (parsed == null || parsed <= 0) {
+                        return 'fx_rate_required'.tr();
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              );
+            }),
             Obx(
               () => ListTile(
                 contentPadding: EdgeInsets.zero,

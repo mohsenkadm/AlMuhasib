@@ -527,6 +527,12 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             var cartSnapshot = CartLines.ToList();
             var totalSnapshot = GrandTotal;
             var paidSnapshot = Math.Min(PaidAmount, GrandTotal);
+            var fxRate = await ResolveFxRateAsync(SelectedCashBox.Currency);
+            if (SelectedCashBox.Currency == AccountingCurrency.USD && fxRate <= 0)
+            {
+                BeautifulMessageDialog.ShowWarning("سعر الصرف مطلوب لبيع بالدولار. سجّل سعر الصرف اليومي أولاً.");
+                return;
+            }
 
             var invoice = new Invoice
             {
@@ -536,7 +542,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 PaymentMethod = isCredit ? PaymentMethod.Credit : PaymentMethod.Cash,
                 CashBoxId = SelectedCashBox.Id,
                 Currency = SelectedCashBox.Currency,
-                FxRate = await ResolveFxRateAsync(SelectedCashBox.Currency),
+                FxRate = fxRate,
                 Date = DateTime.Now,
                 DiscountAmount = (ShowProductDiscount ? InvoiceDiscountAmount : 0m)
                     + (ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m),
@@ -746,12 +752,11 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             return 1m;
         try
         {
-            var rate = await _exchangeRateService.GetUsdToIqdForDateOrLatestAsync(DateTime.Today);
-            return rate > 0 ? rate : 1m;
+            return await _exchangeRateService.GetUsdToIqdForDateOrLatestAsync(DateTime.Today);
         }
         catch
         {
-            return 1m;
+            return 0m;
         }
     }
 

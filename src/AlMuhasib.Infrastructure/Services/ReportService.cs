@@ -403,7 +403,8 @@ public partial class ReportService : IReportService
     public async Task<InstallmentsSummaryResult> GetInstallmentsSummaryAsync(DateTime? from, DateTime? to, int? customerId, string? status)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var plansQ = context.InstallmentPlans.Include(p => p.Customer).Include(p => p.Installments).AsQueryable();
+        var plansQ = context.InstallmentPlans.Include(p => p.Customer).Include(p => p.Installments).Include(p => p.Invoice)
+            .Where(p => p.Invoice!.Currency == AccountingCurrency.IQD);
         if (customerId.HasValue) plansQ = plansQ.Where(p => p.CustomerId == customerId.Value);
         var plans = await plansQ.ToListAsync();
 
@@ -466,8 +467,9 @@ public partial class ReportService : IReportService
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var plans = await context.InstallmentPlans
-            .Include(p => p.Customer).Include(p => p.Installments)
-            .Where(p => p.CustomerId == customerId).ToListAsync();
+            .Include(p => p.Customer).Include(p => p.Installments).Include(p => p.Invoice)
+            .Where(p => p.CustomerId == customerId
+                        && p.Invoice!.Currency == AccountingCurrency.IQD).ToListAsync();
 
         var allInsts = plans.SelectMany(p => p.Installments.Where(i => !i.IsDeleted)).ToList();
         var totalAmt = allInsts.Sum(i => i.Amount);
@@ -505,7 +507,8 @@ public partial class ReportService : IReportService
         var query = context.Installments
             .Include(i => i.InstallmentPlan).ThenInclude(p => p.Customer)
             .Include(i => i.CashBox)
-            .Where(i => i.Status == InstallmentStatus.Paid);
+            .Where(i => i.Status == InstallmentStatus.Paid
+                        && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD);
 
         if (from.HasValue) query = query.Where(i => i.PaymentDate >= from.Value);
         if (to.HasValue) query = query.Where(i => i.PaymentDate < EndOfDay(to));
@@ -542,7 +545,8 @@ public partial class ReportService : IReportService
         await using var context = await _contextFactory.CreateDbContextAsync();
         var query = context.Installments
             .Include(i => i.InstallmentPlan).ThenInclude(p => p.Customer)
-            .Where(i => i.Status != InstallmentStatus.Paid);
+            .Where(i => i.Status != InstallmentStatus.Paid
+                        && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD);
 
         if (from.HasValue) query = query.Where(i => i.DueDate >= from.Value);
         if (to.HasValue) query = query.Where(i => i.DueDate < EndOfDay(to));
@@ -580,7 +584,9 @@ public partial class ReportService : IReportService
         // ── 1. Overdue installments ────────────────────────────────
         var instQuery = context.Installments
             .Include(i => i.InstallmentPlan).ThenInclude(p => p.Customer)
-            .Where(i => i.Status != InstallmentStatus.Paid && i.DueDate < asOfDate);
+            .Where(i => i.Status != InstallmentStatus.Paid
+                        && i.DueDate < asOfDate
+                        && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD);
 
         if (customerId.HasValue) instQuery = instQuery.Where(i => i.InstallmentPlan.CustomerId == customerId.Value);
 
@@ -606,6 +612,7 @@ public partial class ReportService : IReportService
         var creditQuery = context.Invoices
             .Include(i => i.Customer)
             .Where(i => i.PaymentMethod == PaymentMethod.Credit
+                        && i.Currency == AccountingCurrency.IQD
                         && i.CreditDueDate.HasValue
                         && i.CreditDueDate.Value.Date < asOfDate.Date
                         && (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment));
@@ -1099,12 +1106,14 @@ public partial class ReportService : IReportService
 
         var totalSales = await InvoiceSignedSums.SumSignedNetAsync(salesQ);
 
-        var instQ = context.Installments.Where(i => i.PaidAmount > 0);
+        var instQ = context.Installments.Where(i => i.PaidAmount > 0
+                        && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD);
         if (from.HasValue) instQ = instQ.Where(i => i.PaymentDate >= from.Value);
         if (to.HasValue) instQ = instQ.Where(i => i.PaymentDate < EndOfDay(to));
         var instCollections = await instQ.SumAsync(i => (decimal?)i.PaidAmount) ?? 0;
 
-        var recQ = context.Vouchers.Where(v => v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt);
+        var recQ = context.Vouchers.Where(v => (v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt)
+                        && v.Currency == AccountingCurrency.IQD);
         if (from.HasValue) recQ = recQ.Where(v => v.Date >= from.Value);
         if (to.HasValue) recQ = recQ.Where(v => v.Date < EndOfDay(to));
         var receipts = await recQ.SumAsync(v => (decimal?)v.Amount) ?? 0;
@@ -1874,6 +1883,7 @@ public partial class ReportService : IReportService
             .Include(ii => ii.Invoice!).ThenInclude(i => i.Customer)
             .Where(ii => ii.Invoice != null
                          && ii.Invoice.CustomerId != null
+                         && ii.Invoice.Currency == AccountingCurrency.IQD
                          && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
 
         if (from.HasValue) query = query.Where(ii => ii.Invoice!.Date >= from.Value);
@@ -1902,7 +1912,10 @@ public partial class ReportService : IReportService
 
         var customerIds = soldItems.Select(ii => ii.Invoice!.CustomerId!.Value).Distinct().ToList();
         var outstandingByCustomer = await context.Invoices.AsNoTracking()
-            .Where(i => i.CustomerId != null && customerIds.Contains(i.CustomerId.Value) && i.RemainingAmount > 0)
+            .Where(i => i.CustomerId != null
+                        && customerIds.Contains(i.CustomerId.Value)
+                        && i.RemainingAmount > 0
+                        && i.Currency == AccountingCurrency.IQD)
             .GroupBy(i => i.CustomerId!.Value)
             .Select(g => new { CustomerId = g.Key, Outstanding = g.Sum(i => i.RemainingAmount) })
             .ToDictionaryAsync(x => x.CustomerId, x => x.Outstanding);
@@ -1967,7 +1980,9 @@ public partial class ReportService : IReportService
         await using var context = await _contextFactory.CreateDbContextAsync();
         var query = context.Installments
             .Include(i => i.InstallmentPlan).ThenInclude(p => p.Customer)
-            .Where(i => i.Status != InstallmentStatus.Paid && i.RemainingAmount > 0);
+            .Where(i => i.Status != InstallmentStatus.Paid
+                        && i.RemainingAmount > 0
+                        && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD);
 
         if (customerId.HasValue)
             query = query.Where(i => i.InstallmentPlan.CustomerId == customerId.Value);
@@ -2037,6 +2052,7 @@ public partial class ReportService : IReportService
         {
             var invQ = context.Invoices.AsNoTracking()
                 .Where(i => i.CustomerId == customer.Id &&
+                            i.Currency == AccountingCurrency.IQD &&
                             (i.InvoiceType == InvoiceType.Sale
                              || i.InvoiceType == InvoiceType.Installment
                              || i.InvoiceType == InvoiceType.SaleReturn));
@@ -2049,6 +2065,7 @@ public partial class ReportService : IReportService
 
             var voucherQ = context.Vouchers.AsNoTracking()
                 .Where(v => v.CustomerId == customer.Id &&
+                            v.Currency == AccountingCurrency.IQD &&
                             (v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt));
             if (from.HasValue) voucherQ = voucherQ.Where(v => v.Date >= from.Value);
             if (to.HasValue) voucherQ = voucherQ.Where(v => v.Date < EndOfDay(to));
@@ -2061,7 +2078,9 @@ public partial class ReportService : IReportService
             if (planIds.Count > 0)
             {
                 var instQ = context.Installments.AsNoTracking()
-                    .Where(i => planIds.Contains(i.InstallmentPlanId) && i.PaidAmount > 0);
+                    .Where(i => planIds.Contains(i.InstallmentPlanId)
+                                && i.PaidAmount > 0
+                                && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD);
                 if (from.HasValue) instQ = instQ.Where(i => (i.PaymentDate ?? i.DueDate) >= from.Value);
                 if (to.HasValue) instQ = instQ.Where(i => (i.PaymentDate ?? i.DueDate) < EndOfDay(to));
                 collected += await instQ.SumAsync(i => (decimal?)i.PaidAmount) ?? 0m;
@@ -2148,7 +2167,9 @@ public partial class ReportService : IReportService
             var purchaseAmount = InvoiceFilters.SumSignedNet(invoices);
 
             var voucherQ = context.Vouchers.AsNoTracking()
-                .Where(v => v.SupplierId == supplier.Id && v.VoucherType == VoucherType.Payment);
+                .Where(v => v.SupplierId == supplier.Id
+                            && v.VoucherType == VoucherType.Payment
+                            && v.Currency == AccountingCurrency.IQD);
             if (from.HasValue) voucherQ = voucherQ.Where(v => v.Date >= from.Value);
             if (to.HasValue) voucherQ = voucherQ.Where(v => v.Date < EndOfDay(to));
             var paid = await voucherQ.SumAsync(v => (decimal?)v.Amount) ?? 0m;

@@ -51,7 +51,7 @@ public class ExchangeRateService : IExchangeRateService
     public async Task<decimal> GetUsdToIqdForDateOrLatestAsync(DateTime date, CancellationToken ct = default)
     {
         var rate = await GetForDateAsync(date, ct) ?? await GetLatestAsync(ct);
-        return rate is { UsdToIqd: > 0 } ? rate.UsdToIqd : 1m;
+        return rate is { UsdToIqd: > 0 } ? rate.UsdToIqd : 0m;
     }
 
     public async Task<ExchangeRate> SaveAsync(ExchangeRate rate, CancellationToken ct = default)

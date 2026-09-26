@@ -80,19 +80,23 @@ public sealed class CloudDashboardService : ICloudDashboardService
             .SumAsync(t => (decimal?)t.Amount, ct) ?? 0;
 
         data.UnpaidInstallmentsBalance = await _db.Installments.ForTenant(tenantId)
-            .Where(i => i.Status != InstallmentStatus.Paid)
+            .Where(i => i.Status != InstallmentStatus.Paid &&
+                        i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
             .SumAsync(i => (decimal?)i.RemainingAmount, ct) ?? 0;
 
         var creditRemaining = await _db.Invoices.ForTenant(tenantId)
             .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
-                        i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
+                        i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid &&
+                        i.Currency == AccountingCurrency.IQD)
             .SumAsync(i => (decimal?)i.RemainingAmount, ct) ?? 0;
         var unappliedDebt = await _db.Vouchers.ForTenant(tenantId)
             .Where(v => v.VoucherType == VoucherType.DebtReceipt &&
+                        v.Currency == AccountingCurrency.IQD &&
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount, ct) ?? 0;
         var unappliedReceipts = await _db.Vouchers.ForTenant(tenantId)
             .Where(v => v.VoucherType == VoucherType.Receipt &&
+                        v.Currency == AccountingCurrency.IQD &&
                         !v.InvoiceId.HasValue &&
                         !v.InstallmentId.HasValue &&
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
@@ -104,11 +108,13 @@ public sealed class CloudDashboardService : ICloudDashboardService
 
         var supplierRemaining = await _db.Invoices.ForTenant(tenantId)
             .Where(i => i.InvoiceType == InvoiceType.Purchase &&
-                        i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
+                        i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid &&
+                        i.Currency == AccountingCurrency.IQD)
             .SumAsync(i => (decimal?)i.RemainingAmount, ct) ?? 0;
         var unappliedPayments = await _db.Vouchers.ForTenant(tenantId)
             .Where(v => v.VoucherType == VoucherType.Payment &&
                         v.SupplierId != null &&
+                        v.Currency == AccountingCurrency.IQD &&
                         !v.InvoiceId.HasValue &&
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount, ct) ?? 0;

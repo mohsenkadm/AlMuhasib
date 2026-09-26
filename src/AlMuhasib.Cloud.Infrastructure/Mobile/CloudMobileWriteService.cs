@@ -254,6 +254,21 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
     {
         ValidateInvoiceRequest(request);
 
+        // تطابق عملة الفاتورة مع القاصة عند وجودها
+        if (request.CashBoxSyncId is { } cashBoxSyncId && cashBoxSyncId != Guid.Empty)
+        {
+            var cashBoxCurrency = await _db.CashBoxes.AsNoTracking()
+                .Where(c => c.TenantId == tenantId && c.SyncId == cashBoxSyncId && !c.IsDeleted)
+                .Select(c => (AccountingCurrency?)c.Currency)
+                .FirstOrDefaultAsync(ct);
+            if (cashBoxCurrency is null)
+                throw new ArgumentException("القاصة غير موجودة");
+            AccountingCurrencyRules.EnsureSameCurrency(
+                request.Currency, cashBoxCurrency.Value, "الفاتورة", "القاصة");
+        }
+
+        AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "فاتورة موبايل");
+
         var invoiceSyncId = request.SyncId ?? Guid.NewGuid();
 
         // Idempotent retry: already fully saved with this SyncId.
@@ -427,43 +442,76 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         };
     }
 
-    public Task<MobileWriteResponse> UpsertCashBoxAsync(int tenantId, UpsertCashBoxRequest request, string username, CancellationToken ct = default)
+    public async Task<MobileWriteResponse> UpsertCashBoxAsync(int tenantId, UpsertCashBoxRequest request, string username, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
             throw new ArgumentException("اسم الصندوق مطلوب");
 
         var syncId = request.SyncId ?? Guid.NewGuid();
         var now = DateTime.UtcNow;
+        var balance = request.OpeningBalance;
+        var currency = request.Currency;
+
+        if (request.SyncId is { } existingSyncId)
+        {
+            var existing = await _db.CashBoxes.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.TenantId == tenantId && c.SyncId == existingSyncId && !c.IsDeleted, ct);
+            if (existing is not null)
+            {
+                // العملة والرصيد ثابتان بعد الإنشاء — التعديل يغيّر الاسم فقط
+                balance = existing.Balance;
+                currency = existing.Currency;
+            }
+        }
+
         var dto = new CashBoxSyncDto
         {
             SyncId = syncId,
             Name = request.Name.Trim(),
-            Balance = request.OpeningBalance,
-            Currency = request.Currency,
+            Balance = balance,
+            Currency = currency,
             CreatedAt = now,
-            CreatedBy = username
+            CreatedBy = username,
+            UpdatedAt = now,
+            UpdatedBy = username
         };
-        return PushSingleAsync(tenantId, bundle => bundle.CashBoxes.Add(dto), syncId, ct);
+        return await PushSingleAsync(tenantId, bundle => bundle.CashBoxes.Add(dto), syncId, ct);
     }
 
-    public Task<MobileWriteResponse> UpsertBankAccountAsync(int tenantId, UpsertBankAccountRequest request, string username, CancellationToken ct = default)
+    public async Task<MobileWriteResponse> UpsertBankAccountAsync(int tenantId, UpsertBankAccountRequest request, string username, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
             throw new ArgumentException("اسم الحساب البنكي مطلوب");
 
         var syncId = request.SyncId ?? Guid.NewGuid();
         var now = DateTime.UtcNow;
+        var balance = request.OpeningBalance;
+        var currency = request.Currency;
+
+        if (request.SyncId is { } existingSyncId)
+        {
+            var existing = await _db.BankAccounts.AsNoTracking()
+                .FirstOrDefaultAsync(b => b.TenantId == tenantId && b.SyncId == existingSyncId && !b.IsDeleted, ct);
+            if (existing is not null)
+            {
+                balance = existing.Balance;
+                currency = existing.Currency;
+            }
+        }
+
         var dto = new BankAccountSyncDto
         {
             SyncId = syncId,
             Name = request.Name.Trim(),
             AccountNumber = request.AccountNumber,
-            Balance = request.OpeningBalance,
-            Currency = request.Currency,
+            Balance = balance,
+            Currency = currency,
             CreatedAt = now,
-            CreatedBy = username
+            CreatedBy = username,
+            UpdatedAt = now,
+            UpdatedBy = username
         };
-        return PushSingleAsync(tenantId, bundle => bundle.BankAccounts.Add(dto), syncId, ct);
+        return await PushSingleAsync(tenantId, bundle => bundle.BankAccounts.Add(dto), syncId, ct);
     }
 
     public Task<MobileWriteResponse> UpsertExpenseTypeAsync(int tenantId, UpsertExpenseTypeRequest request, string username, CancellationToken ct = default)
@@ -498,6 +546,27 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 throw new ArgumentException("يجب تحديد المستثمر");
             case VoucherType.Receipt or VoucherType.DebtReceipt when !request.CustomerSyncId.HasValue:
                 throw new ArgumentException("يجب تحديد العميل");
+        }
+
+        AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "سند موبايل");
+
+        var cashBoxCurrency = await _db.CashBoxes.AsNoTracking()
+            .Where(c => c.TenantId == tenantId && c.SyncId == request.CashBoxSyncId && !c.IsDeleted)
+            .Select(c => (AccountingCurrency?)c.Currency)
+            .FirstOrDefaultAsync(ct)
+            ?? throw new ArgumentException("القاصة غير موجودة");
+        AccountingCurrencyRules.EnsureSameCurrency(
+            request.Currency, cashBoxCurrency, "السند", "القاصة");
+
+        if (request.VoucherType == VoucherType.BankReceipt && request.BankAccountSyncId is { } bankSyncId)
+        {
+            var bankCurrency = await _db.BankAccounts.AsNoTracking()
+                .Where(b => b.TenantId == tenantId && b.SyncId == bankSyncId && !b.IsDeleted)
+                .Select(b => (AccountingCurrency?)b.Currency)
+                .FirstOrDefaultAsync(ct)
+                ?? throw new ArgumentException("المصرف غير موجود");
+            AccountingCurrencyRules.EnsureSameCurrency(
+                request.Currency, bankCurrency, "السند", "المصرف");
         }
 
         var syncId = request.SyncId ?? Guid.NewGuid();
@@ -560,6 +629,18 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         if (request.CashBoxSyncId == Guid.Empty)
             throw new ArgumentException("الصندوق مطلوب");
 
+        AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "مصروف موبايل");
+
+        var cashBoxPreview = await _db.CashBoxes.AsNoTracking()
+            .Where(c => c.TenantId == tenantId && c.SyncId == request.CashBoxSyncId && !c.IsDeleted)
+            .Select(c => new { c.Currency, c.Balance })
+            .FirstOrDefaultAsync(ct)
+            ?? throw new ArgumentException("القاصة غير موجودة");
+        AccountingCurrencyRules.EnsureSameCurrency(
+            request.Currency, cashBoxPreview.Currency, "المصروف", "القاصة");
+        if (cashBoxPreview.Balance < request.Amount)
+            throw new ArgumentException($"رصيد الصندوق ({cashBoxPreview.Balance:N0}) غير كافٍ");
+
         var syncId = request.SyncId ?? Guid.NewGuid();
         var now = DateTime.UtcNow;
         var dto = new ExpenseSyncDto
@@ -595,6 +676,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             .FirstAsync(e => e.TenantId == tenantId && e.SyncId == syncId, ct);
         var cashBox = await _db.CashBoxes
             .FirstAsync(c => c.TenantId == tenantId && c.Id == expense.CashBoxId, ct);
+        AccountingCurrencyRules.EnsureSameCurrency(
+            expense.Currency, cashBox.Currency, "المصروف", "القاصة");
         if (cashBox.Balance < request.Amount)
             throw new ArgumentException($"رصيد الصندوق ({cashBox.Balance:N0}) غير كافٍ");
 
@@ -619,6 +702,15 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             throw new ArgumentException("حساب المصدر والهدف مطلوبان");
         if (request.FromType == request.ToType && request.FromSyncId == request.ToSyncId)
             throw new ArgumentException("لا يمكن التحويل لنفس الحساب");
+
+        AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "تحويل موبايل");
+
+        var fromCurrency = await ResolveTransferAccountCurrencyAsync(
+            tenantId, request.FromType, request.FromSyncId, ct);
+        var toCurrency = await ResolveTransferAccountCurrencyAsync(
+            tenantId, request.ToType, request.ToSyncId, ct);
+        AccountingCurrencyRules.EnsureSameCurrency(fromCurrency, toCurrency, "حساب المصدر", "حساب الهدف");
+        AccountingCurrencyRules.EnsureSameCurrency(request.Currency, fromCurrency, "التحويل", "حساب المصدر");
 
         var syncId = request.SyncId ?? Guid.NewGuid();
         var now = DateTime.UtcNow;
@@ -831,6 +923,19 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             .FirstOrDefaultAsync(c => c.TenantId == tenantId && c.SyncId == request.CashBoxSyncId && !c.IsDeleted, ct)
             ?? throw new ArgumentException("الصندوق غير موجود");
 
+        if (installment.InstallmentPlan?.InvoiceId is int invoiceId)
+        {
+            var invoiceCurrency = await _db.Invoices.AsNoTracking()
+                .Where(i => i.TenantId == tenantId && i.Id == invoiceId && !i.IsDeleted)
+                .Select(i => (AccountingCurrency?)i.Currency)
+                .FirstOrDefaultAsync(ct);
+            if (invoiceCurrency is not null)
+            {
+                AccountingCurrencyRules.EnsureSameCurrency(
+                    invoiceCurrency.Value, cashBox.Currency, "فاتورة القسط", "القاصة");
+            }
+        }
+
         var payAmount = Math.Min(request.Amount, installment.RemainingAmount);
         var now = DateTime.UtcNow;
         var paymentDate = request.PaymentDate ?? DateTime.UtcNow;
@@ -928,6 +1033,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             {
                 var bank = await _db.BankAccounts.FirstAsync(
                     b => b.TenantId == tenantId && b.Id == voucher.BankAccountId!.Value, ct);
+                AccountingCurrencyRules.EnsureSameCurrency(
+                    voucher.Currency, bank.Currency, "السند", "المصرف");
                 var net = voucher.Amount - voucher.BankFees;
                 if (bank.Balance < voucher.Amount)
                     throw new ArgumentException($"رصيد المصرف ({bank.Balance:N0}) غير كافٍ");
@@ -1041,7 +1148,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
     private async Task ApplyTransferBalancesAsync(
         int tenantId, CreateTransferRequest request, string username, CancellationToken ct)
     {
-        async Task AdjustAsync(TransferAccountType type, Guid syncId, decimal delta)
+        async Task<(AccountingCurrency Currency, Action Adjust)> ResolveAsync(
+            TransferAccountType type, Guid syncId, decimal delta)
         {
             if (type == TransferAccountType.CashBox)
             {
@@ -1049,25 +1157,53 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                     c => c.TenantId == tenantId && c.SyncId == syncId && !c.IsDeleted, ct);
                 if (delta < 0 && box.Balance < -delta)
                     throw new ArgumentException($"رصيد الصندوق ({box.Balance:N0}) غير كافٍ");
-                box.Balance += delta;
-                box.UpdatedAt = DateTime.UtcNow;
-                box.UpdatedBy = username;
+                return (box.Currency, () =>
+                {
+                    box.Balance += delta;
+                    box.UpdatedAt = DateTime.UtcNow;
+                    box.UpdatedBy = username;
+                });
             }
-            else
+
+            var bank = await _db.BankAccounts.FirstAsync(
+                b => b.TenantId == tenantId && b.SyncId == syncId && !b.IsDeleted, ct);
+            if (delta < 0 && bank.Balance < -delta)
+                throw new ArgumentException($"رصيد المصرف ({bank.Balance:N0}) غير كافٍ");
+            return (bank.Currency, () =>
             {
-                var bank = await _db.BankAccounts.FirstAsync(
-                    b => b.TenantId == tenantId && b.SyncId == syncId && !b.IsDeleted, ct);
-                if (delta < 0 && bank.Balance < -delta)
-                    throw new ArgumentException($"رصيد المصرف ({bank.Balance:N0}) غير كافٍ");
                 bank.Balance += delta;
                 bank.UpdatedAt = DateTime.UtcNow;
                 bank.UpdatedBy = username;
-            }
+            });
         }
 
-        await AdjustAsync(request.FromType, request.FromSyncId, -request.Amount);
-        await AdjustAsync(request.ToType, request.ToSyncId, request.Amount);
+        var from = await ResolveAsync(request.FromType, request.FromSyncId, -request.Amount);
+        var to = await ResolveAsync(request.ToType, request.ToSyncId, request.Amount);
+        AccountingCurrencyRules.EnsureSameCurrency(from.Currency, to.Currency, "حساب المصدر", "حساب الهدف");
+        AccountingCurrencyRules.EnsureSameCurrency(request.Currency, from.Currency, "التحويل", "حساب المصدر");
+
+        from.Adjust();
+        to.Adjust();
         await _db.SaveChangesAsync(ct);
+    }
+
+    private async Task<AccountingCurrency> ResolveTransferAccountCurrencyAsync(
+        int tenantId, TransferAccountType type, Guid syncId, CancellationToken ct)
+    {
+        if (type == TransferAccountType.CashBox)
+        {
+            return await _db.CashBoxes.AsNoTracking()
+                .Where(c => c.TenantId == tenantId && c.SyncId == syncId && !c.IsDeleted)
+                .Select(c => (AccountingCurrency?)c.Currency)
+                .FirstOrDefaultAsync(ct)
+                ?? throw new ArgumentException("حساب المصدر/الهدف (قاصة) غير موجود");
+        }
+
+        return await _db.BankAccounts.AsNoTracking()
+            .Where(b => b.TenantId == tenantId && b.SyncId == syncId && !b.IsDeleted)
+            .Select(b => (AccountingCurrency?)b.Currency)
+            .FirstOrDefaultAsync(ct)
+            ?? throw new ArgumentException("حساب المصدر/الهدف (مصرف) غير موجود");
     }
 
     private async Task ApplyWarehouseTransferStockAsync(int tenantId, Guid transferSyncId, string username, CancellationToken ct)
@@ -1246,6 +1382,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 c => c.TenantId == tenantId && c.Id == invoice.CashBoxId.Value, ct);
             if (cashBox is not null)
             {
+                AccountingCurrencyRules.EnsureSameCurrency(
+                    invoice.Currency, cashBox.Currency, "الفاتورة", "القاصة");
                 if (invoice.InvoiceType == InvoiceType.Purchase)
                     cashBox.Balance -= invoice.NetAmount;
                 else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)

@@ -520,10 +520,17 @@ public sealed partial class SyncEngine : ISyncEngine
     {
         var existing = await FindBySyncIdAsync(_db.CashBoxes, tenantId, dto.SyncId, ct);
         if (ShouldReject(existing, dto)) { AddConflict(response, "CashBox", dto.SyncId, "Server version is newer"); return 0; }
-        if (existing is null) { existing = new CloudCashBox { TenantId = tenantId }; _db.CashBoxes.Add(existing); }
-        if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
-        existing.Name = dto.Name;
+        var isNew = existing is null;
+        if (isNew) { existing = new CloudCashBox { TenantId = tenantId }; _db.CashBoxes.Add(existing); }
+        if (!TryApplyAudit(existing!, dto, entityType: GetEntityTypeName(existing!), response)) return 0;
+        if (!isNew && existing!.Currency != dto.Currency)
+        {
+            AddConflict(response, "CashBox", dto.SyncId, "لا يمكن تغيير عملة القاصة بعد إنشائها");
+            return 0;
+        }
+        existing!.Name = dto.Name;
         existing.Balance = dto.Balance;
+        existing.Currency = dto.Currency;
         return 1;
     }
 
@@ -531,9 +538,15 @@ public sealed partial class SyncEngine : ISyncEngine
     {
         var existing = await FindBySyncIdAsync(_db.BankAccounts, tenantId, dto.SyncId, ct);
         if (ShouldReject(existing, dto)) { AddConflict(response, "BankAccount", dto.SyncId, "Server version is newer"); return 0; }
-        if (existing is null) { existing = new CloudBankAccount { TenantId = tenantId }; _db.BankAccounts.Add(existing); }
-        if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
-        existing.Name = dto.Name;
+        var isNew = existing is null;
+        if (isNew) { existing = new CloudBankAccount { TenantId = tenantId }; _db.BankAccounts.Add(existing); }
+        if (!TryApplyAudit(existing!, dto, entityType: GetEntityTypeName(existing!), response)) return 0;
+        if (!isNew && existing!.Currency != dto.Currency)
+        {
+            AddConflict(response, "BankAccount", dto.SyncId, "لا يمكن تغيير عملة الحساب البنكي بعد إنشائه");
+            return 0;
+        }
+        existing!.Name = dto.Name;
         existing.AccountNumber = dto.AccountNumber;
         existing.Balance = dto.Balance;
         existing.Currency = dto.Currency;
@@ -732,6 +745,30 @@ public sealed partial class SyncEngine : ISyncEngine
     {
         var existing = await FindBySyncIdAsync(_db.Vouchers, tenantId, dto.SyncId, ct);
         if (ShouldReject(existing, dto)) { AddConflict(response, "Voucher", dto.SyncId, "Server version is newer"); return 0; }
+
+        try
+        {
+            AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة سند سحابة");
+            var cashBoxCurrency = await _db.CashBoxes.AsNoTracking()
+                .Where(c => c.TenantId == tenantId && c.Id == cashBoxId)
+                .Select(c => c.Currency)
+                .FirstAsync(ct);
+            AccountingCurrencyRules.EnsureSameCurrency(dto.Currency, cashBoxCurrency, "السند", "القاصة");
+            if (bankId is int bid)
+            {
+                var bankCurrency = await _db.BankAccounts.AsNoTracking()
+                    .Where(b => b.TenantId == tenantId && b.Id == bid)
+                    .Select(b => b.Currency)
+                    .FirstAsync(ct);
+                AccountingCurrencyRules.EnsureSameCurrency(dto.Currency, bankCurrency, "السند", "المصرف");
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            AddConflict(response, "Voucher", dto.SyncId, ex.Message);
+            return 0;
+        }
+
         if (existing is null) { existing = new CloudVoucher { TenantId = tenantId }; _db.Vouchers.Add(existing); }
         if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
         existing.VoucherNumber = dto.VoucherNumber;
@@ -759,6 +796,22 @@ public sealed partial class SyncEngine : ISyncEngine
     {
         var existing = await FindBySyncIdAsync(_db.Expenses, tenantId, dto.SyncId, ct);
         if (ShouldReject(existing, dto)) { AddConflict(response, "Expense", dto.SyncId, "Server version is newer"); return 0; }
+
+        try
+        {
+            AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة مصروف سحابة");
+            var cashBoxCurrency = await _db.CashBoxes.AsNoTracking()
+                .Where(c => c.TenantId == tenantId && c.Id == cashBoxId)
+                .Select(c => c.Currency)
+                .FirstAsync(ct);
+            AccountingCurrencyRules.EnsureSameCurrency(dto.Currency, cashBoxCurrency, "المصروف", "القاصة");
+        }
+        catch (InvalidOperationException ex)
+        {
+            AddConflict(response, "Expense", dto.SyncId, ex.Message);
+            return 0;
+        }
+
         if (existing is null) { existing = new CloudExpense { TenantId = tenantId }; _db.Expenses.Add(existing); }
         if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
         existing.ExpenseTypeId = typeId;
@@ -775,6 +828,21 @@ public sealed partial class SyncEngine : ISyncEngine
     {
         var existing = await FindBySyncIdAsync(_db.Transfers, tenantId, dto.SyncId, ct);
         if (ShouldReject(existing, dto)) { AddConflict(response, "Transfer", dto.SyncId, "Server version is newer"); return 0; }
+
+        try
+        {
+            AccountingCurrencyRules.RequireFxRateOrThrow(dto.Currency, dto.FxRate, "مزامنة تحويل سحابة");
+            var fromCurrency = await ResolveTransferCurrencyAsync(tenantId, dto.FromType, fromId, ct);
+            var toCurrency = await ResolveTransferCurrencyAsync(tenantId, dto.ToType, toId, ct);
+            AccountingCurrencyRules.EnsureSameCurrency(fromCurrency, toCurrency, "حساب المصدر", "حساب الهدف");
+            AccountingCurrencyRules.EnsureSameCurrency(dto.Currency, fromCurrency, "التحويل", "حساب المصدر");
+        }
+        catch (InvalidOperationException ex)
+        {
+            AddConflict(response, "Transfer", dto.SyncId, ex.Message);
+            return 0;
+        }
+
         if (existing is null) { existing = new CloudTransfer { TenantId = tenantId }; _db.Transfers.Add(existing); }
         if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
         existing.FromType = dto.FromType;
@@ -787,6 +855,23 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.Date = dto.Date;
         existing.Notes = dto.Notes;
         return 1;
+    }
+
+    private async Task<AccountingCurrency> ResolveTransferCurrencyAsync(
+        int tenantId, TransferAccountType type, int accountId, CancellationToken ct)
+    {
+        if (type == TransferAccountType.CashBox)
+        {
+            return await _db.CashBoxes.AsNoTracking()
+                .Where(c => c.TenantId == tenantId && c.Id == accountId)
+                .Select(c => c.Currency)
+                .FirstAsync(ct);
+        }
+
+        return await _db.BankAccounts.AsNoTracking()
+            .Where(b => b.TenantId == tenantId && b.Id == accountId)
+            .Select(b => b.Currency)
+            .FirstAsync(ct);
     }
 
     private async Task<int> UpsertInvestorTransactionAsync(int tenantId, InvestorTransactionSyncDto dto, int investorId, SyncPushResponse response, CancellationToken ct)

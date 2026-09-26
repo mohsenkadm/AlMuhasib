@@ -174,7 +174,8 @@ public sealed partial class CloudReportService
             .Include(p => p.Customer)
             .Include(p => p.Installments)
             .Include(p => p.Invoice)
-            .Where(p => p.InstallmentType == InstallmentType.OpeningBalance);
+            .Where(p => p.InstallmentType == InstallmentType.OpeningBalance
+                        && p.Invoice!.Currency == AccountingCurrency.IQD);
 
         if (customerId.HasValue) query = query.Where(p => p.CustomerId == customerId.Value);
         if (from.HasValue) query = query.Where(p => p.Invoice.Date >= from.Value);
@@ -219,7 +220,8 @@ public sealed partial class CloudReportService
         var query = context.Invoices
             .Include(i => i.Customer)
             .Include(i => i.InstallmentPlans)
-            .Where(i => i.InvoiceType == InvoiceType.Installment);
+            .Where(i => i.InvoiceType == InvoiceType.Installment
+                        && i.Currency == AccountingCurrency.IQD);
 
         if (from.HasValue) query = query.Where(i => i.Date >= from.Value);
         if (to.HasValue) query = query.Where(i => i.Date < EndOfDay(to));
@@ -729,7 +731,8 @@ public sealed partial class CloudReportService
         var rows = new List<CustomerCollectionRow>();
 
         var vouchQ = context.Vouchers.Include(v => v.Customer).Include(v => v.CashBox)
-            .Where(v => v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt);
+            .Where(v => (v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt)
+                        && v.Currency == AccountingCurrency.IQD);
         if (from.HasValue) vouchQ = vouchQ.Where(v => v.Date >= from.Value);
         if (to.HasValue) vouchQ = vouchQ.Where(v => v.Date < EndOfDay(to));
         if (customerId.HasValue) vouchQ = vouchQ.Where(v => v.CustomerId == customerId.Value);
@@ -752,7 +755,8 @@ public sealed partial class CloudReportService
         var instQ = context.Installments
             .Include(i => i.InstallmentPlan).ThenInclude(p => p.Customer)
             .Include(i => i.CashBox)
-            .Where(i => i.PaidAmount > 0 && i.PaymentDate != null);
+            .Where(i => i.PaidAmount > 0 && i.PaymentDate != null
+                        && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD);
         if (from.HasValue) instQ = instQ.Where(i => i.PaymentDate >= from.Value);
         if (to.HasValue) instQ = instQ.Where(i => i.PaymentDate < EndOfDay(to));
         if (customerId.HasValue) instQ = instQ.Where(i => i.InstallmentPlan.CustomerId == customerId.Value);
@@ -841,7 +845,9 @@ public sealed partial class CloudReportService
         var rows = new List<SupplierPaymentRow>();
 
         var vouchQ = context.Vouchers.Include(v => v.CashBox)
-            .Where(v => v.VoucherType == VoucherType.Payment && v.SupplierId != null);
+            .Where(v => v.VoucherType == VoucherType.Payment
+                        && v.SupplierId != null
+                        && v.Currency == AccountingCurrency.IQD);
         if (from.HasValue) vouchQ = vouchQ.Where(v => v.Date >= from.Value);
         if (to.HasValue) vouchQ = vouchQ.Where(v => v.Date < EndOfDay(to));
         if (supplierId.HasValue) vouchQ = vouchQ.Where(v => v.SupplierId == supplierId.Value);
@@ -861,7 +867,9 @@ public sealed partial class CloudReportService
         }
 
         var purchQ = context.Invoices.Include(i => i.Supplier).Include(i => i.CashBox)
-            .Where(i => i.InvoiceType == InvoiceType.Purchase && i.PaymentMethod == PaymentMethod.Cash);
+            .Where(i => i.InvoiceType == InvoiceType.Purchase
+                        && i.PaymentMethod == PaymentMethod.Cash
+                        && i.Currency == AccountingCurrency.IQD);
         if (from.HasValue) purchQ = purchQ.Where(i => i.Date >= from.Value);
         if (to.HasValue) purchQ = purchQ.Where(i => i.Date < EndOfDay(to));
         if (supplierId.HasValue) purchQ = purchQ.Where(i => i.SupplierId == supplierId.Value);
@@ -881,7 +889,9 @@ public sealed partial class CloudReportService
         }
 
         var purchaseReturnQ = context.Invoices.Include(i => i.Supplier).Include(i => i.CashBox)
-            .Where(i => i.InvoiceType == InvoiceType.PurchaseReturn && i.PaymentMethod == PaymentMethod.Cash);
+            .Where(i => i.InvoiceType == InvoiceType.PurchaseReturn
+                        && i.PaymentMethod == PaymentMethod.Cash
+                        && i.Currency == AccountingCurrency.IQD);
         if (from.HasValue) purchaseReturnQ = purchaseReturnQ.Where(i => i.Date >= from.Value);
         if (to.HasValue) purchaseReturnQ = purchaseReturnQ.Where(i => i.Date < EndOfDay(to));
         if (supplierId.HasValue) purchaseReturnQ = purchaseReturnQ.Where(i => i.SupplierId == supplierId.Value);
@@ -1861,27 +1871,35 @@ public sealed partial class CloudReportService
             .Count();
 
         var receiptQ = context.Vouchers.AsNoTracking()
-            .Where(v => v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt);
+            .Where(v => (v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt)
+                        && v.Currency == AccountingCurrency.IQD);
         if (from.HasValue) receiptQ = receiptQ.Where(v => v.Date >= from.Value);
         if (endExclusive.HasValue) receiptQ = receiptQ.Where(v => v.Date < endExclusive.Value);
         var receiptAmount = await receiptQ.SumAsync(v => (decimal?)v.Amount) ?? 0;
 
-        var paymentQ = context.Vouchers.AsNoTracking().Where(v => v.VoucherType == VoucherType.Payment);
+        var paymentQ = context.Vouchers.AsNoTracking()
+            .Where(v => v.VoucherType == VoucherType.Payment && v.Currency == AccountingCurrency.IQD);
         if (from.HasValue) paymentQ = paymentQ.Where(v => v.Date >= from.Value);
         if (endExclusive.HasValue) paymentQ = paymentQ.Where(v => v.Date < endExclusive.Value);
         var paymentAmount = await paymentQ.SumAsync(v => (decimal?)v.Amount) ?? 0;
 
-        var instPaidQ = context.Installments.AsNoTracking().Where(i => i.PaidAmount > 0);
+        var instPaidQ = context.Installments.AsNoTracking()
+            .Where(i => i.PaidAmount > 0
+                        && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD);
         if (from.HasValue) instPaidQ = instPaidQ.Where(i => (i.PaymentDate ?? i.DueDate) >= from.Value);
         if (endExclusive.HasValue) instPaidQ = instPaidQ.Where(i => (i.PaymentDate ?? i.DueDate) < endExclusive.Value);
         var collectedInstallments = await instPaidQ.SumAsync(i => (decimal?)i.PaidAmount) ?? 0;
 
         var overdueQ = context.Installments.AsNoTracking()
-            .Where(i => i.Status != InstallmentStatus.Paid && i.DueDate < asOf && i.RemainingAmount > 0);
+            .Where(i => i.Status != InstallmentStatus.Paid
+                        && i.DueDate < asOf
+                        && i.RemainingAmount > 0
+                        && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD);
         var overdueCount = await overdueQ.CountAsync();
         var overdueAmount = await overdueQ.SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
 
-        var transferQ = context.Transfers.AsNoTracking().AsQueryable();
+        var transferQ = context.Transfers.AsNoTracking()
+            .Where(t => t.Currency == AccountingCurrency.IQD);
         if (from.HasValue) transferQ = transferQ.Where(t => t.Date >= from.Value);
         if (endExclusive.HasValue) transferQ = transferQ.Where(t => t.Date < endExclusive.Value);
         var transfersCount = await transferQ.CountAsync();
