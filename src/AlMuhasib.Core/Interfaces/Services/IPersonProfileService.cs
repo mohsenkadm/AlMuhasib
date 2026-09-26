@@ -78,6 +78,7 @@ public class CustomerProfileInsights
     public decimal MarginPercent { get; set; }
     public int InvoiceCount { get; set; }
     public decimal OutstandingBalance { get; set; }
+    public decimal OutstandingBalanceUsd { get; set; }
 
     public List<CustomerProfitMonthPoint> ProfitByMonth { get; set; } = [];
     public List<CustomerProductPurchaseRow> Products { get; set; } = [];

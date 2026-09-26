@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 
 namespace AlMuhasib.Core.Entities;
 
@@ -11,4 +12,7 @@ public class BankAccount : BaseEntity
 
     /// <summary>عملة الحساب الثابتة — افتراضي دينار.</summary>
     public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+
+    public string DisplayNameWithCurrency =>
+        $"{Name} ({AccountingCurrencyHelper.GetLabel(Currency)})";
 }

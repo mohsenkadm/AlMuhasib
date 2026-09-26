@@ -646,9 +646,26 @@ public partial class ReportService
         }
 
         rows = rows.OrderByDescending(r => r.DaysOverdue).ThenBy(r => r.DueDate).ToList();
+
+        var totalOutstandingUsdCredit = await context.Invoices.AsNoTracking()
+            .Where(i => i.InvoiceType == InvoiceType.Sale
+                        && i.PaymentMethod == PaymentMethod.Credit
+                        && i.Currency == AccountingCurrency.USD
+                        && i.RemainingAmount > 0
+                        && i.Date < asOfEnd
+                        && (!customerId.HasValue || i.CustomerId == customerId.Value))
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0m;
+        var totalOutstandingUsdInst = await context.Installments.AsNoTracking()
+            .Where(i => i.Status != InstallmentStatus.Paid
+                        && i.RemainingAmount > 0
+                        && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.USD
+                        && (!customerId.HasValue || i.InstallmentPlan.CustomerId == customerId.Value))
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0m;
+
         return new ReceivablesAgingReportResult
         {
             TotalOutstanding = rows.Sum(r => r.RemainingAmount),
+            TotalOutstandingUsd = totalOutstandingUsdCredit + totalOutstandingUsdInst,
             RowCount = rows.Count,
             CustomerCount = rows.Select(r => r.CustomerName).Distinct().Count(),
             Buckets = BuildAgingBuckets(rows.Select(r => (r.AgingBucket, r.RemainingAmount))),
@@ -715,9 +732,19 @@ public partial class ReportService
 
         rows = rows.OrderByDescending(r => r.DaysOverdue).ThenBy(r => r.DueDate).ToList();
 
+        var totalOutstandingUsd = await context.Invoices.AsNoTracking()
+            .Where(i => i.InvoiceType == InvoiceType.Purchase
+                        && i.PaymentMethod == PaymentMethod.Credit
+                        && i.Currency == AccountingCurrency.USD
+                        && i.RemainingAmount > 0
+                        && i.Date < asOfEnd
+                        && (!supplierId.HasValue || i.SupplierId == supplierId.Value))
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0m;
+
         return new PayablesAgingReportResult
         {
             TotalOutstanding = rows.Sum(r => r.RemainingAmount),
+            TotalOutstandingUsd = totalOutstandingUsd,
             RowCount = rows.Count,
             SupplierCount = rows.Select(r => r.SupplierName).Distinct().Count(),
             Buckets = BuildAgingBuckets(rows.Select(r => (r.AgingBucket, r.RemainingAmount))),
@@ -947,8 +974,11 @@ public partial class ReportService
             : await context.BankAccounts.Where(b => b.Currency == AccountingCurrency.IQD).ToListAsync();
         var bankMap = banks.ToDictionary(b => b.Id, b => b.Name);
         var bankIds = banks.Select(b => b.Id).ToHashSet();
+        var reportCurrency = banks.FirstOrDefault()?.Currency ?? AccountingCurrency.IQD;
 
-        var vouchQ = context.Vouchers.Where(v => v.BankAccountId != null && bankIds.Contains(v.BankAccountId.Value));
+        var vouchQ = context.Vouchers.Where(v =>
+            v.BankAccountId != null && bankIds.Contains(v.BankAccountId.Value)
+            && v.Currency == reportCurrency);
         if (from.HasValue) vouchQ = vouchQ.Where(v => v.Date >= from.Value);
         if (to.HasValue) vouchQ = vouchQ.Where(v => v.Date < EndOfDay(to));
         foreach (var v in await vouchQ.ToListAsync())
@@ -966,7 +996,9 @@ public partial class ReportService
             });
         }
 
-        var transfers = await context.Transfers.ToListAsync();
+        var transfers = await context.Transfers
+            .Where(t => t.Currency == reportCurrency)
+            .ToListAsync();
         foreach (var t in transfers.Where(t =>
                      (t.FromType == TransferAccountType.Bank && bankIds.Contains(t.FromId)) ||
                      (t.ToType == TransferAccountType.Bank && bankIds.Contains(t.ToId))))
@@ -1018,6 +1050,7 @@ public partial class ReportService
             TotalIn = rows.Sum(r => r.Incoming),
             TotalOut = rows.Sum(r => r.Outgoing),
             ClosingBalance = closing,
+            Currency = reportCurrency,
             Rows = rows,
             DailyInChart = rows.Where(r => r.Incoming > 0).GroupBy(r => r.Date.Date)
                 .Select(g => new DailyAmountPoint { Date = g.Key, Amount = g.Sum(x => x.Incoming) })
@@ -1127,6 +1160,7 @@ public partial class ReportService
             TotalIncoming = rows.Sum(r => r.Incoming),
             TotalOutgoing = rows.Sum(r => r.Outgoing),
             ClosingBalance = closing,
+            Currency = selectedCurrency,
             Rows = rows,
             DailyIncomingChart = rows.Where(r => r.Incoming > 0).GroupBy(r => r.Date.Date)
                 .Select(g => new DailyAmountPoint { Date = g.Key, Amount = g.Sum(x => x.Incoming) })
@@ -1185,7 +1219,7 @@ public partial class ReportService
     public async Task<TransfersReportResult> GetTransfersReportAsync(DateTime? from, DateTime? to)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var query = context.Transfers.Where(t => t.Currency == AccountingCurrency.IQD);
+        var query = context.Transfers.AsQueryable();
         if (from.HasValue) query = query.Where(t => t.Date >= from.Value);
         if (to.HasValue) query = query.Where(t => t.Date < EndOfDay(to));
 
@@ -1206,16 +1240,20 @@ public partial class ReportService
             });
         }
 
+        var iqdRows = rows.Where(r => r.Currency == AccountingCurrency.IQD).ToList();
+        var usdRows = rows.Where(r => r.Currency == AccountingCurrency.USD).ToList();
+
         return new TransfersReportResult
         {
-            TotalAmount = rows.Sum(r => r.Amount),
+            TotalAmount = iqdRows.Sum(r => r.Amount),
+            TotalAmountUsd = usdRows.Sum(r => r.Amount),
             TransferCount = rows.Count,
-            AverageAmount = rows.Count > 0 ? Math.Round(rows.Average(r => r.Amount), 0) : 0,
+            AverageAmount = iqdRows.Count > 0 ? Math.Round(iqdRows.Average(r => r.Amount), 0) : 0,
             Rows = rows,
-            DailyChart = rows.GroupBy(r => r.Date.Date)
+            DailyChart = iqdRows.GroupBy(r => r.Date.Date)
                 .Select(g => new DailyAmountPoint { Date = g.Key, Amount = g.Sum(x => x.Amount) })
                 .OrderBy(x => x.Date).ToList(),
-            ByTypeChart = rows.GroupBy(r => $"{r.FromAccount} ←")
+            ByTypeChart = iqdRows.GroupBy(r => $"{r.FromAccount} ←")
                 .Select(g => new NameAmountPoint { Name = g.Key.TrimEnd(' ', '←'), Amount = g.Sum(x => x.Amount) })
                 .OrderByDescending(x => x.Amount).Take(10).ToList()
         };

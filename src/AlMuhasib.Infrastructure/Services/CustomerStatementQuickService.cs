@@ -36,10 +36,11 @@ public class CustomerStatementQuickService : ICustomerStatementQuickService
             .FirstOrDefaultAsync(cancellationToken);
 
         var overdue = await context.Installments.AsNoTracking()
-            .Include(i => i.InstallmentPlan)
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Invoice)
             .Where(i => i.InstallmentPlan!.CustomerId == customerId
                         && i.Status == InstallmentStatus.Overdue
-                        && i.RemainingAmount > 0)
+                        && i.RemainingAmount > 0
+                        && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
             .ToListAsync(cancellationToken);
 
         return new CustomerQuickStatementResult
@@ -48,6 +49,7 @@ public class CustomerStatementQuickService : ICustomerStatementQuickService
             CustomerName = statement.CustomerName,
             Phone = phone,
             Balance = statement.Balance,
+            BalanceUsd = statement.BalanceUsd,
             TotalDebit = statement.TotalDebit,
             TotalCredit = statement.TotalCredit,
             OverdueInstallmentCount = overdue.Count,

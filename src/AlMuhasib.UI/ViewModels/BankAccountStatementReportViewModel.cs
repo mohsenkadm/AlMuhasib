@@ -55,10 +55,10 @@ public partial class BankAccountStatementReportViewModel : ReportViewModelBase
             IsBusy = true;
             var result = await _reportService.GetBankAccountStatementReportAsync(SelectedBankAccountId, DateFrom, DateTo);
 
-            OpeningBalance = FormatCurrency(result.OpeningBalance);
-            TotalIn = FormatCurrency(result.TotalIn);
-            TotalOut = FormatCurrency(result.TotalOut);
-            ClosingBalance = FormatCurrency(result.ClosingBalance);
+            OpeningBalance = FormatCurrency(result.OpeningBalance, result.Currency);
+            TotalIn = FormatCurrency(result.TotalIn, result.Currency);
+            TotalOut = FormatCurrency(result.TotalOut, result.Currency);
+            ClosingBalance = FormatCurrency(result.ClosingBalance, result.Currency);
             if (result.DailyInChart.Count > 0)
             {
                 DailySeries = [ChartThemeConfig.Column(result.DailyInChart.Select(d => d.Amount).ToArray(), "وارد", 2)];

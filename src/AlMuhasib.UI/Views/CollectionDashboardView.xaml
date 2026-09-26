@@ -47,7 +47,7 @@
                         <StackPanel>
                             <TextBlock Text="مستحق اليوم" FontWeight="SemiBold" Foreground="#1565C0"/>
                             <TextBlock Text="{Binding DueTodayCount}" FontSize="28" FontWeight="Bold"/>
-                            <TextBlock Text="{Binding DueTodayAmount, StringFormat={}{0:N0} د.ع}"/>
+                            <TextBlock Text="{Binding DueTodayAmountText}"/>
                         </StackPanel>
                     </materialDesign:Card>
                 </Button>
@@ -57,7 +57,7 @@
                         <StackPanel>
                             <TextBlock Text="متأخر" FontWeight="SemiBold" Foreground="#C62828"/>
                             <TextBlock Text="{Binding OverdueCount}" FontSize="28" FontWeight="Bold"/>
-                            <TextBlock Text="{Binding OverdueAmount, StringFormat={}{0:N0} د.ع}"/>
+                            <TextBlock Text="{Binding OverdueAmountText}"/>
                         </StackPanel>
                     </materialDesign:Card>
                 </Button>
@@ -67,7 +67,7 @@
                         <StackPanel>
                             <TextBlock Text="هذا الأسبوع" FontWeight="SemiBold" Foreground="#EF6C00"/>
                             <TextBlock Text="{Binding ThisWeekCount}" FontSize="28" FontWeight="Bold"/>
-                            <TextBlock Text="{Binding ThisWeekAmount, StringFormat={}{0:N0} د.ع}"/>
+                            <TextBlock Text="{Binding ThisWeekAmountText}"/>
                         </StackPanel>
                     </materialDesign:Card>
                 </Button>
@@ -76,7 +76,7 @@
             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                 <TextBlock Text="القاصة:" VerticalAlignment="Center" Margin="0,0,8,0"/>
                 <ComboBox ItemsSource="{Binding CashBoxes}" SelectedItem="{Binding PaymentCashBox}"
-                          DisplayMemberPath="Name" Width="200" Margin="0,0,16,0"/>
+                          DisplayMemberPath="DisplayNameWithCurrency" Width="200" Margin="0,0,16,0"/>
                 <Button Content="عرض الكل" Command="{Binding FilterByBucketCommand}" CommandParameter="{x:Null}"
                         Style="{StaticResource MaterialDesignFlatButton}"/>
             </StackPanel>
@@ -116,6 +116,8 @@
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StatusLabel"/>
                             <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="100"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
+                            <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrencyLabel"/>
                             <DataGridTemplateColumn Header="دفع سريع" Width="100"
                                                     behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                 <DataGridTemplateColumn.CellTemplate>

@@ -451,6 +451,8 @@ public class CustomerStatementRow
     public decimal Debit { get; set; }
     public decimal Credit { get; set; }
     public decimal RunningBalance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
     /// <summary>Invoice | Voucher | Installment</summary>
     public string SourceKind { get; set; } = string.Empty;
     public int DocumentId { get; set; }
@@ -600,6 +602,7 @@ public class CashFlowResult
     public decimal TotalOutgoing { get; set; }
     public decimal NetFlow { get; set; }
     public decimal CurrentBalance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public List<CashFlowRow> Rows { get; set; } = [];
     public List<DailyAmountPoint> DailyIncomingChart { get; set; } = [];
     public List<DailyAmountPoint> DailyOutgoingChart { get; set; } = [];
@@ -813,6 +816,7 @@ public class CustomersOverviewReportResult
     public decimal TotalSales { get; set; }
     public decimal TotalCollected { get; set; }
     public decimal TotalOutstanding { get; set; }
+    public decimal TotalOutstandingUsd { get; set; }
     public int CustomerCount { get; set; }
     public List<CustomerOverviewRow> Rows { get; set; } = [];
 }
@@ -827,6 +831,7 @@ public class CustomerOverviewRow
     public decimal SalesAmount { get; set; }
     public decimal CollectedAmount { get; set; }
     public decimal OutstandingBalance { get; set; }
+    public decimal OutstandingBalanceUsd { get; set; }
 }
 
 public class SuppliersOverviewReportResult
@@ -834,6 +839,7 @@ public class SuppliersOverviewReportResult
     public decimal TotalPurchases { get; set; }
     public decimal TotalPaid { get; set; }
     public decimal TotalOutstanding { get; set; }
+    public decimal TotalOutstandingUsd { get; set; }
     public int SupplierCount { get; set; }
     public List<SupplierOverviewRow> Rows { get; set; } = [];
 }
@@ -847,6 +853,7 @@ public class SupplierOverviewRow
     public decimal PurchaseAmount { get; set; }
     public decimal PaidAmount { get; set; }
     public decimal OutstandingBalance { get; set; }
+    public decimal OutstandingBalanceUsd { get; set; }
 }
 
 public class ProfitComparisonResult
@@ -1266,6 +1273,7 @@ public class OperatingProfitLineRow
 public class ReceivablesAgingReportResult
 {
     public decimal TotalOutstanding { get; set; }
+    public decimal TotalOutstandingUsd { get; set; }
     public int RowCount { get; set; }
     public int CustomerCount { get; set; }
     public List<AgingBucketSummary> Buckets { get; set; } = [];
@@ -1297,6 +1305,7 @@ public class ReceivablesAgingRow
 public class PayablesAgingReportResult
 {
     public decimal TotalOutstanding { get; set; }
+    public decimal TotalOutstandingUsd { get; set; }
     public int RowCount { get; set; }
     public int SupplierCount { get; set; }
     public List<AgingBucketSummary> Buckets { get; set; } = [];
@@ -1392,6 +1401,7 @@ public class BankAccountStatementReportResult
     public decimal TotalIn { get; set; }
     public decimal TotalOut { get; set; }
     public decimal ClosingBalance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public List<BankAccountStatementRow> Rows { get; set; } = [];
     public List<DailyAmountPoint> DailyInChart { get; set; } = [];
     public List<DailyAmountPoint> DailyOutChart { get; set; } = [];
@@ -1414,6 +1424,7 @@ public class CashBoxMovementReportResult
     public decimal TotalIncoming { get; set; }
     public decimal TotalOutgoing { get; set; }
     public decimal ClosingBalance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public List<CashBoxMovementRow> Rows { get; set; } = [];
     public List<DailyAmountPoint> DailyIncomingChart { get; set; } = [];
     public List<DailyAmountPoint> DailyOutgoingChart { get; set; } = [];
@@ -1456,6 +1467,7 @@ public class CashBalanceRow
 public class TransfersReportResult
 {
     public decimal TotalAmount { get; set; }
+    public decimal TotalAmountUsd { get; set; }
     public int TransferCount { get; set; }
     public decimal AverageAmount { get; set; }
     public List<TransferReportRow> Rows { get; set; } = [];

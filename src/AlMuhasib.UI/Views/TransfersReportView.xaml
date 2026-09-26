@@ -44,12 +44,20 @@
 
                 <UniformGrid Columns="4" Margin="0,0,0,20">
                     <controls:AnimatedStatCard
-                        Title="إجمالي التحويلات"
+                        Title="إجمالي التحويلات (د.ع)"
                         TextValue="{Binding TotalAmount}"
                         Icon="SwapHorizontal"
                         IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
                         IconForeground="#1565C0"
                         ValueForeground="#1565C0"/>
+                    <controls:AnimatedStatCard
+                        Title="إجمالي التحويلات ($)"
+                        TextValue="{Binding TotalAmountUsd}"
+                        Icon="CurrencyUsd"
+                        IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
+                        IconForeground="#2E7D32"
+                        ValueForeground="#2E7D32"
+                        Visibility="{Binding ShowTotalAmountUsd, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     <controls:AnimatedStatCard
                         Title="عدد التحويلات"
                         TextValue="{Binding TransferCount}"
@@ -58,19 +66,12 @@
                         IconForeground="#EF6C00"
                         ValueForeground="#EF6C00"/>
                     <controls:AnimatedStatCard
-                        Title="متوسط التحويل"
+                        Title="متوسط التحويل (د.ع)"
                         TextValue="{Binding AverageAmount}"
                         Icon="ChartLine"
                         IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
                         IconForeground="#2E7D32"
                         ValueForeground="#2E7D32"/>
-                    <controls:AnimatedStatCard
-                        Title="عمليات"
-                        TextValue="{Binding OpsCount}"
-                        Icon="SwapHorizontal"
-                        IconBackground="{DynamicResource PrimaryHueLightBrush}"
-                        IconForeground="#6A1B9A"
-                        ValueForeground="#6A1B9A"/>
                 </UniformGrid>
 
                 <UniformGrid Columns="2" Margin="0,0,0,4">

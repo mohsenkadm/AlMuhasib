@@ -822,6 +822,18 @@ class _ReportDetailBody extends StatelessWidget {
   }
 
   static String _humanizeKey(String key) {
+    const labels = {
+      'cashBoxesTotal': 'قاصات د.ع',
+      'banksTotal': 'مصارف د.ع',
+      'totalLiquid': 'سيولة د.ع',
+      'cashBoxesTotalUsd': 'قاصات \$',
+      'banksTotalUsd': 'مصارف \$',
+      'totalLiquidUsd': 'سيولة \$',
+      'totalOutstandingUsd': 'مستحق \$',
+      'balanceUsd': 'رصيد \$',
+      'totalAmountUsd': 'إجمالي \$',
+    };
+    if (labels.containsKey(key)) return labels[key]!;
     final spaced = key
         .replaceAllMapped(RegExp(r'([a-z])([A-Z])'), (m) => '${m[1]} ${m[2]}')
         .replaceAll('Chart', '')
@@ -1327,7 +1339,9 @@ class _ReportDetailBody extends StatelessWidget {
       PageStatsHeader(
         heroTitle: r.customerName,
         heroValue: formatCurrency(r.balance),
-        heroSubtitle: 'report_statement'.tr(),
+        heroSubtitle: r.balanceUsd != 0
+            ? 'USD: ${formatCurrency(r.balanceUsd)}'
+            : 'report_statement'.tr(),
         stats: [
           StatsChipData(
             label: 'total_debit'.tr(),
@@ -1341,6 +1355,13 @@ class _ReportDetailBody extends StatelessWidget {
             icon: Icons.arrow_downward_rounded,
             color: AppColors.success,
           ),
+          if (r.balanceUsd != 0)
+            StatsChipData(
+              label: 'USD',
+              value: formatCurrency(r.balanceUsd),
+              icon: Icons.attach_money_rounded,
+              color: AppColors.moduleIndigo,
+            ),
           StatsChipData(
             label: 'records_count'.tr(),
             value: '${r.rows.length}',

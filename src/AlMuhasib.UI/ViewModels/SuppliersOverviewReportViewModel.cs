@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
@@ -13,6 +14,8 @@ public partial class SuppliersOverviewReportViewModel : ReportViewModelBase
     [ObservableProperty] private string _totalPurchases = "0";
     [ObservableProperty] private string _totalPaid = "0";
     [ObservableProperty] private string _totalOutstanding = "0";
+    [ObservableProperty] private string _totalOutstandingUsd = "—";
+    [ObservableProperty] private bool _showTotalOutstandingUsd;
     [ObservableProperty] private string _supplierCount = "0";
 
     private List<SupplierOverviewRow> _allRows = [];
@@ -42,6 +45,10 @@ public partial class SuppliersOverviewReportViewModel : ReportViewModelBase
             TotalPurchases = FormatCurrency(result.TotalPurchases);
             TotalPaid = FormatCurrency(result.TotalPaid);
             TotalOutstanding = FormatCurrency(result.TotalOutstanding);
+            ShowTotalOutstandingUsd = result.TotalOutstandingUsd != 0;
+            TotalOutstandingUsd = ShowTotalOutstandingUsd
+                ? FormatCurrency(result.TotalOutstandingUsd, AccountingCurrency.USD)
+                : "—";
             SupplierCount = result.SupplierCount.ToString("N0");
 
             _allRows = result.Rows;
@@ -70,10 +77,10 @@ public partial class SuppliersOverviewReportViewModel : ReportViewModelBase
         };
         if (dlg.ShowDialog() != true) return;
 
-        var cols = new[] { "المورد", "الهاتف", "فواتير", "المشتريات", "المدفوع", "المستحق" };
+        var cols = new[] { "المورد", "الهاتف", "فواتير", "المشتريات", "المدفوع", "المستحق د.ع", "المستحق $" };
         var rows = _allRows.Select(r => new object[]
         {
-            r.SupplierName, r.Phone, r.InvoiceCount, r.PurchaseAmount, r.PaidAmount, r.OutstandingBalance
+            r.SupplierName, r.Phone, r.InvoiceCount, r.PurchaseAmount, r.PaidAmount, r.OutstandingBalance, r.OutstandingBalanceUsd
         }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "ملخص الموردين", cols, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
@@ -82,10 +89,10 @@ public partial class SuppliersOverviewReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "المورد", "الهاتف", "فواتير", "المشتريات", "المدفوع", "المستحق" };
+        var cols = new[] { "المورد", "الهاتف", "فواتير", "المشتريات", "المدفوع", "المستحق د.ع", "المستحق $" };
         var rows = _allRows.Select(r => new object[]
         {
-            r.SupplierName, r.Phone, r.InvoiceCount, r.PurchaseAmount, r.PaidAmount, r.OutstandingBalance
+            r.SupplierName, r.Phone, r.InvoiceCount, r.PurchaseAmount, r.PaidAmount, r.OutstandingBalance, r.OutstandingBalanceUsd
         }).ToList();
         _exportService.PrintTable("ملخص الموردين", cols, rows);
     }

@@ -631,6 +631,21 @@ internal static class SyncMapper
         await db.SaveChangesAsync(ct);
     }
 
+    private static async Task UpsertExchangeRatesAsync(AppDbContext db, List<ExchangeRateSyncDto> items, CancellationToken ct)
+    {
+        foreach (var dto in items)
+        {
+            var entity = await FindBySyncIdAsync(db.ExchangeRates, dto.SyncId, ct) ?? new ExchangeRate();
+            if (ShouldRejectIncoming(entity, dto)) continue;
+            if (entity.Id == 0) db.ExchangeRates.Add(entity);
+            ApplyBase(entity, dto);
+            entity.RateDate = dto.RateDate.Date;
+            entity.UsdToIqd = dto.UsdToIqd;
+            entity.Notes = dto.Notes ?? string.Empty;
+        }
+        await db.SaveChangesAsync(ct);
+    }
+
     private static async Task<Dictionary<Guid, int>> UpsertWarehousesAsync(AppDbContext db, List<WarehouseSyncDto> items, CancellationToken ct) =>
         await UpsertSimpleAsync(db, db.Warehouses, items, (e, d) => { e.Name = d.Name; e.Location = d.Location; }, ct);
 

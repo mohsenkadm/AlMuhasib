@@ -112,7 +112,8 @@ public sealed class SalesRepService : ISalesRepService
             .ToListAsync(ct);
 
         var commissionsQ = db.SalesRepCommissionEntries.AsNoTracking()
-            .Where(e => !e.IsDeleted && e.SalesRepresentativeId == salesRepresentativeId);
+            .Where(e => !e.IsDeleted && e.SalesRepresentativeId == salesRepresentativeId
+                        && e.Invoice!.Currency == AccountingCurrency.IQD);
         if (fromDate is not null) commissionsQ = commissionsQ.Where(e => e.InvoiceDate >= fromDate);
         if (toDate is not null) commissionsQ = commissionsQ.Where(e => e.InvoiceDate < toDate);
 
@@ -123,10 +124,11 @@ public sealed class SalesRepService : ISalesRepService
             .ToListAsync(ct);
 
         var collectionsQ = db.SalesRepCollections.AsNoTracking()
-            .Where(c => !c.IsDeleted && c.SalesRepresentativeId == salesRepresentativeId);
+            .Where(c => !c.IsDeleted && c.SalesRepresentativeId == salesRepresentativeId
+                        && (c.InvoiceId == null || c.Invoice!.Currency == AccountingCurrency.IQD));
         if (fromDate is not null) collectionsQ = collectionsQ.Where(c => c.CollectionDate >= fromDate);
         if (toDate is not null) collectionsQ = collectionsQ.Where(c => c.CollectionDate < toDate);
-        var collections = await collectionsQ.ToListAsync(ct);
+        var collections = await collectionsQ.Include(c => c.Invoice).ToListAsync(ct);
 
         var commissionByInvoice = commissions.ToDictionary(c => c.InvoiceId, c => c.CommissionAmount);
 
@@ -203,7 +205,8 @@ public sealed class SalesRepService : ISalesRepService
                 .FirstOrDefaultAsync(ct);
 
             var commissionsQ = db.SalesRepCommissionEntries.AsNoTracking()
-                .Where(e => !e.IsDeleted && e.SalesRepresentativeId == rep.Id);
+                .Where(e => !e.IsDeleted && e.SalesRepresentativeId == rep.Id
+                            && e.Invoice!.Currency == AccountingCurrency.IQD);
             if (fromDate is not null) commissionsQ = commissionsQ.Where(e => e.InvoiceDate >= fromDate);
             if (toDate is not null) commissionsQ = commissionsQ.Where(e => e.InvoiceDate < toDate);
 

@@ -55,10 +55,10 @@ public partial class CashBoxMovementReportViewModel : ReportViewModelBase
             IsBusy = true;
             var result = await _reportService.GetCashBoxMovementReportAsync(SelectedCashBoxId, DateFrom, DateTo);
 
-            OpeningBalance = FormatCurrency(result.OpeningBalance);
-            TotalIncoming = FormatCurrency(result.TotalIncoming);
-            TotalOutgoing = FormatCurrency(result.TotalOutgoing);
-            ClosingBalance = FormatCurrency(result.ClosingBalance);
+            OpeningBalance = FormatCurrency(result.OpeningBalance, result.Currency);
+            TotalIncoming = FormatCurrency(result.TotalIncoming, result.Currency);
+            TotalOutgoing = FormatCurrency(result.TotalOutgoing, result.Currency);
+            ClosingBalance = FormatCurrency(result.ClosingBalance, result.Currency);
             if (result.DailyIncomingChart.Count > 0)
             {
                 DailySeries = [ChartThemeConfig.Column(result.DailyIncomingChart.Select(d => d.Amount).ToArray(), "وارد", 2)];

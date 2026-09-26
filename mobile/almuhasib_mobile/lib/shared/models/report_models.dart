@@ -245,6 +245,7 @@ class CustomerStatementResult {
     required this.customerName,
     this.customerFileNumber,
     required this.balance,
+    this.balanceUsd = 0,
     required this.rows,
   });
 
@@ -253,6 +254,7 @@ class CustomerStatementResult {
       customerName: json['customerName'] as String? ?? '',
       customerFileNumber: json['customerFileNumber'] as String?,
       balance: _num(json['balance']),
+      balanceUsd: _num(json['balanceUsd']),
       rows: (json['rows'] as List<dynamic>? ?? [])
           .map((e) => CustomerStatementRow.fromJson(e as Map<String, dynamic>))
           .toList(),
@@ -262,6 +264,7 @@ class CustomerStatementResult {
   final String customerName;
   final String? customerFileNumber;
   final double balance;
+  final double balanceUsd;
   final List<CustomerStatementRow> rows;
 }
 

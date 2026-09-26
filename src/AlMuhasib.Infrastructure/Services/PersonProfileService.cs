@@ -1,5 +1,6 @@
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -163,9 +164,9 @@ public class PersonProfileService : IPersonProfileService
                 Date = i.Date,
                 Title = i.InvoiceNumber,
                 Subtitle = $"{InvoiceTypeLabel(i.InvoiceType)} — {PaymentMethodLabel(i.PaymentMethod)}",
-                AmountLabel = $"{i.NetAmount:N0} د.ع",
+                AmountLabel = AccountingCurrencyHelper.Format(i.NetAmount, i.Currency),
                 Status = i.PaymentMethod == PaymentMethod.Credit
-                    ? (i.IsCreditPaid ? "مسدد" : $"متبقي {i.RemainingAmount:N0}")
+                    ? (i.IsCreditPaid ? "مسدد" : $"متبقي {AccountingCurrencyHelper.Format(i.RemainingAmount, i.Currency)}")
                     : PaymentMethodLabel(i.PaymentMethod)
             }).ToList()
         });
@@ -190,7 +191,7 @@ public class PersonProfileService : IPersonProfileService
                 Date = v.Date,
                 Title = v.VoucherNumber,
                 Subtitle = VoucherTypeLabel(v.VoucherType),
-                AmountLabel = $"{v.Amount:N0} د.ع",
+                AmountLabel = AccountingCurrencyHelper.Format(v.Amount, v.Currency),
                 Status = string.IsNullOrWhiteSpace(v.Notes) ? "—" : v.Notes!
             }).ToList()
         });
@@ -250,7 +251,12 @@ public class PersonProfileService : IPersonProfileService
         var insights = new CustomerProfileInsights
         {
             InvoiceCount = invoices.Count,
-            OutstandingBalance = invoices.Sum(i => i.RemainingAmount),
+            OutstandingBalance = invoices
+                .Where(i => i.Currency == AccountingCurrency.IQD)
+                .Sum(i => i.RemainingAmount),
+            OutstandingBalanceUsd = invoices
+                .Where(i => i.Currency == AccountingCurrency.USD)
+                .Sum(i => i.RemainingAmount),
             FinancialTransactions = vouchers.Select(v => new CustomerFinancialTxnRow
             {
                 Date = v.Date,
@@ -261,7 +267,10 @@ public class PersonProfileService : IPersonProfileService
             }).ToList()
         };
 
-        var invoiceIds = invoices.Select(i => i.Id).ToList();
+        var invoiceIds = invoices
+            .Where(i => i.Currency == AccountingCurrency.IQD)
+            .Select(i => i.Id)
+            .ToList();
         List<InvoiceItem> items;
         if (invoiceIds.Count == 0)
             items = [];
@@ -430,9 +439,9 @@ public class PersonProfileService : IPersonProfileService
                 Date = i.Date,
                 Title = i.InvoiceNumber,
                 Subtitle = $"{InvoiceTypeLabel(i.InvoiceType)} — {PaymentMethodLabel(i.PaymentMethod)}",
-                AmountLabel = $"{i.NetAmount:N0} د.ع",
+                AmountLabel = AccountingCurrencyHelper.Format(i.NetAmount, i.Currency),
                 Status = i.PaymentMethod == PaymentMethod.Credit
-                    ? (i.IsCreditPaid ? "مسدد" : $"متبقي {i.RemainingAmount:N0}")
+                    ? (i.IsCreditPaid ? "مسدد" : $"متبقي {AccountingCurrencyHelper.Format(i.RemainingAmount, i.Currency)}")
                     : PaymentMethodLabel(i.PaymentMethod)
             }).ToList()
         });
@@ -454,7 +463,7 @@ public class PersonProfileService : IPersonProfileService
                 Date = v.Date,
                 Title = v.VoucherNumber,
                 Subtitle = VoucherTypeLabel(v.VoucherType),
-                AmountLabel = $"{v.Amount:N0} د.ع",
+                AmountLabel = AccountingCurrencyHelper.Format(v.Amount, v.Currency),
                 Status = string.IsNullOrWhiteSpace(v.Notes) ? "—" : v.Notes!
             }).ToList()
         });

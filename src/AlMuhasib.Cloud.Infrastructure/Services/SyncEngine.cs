@@ -476,6 +476,18 @@ public sealed partial class SyncEngine : ISyncEngine
         return 1;
     }
 
+    private async Task<int> UpsertExchangeRateAsync(int tenantId, ExchangeRateSyncDto dto, SyncPushResponse response, CancellationToken ct)
+    {
+        var existing = await FindBySyncIdAsync(_db.ExchangeRates, tenantId, dto.SyncId, ct);
+        if (ShouldReject(existing, dto)) { AddConflict(response, "ExchangeRate", dto.SyncId, "Server version is newer"); return 0; }
+        if (existing is null) { existing = new CloudExchangeRate { TenantId = tenantId }; _db.ExchangeRates.Add(existing); }
+        if (!TryApplyAudit(existing, dto, entityType: GetEntityTypeName(existing), response)) return 0;
+        existing.RateDate = dto.RateDate.Date;
+        existing.UsdToIqd = dto.UsdToIqd;
+        existing.Notes = dto.Notes ?? string.Empty;
+        return 1;
+    }
+
     private async Task<int> UpsertWarehouseAsync(int tenantId, WarehouseSyncDto dto, SyncPushResponse response, CancellationToken ct)
     {
         var existing = await FindBySyncIdAsync(_db.Warehouses, tenantId, dto.SyncId, ct);
@@ -1253,6 +1265,15 @@ public sealed partial class SyncEngine : ISyncEngine
         PeriodLockEnabled = e.PeriodLockEnabled,
         LockedThroughDate = e.LockedThroughDate,
         MultiCurrencyEnabled = e.MultiCurrencyEnabled
+    };
+
+    private static ExchangeRateSyncDto MapExchangeRate(CloudExchangeRate e, Dictionary<int, Guid> _) => new()
+    {
+        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
+        RateDate = e.RateDate,
+        UsdToIqd = e.UsdToIqd,
+        Notes = e.Notes
     };
 
     private static WarehouseSyncDto MapWarehouse(CloudWarehouse e, Dictionary<int, Guid> _) => new()
