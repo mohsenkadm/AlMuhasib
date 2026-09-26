@@ -5,6 +5,7 @@ using System.Windows.Threading;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Print;
@@ -250,7 +251,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         IPartyQuickDetailService partyQuickDetail,
         IProductQuickDetailService productQuickDetail,
         ICustomerCreditService customerCreditService,
-        IReportService reportService)
+        IReportService reportService,
+        IExchangeRateService exchangeRateService)
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
@@ -270,6 +272,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         _queueService = queueService;
         _productPriceService = productPriceService;
         _pricingTypeService = pricingTypeService;
+        ConfigureCurrencyServices(exchangeRateService);
 
         PageTitle = "فاتورة مبيعات";
 
@@ -421,12 +424,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             if (Warehouses.Count > 0)
                 SelectedWarehouse = Warehouses[0];
 
-            var cashBoxes = await _unitOfWork.CashBoxes.GetAllAsync();
-            CashBoxes.Clear();
-            foreach (var cb in cashBoxes)
-                CashBoxes.Add(cb);
-            if (CashBoxes.Count > 0)
-                SelectedCashBox = CashBoxes[0];
+            var cashBoxes = (await _unitOfWork.CashBoxes.GetAllAsync()).ToList();
+            RememberCashBoxesForCurrencyFilter(cashBoxes);
 
             var drivers = await _unitOfWork.Drivers.GetAllAsync();
             Drivers.Clear();
@@ -539,6 +538,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
         if (SelectedPaymentMethod == PaymentMethod.Credit)
             CreditDueDate = invoice.CreditDueDate ?? DateTime.Today.AddMonths(1);
+
+        ApplyCurrencyFromDocument(invoice.Currency, invoice.FxRate);
 
         foreach (var row in Items.ToList())
             UnwireItemRow(row);
@@ -1208,7 +1209,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         if (IsCreditPayment && SelectedCustomer is not null && !IsReturnMode && !IsDamageMode)
         {
             var creditCheck = await _customerCreditService.CheckCreditAsync(
-                SelectedCustomer.Id, GrandTotal, isInstallment: false);
+                SelectedCustomer.Id, GrandTotal, isInstallment: false,
+                ShowMultiCurrency ? SelectedCurrency : AccountingCurrency.IQD,
+                ShowMultiCurrency ? FxRate : 1m);
             if (!creditCheck.IsAllowed)
             {
                 InvoiceValidationDialog.ShowBlockingError(creditCheck.Message);
@@ -1255,6 +1258,10 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 SalesRepresentativeId = ShowSalesRepSelection && !IsDamageMode ? SelectedSalesRepresentative?.Id : null,
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = IsDamageMode ? PaymentMethod.Cash : SelectedPaymentMethod,
+                Currency = ShowMultiCurrency ? SelectedCurrency : AccountingCurrency.IQD,
+                FxRate = ShowMultiCurrency
+                    ? AccountingCurrencyRules.RequireFxRateOrThrow(SelectedCurrency, FxRate, "فاتورة مبيعات")
+                    : 1m,
                 CashBoxId = ResolveCashBoxIdForSave(),
                 Date = InvoiceDate,
                 CreditDueDate = !IsDamageMode && IsCreditPayment ? CreditDueDate : null,
@@ -1578,6 +1585,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             ShowLineDiscount = ShowProductDiscount,
             PharmacyUsageReceipt = ShowPharmacyUsage,
             ShowCarShowroomFields = ShowCarShowroomContractPrint,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(_savedInvoice.Currency),
             Items = _savedItems.Select((item, i) =>
             {
                 var usage = ShowPharmacyUsage
@@ -1642,6 +1650,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             WarehouseName = source.WarehouseName,
             PaymentMethod = source.PaymentMethod,
             Notes = source.Notes,
+            CurrencyLabel = source.CurrencyLabel,
             HideAmounts = true,
             Items = source.Items.Select(i => new InvoicePrintItem
             {

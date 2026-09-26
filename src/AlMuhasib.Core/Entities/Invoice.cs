@@ -16,6 +16,13 @@ public class Invoice : BaseEntity
     public int? SalesRepresentativeId { get; set; }
     public int WarehouseId { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
+
+    /// <summary>عملة المستند الواحدة — افتراضي دينار.</summary>
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+
+    /// <summary>سعر الصرف (دولار→دينار) وقت الحفظ — يُستخدم عند Currency=USD.</summary>
+    public decimal FxRate { get; set; } = 1m;
+
     public decimal TotalAmount { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal NetAmount { get; set; }

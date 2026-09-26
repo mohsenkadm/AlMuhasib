@@ -190,6 +190,8 @@ class CreateInvoiceRequest {
     this.supplierSyncId,
     required this.warehouseSyncId,
     required this.paymentMethod,
+    this.currency = 0,
+    this.fxRate = 1,
     this.cashBoxSyncId,
     required this.date,
     this.creditDueDate,
@@ -206,6 +208,8 @@ class CreateInvoiceRequest {
         if (supplierSyncId != null) 'supplierSyncId': supplierSyncId,
         'warehouseSyncId': warehouseSyncId,
         'paymentMethod': paymentMethod,
+        'currency': currency,
+        'fxRate': fxRate,
         if (cashBoxSyncId != null) 'cashBoxSyncId': cashBoxSyncId,
         'date': date.toIso8601String(),
         if (creditDueDate != null) 'creditDueDate': creditDueDate!.toIso8601String(),
@@ -221,6 +225,9 @@ class CreateInvoiceRequest {
   final String? supplierSyncId;
   final String warehouseSyncId;
   final int paymentMethod;
+  /// 0 = IQD (default), 1 = USD
+  final int currency;
+  final double fxRate;
   final String? cashBoxSyncId;
   final DateTime date;
   final DateTime? creditDueDate;
@@ -280,17 +287,21 @@ class UpsertCashBoxRequest {
     this.syncId,
     required this.name,
     this.openingBalance = 0,
+    this.currency = 0,
   });
 
   Map<String, dynamic> toJson() => {
         if (syncId != null) 'syncId': syncId,
         'name': name,
         'openingBalance': openingBalance,
+        'currency': currency,
       };
 
   final String? syncId;
   final String name;
   final double openingBalance;
+  /// 0 = IQD, 1 = USD
+  final int currency;
 }
 
 class UpsertBankAccountRequest {
@@ -299,6 +310,7 @@ class UpsertBankAccountRequest {
     required this.name,
     this.accountNumber,
     this.openingBalance = 0,
+    this.currency = 0,
   });
 
   Map<String, dynamic> toJson() => {
@@ -306,12 +318,15 @@ class UpsertBankAccountRequest {
         'name': name,
         if (accountNumber != null) 'accountNumber': accountNumber,
         'openingBalance': openingBalance,
+        'currency': currency,
       };
 
   final String? syncId;
   final String name;
   final String? accountNumber;
   final double openingBalance;
+  /// 0 = IQD, 1 = USD
+  final int currency;
 }
 
 class UpsertExpenseTypeRequest {
@@ -330,6 +345,8 @@ class CreateVoucherRequest {
   CreateVoucherRequest({
     this.syncId,
     required this.voucherType,
+    this.currency = 0,
+    this.fxRate = 1,
     required this.amount,
     this.bankFees = 0,
     this.customerSyncId,
@@ -343,6 +360,8 @@ class CreateVoucherRequest {
   Map<String, dynamic> toJson() => {
         if (syncId != null) 'syncId': syncId,
         'voucherType': voucherType,
+        'currency': currency,
+        'fxRate': fxRate,
         'amount': amount,
         'bankFees': bankFees,
         if (customerSyncId != null) 'customerSyncId': customerSyncId,
@@ -355,6 +374,8 @@ class CreateVoucherRequest {
 
   final String? syncId;
   final int voucherType;
+  final int currency;
+  final double fxRate;
   final double amount;
   final double bankFees;
   final String? customerSyncId;
@@ -369,6 +390,8 @@ class CreateExpenseRequest {
   CreateExpenseRequest({
     this.syncId,
     required this.expenseTypeSyncId,
+    this.currency = 0,
+    this.fxRate = 1,
     required this.amount,
     required this.date,
     required this.cashBoxSyncId,
@@ -378,6 +401,8 @@ class CreateExpenseRequest {
   Map<String, dynamic> toJson() => {
         if (syncId != null) 'syncId': syncId,
         'expenseTypeSyncId': expenseTypeSyncId,
+        'currency': currency,
+        'fxRate': fxRate,
         'amount': amount,
         'date': date.toIso8601String(),
         'cashBoxSyncId': cashBoxSyncId,
@@ -386,6 +411,8 @@ class CreateExpenseRequest {
 
   final String? syncId;
   final String expenseTypeSyncId;
+  final int currency;
+  final double fxRate;
   final double amount;
   final DateTime date;
   final String cashBoxSyncId;
@@ -399,6 +426,8 @@ class CreateTransferRequest {
     required this.fromSyncId,
     required this.toType,
     required this.toSyncId,
+    this.currency = 0,
+    this.fxRate = 1,
     required this.amount,
     required this.date,
     this.notes,
@@ -410,6 +439,8 @@ class CreateTransferRequest {
         'fromSyncId': fromSyncId,
         'toType': toType,
         'toSyncId': toSyncId,
+        'currency': currency,
+        'fxRate': fxRate,
         'amount': amount,
         'date': date.toIso8601String(),
         if (notes != null) 'notes': notes,
@@ -421,6 +452,8 @@ class CreateTransferRequest {
   final String fromSyncId;
   final int toType;
   final String toSyncId;
+  final int currency;
+  final double fxRate;
   final double amount;
   final DateTime date;
   final String? notes;
@@ -798,6 +831,7 @@ class InstallmentListItem {
     this.paymentDate,
     this.cashBoxSyncId,
     this.cashBoxName,
+    this.currency = 0,
   });
 
   factory InstallmentListItem.fromJson(Map<String, dynamic> json) {
@@ -815,6 +849,7 @@ class InstallmentListItem {
       paymentDate: _mDate(json['paymentDate']),
       cashBoxSyncId: json['cashBoxSyncId']?.toString(),
       cashBoxName: json['cashBoxName'] as String?,
+      currency: json['currency'] as int? ?? 0,
     );
   }
 
@@ -831,6 +866,7 @@ class InstallmentListItem {
   final DateTime? paymentDate;
   final String? cashBoxSyncId;
   final String? cashBoxName;
+  final int currency;
 }
 
 class InstallmentPlanDetail {

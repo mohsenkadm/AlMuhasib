@@ -15,6 +15,7 @@
 
     
     <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <ContextMenu x:Key="PageActionsMenu">
             <MenuItem Header="بحث / تحديث" Command="{Binding LoadDataCommand}">
                 <MenuItem.Icon><materialDesign:PackIcon Kind="Magnify" Width="16" Height="16"/></MenuItem.Icon>
@@ -40,8 +41,10 @@
             <StackPanel Margin="24,24,24,8">
                 <TextBlock Text="أعمار ذمم الأقساط" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
 
-                <UniformGrid Columns="3" Margin="0,0,0,16">
-                    <controls:AnimatedStatCard Title="إجمالي المتبقي" TextValue="{Binding TotalOutstanding}" Icon="CashClock" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
+                <UniformGrid Columns="4" Margin="0,0,0,16">
+                    <controls:AnimatedStatCard Title="إجمالي المتبقي (د.ع)" TextValue="{Binding TotalOutstanding}" Icon="CashClock" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
+                    <controls:AnimatedStatCard Title="إجمالي المتبقي ($)" TextValue="{Binding TotalOutstandingUsd}" Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"
+                                               Visibility="{Binding ShowTotalOutstandingUsd, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     <controls:AnimatedStatCard Title="عدد الأقساط" TextValue="{Binding InstallmentCount}" Icon="CalendarClock" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
                     <controls:AnimatedStatCard Title="عدد العملاء" TextValue="{Binding CustomerCount}" Icon="AccountGroup" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                 </UniformGrid>
@@ -116,6 +119,8 @@
                         <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
                                             <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
+                        <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="55"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrencyLabel"/>
                         <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="110"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Phone"/>
                         <DataGridTextColumn Header="الخطة" Binding="{Binding PlanNumber}" Width="70"

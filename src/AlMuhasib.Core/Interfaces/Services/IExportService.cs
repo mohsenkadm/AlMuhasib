@@ -1,3 +1,5 @@
+using AlMuhasib.Core.Enums;
+
 namespace AlMuhasib.Core.Interfaces.Services;
 
 public interface IExportService
@@ -163,6 +165,8 @@ public class InstallmentPlanDetailPrintModel
     public DateTime StartDate { get; set; }
     public string InstallmentTypeLabel { get; set; } = string.Empty;
     public decimal TotalAmount { get; set; }
+    /// <summary>عملة خطة الأقساط (من الفاتورة) — لتجنب خلط الإجماليات.</summary>
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public IReadOnlyList<InstallmentPrintRow> Schedule { get; set; } = [];
 }
 
@@ -175,6 +179,9 @@ public class InstallmentPlansSummaryPrintModel
     public decimal TotalAmount { get; set; }
     public decimal PaidAmount { get; set; }
     public decimal RemainingAmount { get; set; }
+    public decimal TotalAmountUsd { get; set; }
+    public decimal PaidAmountUsd { get; set; }
+    public decimal RemainingAmountUsd { get; set; }
     public int PaidInstallmentCount { get; set; }
 }
 
@@ -211,6 +218,7 @@ public class VoucherPrintModel
     public DateTime Date { get; set; } = DateTime.Now;
     public decimal Amount { get; set; }
     public decimal BankFees { get; set; }
+    public string CurrencyLabel { get; set; } = "د.ع";
     public string? PartyLabel { get; set; }
     public string? PartyName { get; set; }
     public string? PartyPhone { get; set; }

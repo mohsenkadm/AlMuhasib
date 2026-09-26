@@ -9,6 +9,7 @@ public sealed class SyncDataBundle
     public List<PricingTypeSyncDto> PricingTypes { get; set; } = [];
     public List<ProductPriceSyncDto> ProductPrices { get; set; } = [];
     public List<BusinessSettingsSyncDto> BusinessSettings { get; set; } = [];
+    public List<ExchangeRateSyncDto> ExchangeRates { get; set; } = [];
     public List<WarehouseSyncDto> Warehouses { get; set; } = [];
     public List<CustomerSyncDto> Customers { get; set; } = [];
     public List<SupplierSyncDto> Suppliers { get; set; } = [];

@@ -26,6 +26,8 @@ public class CollectionDashboardService : ICollectionDashboardService
         var query = context.Installments.AsNoTracking()
             .Include(i => i.InstallmentPlan)
             .ThenInclude(p => p!.Customer)
+            .Include(i => i.InstallmentPlan)
+            .ThenInclude(p => p!.Invoice)
             .Where(i => i.RemainingAmount > 0 && i.Status != InstallmentStatus.Paid);
 
         var items = await query.ToListAsync(cancellationToken);
@@ -36,6 +38,7 @@ public class CollectionDashboardService : ICollectionDashboardService
             var bucket = ClassifyBucket(inst, today, weekEnd);
             if (bucket is null) continue;
 
+            var currency = inst.InstallmentPlan?.Invoice?.Currency ?? AccountingCurrency.IQD;
             rows.Add(new CollectionInstallmentRow
             {
                 InstallmentId = inst.Id,
@@ -47,6 +50,7 @@ public class CollectionDashboardService : ICollectionDashboardService
                 CustomerPhone = inst.InstallmentPlan?.Customer?.Phone,
                 DueDate = inst.DueDate,
                 RemainingAmount = inst.RemainingAmount,
+                Currency = currency,
                 Bucket = bucket,
                 StatusLabel = bucket switch
                 {
@@ -65,14 +69,26 @@ public class CollectionDashboardService : ICollectionDashboardService
             .ThenBy(r => r.DueDate)
             .ToList();
 
+        static decimal SumIqd(IEnumerable<CollectionInstallmentRow> src) =>
+            src.Where(r => r.Currency == AccountingCurrency.IQD).Sum(r => r.RemainingAmount);
+        static decimal SumUsd(IEnumerable<CollectionInstallmentRow> src) =>
+            src.Where(r => r.Currency == AccountingCurrency.USD).Sum(r => r.RemainingAmount);
+
+        var todayRows = rows.Where(r => r.Bucket == "Today").ToList();
+        var overdueRows = rows.Where(r => r.Bucket == "Overdue").ToList();
+        var weekRows = rows.Where(r => r.Bucket == "ThisWeek").ToList();
+
         return new CollectionDashboardSummary
         {
-            DueTodayCount = rows.Count(r => r.Bucket == "Today"),
-            DueTodayAmount = rows.Where(r => r.Bucket == "Today").Sum(r => r.RemainingAmount),
-            OverdueCount = rows.Count(r => r.Bucket == "Overdue"),
-            OverdueAmount = rows.Where(r => r.Bucket == "Overdue").Sum(r => r.RemainingAmount),
-            ThisWeekCount = rows.Count(r => r.Bucket == "ThisWeek"),
-            ThisWeekAmount = rows.Where(r => r.Bucket == "ThisWeek").Sum(r => r.RemainingAmount),
+            DueTodayCount = todayRows.Count,
+            DueTodayAmount = SumIqd(todayRows),
+            DueTodayAmountUsd = SumUsd(todayRows),
+            OverdueCount = overdueRows.Count,
+            OverdueAmount = SumIqd(overdueRows),
+            OverdueAmountUsd = SumUsd(overdueRows),
+            ThisWeekCount = weekRows.Count,
+            ThisWeekAmount = SumIqd(weekRows),
+            ThisWeekAmountUsd = SumUsd(weekRows),
             Rows = rows
         };
     }

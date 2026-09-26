@@ -20,6 +20,11 @@ public class BankAccountConfiguration : IEntityTypeConfiguration<BankAccount>
         builder.Property(b => b.Balance)
             .HasPrecision(18, 2);
 
+        builder.Property(b => b.Currency)
+            .HasConversion<string>()
+            .HasMaxLength(10)
+            .HasDefaultValue(AlMuhasib.Core.Enums.AccountingCurrency.IQD);
+
         builder.HasIndex(b => b.AccountNumber)
             .IsUnique()
             .HasFilter("[AccountNumber] IS NOT NULL AND [IsDeleted] = 0");

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
@@ -127,16 +128,26 @@ public partial class PosQuickSaleViewModel
 
         using var scope = ((App)System.Windows.Application.Current).Services.CreateScope();
         var credit = scope.ServiceProvider.GetRequiredService<ICustomerCreditService>();
-        var check = await credit.CheckCreditAsync(SelectedPosCustomer.Id, GrandTotal, isInstallment: true);
-        if (!check.IsAllowed)
-        {
-            BeautifulMessageDialog.ShowWarning(check.Message ?? "تجاوز حد الائتمان");
-            return;
-        }
 
         if (SelectedWarehouse is null || SelectedCashBox is null || CartLines.Count == 0)
         {
             BeautifulMessageDialog.ShowWarning("أكمل البيانات والسلة");
+            return;
+        }
+
+        var fxRate = await ResolveFxRateAsync(SelectedCashBox.Currency);
+        if (SelectedCashBox.Currency == AccountingCurrency.USD && fxRate <= 0)
+        {
+            BeautifulMessageDialog.ShowWarning("سعر الصرف مطلوب لبيع بالدولار. سجّل سعر الصرف اليومي أولاً.");
+            return;
+        }
+
+        var check = await credit.CheckCreditAsync(
+            SelectedPosCustomer.Id, GrandTotal, isInstallment: true,
+            SelectedCashBox.Currency, fxRate);
+        if (!check.IsAllowed)
+        {
+            BeautifulMessageDialog.ShowWarning(check.Message ?? "تجاوز حد الائتمان");
             return;
         }
 
@@ -152,6 +163,8 @@ public partial class PosQuickSaleViewModel
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = PaymentMethod.Cash,
                 CashBoxId = SelectedCashBox.Id,
+                Currency = SelectedCashBox.Currency,
+                FxRate = fxRate,
                 Date = DateTime.Now,
                 DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
                 Notes = "بيع تقسيط POS"
@@ -246,6 +259,7 @@ public partial class PosQuickSaleViewModel
             Subtotal = items.Sum(i => i.TotalPrice),
             GrandTotal = inv.NetAmount,
             PharmacyUsageReceipt = false,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(inv.Currency),
             Items = items.Select((it, idx) => new InvoicePrintItem
             {
                 Number = idx + 1,
@@ -305,6 +319,7 @@ public partial class PosQuickSaleViewModel
             Subtotal = items.Sum(i => i.TotalPrice),
             GrandTotal = inv.NetAmount,
             PharmacyUsageReceipt = true,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(inv.Currency),
             Items = items.Select((it, idx) => new InvoicePrintItem
             {
                 Number = idx + 1,
@@ -348,6 +363,7 @@ public partial class PosQuickSaleViewModel
             Subtotal = totalSnapshot,
             GrandTotal = saved.NetAmount > 0 ? saved.NetAmount : totalSnapshot,
             PharmacyUsageReceipt = pharmacyUsage && ShowPharmacy,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(saved.Currency),
             Items = cartSnapshot.Select((l, idx) => new InvoicePrintItem
             {
                 Number = idx + 1,

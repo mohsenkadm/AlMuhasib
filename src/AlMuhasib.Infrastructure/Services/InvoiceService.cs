@@ -1,6 +1,7 @@
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Data;
@@ -45,6 +46,21 @@ public class InvoiceService : IInvoiceService
             var username = _currentUserService.Username;
             invoice.CreatedBy = username;
             invoice.CreatedAt = DateTime.UtcNow;
+
+            invoice.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
+                invoice.Currency, invoice.FxRate, "فاتورة");
+
+            if (invoice.CashBoxId.HasValue)
+            {
+                var cashBoxCurrency = await context.CashBoxes.AsNoTracking()
+                    .Where(c => c.Id == invoice.CashBoxId.Value)
+                    .Select(c => (AccountingCurrency?)c.Currency)
+                    .FirstOrDefaultAsync();
+                if (cashBoxCurrency is null)
+                    throw new InvalidOperationException("القاصة غير موجودة");
+                AccountingCurrencyRules.EnsureSameCurrency(
+                    invoice.Currency, cashBoxCurrency.Value, "الفاتورة", "القاصة");
+            }
 
             var itemsList = items.ToList();
             decimal subtotal = 0m;
@@ -405,7 +421,8 @@ public class InvoiceService : IInvoiceService
         decimal preservedRemainingAmount = 0;
         bool preservedIsCreditPaid = false;
         var preserveCreditState = existing?.PaymentMethod == PaymentMethod.Credit
-                                  && invoice.PaymentMethod == PaymentMethod.Credit;
+                                  && invoice.PaymentMethod == PaymentMethod.Credit
+                                  && existing.Currency == invoice.Currency;
         if (preserveCreditState && existing is not null)
         {
             preservedPaidAmount = existing.PaidAmount;
@@ -592,6 +609,16 @@ public class InvoiceService : IInvoiceService
         await using var transaction = await context.Database.BeginTransactionAsync();
         try
         {
+            var linkedVouchers = await context.Vouchers
+                .Where(v => v.InvoiceId == invoice.Id && !v.IsDeleted)
+                .ToListAsync();
+            var reportOnlyDownPayments = linkedVouchers
+                .Where(IsReportOnlyDownPaymentVoucher)
+                .ToList();
+            var independentVouchers = linkedVouchers
+                .Where(v => !IsReportOnlyDownPaymentVoucher(v))
+                .ToList();
+
             if (invoice.CashBoxId.HasValue &&
                 (invoice.PaymentMethod == PaymentMethod.Cash
                  || (invoice.PaymentMethod == PaymentMethod.Credit && invoice.PaidAmount > 0)))
@@ -599,9 +626,19 @@ public class InvoiceService : IInvoiceService
                 var cashBox = await context.CashBoxes.FindAsync(invoice.CashBoxId.Value);
                 if (cashBox is not null)
                 {
-                    var cashAmount = invoice.PaymentMethod == PaymentMethod.Credit
-                        ? invoice.PaidAmount
-                        : invoice.NetAmount;
+                    decimal cashAmount;
+                    if (invoice.PaymentMethod == PaymentMethod.Credit)
+                    {
+                        // عكس دفعة الإنشاء فقط — لا تُحسب سندات التسديد المستقلة هنا
+                        var downPayment = reportOnlyDownPayments.Sum(v => v.Amount);
+                        cashAmount = downPayment > 0
+                            ? Math.Min(invoice.PaidAmount, downPayment)
+                            : invoice.PaidAmount;
+                    }
+                    else
+                    {
+                        cashAmount = invoice.NetAmount;
+                    }
 
                     if (invoice.InvoiceType == InvoiceType.Purchase || invoice.InvoiceType == InvoiceType.SaleReturn)
                         cashBox.Balance += cashAmount;
@@ -615,10 +652,10 @@ public class InvoiceService : IInvoiceService
                 }
             }
 
-            // إخفاء سندات الدفعة/التسديد المرتبطة من حركة الصندوق مع حذف الفاتورة
-            var linkedVouchers = await context.Vouchers
-                .Where(v => v.InvoiceId == invoice.Id)
-                .ToListAsync();
+            // سندات التسديد المستقلة حرّكت الصندوق — عكس أثرها قبل الإخفاء.
+            foreach (var voucher in independentVouchers)
+                await ReverseLinkedVoucherCashAsync(context, voucher, username);
+
             foreach (var voucher in linkedVouchers)
                 voucher.MarkSoftDeleted(username);
 
@@ -653,8 +690,27 @@ public class InvoiceService : IInvoiceService
             foreach (var item in invoice.Items)
                 item.MarkSoftDeleted(username);
 
+            // أقساط سُددت مباشرة عبر PayInstallmentAsync (بدون سند) — عكس أثرها النقدي قبل الحذف
             foreach (var plan in invoice.InstallmentPlans)
             {
+                foreach (var installment in plan.Installments.Where(i => i.PaidAmount > 0 && i.CashBoxId.HasValue))
+                {
+                    var hasVoucher = await context.Vouchers
+                        .AnyAsync(v => v.InstallmentId == installment.Id && !v.IsDeleted);
+                    if (hasVoucher)
+                        continue; // عُكس عبر مسار السندات أعلاه أو سيُعكس معها
+
+                    var box = await context.CashBoxes.FindAsync(installment.CashBoxId!.Value);
+                    if (box is null)
+                        continue;
+                    if (box.Balance < installment.PaidAmount)
+                        throw new InvalidOperationException(
+                            $"رصيد القاصة '{box.Name}' غير كافٍ لعكس تسديد قسط عند حذف الفاتورة");
+                    box.Balance -= installment.PaidAmount;
+                    box.UpdatedBy = username;
+                    box.UpdatedAt = DateTime.UtcNow;
+                }
+
                 plan.MarkSoftDeleted(username);
                 foreach (var installment in plan.Installments)
                     installment.MarkSoftDeleted(username);
@@ -731,6 +787,17 @@ public class InvoiceService : IInvoiceService
         await using var transaction = await context.Database.BeginTransactionAsync();
         try
         {
+            var linkedVouchersForRestore = await context.Vouchers
+                .IgnoreQueryFilters()
+                .Where(v => v.InvoiceId == invoice.Id && v.IsDeleted)
+                .ToListAsync();
+            var reportOnlyDownPayments = linkedVouchersForRestore
+                .Where(IsReportOnlyDownPaymentVoucher)
+                .ToList();
+            var independentVouchers = linkedVouchersForRestore
+                .Where(v => !IsReportOnlyDownPaymentVoucher(v))
+                .ToList();
+
             // Re-apply cash effects (opposite of delete)
             if (invoice.CashBoxId.HasValue &&
                 (invoice.PaymentMethod == PaymentMethod.Cash
@@ -739,9 +806,18 @@ public class InvoiceService : IInvoiceService
                 var cashBox = await context.CashBoxes.FindAsync(invoice.CashBoxId.Value);
                 if (cashBox is not null)
                 {
-                    var cashAmount = invoice.PaymentMethod == PaymentMethod.Credit
-                        ? invoice.PaidAmount
-                        : invoice.NetAmount;
+                    decimal cashAmount;
+                    if (invoice.PaymentMethod == PaymentMethod.Credit)
+                    {
+                        var downPayment = reportOnlyDownPayments.Sum(v => v.Amount);
+                        cashAmount = downPayment > 0
+                            ? Math.Min(invoice.PaidAmount, downPayment)
+                            : invoice.PaidAmount;
+                    }
+                    else
+                    {
+                        cashAmount = invoice.NetAmount;
+                    }
 
                     if (invoice.InvoiceType == InvoiceType.Purchase || invoice.InvoiceType == InvoiceType.SaleReturn)
                         cashBox.Balance -= cashAmount;
@@ -798,15 +874,34 @@ public class InvoiceService : IInvoiceService
             {
                 plan.RestoreFromSoftDelete(username);
                 foreach (var installment in plan.Installments)
+                {
                     installment.RestoreFromSoftDelete(username);
+
+                    // إعادة تطبيق نقد الأقساط المسددة مباشرة (بدون سند)
+                    if (installment.PaidAmount > 0 && installment.CashBoxId.HasValue)
+                    {
+                        var hasVoucher = await context.Vouchers
+                            .IgnoreQueryFilters()
+                            .AnyAsync(v => v.InstallmentId == installment.Id);
+                        if (!hasVoucher)
+                        {
+                            var box = await context.CashBoxes.FindAsync(installment.CashBoxId.Value);
+                            if (box is not null)
+                            {
+                                box.Balance += installment.PaidAmount;
+                                box.UpdatedBy = username;
+                                box.UpdatedAt = DateTime.UtcNow;
+                            }
+                        }
+                    }
+                }
             }
 
-            var linkedVouchers = await context.Vouchers
-                .IgnoreQueryFilters()
-                .Where(v => v.InvoiceId == invoice.Id && v.IsDeleted)
-                .ToListAsync();
-            foreach (var voucher in linkedVouchers)
+            foreach (var voucher in linkedVouchersForRestore)
                 voucher.RestoreFromSoftDelete(username);
+
+            foreach (var voucher in independentVouchers)
+                await ApplyLinkedVoucherCashAsync(context, voucher, username);
 
             if (InvoiceReturnCreditHelper.IsCreditReturnType(invoice.InvoiceType) &&
                 !InvoiceReturnCreditHelper.IsReturnApplied(invoice.Notes))
@@ -864,6 +959,12 @@ public class InvoiceService : IInvoiceService
             if (amount > invoice.RemainingAmount)
                 throw new InvalidOperationException($"مبلغ الدفع ({amount:N0}) أكبر من المتبقي ({invoice.RemainingAmount:N0})");
 
+            // Update CashBox balance
+            var cashBox = await context.CashBoxes.FindAsync(cashBoxId)
+                ?? throw new InvalidOperationException("القاصة غير موجودة");
+            AccountingCurrencyRules.EnsureSameCurrency(
+                invoice.Currency, cashBox.Currency, "الفاتورة", "القاصة");
+
             invoice.PaidAmount += amount;
             invoice.RemainingAmount = invoice.NetAmount - invoice.PaidAmount;
             invoice.IsCreditPaid = invoice.RemainingAmount <= 0;
@@ -871,18 +972,13 @@ public class InvoiceService : IInvoiceService
             invoice.UpdatedBy = username;
             invoice.UpdatedAt = DateTime.UtcNow;
 
-            // Update CashBox balance
-            var cashBox = await context.CashBoxes.FindAsync(cashBoxId);
-            if (cashBox is not null)
-            {
-                if (invoice.InvoiceType == InvoiceType.Purchase)
-                    cashBox.Balance -= amount;
-                else
-                    cashBox.Balance += amount;
+            if (invoice.InvoiceType == InvoiceType.Purchase)
+                cashBox.Balance -= amount;
+            else
+                cashBox.Balance += amount;
 
-                cashBox.UpdatedBy = username;
-                cashBox.UpdatedAt = DateTime.UtcNow;
-            }
+            cashBox.UpdatedBy = username;
+            cashBox.UpdatedAt = DateTime.UtcNow;
 
             // إنشاء سند قبض دين للمزامنة وكشف الحساب (معلّم كمطبّق لأن الفاتورة حُدّثت أعلاه)
             if (invoice.CustomerId.HasValue && invoice.InvoiceType != InvoiceType.Purchase)
@@ -953,6 +1049,7 @@ public class InvoiceService : IInvoiceService
         IQueryable<Invoice> openQuery = context.Invoices
             .Where(i => i.InvoiceType == originalType &&
                         i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == returnInvoice.Currency &&
                         i.RemainingAmount > 0);
 
         if (returnInvoice.InvoiceType == InvoiceType.PurchaseReturn)
@@ -1133,6 +1230,8 @@ public class InvoiceService : IInvoiceService
                 VoucherNumber = voucherNumber,
                 VoucherType = VoucherType.Payment,
                 Amount = amount,
+                Currency = invoice.Currency,
+                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(invoice.Currency, invoice.FxRate, "سند دفعة مقدمة"),
                 SupplierId = invoice.SupplierId,
                 InvoiceId = invoice.Id,
                 CashBoxId = cashBoxId,
@@ -1157,6 +1256,8 @@ public class InvoiceService : IInvoiceService
                 VoucherNumber = voucherNumber,
                 VoucherType = VoucherType.DebtReceipt,
                 Amount = amount,
+                Currency = invoice.Currency,
+                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(invoice.Currency, invoice.FxRate, "سند دفعة مقدمة"),
                 CustomerId = invoice.CustomerId,
                 InvoiceId = invoice.Id,
                 CashBoxId = cashBoxId,
@@ -1165,6 +1266,120 @@ public class InvoiceService : IInvoiceService
                 CreatedBy = username,
                 CreatedAt = DateTime.UtcNow
             });
+        }
+    }
+
+    /// <summary>
+    /// سند دفعة مقدمة يُنشأ مع الفاتورة الآجلة للتقارير فقط — لا يحرّك الصندوق (الأثر على الفاتورة).
+    /// </summary>
+    private static bool IsReportOnlyDownPaymentVoucher(Voucher voucher)
+    {
+        if (string.IsNullOrEmpty(voucher.Notes))
+            return false;
+
+        return voucher.Notes.Contains("دفعة مقدمة", StringComparison.Ordinal)
+               || voucher.Notes.Contains("استرداد دفعة", StringComparison.Ordinal);
+    }
+
+    /// <summary>عكس أثر سند مرتبط على الصندوق/المصرف عند حذف الفاتورة (سندات حرّكت النقد فعلياً).</summary>
+    private static async Task ReverseLinkedVoucherCashAsync(
+        AppDbContext context, Voucher voucher, string username)
+    {
+        switch (voucher.VoucherType)
+        {
+            case VoucherType.Receipt:
+            case VoucherType.DebtReceipt:
+            {
+                var cashBox = await context.CashBoxes.FindAsync(voucher.CashBoxId)
+                    ?? throw new InvalidOperationException("القاصة المرتبطة بالسند غير موجودة");
+                if (cashBox.Balance < voucher.Amount)
+                    throw new InvalidOperationException(
+                        $"رصيد القاصة '{cashBox.Name}' غير كافٍ لعكس سند {voucher.VoucherNumber}");
+                cashBox.Balance -= voucher.Amount;
+                cashBox.UpdatedBy = username;
+                cashBox.UpdatedAt = DateTime.UtcNow;
+                break;
+            }
+            case VoucherType.Payment:
+            {
+                var cashBox = await context.CashBoxes.FindAsync(voucher.CashBoxId)
+                    ?? throw new InvalidOperationException("القاصة المرتبطة بالسند غير موجودة");
+                cashBox.Balance += voucher.Amount;
+                cashBox.UpdatedBy = username;
+                cashBox.UpdatedAt = DateTime.UtcNow;
+                break;
+            }
+            case VoucherType.BankReceipt:
+            {
+                if (!voucher.BankAccountId.HasValue)
+                    throw new InvalidOperationException("السند المصرفي بدون مصرف مرتبط");
+                var net = voucher.Amount - voucher.BankFees;
+                var cashBox = await context.CashBoxes.FindAsync(voucher.CashBoxId)
+                    ?? throw new InvalidOperationException("القاصة المرتبطة بالسند غير موجودة");
+                if (cashBox.Balance < net)
+                    throw new InvalidOperationException(
+                        $"رصيد القاصة '{cashBox.Name}' غير كافٍ لعكس سند {voucher.VoucherNumber}");
+                cashBox.Balance -= net;
+                cashBox.UpdatedBy = username;
+                cashBox.UpdatedAt = DateTime.UtcNow;
+                var bank = await context.BankAccounts.FindAsync(voucher.BankAccountId.Value)
+                    ?? throw new InvalidOperationException("المصرف المرتبط بالسند غير موجود");
+                bank.Balance += voucher.Amount;
+                bank.UpdatedBy = username;
+                bank.UpdatedAt = DateTime.UtcNow;
+                break;
+            }
+        }
+    }
+
+    /// <summary>إعادة تطبيق أثر سند مرتبط على الصندوق/المصرف عند استرجاع الفاتورة.</summary>
+    private static async Task ApplyLinkedVoucherCashAsync(
+        AppDbContext context, Voucher voucher, string username)
+    {
+        switch (voucher.VoucherType)
+        {
+            case VoucherType.Receipt:
+            case VoucherType.DebtReceipt:
+            {
+                var cashBox = await context.CashBoxes.FindAsync(voucher.CashBoxId)
+                    ?? throw new InvalidOperationException("القاصة المرتبطة بالسند غير موجودة");
+                cashBox.Balance += voucher.Amount;
+                cashBox.UpdatedBy = username;
+                cashBox.UpdatedAt = DateTime.UtcNow;
+                break;
+            }
+            case VoucherType.Payment:
+            {
+                var cashBox = await context.CashBoxes.FindAsync(voucher.CashBoxId)
+                    ?? throw new InvalidOperationException("القاصة المرتبطة بالسند غير موجودة");
+                if (cashBox.Balance < voucher.Amount)
+                    throw new InvalidOperationException(
+                        $"رصيد القاصة '{cashBox.Name}' غير كافٍ لاسترجاع سند {voucher.VoucherNumber}");
+                cashBox.Balance -= voucher.Amount;
+                cashBox.UpdatedBy = username;
+                cashBox.UpdatedAt = DateTime.UtcNow;
+                break;
+            }
+            case VoucherType.BankReceipt:
+            {
+                if (!voucher.BankAccountId.HasValue)
+                    throw new InvalidOperationException("السند المصرفي بدون مصرف مرتبط");
+                var net = voucher.Amount - voucher.BankFees;
+                var cashBox = await context.CashBoxes.FindAsync(voucher.CashBoxId)
+                    ?? throw new InvalidOperationException("القاصة المرتبطة بالسند غير موجودة");
+                cashBox.Balance += net;
+                cashBox.UpdatedBy = username;
+                cashBox.UpdatedAt = DateTime.UtcNow;
+                var bank = await context.BankAccounts.FindAsync(voucher.BankAccountId.Value)
+                    ?? throw new InvalidOperationException("المصرف المرتبط بالسند غير موجود");
+                if (bank.Balance < voucher.Amount)
+                    throw new InvalidOperationException(
+                        $"رصيد المصرف غير كافٍ لاسترجاع سند {voucher.VoucherNumber}");
+                bank.Balance -= voucher.Amount;
+                bank.UpdatedBy = username;
+                bank.UpdatedAt = DateTime.UtcNow;
+                break;
+            }
         }
     }
 

@@ -3,6 +3,7 @@ using System.Windows;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -23,6 +24,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     private readonly IWhatsAppShareService _whatsAppShare;
     private readonly ICurrentUserService _currentUserService;
     private readonly IReportService _reportService;
+    private readonly IExchangeRateService _exchangeRateService;
     private CancellationTokenSource? _customerBalanceCts;
     private CancellationTokenSource? _supplierBalanceCts;
 
@@ -32,7 +34,8 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         IExportService exportService,
         IWhatsAppShareService whatsAppShare,
         ICurrentUserService currentUserService,
-        IReportService reportService)
+        IReportService reportService,
+        IExchangeRateService exchangeRateService)
     {
         _cashBankService = cashBankService;
         _unitOfWork = unitOfWork;
@@ -40,6 +43,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         _whatsAppShare = whatsAppShare;
         _currentUserService = currentUserService;
         _reportService = reportService;
+        _exchangeRateService = exchangeRateService;
         PageTitle = "السندات";
     }
 
@@ -697,10 +701,24 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         IsBusy = true;
         try
         {
+            var currency = SelectedCashBox.Currency;
+            var fxRate = 1m;
+            if (currency == AccountingCurrency.USD)
+            {
+                fxRate = await _exchangeRateService.GetUsdToIqdForDateOrLatestAsync(VoucherDate);
+                if (fxRate <= 0)
+                {
+                    BeautifulMessageDialog.ShowWarning("سعر الصرف مطلوب للمستندات بالدولار. سجّل سعر الصرف اليومي أولاً.");
+                    return;
+                }
+            }
+
             var voucher = new Voucher
             {
                 VoucherNumber = VoucherNumber,
                 VoucherType = SelectedVoucherType,
+                Currency = currency,
+                FxRate = fxRate,
                 Amount = Amount,
                 BankFees = BankFees,
                 CashBoxId = SelectedCashBox.Id,
@@ -905,7 +923,8 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             PartyPhone = partyPhone,
             CashBoxName = voucher.CashBox?.Name,
             BankAccountName = voucher.BankAccount?.Name,
-            Notes = voucher.Notes
+            Notes = voucher.Notes,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(voucher.Currency)
         };
     }
 

@@ -9,6 +9,7 @@ public static class SyncEntityOrder
         SyncEntityType.PricingType,
         SyncEntityType.ProductPrice,
         SyncEntityType.BusinessSettings,
+        SyncEntityType.ExchangeRate,
         SyncEntityType.Warehouse,
         SyncEntityType.Customer,
         SyncEntityType.Supplier,

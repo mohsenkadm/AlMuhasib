@@ -8,6 +8,15 @@ String formatCurrency(num value) => currencyFormat.format(value);
 
 String formatDate(DateTime date) => dateFormat.format(date);
 
+/// Parses lookup `extra` (e.g. "IQD"/"USD") into AccountingCurrency int.
+int lookupCurrencyCode(String? extra) {
+  final code = (extra ?? 'IQD').trim().toUpperCase();
+  if (code == 'USD' || code == '1') return 1;
+  return 0;
+}
+
+String currencyCodeLabel(int currency) => currency == 1 ? 'USD' : 'IQD';
+
 String invoiceTypeLabel(int type) {
   switch (type) {
     case 0:

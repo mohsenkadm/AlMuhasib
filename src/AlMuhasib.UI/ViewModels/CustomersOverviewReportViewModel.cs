@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
@@ -13,6 +14,8 @@ public partial class CustomersOverviewReportViewModel : ReportViewModelBase
     [ObservableProperty] private string _totalSales = "0";
     [ObservableProperty] private string _totalCollected = "0";
     [ObservableProperty] private string _totalOutstanding = "0";
+    [ObservableProperty] private string _totalOutstandingUsd = "—";
+    [ObservableProperty] private bool _showTotalOutstandingUsd;
     [ObservableProperty] private string _customerCount = "0";
 
     private List<CustomerOverviewRow> _allRows = [];
@@ -42,6 +45,10 @@ public partial class CustomersOverviewReportViewModel : ReportViewModelBase
             TotalSales = FormatCurrency(result.TotalSales);
             TotalCollected = FormatCurrency(result.TotalCollected);
             TotalOutstanding = FormatCurrency(result.TotalOutstanding);
+            ShowTotalOutstandingUsd = result.TotalOutstandingUsd != 0;
+            TotalOutstandingUsd = ShowTotalOutstandingUsd
+                ? FormatCurrency(result.TotalOutstandingUsd, AccountingCurrency.USD)
+                : "—";
             CustomerCount = result.CustomerCount.ToString("N0");
 
             _allRows = result.Rows;
@@ -70,10 +77,10 @@ public partial class CustomersOverviewReportViewModel : ReportViewModelBase
         };
         if (dlg.ShowDialog() != true) return;
 
-        var cols = new[] { "العميل", "الهاتف", "عدد الفواتير", "المبيعات", "المحصّل", "الرصيد المستحق" };
+        var cols = new[] { "العميل", "الهاتف", "عدد الفواتير", "المبيعات", "المحصّل", "المستحق د.ع", "المستحق $" };
         var rows = _allRows.Select(r => new object[]
         {
-            r.CustomerName, r.Phone, r.InvoiceCount, r.SalesAmount, r.CollectedAmount, r.OutstandingBalance
+            r.CustomerName, r.Phone, r.InvoiceCount, r.SalesAmount, r.CollectedAmount, r.OutstandingBalance, r.OutstandingBalanceUsd
         }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "ملخص العملاء", cols, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
@@ -82,10 +89,10 @@ public partial class CustomersOverviewReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "العميل", "الهاتف", "فواتير", "المبيعات", "المحصّل", "المستحق" };
+        var cols = new[] { "العميل", "الهاتف", "فواتير", "المبيعات", "المحصّل", "المستحق د.ع", "المستحق $" };
         var rows = _allRows.Select(r => new object[]
         {
-            r.CustomerName, r.Phone, r.InvoiceCount, r.SalesAmount, r.CollectedAmount, r.OutstandingBalance
+            r.CustomerName, r.Phone, r.InvoiceCount, r.SalesAmount, r.CollectedAmount, r.OutstandingBalance, r.OutstandingBalanceUsd
         }).ToList();
         _exportService.PrintTable("ملخص العملاء", cols, rows);
     }

@@ -165,6 +165,8 @@ public partial class PurchaseInvoiceViewModel
 
         IsCashPayment = invoice.PaymentMethod == PaymentMethod.Cash;
 
+        ApplyCurrencyFromDocument(invoice.Currency, invoice.FxRate);
+
         if (invoice.CashBoxId.HasValue)
             SelectedCashBox = CashBoxes.FirstOrDefault(c => c.Id == invoice.CashBoxId);
 

@@ -47,11 +47,15 @@
 
                 <!-- ═══ Stat Cards ═══ -->
                 <UniformGrid Columns="5" Margin="0,0,0,20">
-                    <controls:AnimatedStatCard Title="إجمالي المبيعات" Hint="صافي بعد خصم مرتجعات المبيعات" TextValue="{Binding TotalSales}" Icon="CashRegister" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                    <controls:AnimatedStatCard Title="إجمالي المبيعات (د.ع)" Hint="صافي بعد خصم مرتجعات المبيعات" TextValue="{Binding TotalSales}" Icon="CashRegister" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                    <controls:AnimatedStatCard Title="إجمالي المبيعات ($)" Hint="صافي بالدولار — منفصل عن الدينار" TextValue="{Binding TotalSalesUsd}" Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"
+                                               Visibility="{Binding ShowTotalSalesUsd, Converter={StaticResource BoolToVis}}"/>
                     <controls:AnimatedStatCard Title="نسبة الشركة" TextValue="{Binding TotalCompanyFees}" Icon="Percent" IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"/>
                     <controls:AnimatedStatCard Title="عدد الفواتير" TextValue="{Binding InvoiceCount}" Icon="FileDocument" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
                     <controls:AnimatedStatCard Title="متوسط الفاتورة" TextValue="{Binding AverageInvoice}" Icon="Calculator" IconBackground="{DynamicResource AccentLightBrush}" IconForeground="{DynamicResource AccentBrush}" ValueForeground="{DynamicResource AccentBrush}"/>
-                    <controls:AnimatedStatCard Title="مبيعات اليوم" Hint="صافي بعد خصم المرتجعات" TextValue="{Binding TodaySales}" Icon="CalendarToday" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="#00796B" ValueForeground="#00796B"/>
+                    <controls:AnimatedStatCard Title="مبيعات اليوم (د.ع)" Hint="صافي بعد خصم المرتجعات" TextValue="{Binding TodaySales}" Icon="CalendarToday" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="#00796B" ValueForeground="#00796B"/>
+                    <controls:AnimatedStatCard Title="مبيعات اليوم ($)" TextValue="{Binding TodaySalesUsd}" Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="#00796B" ValueForeground="#00796B"
+                                               Visibility="{Binding ShowTodaySalesUsd, Converter={StaticResource BoolToVis}}"/>
                 </UniformGrid>
 
                 <!-- ═══ Chart ═══ -->
@@ -139,6 +143,8 @@
                                                     <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                 <DataGridTextColumn Header="الدفع" Binding="{Binding PaymentMethod}" Width="60"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaymentMethod"/>
+                                <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="55"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrencyLabel"/>
                                 <DataGridTextColumn Header="الصافي" Binding="{Binding NetAmount, StringFormat=N0}" Width="90"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="NetAmount">
                                     <DataGridTextColumn.ElementStyle>

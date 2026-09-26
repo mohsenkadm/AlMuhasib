@@ -207,6 +207,26 @@
                                          Style="{StaticResource MaterialDesignTabRadioButtonBottom}"
                                          Padding="16,8"
                                          FontSize="13" />
+
+                            <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center"
+                                        Margin="12,0,0,0"
+                                        Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="العملة:" FontSize="13"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <ComboBox ItemsSource="{Binding CurrencyOptions}"
+                                          SelectedItem="{Binding SelectedCurrencyOption}"
+                                          DisplayMemberPath="DisplayName"
+                                          Width="100"
+                                          Style="{StaticResource FilledComboBox}"
+                                          FontSize="13" Margin="0,0,8,0"/>
+                                <TextBox Text="{Binding FxRate, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="سعر الصرف"
+                                         Style="{StaticResource FilledTextBox}"
+                                         Width="110" FontSize="13"
+                                         Visibility="{Binding ShowFxRateInput, Converter={StaticResource BoolToVis}}"/>
+                            </StackPanel>
                         </StackPanel>
 
                         <!-- CashBox (نقدي أو دفعة مقدمة على الآجل) -->

@@ -15,6 +15,8 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class TransfersReportViewModel : ReportViewModelBase
 {
     [ObservableProperty] private string _totalAmount = "0";
+    [ObservableProperty] private string _totalAmountUsd = "—";
+    [ObservableProperty] private bool _showTotalAmountUsd;
     [ObservableProperty] private string _transferCount = "0";
     [ObservableProperty] private string _averageAmount = "0";
     [ObservableProperty] private string _opsCount = "0";
@@ -53,6 +55,8 @@ public partial class TransfersReportViewModel : ReportViewModelBase
             var result = await _reportService.GetTransfersReportAsync(DateFrom, DateTo);
 
             TotalAmount = FormatCurrency(result.TotalAmount);
+            ShowTotalAmountUsd = result.TotalAmountUsd != 0;
+            TotalAmountUsd = ShowTotalAmountUsd ? FormatCurrency(result.TotalAmountUsd, AccountingCurrency.USD) : "—";
             TransferCount = result.TransferCount.ToString("N0");
             AverageAmount = FormatCurrency(result.AverageAmount);
             OpsCount = result.TransferCount.ToString("N0");
@@ -80,8 +84,8 @@ public partial class TransfersReportViewModel : ReportViewModelBase
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "تقرير_التحويلات.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "التاريخ", "من", "إلى", "المبلغ", "ملاحظات", "بواسطة" };
-        var rows = _allRows.Select(r => new object[] { r.Date.ToString("yyyy/MM/dd"), r.FromAccount, r.ToAccount, r.Amount, r.Notes, r.CreatedBy }).ToList();
+        var cols = new[] { "التاريخ", "من", "إلى", "المبلغ", "العملة", "ملاحظات", "بواسطة" };
+        var rows = _allRows.Select(r => new object[] { r.Date.ToString("yyyy/MM/dd"), r.FromAccount, r.ToAccount, r.Amount, r.CurrencyLabel, r.Notes, r.CreatedBy }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "تقرير التحويلات", cols, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
@@ -89,8 +93,8 @@ public partial class TransfersReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "التاريخ", "من", "إلى", "المبلغ", "ملاحظات", "بواسطة" };
-        var rows = _allRows.Select(r => new object[] { r.Date.ToString("yyyy/MM/dd"), r.FromAccount, r.ToAccount, r.Amount, r.Notes, r.CreatedBy }).ToList();
+        var cols = new[] { "التاريخ", "من", "إلى", "المبلغ", "العملة", "ملاحظات", "بواسطة" };
+        var rows = _allRows.Select(r => new object[] { r.Date.ToString("yyyy/MM/dd"), r.FromAccount, r.ToAccount, r.Amount, r.CurrencyLabel, r.Notes, r.CreatedBy }).ToList();
         _exportService.PrintTable("تقرير التحويلات", cols, rows);
     }
 }

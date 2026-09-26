@@ -136,6 +136,7 @@ class BusinessSettings {
     required this.syncId,
     required this.productPricingEnabled,
     required this.updateProductPriceOnPurchase,
+    this.multiCurrencyEnabled = false,
   });
 
   factory BusinessSettings.fromJson(Map<String, dynamic> json) {
@@ -144,12 +145,14 @@ class BusinessSettings {
       productPricingEnabled: json['productPricingEnabled'] as bool? ?? false,
       updateProductPriceOnPurchase:
           json['updateProductPriceOnPurchase'] as bool? ?? false,
+      multiCurrencyEnabled: json['multiCurrencyEnabled'] as bool? ?? false,
     );
   }
 
   final String syncId;
   final bool productPricingEnabled;
   final bool updateProductPriceOnPurchase;
+  final bool multiCurrencyEnabled;
 }
 
 /// Alias kept for clarity in pricing list/form screens.

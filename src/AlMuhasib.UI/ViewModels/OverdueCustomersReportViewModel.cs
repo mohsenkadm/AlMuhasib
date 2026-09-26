@@ -15,6 +15,8 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class OverdueCustomersReportViewModel : ReportViewModelBase
 {
     [ObservableProperty] private string _totalOverdue = "0";
+    [ObservableProperty] private string _totalOverdueUsd = "—";
+    [ObservableProperty] private bool _showTotalOverdueUsd;
     [ObservableProperty] private string _customerCount = "0";
     [ObservableProperty] private string _itemCount = "0";
     [ObservableProperty] private string _averageDaysOverdue = "0";
@@ -53,6 +55,10 @@ public partial class OverdueCustomersReportViewModel : ReportViewModelBase
             var result = await _reportService.GetOverdueCustomersReportAsync(AsOfDate ?? DateTime.Today, MinDaysOverdue, SelectedCustomerId);
 
             TotalOverdue = FormatCurrency(result.TotalOverdue);
+            ShowTotalOverdueUsd = result.TotalOverdueUsd != 0;
+            TotalOverdueUsd = ShowTotalOverdueUsd
+                ? FormatCurrency(result.TotalOverdueUsd, AccountingCurrency.USD)
+                : "—";
             CustomerCount = result.CustomerCount.ToString("N0");
             ItemCount = result.ItemCount.ToString("N0");
             AverageDaysOverdue = result.AverageDaysOverdue.ToString("N1");

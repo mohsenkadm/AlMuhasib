@@ -70,7 +70,8 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
                     .OrderByDescending(r => r.RateDate)
                     .ThenByDescending(r => r.Id)
                     .Select(r => (decimal?)r.UsdToIqd)
-                    .FirstOrDefaultAsync(cancellationToken)) ?? 1m;
+                    .FirstOrDefaultAsync(cancellationToken)) ?? 0m;
+            fx = GoldCurrencyHelper.RequirePositiveFxRate(fx, "فاتورة ذهب");
 
             GoldCustomer? customer = null;
             if (request.CustomerId.HasValue)
@@ -307,7 +308,8 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
             if (invoice.RemainingAmount <= 0)
                 throw new InvalidOperationException("الفاتورة مسددة بالكامل");
 
-            var fx = request.FxRate > 0 ? request.FxRate : (invoice.FxRate > 0 ? invoice.FxRate : 1m);
+            var fx = GoldCurrencyHelper.RequirePositiveFxRate(
+                request.FxRate > 0 ? request.FxRate : invoice.FxRate, "تعديل فاتورة ذهب");
             var paidInPricing = GoldCurrencyHelper.ConvertAmount(
                 request.Amount,
                 request.Currency,
@@ -440,7 +442,7 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
                         invoice.RemainingAmount,
                         invoice.PricingCurrency,
                         invoice.PaymentCurrency,
-                        invoice.FxRate > 0 ? invoice.FxRate : 1m);
+                        GoldCurrencyHelper.RequirePositiveFxRate(invoice.FxRate, "فاتورة ذهب"));
                     GoldCustomerService.AdjustCredit(invoice.Customer, invoice.PaymentCurrency, -credit);
                 }
                 catch
@@ -460,7 +462,7 @@ public sealed class GoldPurchaseService : IGoldPurchaseService
                             invoice.RemainingAmount,
                             invoice.PricingCurrency,
                             invoice.PaymentCurrency,
-                            invoice.FxRate > 0 ? invoice.FxRate : 1m);
+                            GoldCurrencyHelper.RequirePositiveFxRate(invoice.FxRate, "فاتورة ذهب"));
                         GoldSupplierService.AdjustCredit(supplier, invoice.PaymentCurrency, -credit);
                     }
                 }

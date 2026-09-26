@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Windows;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Shared.Services;
@@ -84,7 +85,14 @@ public abstract partial class ReportViewModelBase : ViewModelBase
     protected virtual void OnPageChanged() { }
 
     protected static string FormatCurrency(decimal value)
-        => $"{value:N0} د.ع";
+        => FormatCurrency(value, AccountingCurrency.IQD);
+
+    protected static string FormatCurrency(decimal value, AccountingCurrency currency)
+        => AccountingCurrencyHelper.Format(value, currency);
+
+    /// <summary>توحيد مبلغ إلى الدينار (العملة الأساسية) للتقارير الإجمالية.</summary>
+    protected static decimal ToBaseIqd(decimal value, AccountingCurrency currency, decimal fxRate)
+        => AccountingCurrencyHelper.ToBaseIqd(value, currency, fxRate);
 
     /// <summary>Re-runs chart data load when the user toggles dark/light theme.</summary>
     protected void RegisterThemeChartReload(Func<Task> reload)

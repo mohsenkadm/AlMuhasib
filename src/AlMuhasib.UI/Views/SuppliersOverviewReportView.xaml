@@ -44,7 +44,9 @@
                 <UniformGrid Columns="4" Margin="0,0,0,20">
                     <controls:AnimatedStatCard Title="إجمالي المشتريات" TextValue="{Binding TotalPurchases}" Icon="CartArrowDown" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
                     <controls:AnimatedStatCard Title="إجمالي المدفوع" TextValue="{Binding TotalPaid}" Icon="CashMinus" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
-                    <controls:AnimatedStatCard Title="ذمم دائنة" TextValue="{Binding TotalOutstanding}" Icon="Factory" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
+                    <controls:AnimatedStatCard Title="ذمم دائنة (د.ع)" TextValue="{Binding TotalOutstanding}" Icon="Factory" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
+                    <controls:AnimatedStatCard Title="ذمم دائنة ($)" TextValue="{Binding TotalOutstandingUsd}" Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"
+                                               Visibility="{Binding ShowTotalOutstandingUsd, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     <controls:AnimatedStatCard Title="عدد الموردين" TextValue="{Binding SupplierCount}" Icon="TruckDelivery" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
                 </UniformGrid>
 
@@ -94,8 +96,10 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PurchaseAmount"/>
                         <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat=N0}" Width="110"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount"/>
-                        <DataGridTextColumn Header="المستحق" Binding="{Binding OutstandingBalance, StringFormat=N0}" Width="110"
+                        <DataGridTextColumn Header="المستحق د.ع" Binding="{Binding OutstandingBalance, StringFormat=N0}" Width="110"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="OutstandingBalance"/>
+                        <DataGridTextColumn Header="المستحق $" Binding="{Binding OutstandingBalanceUsd, StringFormat=N2}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="OutstandingBalanceUsd"/>
                     </DataGrid.Columns>
                 </DataGrid>
                         <controls:PaginationBar Grid.Row="2"/>

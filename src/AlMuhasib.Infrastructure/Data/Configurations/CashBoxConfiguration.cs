@@ -16,5 +16,10 @@ public class CashBoxConfiguration : IEntityTypeConfiguration<CashBox>
 
         builder.Property(c => c.Balance)
             .HasPrecision(18, 2);
+
+        builder.Property(c => c.Currency)
+            .HasConversion<string>()
+            .HasMaxLength(10)
+            .HasDefaultValue(AlMuhasib.Core.Enums.AccountingCurrency.IQD);
     }
 }

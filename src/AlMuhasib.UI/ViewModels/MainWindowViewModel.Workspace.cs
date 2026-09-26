@@ -29,6 +29,7 @@ public partial class MainWindowViewModel
     [ObservableProperty] private bool _showQuickCheckIn;
 
     [ObservableProperty] private bool _showQuickGoldFx;
+    [ObservableProperty] private bool _showQuickAccountingFx;
 
     public string WorkspaceProfileDisplay => WorkspaceProfile switch
     {
@@ -62,6 +63,7 @@ public partial class MainWindowViewModel
             ShowQuickCarContractsList = false;
             ShowQuickNewReservation = true;
             ShowQuickCheckIn = true;
+            ShowQuickAccountingFx = false;
             return;
         }
 
@@ -81,6 +83,7 @@ public partial class MainWindowViewModel
             ShowQuickAssistant = false;
             ShowQuickNewCarContract = true;
             ShowQuickCarContractsList = true;
+            ShowQuickAccountingFx = false;
             return;
         }
 
@@ -97,6 +100,7 @@ public partial class MainWindowViewModel
             ShowQuickAssistant = false;
             ShowQuickNewCarContract = false;
             ShowQuickCarContractsList = false;
+            ShowQuickAccountingFx = false;
             return;
         }
 
@@ -114,10 +118,14 @@ public partial class MainWindowViewModel
             ShowQuickNewCarContract = false;
             ShowQuickCarContractsList = false;
             ShowQuickGoldFx = _currentUserService.CanView(GoldShopPermissionRegistry.FxRates);
+            ShowQuickAccountingFx = false;
             return;
         }
 
         ShowQuickGoldFx = false;
+        ShowQuickAccountingFx = !_moduleRegistry.IsRealEstateContracts
+            && _userPreferences.Current.FeatureFlags.MultiCurrency
+            && _currentUserService.CanView("ExchangeRates");
 
         ShowQuickNewCarContract = false;
         ShowQuickCarContractsList = false;
@@ -216,6 +224,22 @@ public partial class MainWindowViewModel
             typeof(GoldFxRatesViewModel),
             "أسعار الصرف",
             PackIconKind.CashMultiple,
+            activateIfExists: true);
+    }
+
+    [RelayCommand]
+    private async Task OpenQuickAccountingFx()
+    {
+        if (!_userPreferences.Current.FeatureFlags.MultiCurrency)
+        {
+            _toast.ShowWarning("فعّل «تنوع العملات» من إعدادات الميزات أولاً");
+            return;
+        }
+
+        await OpenTabAsync(
+            typeof(ExchangeRatesViewModel),
+            "أسعار الصرف",
+            PackIconKind.CurrencyUsd,
             activateIfExists: true);
     }
 }

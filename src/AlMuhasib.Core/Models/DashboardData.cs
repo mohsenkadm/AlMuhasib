@@ -1,10 +1,16 @@
+using AlMuhasib.Core.Enums;
+
 namespace AlMuhasib.Core.Models;
 
 public class DashboardData
 {
     // Summary cards
     public decimal TodaySales { get; set; }
+    /// <summary>مبيعات اليوم بالدولار — إفصاح منفصل عن TodaySales.</summary>
+    public decimal TodaySalesUsd { get; set; }
     public decimal TodayPurchases { get; set; }
+    /// <summary>مشتريات اليوم بالدولار — إفصاح منفصل.</summary>
+    public decimal TodayPurchasesUsd { get; set; }
     public decimal NetProfit { get; set; }
     public int OverdueInstallmentsCount { get; set; }
 
@@ -43,6 +49,10 @@ public class DashboardData
     // Bottom row
     public List<CashBoxSummary> CashBoxes { get; set; } = [];
     public decimal BankBalance { get; set; }
+    public decimal CashBalanceIqd { get; set; }
+    public decimal CashBalanceUsd { get; set; }
+    public decimal BankBalanceIqd { get; set; }
+    public decimal BankBalanceUsd { get; set; }
     public decimal TotalInventoryValue { get; set; }
 
     // KPI mini-chart trends (last 14 days) + period-over-period %
@@ -104,4 +114,6 @@ public class CashBoxSummary
 {
     public string Name { get; set; } = string.Empty;
     public decimal Balance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "USD" : "د.ع";
 }

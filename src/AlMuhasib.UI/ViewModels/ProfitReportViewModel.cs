@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Charts;
@@ -14,9 +15,13 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class ProfitReportViewModel : ReportViewModelBase
 {
     [ObservableProperty] private string _totalSales = "0";
+    [ObservableProperty] private string _totalSalesUsd = "0";
+    [ObservableProperty] private bool _showTotalSalesUsd;
     [ObservableProperty] private string _costOfSales = "0";
     [ObservableProperty] private string _grossProfit = "0";
     [ObservableProperty] private string _totalExpenses = "0";
+    [ObservableProperty] private string _totalExpensesUsd = "0";
+    [ObservableProperty] private bool _showTotalExpensesUsd;
     [ObservableProperty] private string _netProfit = "0";
     [ObservableProperty] private bool _isDetailsVisible;
     [ObservableProperty] private string _detailProductCount = "0";
@@ -63,9 +68,17 @@ public partial class ProfitReportViewModel : ReportViewModelBase
             var periodNet = result.GrossProfit - result.TotalExpenses;
 
             TotalSales = FormatCurrency(result.TotalSales);
+            ShowTotalSalesUsd = result.TotalSalesUsd != 0;
+            TotalSalesUsd = ShowTotalSalesUsd
+                ? FormatCurrency(result.TotalSalesUsd, AccountingCurrency.USD)
+                : "0";
             CostOfSales = FormatCurrency(result.TotalPurchases);
             GrossProfit = FormatCurrency(result.GrossProfit);
             TotalExpenses = FormatCurrency(result.TotalExpenses);
+            ShowTotalExpensesUsd = result.TotalExpensesUsd != 0;
+            TotalExpensesUsd = ShowTotalExpensesUsd
+                ? FormatCurrency(result.TotalExpensesUsd, AccountingCurrency.USD)
+                : "0";
             NetProfit = FormatCurrency(periodNet);
 
             PeriodSeries =

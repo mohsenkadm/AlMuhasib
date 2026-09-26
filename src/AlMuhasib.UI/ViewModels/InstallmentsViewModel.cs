@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Models;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
@@ -433,24 +434,30 @@ public partial class InstallmentsViewModel : ViewModelBase
 
     private static readonly string[] PlanSummaryColumns =
     [
-        "العميل", "رقم الإضبارة", "المبلغ الكلي", "عدد الأقساط", "مبلغ القسط", "تاريخ البدء",
+        "العميل", "رقم الإضبارة", "العملة", "المبلغ الكلي", "عدد الأقساط", "مبلغ القسط", "تاريخ البدء",
         "رقم الفاتورة", "المسدد", "المتبقي", "أقساط مسددة"
     ];
+
+    private static AccountingCurrency PlanCurrency(InstallmentPlan p) =>
+        p.Invoice?.Currency ?? AccountingCurrency.IQD;
 
     private static object[] BuildPlanSummaryRow(InstallmentPlan p)
     {
         var installments = p.Installments?.ToList() ?? [];
+        var currency = PlanCurrency(p);
+        var fmt = currency == AccountingCurrency.USD ? "N2" : "N0";
         return
         [
             p.Customer?.Name ?? "",
             p.FileNumber ?? "",
-            p.TotalAmount.ToString("N0"),
+            AccountingCurrencyHelper.GetLabel(currency),
+            p.TotalAmount.ToString(fmt),
             p.NumberOfInstallments,
-            p.InstallmentAmount.ToString("N0"),
+            p.InstallmentAmount.ToString(fmt),
             p.StartDate.ToString("yyyy/MM/dd"),
             p.Invoice?.InvoiceNumber ?? "",
-            installments.Sum(i => i.PaidAmount).ToString("N0"),
-            installments.Sum(i => i.RemainingAmount).ToString("N0"),
+            installments.Sum(i => i.PaidAmount).ToString(fmt),
+            installments.Sum(i => i.RemainingAmount).ToString(fmt),
             installments.Count(i => i.Status == InstallmentStatus.Paid)
         ];
     }
@@ -458,17 +465,23 @@ public partial class InstallmentsViewModel : ViewModelBase
     private static InstallmentPlansSummaryPrintModel BuildPlansSummaryPrintModel(IEnumerable<InstallmentPlan> plans, string title)
     {
         var list = plans.ToList();
-        var installments = list.SelectMany(p => p.Installments ?? []).ToList();
+        decimal SumFor(AccountingCurrency currency, Func<InstallmentPlan, IEnumerable<Installment>, decimal> selector) =>
+            list.Where(p => PlanCurrency(p) == currency)
+                .Sum(p => selector(p, p.Installments ?? []));
+
         return new InstallmentPlansSummaryPrintModel
         {
             Title = title,
             Columns = PlanSummaryColumns,
             Rows = list.Select(BuildPlanSummaryRow).ToList(),
             PlanCount = list.Count,
-            TotalAmount = list.Sum(p => p.TotalAmount),
-            PaidAmount = installments.Sum(i => i.PaidAmount),
-            RemainingAmount = installments.Sum(i => i.RemainingAmount),
-            PaidInstallmentCount = installments.Count(i => i.Status == InstallmentStatus.Paid)
+            TotalAmount = SumFor(AccountingCurrency.IQD, (p, _) => p.TotalAmount),
+            PaidAmount = SumFor(AccountingCurrency.IQD, (_, inst) => inst.Sum(i => i.PaidAmount)),
+            RemainingAmount = SumFor(AccountingCurrency.IQD, (_, inst) => inst.Sum(i => i.RemainingAmount)),
+            TotalAmountUsd = SumFor(AccountingCurrency.USD, (p, _) => p.TotalAmount),
+            PaidAmountUsd = SumFor(AccountingCurrency.USD, (_, inst) => inst.Sum(i => i.PaidAmount)),
+            RemainingAmountUsd = SumFor(AccountingCurrency.USD, (_, inst) => inst.Sum(i => i.RemainingAmount)),
+            PaidInstallmentCount = list.SelectMany(p => p.Installments ?? []).Count(i => i.Status == InstallmentStatus.Paid)
         };
     }
 

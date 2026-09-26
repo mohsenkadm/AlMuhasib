@@ -20,9 +20,8 @@ public partial class MigrationWizardView
             vm.PropertyChanged += OnViewModelPropertyChanged;
         }
 
-        PageEntranceAnimator.AnimateFadeSlide(HeroHeader, 0, axisY: true, from: 16);
-        PageEntranceAnimator.AnimateFadeSlide(StepIndicator, 90, axisY: true, from: 10);
-        PageEntranceAnimator.AnimateFadeSlide(StepContentScroller, 150, axisY: false, from: -20);
+        PageEntranceAnimator.AnimateFadeSlide(HeroHeader, 0, axisY: true, from: 12);
+        PageEntranceAnimator.AnimateFadeSlide(StepContentScroller, 120, axisY: false, from: -16);
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)

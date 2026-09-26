@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Ux;
 using AlMuhasib.Infrastructure.Data;
@@ -141,9 +142,9 @@ public class GlobalSearchService : IGlobalSearchService
         hits.AddRange(vouchers);
 
         var today = DateTime.Today;
-        var installments = await context.Installments.AsNoTracking()
-            .Include(i => i.InstallmentPlan)
-            .ThenInclude(p => p!.Customer)
+        var installmentRows = await context.Installments.AsNoTracking()
+            .Include(i => i.InstallmentPlan!).ThenInclude(p => p!.Customer)
+            .Include(i => i.InstallmentPlan!).ThenInclude(p => p!.Invoice)
             .Where(i => i.RemainingAmount > 0
                         && i.Status != InstallmentStatus.Paid
                         && (i.Status == InstallmentStatus.Overdue
@@ -157,23 +158,33 @@ public class GlobalSearchService : IGlobalSearchService
                                 && EF.Functions.Like(i.InstallmentPlan.Customer.FileNumber, like))))
             .OrderBy(i => i.DueDate)
             .Take(PerCategoryLimit)
-            .Select(i => new GlobalSearchHit
+            .Select(i => new
             {
-                Kind = i.Status == InstallmentStatus.Overdue
-                    ? GlobalSearchKind.Installment
-                    : GlobalSearchKind.Installment,
-                EntityId = i.Id,
-                Title = i.InstallmentPlan!.Customer!.Name,
-                Subtitle = (i.Status == InstallmentStatus.Overdue ? "قسط متأخر — " : "قسط — ")
-                           + i.RemainingAmount.ToString("N0") + " د.ع — " + i.DueDate.ToString("yyyy/MM/dd"),
-                ScreenName = "Installments"
+                i.Id,
+                CustomerName = i.InstallmentPlan!.Customer!.Name,
+                i.RemainingAmount,
+                i.DueDate,
+                i.Status,
+                Currency = i.InstallmentPlan!.Invoice != null
+                    ? i.InstallmentPlan.Invoice.Currency
+                    : AccountingCurrency.IQD
             })
             .ToListAsync(cancellationToken);
-        hits.AddRange(installments);
 
-        var overdueCustomers = await context.Installments.AsNoTracking()
-            .Include(i => i.InstallmentPlan)
-            .ThenInclude(p => p!.Customer)
+        hits.AddRange(installmentRows.Select(i => new GlobalSearchHit
+        {
+            Kind = GlobalSearchKind.Installment,
+            EntityId = i.Id,
+            Title = i.CustomerName,
+            Subtitle = (i.Status == InstallmentStatus.Overdue ? "قسط متأخر — " : "قسط — ")
+                       + AccountingCurrencyHelper.Format(i.RemainingAmount, i.Currency)
+                       + " — " + i.DueDate.ToString("yyyy/MM/dd"),
+            ScreenName = "Installments"
+        }));
+
+        var overdueRows = await context.Installments.AsNoTracking()
+            .Include(i => i.InstallmentPlan!).ThenInclude(p => p!.Customer)
+            .Include(i => i.InstallmentPlan!).ThenInclude(p => p!.Invoice)
             .Where(i => i.Status == InstallmentStatus.Overdue
                         && i.RemainingAmount > 0
                         && i.InstallmentPlan != null
@@ -183,25 +194,32 @@ public class GlobalSearchService : IGlobalSearchService
                                 && EF.Functions.Like(i.InstallmentPlan.Customer.Phone, like))
                             || (i.InstallmentPlan.Customer.FileNumber != null
                                 && EF.Functions.Like(i.InstallmentPlan.Customer.FileNumber, like))))
-            .GroupBy(i => i.InstallmentPlan!.CustomerId)
-            .Select(g => new
+            .Select(i => new
             {
-                CustomerId = g.Key,
-                Customer = g.First().InstallmentPlan!.Customer!,
-                Count = g.Count(),
-                Total = g.Sum(x => x.RemainingAmount)
+                CustomerId = i.InstallmentPlan!.CustomerId,
+                CustomerName = i.InstallmentPlan!.Customer!.Name,
+                i.RemainingAmount,
+                Currency = i.InstallmentPlan!.Invoice != null
+                    ? i.InstallmentPlan.Invoice.Currency
+                    : AccountingCurrency.IQD
             })
-            .Take(PerCategoryLimit)
             .ToListAsync(cancellationToken);
 
-        foreach (var oc in overdueCustomers)
+        foreach (var oc in overdueRows
+                     .GroupBy(x => x.CustomerId)
+                     .Take(PerCategoryLimit))
         {
+            var totalIqd = oc.Where(x => x.Currency == AccountingCurrency.IQD).Sum(x => x.RemainingAmount);
+            var totalUsd = oc.Where(x => x.Currency == AccountingCurrency.USD).Sum(x => x.RemainingAmount);
+            var amountText = totalUsd > 0
+                ? $"{totalIqd:N0} د.ع | $ {totalUsd:N2}"
+                : $"{totalIqd:N0} د.ع";
             hits.Add(new GlobalSearchHit
             {
                 Kind = GlobalSearchKind.OverdueCustomer,
-                EntityId = oc.CustomerId,
-                Title = oc.Customer.Name,
-                Subtitle = $"متأخر — {oc.Count} قسط — {oc.Total:N0} د.ع",
+                EntityId = oc.Key,
+                Title = oc.First().CustomerName,
+                Subtitle = $"متأخر — {oc.Count()} قسط — {amountText}",
                 ScreenName = "Installments"
             });
         }

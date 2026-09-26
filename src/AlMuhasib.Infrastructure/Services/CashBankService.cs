@@ -1,6 +1,7 @@
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
@@ -34,7 +35,7 @@ public class CashBankService : ICashBankService
         return await context.CashBoxes.ToListAsync();
     }
 
-    public async Task<CashBox> AddCashBoxAsync(string name, decimal initialBalance = 0)
+    public async Task<CashBox> AddCashBoxAsync(string name, decimal initialBalance = 0, AccountingCurrency currency = AccountingCurrency.IQD)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var username = _currentUserService.Username;
@@ -42,6 +43,7 @@ public class CashBankService : ICashBankService
         {
             Name = name,
             Balance = initialBalance,
+            Currency = currency,
             CreatedBy = username,
             CreatedAt = DateTime.UtcNow
         };
@@ -56,7 +58,7 @@ public class CashBankService : ICashBankService
                 Action = AuditAction.Add,
                 EntityName = "CashBox",
                 EntityId = cashBox.Id,
-                NewValues = $"قاصة: {name}, الرصيد: {initialBalance:N0}",
+                NewValues = $"قاصة: {name}, الرصيد: {initialBalance:N0}, العملة: {currency}",
                 Timestamp = DateTime.UtcNow
             });
             await context.SaveChangesAsync();
@@ -149,7 +151,7 @@ public class CashBankService : ICashBankService
         return await context.BankAccounts.ToListAsync();
     }
 
-    public async Task<BankAccount> AddBankAccountAsync(string name, string? accountNumber, decimal initialBalance = 0)
+    public async Task<BankAccount> AddBankAccountAsync(string name, string? accountNumber, decimal initialBalance = 0, AccountingCurrency currency = AccountingCurrency.IQD)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var username = _currentUserService.Username;
@@ -158,6 +160,7 @@ public class CashBankService : ICashBankService
             Name = name,
             AccountNumber = accountNumber,
             Balance = initialBalance,
+            Currency = currency,
             CreatedBy = username,
             CreatedAt = DateTime.UtcNow
         };
@@ -172,7 +175,7 @@ public class CashBankService : ICashBankService
                 Action = AuditAction.Add,
                 EntityName = "BankAccount",
                 EntityId = bank.Id,
-                NewValues = $"مصرف: {name}, الرصيد: {initialBalance:N0}",
+                NewValues = $"مصرف: {name}, الرصيد: {initialBalance:N0}, العملة: {currency}",
                 Timestamp = DateTime.UtcNow
             });
             await context.SaveChangesAsync();
@@ -257,16 +260,44 @@ public class CashBankService : ICashBankService
 
         await _periodLockService.EnsureDateAllowedAsync(date);
 
-        var voucher = new Voucher
+        await using (var context = await _contextFactory.CreateDbContextAsync())
         {
-            VoucherType = delta > 0 ? VoucherType.Receipt : VoucherType.Payment,
-            Amount = Math.Abs(delta),
-            CashBoxId = cashBoxId,
-            Date = date,
-            Notes = $"تسوية رصيد: {reason.Trim()}"
-        };
-        voucher.VoucherNumber = await GetNextVoucherNumberAsync(voucher.VoucherType);
-        await CreateVoucherAsync(voucher);
+            var cashBox = await context.CashBoxes.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == cashBoxId)
+                ?? throw new InvalidOperationException("القاصة غير موجودة");
+
+            decimal fxRate = 1m;
+            if (cashBox.Currency == AccountingCurrency.USD)
+            {
+                fxRate = await context.ExchangeRates.AsNoTracking()
+                    .Where(r => r.UsdToIqd > 0 && r.RateDate.Date <= date.Date)
+                    .OrderByDescending(r => r.RateDate)
+                    .Select(r => r.UsdToIqd)
+                    .FirstOrDefaultAsync();
+                if (fxRate <= 0)
+                {
+                    fxRate = await context.ExchangeRates.AsNoTracking()
+                        .Where(r => r.UsdToIqd > 0)
+                        .OrderByDescending(r => r.RateDate)
+                        .Select(r => r.UsdToIqd)
+                        .FirstOrDefaultAsync();
+                }
+            }
+
+            var voucher = new Voucher
+            {
+                VoucherType = delta > 0 ? VoucherType.Receipt : VoucherType.Payment,
+                Amount = Math.Abs(delta),
+                CashBoxId = cashBoxId,
+                Currency = cashBox.Currency,
+                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
+                    cashBox.Currency, fxRate, "تسوية قاصة"),
+                Date = date,
+                Notes = $"تسوية رصيد: {reason.Trim()}"
+            };
+            voucher.VoucherNumber = await GetNextVoucherNumberAsync(voucher.VoucherType);
+            await CreateVoucherAsync(voucher);
+        }
     }
 
     public async Task AdjustBankBalanceAsync(int bankAccountId, decimal delta, string reason, DateTime date)
@@ -335,10 +366,14 @@ public class CashBankService : ICashBankService
         {
             var username = _currentUserService.Username;
 
+            AccountingCurrency fromCurrency;
+            AccountingCurrency toCurrency;
+
             if (fromType == TransferAccountType.CashBox)
             {
                 var cashBox = await context.CashBoxes.FindAsync(fromId)
                     ?? throw new InvalidOperationException("القاصة المصدر غير موجودة");
+                fromCurrency = cashBox.Currency;
                 if (cashBox.Balance < amount)
                     throw new InvalidOperationException($"رصيد القاصة ({cashBox.Balance:N0}) غير كافٍ للتحويل ({amount:N0})");
                 cashBox.Balance -= amount;
@@ -349,6 +384,7 @@ public class CashBankService : ICashBankService
             {
                 var bank = await context.BankAccounts.FindAsync(fromId)
                     ?? throw new InvalidOperationException("المصرف المصدر غير موجود");
+                fromCurrency = bank.Currency;
                 if (bank.Balance < amount)
                     throw new InvalidOperationException($"رصيد المصرف ({bank.Balance:N0}) غير كافٍ للتحويل ({amount:N0})");
                 bank.Balance -= amount;
@@ -360,6 +396,7 @@ public class CashBankService : ICashBankService
             {
                 var cashBox = await context.CashBoxes.FindAsync(toId)
                     ?? throw new InvalidOperationException("القاصة الهدف غير موجودة");
+                toCurrency = cashBox.Currency;
                 cashBox.Balance += amount;
                 cashBox.UpdatedBy = username;
                 cashBox.UpdatedAt = DateTime.UtcNow;
@@ -368,15 +405,40 @@ public class CashBankService : ICashBankService
             {
                 var bank = await context.BankAccounts.FindAsync(toId)
                     ?? throw new InvalidOperationException("المصرف الهدف غير موجود");
+                toCurrency = bank.Currency;
                 bank.Balance += amount;
                 bank.UpdatedBy = username;
                 bank.UpdatedAt = DateTime.UtcNow;
+            }
+
+            if (fromCurrency != toCurrency)
+                throw new InvalidOperationException("لا يمكن التحويل بين قاصة/حساب بعملتين مختلفتين. أنشئ تحويلاً ضمن نفس العملة فقط.");
+
+            decimal transferFx = 1m;
+            if (fromCurrency == AccountingCurrency.USD)
+            {
+                transferFx = await context.ExchangeRates.AsNoTracking()
+                    .Where(r => r.UsdToIqd > 0 && r.RateDate.Date <= DateTime.Today)
+                    .OrderByDescending(r => r.RateDate)
+                    .Select(r => r.UsdToIqd)
+                    .FirstOrDefaultAsync();
+                if (transferFx <= 0)
+                {
+                    transferFx = await context.ExchangeRates.AsNoTracking()
+                        .Where(r => r.UsdToIqd > 0)
+                        .OrderByDescending(r => r.RateDate)
+                        .Select(r => r.UsdToIqd)
+                        .FirstOrDefaultAsync();
+                }
             }
 
             var transfer = new Transfer
             {
                 FromType = fromType, FromId = fromId,
                 ToType = toType, ToId = toId,
+                Currency = fromCurrency,
+                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
+                    fromCurrency, transferFx, "تحويل"),
                 Amount = amount, Date = DateTime.Now,
                 Notes = notes, CreatedBy = username, CreatedAt = DateTime.UtcNow
             };
@@ -546,6 +608,24 @@ public class CashBankService : ICashBankService
             voucher.CreatedBy = username;
             voucher.CreatedAt = DateTime.UtcNow;
 
+            voucher.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
+                voucher.Currency, voucher.FxRate, "سند");
+
+            var cashBoxForCurrency = await context.CashBoxes.AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == voucher.CashBoxId)
+                ?? throw new InvalidOperationException("القاصة غير موجودة");
+            AccountingCurrencyRules.EnsureSameCurrency(
+                voucher.Currency, cashBoxForCurrency.Currency, "السند", "القاصة");
+
+            if (voucher.BankAccountId.HasValue)
+            {
+                var bank = await context.BankAccounts.AsNoTracking()
+                    .FirstOrDefaultAsync(b => b.Id == voucher.BankAccountId.Value)
+                    ?? throw new InvalidOperationException("المصرف غير موجود");
+                AccountingCurrencyRules.EnsureSameCurrency(
+                    voucher.Currency, bank.Currency, "السند", "المصرف");
+            }
+
             // Always assign server-side to avoid stale UI numbers and soft-delete collisions.
             voucher.VoucherNumber = await GetNextVoucherNumberAsync(context, voucher.VoucherType);
 
@@ -593,6 +673,8 @@ public class CashBankService : ICashBankService
                 case VoucherType.InvestorDeposit:
                     if (!voucher.InvestorId.HasValue)
                         throw new InvalidOperationException("يجب تحديد المستثمر لسند إيداع المستثمر");
+                    if (voucher.Currency != AccountingCurrency.IQD)
+                        throw new InvalidOperationException("سندات المستثمرين بالدينار فقط — دفتر المستثمر لا يدعم الدولار حالياً.");
                     await AdjustCashBoxBalance(context, voucher.CashBoxId, voucher.Amount, username);
                     await AdjustInvestorDeposit(context, voucher.InvestorId.Value, voucher.Amount, username);
                     await CreateInvestorTransaction(context, voucher.InvestorId.Value,
@@ -602,6 +684,8 @@ public class CashBankService : ICashBankService
                 case VoucherType.InvestorWithdrawal:
                     if (!voucher.InvestorId.HasValue)
                         throw new InvalidOperationException("يجب تحديد المستثمر لسند سحب المستثمر");
+                    if (voucher.Currency != AccountingCurrency.IQD)
+                        throw new InvalidOperationException("سندات المستثمرين بالدينار فقط — دفتر المستثمر لا يدعم الدولار حالياً.");
                     await ValidateAndDeductCashBox(context, voucher.CashBoxId, voucher.Amount, username);
                     await AdjustInvestorDeposit(context, voucher.InvestorId.Value, -voucher.Amount, username);
                     await CreateInvestorTransaction(context, voucher.InvestorId.Value,
@@ -687,10 +771,15 @@ public class CashBankService : ICashBankService
                     await ReverseInstallmentApplicationAsync(context, voucher, username);
                 else if (voucher.InvoiceId.HasValue)
                     await ReverseCreditInvoiceApplicationAsync(context, voucher, username);
+                else if (voucher.CustomerId.HasValue && CustomerBalanceHelper.IsDebtReceiptApplied(voucher.Notes))
+                    await ReverseFifoCustomerApplicationAsync(context, voucher, username);
             }
-            else if (voucher.VoucherType == VoucherType.Payment && voucher.InvoiceId.HasValue)
+            else if (voucher.VoucherType == VoucherType.Payment)
             {
-                await ReverseCreditInvoiceApplicationAsync(context, voucher, username);
+                if (voucher.InvoiceId.HasValue)
+                    await ReverseCreditInvoiceApplicationAsync(context, voucher, username);
+                else if (voucher.SupplierId.HasValue && CustomerBalanceHelper.IsDebtReceiptApplied(voucher.Notes))
+                    await ReverseFifoSupplierApplicationAsync(context, voucher, username);
             }
 
             switch (voucher.VoucherType)
@@ -949,15 +1038,16 @@ public class CashBankService : ICashBankService
             .Where(i => i.CustomerId == voucher.CustomerId.Value &&
                         (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
                         i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == voucher.Currency &&
                         i.RemainingAmount > 0)
             .OrderBy(i => i.Date)
             .ThenBy(i => i.Id)
             .ToListAsync();
 
         var snapshot = creditInvoices
-            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount))
+            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount, i.Currency))
             .ToList();
-        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount);
+        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount, voucher.Currency);
         foreach (var u in updates)
         {
             var inv = creditInvoices.First(i => i.Id == u.Id);
@@ -981,15 +1071,16 @@ public class CashBankService : ICashBankService
             .Where(i => i.SupplierId == voucher.SupplierId.Value &&
                         i.InvoiceType == InvoiceType.Purchase &&
                         i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == voucher.Currency &&
                         i.RemainingAmount > 0)
             .OrderBy(i => i.Date)
             .ThenBy(i => i.Id)
             .ToListAsync();
 
         var snapshot = creditInvoices
-            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount))
+            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount, i.Currency))
             .ToList();
-        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount);
+        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount, voucher.Currency);
         foreach (var u in updates)
         {
             var inv = creditInvoices.First(i => i.Id == u.Id);
@@ -1014,6 +1105,9 @@ public class CashBankService : ICashBankService
 
         if (voucher.SupplierId.HasValue && invoice.SupplierId != voucher.SupplierId)
             throw new InvalidOperationException("الفاتورة لا تخص المورد المحدد");
+
+        AccountingCurrencyRules.EnsureSameCurrency(
+            voucher.Currency, invoice.Currency, "السند", "الفاتورة");
 
         if (invoice.RemainingAmount <= 0)
             throw new InvalidOperationException("الفاتورة مسددة بالكامل");
@@ -1041,6 +1135,9 @@ public class CashBankService : ICashBankService
         if (voucher.CustomerId.HasValue && invoice.CustomerId != voucher.CustomerId)
             throw new InvalidOperationException("الفاتورة لا تخص العميل المحدد");
 
+        AccountingCurrencyRules.EnsureSameCurrency(
+            voucher.Currency, invoice.Currency, "السند", "الفاتورة");
+
         if (invoice.RemainingAmount <= 0)
             throw new InvalidOperationException("الفاتورة مسددة بالكامل");
 
@@ -1066,6 +1163,19 @@ public class CashBankService : ICashBankService
         if (voucher.CustomerId.HasValue &&
             installment.InstallmentPlan?.CustomerId != voucher.CustomerId)
             throw new InvalidOperationException("القسط لا يخص العميل المحدد");
+
+        if (installment.InstallmentPlan?.InvoiceId is int invoiceId)
+        {
+            var invoiceCurrency = await context.Invoices.AsNoTracking()
+                .Where(i => i.Id == invoiceId)
+                .Select(i => (AccountingCurrency?)i.Currency)
+                .FirstOrDefaultAsync();
+            if (invoiceCurrency is not null)
+            {
+                AccountingCurrencyRules.EnsureSameCurrency(
+                    voucher.Currency, invoiceCurrency.Value, "السند", "فاتورة القسط");
+            }
+        }
 
         if (installment.RemainingAmount <= 0)
             throw new InvalidOperationException("القسط مسدد بالكامل");
@@ -1100,6 +1210,83 @@ public class CashBankService : ICashBankService
         invoice.IsCreditPaid = invoice.RemainingAmount <= 0;
         invoice.UpdatedAt = DateTime.UtcNow;
         invoice.UpdatedBy = username;
+        voucher.Notes = CustomerBalanceHelper.UnmarkDebtReceiptApplied(voucher.Notes);
+    }
+
+    /// <summary>
+    /// عكس تطبيق FIFO لسند قبض/دين بدون InvoiceId — يعيد PaidAmount/Remaining على فواتير العميل بنفس العملة.
+    /// </summary>
+    private static async Task ReverseFifoCustomerApplicationAsync(
+        AppDbContext context, Voucher voucher, string username)
+    {
+        if (!voucher.CustomerId.HasValue)
+            return;
+
+        var creditInvoices = await context.Invoices
+            .Where(i => i.CustomerId == voucher.CustomerId.Value &&
+                        (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == voucher.Currency &&
+                        i.PaidAmount > 0)
+            .OrderByDescending(i => i.Date)
+            .ThenByDescending(i => i.Id)
+            .ToListAsync();
+
+        var snapshot = creditInvoices
+            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount, i.Currency))
+            .ToList();
+        var updates = CustomerBalanceHelper.DeallocateFromCreditInvoices(
+            snapshot, voucher.Amount, voucher.Currency);
+
+        foreach (var u in updates)
+        {
+            var inv = creditInvoices.First(i => i.Id == u.Id);
+            inv.PaidAmount = u.PaidAmount;
+            inv.RemainingAmount = u.RemainingAmount;
+            inv.IsCreditPaid = u.IsCreditPaid;
+            inv.UpdatedAt = DateTime.UtcNow;
+            inv.UpdatedBy = username;
+        }
+
+        voucher.Notes = CustomerBalanceHelper.UnmarkDebtReceiptApplied(voucher.Notes);
+    }
+
+    /// <summary>
+    /// عكس تطبيق FIFO لسند صرف بدون InvoiceId — يعيد PaidAmount/Remaining على فواتير المورد بنفس العملة.
+    /// </summary>
+    private static async Task ReverseFifoSupplierApplicationAsync(
+        AppDbContext context, Voucher voucher, string username)
+    {
+        if (!voucher.SupplierId.HasValue)
+            return;
+
+        var creditInvoices = await context.Invoices
+            .Where(i => i.SupplierId == voucher.SupplierId.Value &&
+                        i.InvoiceType == InvoiceType.Purchase &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == voucher.Currency &&
+                        i.PaidAmount > 0)
+            .OrderByDescending(i => i.Date)
+            .ThenByDescending(i => i.Id)
+            .ToListAsync();
+
+        var snapshot = creditInvoices
+            .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount, i.Currency))
+            .ToList();
+        var updates = CustomerBalanceHelper.DeallocateFromCreditInvoices(
+            snapshot, voucher.Amount, voucher.Currency);
+
+        foreach (var u in updates)
+        {
+            var inv = creditInvoices.First(i => i.Id == u.Id);
+            inv.PaidAmount = u.PaidAmount;
+            inv.RemainingAmount = u.RemainingAmount;
+            inv.IsCreditPaid = u.IsCreditPaid;
+            inv.UpdatedAt = DateTime.UtcNow;
+            inv.UpdatedBy = username;
+        }
+
+        voucher.Notes = CustomerBalanceHelper.UnmarkDebtReceiptApplied(voucher.Notes);
     }
 
     private static async Task ReverseInstallmentApplicationAsync(

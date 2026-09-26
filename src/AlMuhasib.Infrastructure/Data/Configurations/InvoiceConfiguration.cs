@@ -22,6 +22,13 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
             .HasConversion<string>()
             .HasMaxLength(20);
 
+        builder.Property(i => i.Currency)
+            .HasConversion<string>()
+            .HasMaxLength(10)
+            .HasDefaultValue(AlMuhasib.Core.Enums.AccountingCurrency.IQD);
+
+        builder.Property(i => i.FxRate).HasPrecision(18, 4);
+
         builder.Property(i => i.RoundingType)
             .HasConversion<string>()
             .HasMaxLength(20);

@@ -8,6 +8,13 @@ public class Voucher : BaseEntity
 {
     public string VoucherNumber { get; set; } = string.Empty;
     public VoucherType VoucherType { get; set; }
+
+    /// <summary>عملة السند — يجب أن تطابق عملة القاصة/البنك.</summary>
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+
+    /// <summary>سعر الصرف وقت الحفظ (دولار→دينار).</summary>
+    public decimal FxRate { get; set; } = 1m;
+
     public decimal Amount { get; set; }
     public decimal BankFees { get; set; }
     public int? CustomerId { get; set; }

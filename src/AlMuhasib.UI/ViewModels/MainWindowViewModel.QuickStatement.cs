@@ -16,6 +16,8 @@ public partial class MainWindowViewModel
     [ObservableProperty] private bool _isQuickStatementOpen;
     [ObservableProperty] private string _quickStatementCustomerName = string.Empty;
     [ObservableProperty] private decimal _quickStatementBalance;
+    [ObservableProperty] private string _quickStatementBalanceUsdText = string.Empty;
+    [ObservableProperty] private bool _showQuickStatementBalanceUsd;
     [ObservableProperty] private string _quickStatementOverdueText = string.Empty;
 
     public ObservableCollection<CustomerQuickStatementLine> QuickStatementLines { get; } = [];
@@ -35,6 +37,10 @@ public partial class MainWindowViewModel
             _quickStatementPhone = data.Phone;
             QuickStatementCustomerName = data.CustomerName;
             QuickStatementBalance = data.Balance;
+            ShowQuickStatementBalanceUsd = data.BalanceUsd != 0;
+            QuickStatementBalanceUsdText = ShowQuickStatementBalanceUsd
+                ? $"الرصيد $: {data.BalanceUsd:N2}"
+                : string.Empty;
             QuickStatementOverdueText = data.OverdueInstallmentCount > 0
                 ? $"{data.OverdueInstallmentCount} قسط متأخر — {data.OverdueInstallmentAmount:N0} د.ع"
                 : "لا أقساط متأخرة";

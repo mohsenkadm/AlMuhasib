@@ -8,21 +8,31 @@ namespace AlMuhasib.Cloud.Infrastructure.Reports;
 
 public static class CloudInvoiceFilters
 {
+    /// <summary>
+    /// إجماليات الربح/المبيعات لعملة واحدة — الافتراضي دينار.
+    /// مرّر USD لإفصاح منفصل دون خلط.
+    /// </summary>
     public static IQueryable<CloudInvoice> ForProfitAndSalesTotals(
         IQueryable<CloudInvoice> invoices,
-        IQueryable<CloudInstallmentPlan> plans)
+        IQueryable<CloudInstallmentPlan> plans,
+        AccountingCurrency currency = AccountingCurrency.IQD)
         => invoices.Where(i =>
-            (i.InvoiceType == InvoiceType.Sale
-             && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
-            || (i.InvoiceType == InvoiceType.Installment
-                && !plans.Any(p => p.InvoiceId == i.Id && p.InstallmentType == InstallmentType.OpeningBalance))
-            || i.InvoiceType == InvoiceType.SaleReturn);
+            i.Currency == currency &&
+            ((i.InvoiceType == InvoiceType.Sale
+              && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
+             || (i.InvoiceType == InvoiceType.Installment
+                 && !plans.Any(p => p.InvoiceId == i.Id && p.InstallmentType == InstallmentType.OpeningBalance))
+             || i.InvoiceType == InvoiceType.SaleReturn));
 
-    public static IQueryable<CloudInvoice> ForPurchasesTotals(IQueryable<CloudInvoice> invoices)
+    /// <summary>إجماليات المشتريات لعملة واحدة — الافتراضي دينار.</summary>
+    public static IQueryable<CloudInvoice> ForPurchasesTotals(
+        IQueryable<CloudInvoice> invoices,
+        AccountingCurrency currency = AccountingCurrency.IQD)
         => invoices.Where(i =>
-            (i.InvoiceType == InvoiceType.Purchase
-             && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
-            || i.InvoiceType == InvoiceType.PurchaseReturn);
+            i.Currency == currency &&
+            ((i.InvoiceType == InvoiceType.Purchase
+              && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
+             || i.InvoiceType == InvoiceType.PurchaseReturn));
 
     /// <summary>مجموع NetAmount بإشارة صحيحة (المرتجعات تُطرح).</summary>
     public static async Task<decimal> SumSignedNetAsync(IQueryable<CloudInvoice> invoices)

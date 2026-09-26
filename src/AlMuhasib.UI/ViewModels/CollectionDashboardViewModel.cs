@@ -20,11 +20,11 @@ public partial class CollectionDashboardViewModel : ViewModelBase
     private List<CollectionInstallmentRow> _allRows = [];
 
     [ObservableProperty] private int _dueTodayCount;
-    [ObservableProperty] private decimal _dueTodayAmount;
+    [ObservableProperty] private string _dueTodayAmountText = "0 د.ع";
     [ObservableProperty] private int _overdueCount;
-    [ObservableProperty] private decimal _overdueAmount;
+    [ObservableProperty] private string _overdueAmountText = "0 د.ع";
     [ObservableProperty] private int _thisWeekCount;
-    [ObservableProperty] private decimal _thisWeekAmount;
+    [ObservableProperty] private string _thisWeekAmountText = "0 د.ع";
     [ObservableProperty] private string? _selectedBucketFilter;
     [ObservableProperty] private CashBox? _paymentCashBox;
 
@@ -65,11 +65,11 @@ public partial class CollectionDashboardViewModel : ViewModelBase
             await _installmentService.UpdateOverdueStatusesAsync();
             var summary = await _dashboardService.GetDashboardAsync(SelectedBucketFilter);
             DueTodayCount = summary.DueTodayCount;
-            DueTodayAmount = summary.DueTodayAmount;
+            DueTodayAmountText = FormatDualAmount(summary.DueTodayAmount, summary.DueTodayAmountUsd);
             OverdueCount = summary.OverdueCount;
-            OverdueAmount = summary.OverdueAmount;
+            OverdueAmountText = FormatDualAmount(summary.OverdueAmount, summary.OverdueAmountUsd);
             ThisWeekCount = summary.ThisWeekCount;
-            ThisWeekAmount = summary.ThisWeekAmount;
+            ThisWeekAmountText = FormatDualAmount(summary.ThisWeekAmount, summary.ThisWeekAmountUsd);
             Rows.Clear();
             _allRows = summary.Rows.ToList();
             ApplyRowFilters();
@@ -100,11 +100,11 @@ public partial class CollectionDashboardViewModel : ViewModelBase
         if (Rows.Count == 0) return;
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "لوحة_التحصيل.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "العميل", "الهاتف", "الاستحقاق", "الحالة", "المتبقي" };
+        var cols = new[] { "العميل", "الهاتف", "الاستحقاق", "الحالة", "المتبقي", "العملة" };
         var data = Rows.Select(r => new object[]
         {
             r.CustomerName, r.CustomerPhone ?? "", r.DueDate.ToString("yyyy/MM/dd"),
-            r.StatusLabel, r.RemainingAmount.ToString("N0")
+            r.StatusLabel, r.RemainingAmount.ToString("N0"), r.CurrencyLabel
         }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "لوحة التحصيل", cols, (IList<object[]>)data);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
@@ -114,11 +114,11 @@ public partial class CollectionDashboardViewModel : ViewModelBase
     private void PrintTable()
     {
         if (Rows.Count == 0) return;
-        var cols = new[] { "العميل", "الهاتف", "الاستحقاق", "الحالة", "المتبقي" };
+        var cols = new[] { "العميل", "الهاتف", "الاستحقاق", "الحالة", "المتبقي", "العملة" };
         var data = Rows.Select(r => new object[]
         {
             r.CustomerName, r.CustomerPhone ?? "", r.DueDate.ToString("yyyy/MM/dd"),
-            r.StatusLabel, r.RemainingAmount.ToString("N0")
+            r.StatusLabel, r.RemainingAmount.ToString("N0"), r.CurrencyLabel
         }).ToList();
         _exportService.PrintTable("لوحة التحصيل اليومية", cols, (IList<object[]>)data);
     }
@@ -128,6 +128,14 @@ public partial class CollectionDashboardViewModel : ViewModelBase
     {
         SelectedBucketFilter = bucket;
         await RefreshAsync();
+    }
+
+    private static string FormatDualAmount(decimal iqd, decimal usd)
+    {
+        var text = $"{iqd:N0} د.ع";
+        if (usd != 0)
+            text += $" | {usd:N2} $";
+        return text;
     }
 
     [RelayCommand]
@@ -144,7 +152,8 @@ public partial class CollectionDashboardViewModel : ViewModelBase
         {
             IsBusy = true;
             await _installmentService.PayInstallmentAsync(row.InstallmentId, row.RemainingAmount, PaymentCashBox.Id);
-            BeautifulMessageDialog.ShowSuccess($"تم تسديد {row.RemainingAmount:N0} د.ع — {row.CustomerName}");
+            BeautifulMessageDialog.ShowSuccess(
+                $"تم تسديد {AlMuhasib.Core.Helpers.AccountingCurrencyHelper.Format(row.RemainingAmount, row.Currency)} — {row.CustomerName}");
             await RefreshAsync();
         }
         catch (Exception ex)

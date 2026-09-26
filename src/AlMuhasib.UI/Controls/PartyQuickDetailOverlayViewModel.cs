@@ -29,12 +29,16 @@ public partial class PartyQuickDetailOverlayViewModel : ObservableObject
         Phone = string.IsNullOrWhiteSpace(data.Phone) ? null : data.Phone;
         Address = string.IsNullOrWhiteSpace(data.Address) ? null : data.Address;
         FileNumber = string.IsNullOrWhiteSpace(data.FileNumber) ? null : data.FileNumber;
-        BalanceText = $"{data.Balance:N0} د.ع";
+        BalanceText = data.BalanceUsd != 0
+            ? $"{data.Balance:N0} د.ع | $ {data.BalanceUsd:N2}"
+            : $"{data.Balance:N0} د.ع";
         DealCountText = data.DealCount.ToString("N0");
-        TotalDealAmountText = $"{data.TotalDealAmount:N0} د.ع";
+        TotalDealAmountText = data.TotalDealAmountUsd != 0
+            ? $"{data.TotalDealAmount:N0} د.ع | $ {data.TotalDealAmountUsd:N2}"
+            : $"{data.TotalDealAmount:N0} د.ع";
         LastDealText = data.LastDealDate is null
             ? "لا يوجد تعامل سابق"
-            : $"{data.LastDealDate:yyyy/MM/dd} — {data.LastDealDescription} ({data.LastDealAmount:N0} د.ع)";
+            : $"{data.LastDealDate:yyyy/MM/dd} — {data.LastDealDescription} ({data.LastDealAmount:N0})";
 
         Products.Clear();
         foreach (var p in data.Products)

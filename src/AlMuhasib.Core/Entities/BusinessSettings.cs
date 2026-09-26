@@ -16,4 +16,7 @@ public class BusinessSettings : BaseEntity
 
     /// <summary>آخر يوم مقفل شاملاً — لا يُسمح بمستندات بتاريخه أو قبله عند التفعيل.</summary>
     public DateTime? LockedThroughDate { get; set; }
+
+    /// <summary>تنوع العملات (دينار/دولار) — للمزامنة مع السحابة والموبايل.</summary>
+    public bool MultiCurrencyEnabled { get; set; }
 }

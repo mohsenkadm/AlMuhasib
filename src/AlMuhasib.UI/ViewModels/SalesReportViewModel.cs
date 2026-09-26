@@ -3,6 +3,7 @@ using System.Windows;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -24,12 +25,16 @@ public partial class SalesReportViewModel : ReportViewModelBase
 
     // Stats
     [ObservableProperty] private string _totalSales = "0";
+    [ObservableProperty] private string _totalSalesUsd = "0";
+    [ObservableProperty] private bool _showTotalSalesUsd;
     [ObservableProperty] private string _cashSales = "0";
     [ObservableProperty] private string _creditSales = "0";
     [ObservableProperty] private string _installmentSales = "0";
     [ObservableProperty] private string _invoiceCount = "0";
     [ObservableProperty] private string _averageInvoice = "0";
     [ObservableProperty] private string _todaySales = "0";
+    [ObservableProperty] private string _todaySalesUsd = "0";
+    [ObservableProperty] private bool _showTodaySalesUsd;
     [ObservableProperty] private string _totalCompanyFees = "0";
 
     // Filters
@@ -127,12 +132,20 @@ public partial class SalesReportViewModel : ReportViewModelBase
             var result = await _reportService.GetSalesReportAsync(DateFrom, DateTo, SelectedCustomer?.Id, _selectedPaymentMethodItem?.Value, _selectedWarehouseId);
 
             TotalSales = FormatCurrency(result.TotalSales);
+            ShowTotalSalesUsd = result.TotalSalesUsd != 0;
+            TotalSalesUsd = ShowTotalSalesUsd
+                ? FormatCurrency(result.TotalSalesUsd, AccountingCurrency.USD)
+                : "0";
             CashSales = FormatCurrency(result.CashSales);
             CreditSales = FormatCurrency(result.CreditSales);
             InstallmentSales = FormatCurrency(result.InstallmentSales);
             InvoiceCount = result.InvoiceCount.ToString("N0");
             AverageInvoice = FormatCurrency(result.AverageInvoice);
             TodaySales = FormatCurrency(result.TodaySales);
+            ShowTodaySalesUsd = result.TodaySalesUsd != 0;
+            TodaySalesUsd = ShowTodaySalesUsd
+                ? FormatCurrency(result.TodaySalesUsd, AccountingCurrency.USD)
+                : "0";
             TotalCompanyFees = FormatCurrency(result.TotalCompanyFees);
 
             // Chart
@@ -247,6 +260,7 @@ public partial class SalesReportViewModel : ReportViewModelBase
             RemainingAmount = remainingAmount,
             GrandTotal = invoice.NetAmount,
             CompanyFeeAmount = row.CompanyFeeAmount > 0 ? row.CompanyFeeAmount : null,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(invoice.Currency),
             Items = invoice.Items.Select((item, i) => new InvoicePrintItem
             {
                 Number = i + 1,

@@ -179,12 +179,15 @@ public enum ExpiryBatchStatus
 public class SalesReportResult
 {
     public decimal TotalSales { get; set; }
+    /// <summary>صافي المبيعات بالدولار — منفصل عن TotalSales بالدينار.</summary>
+    public decimal TotalSalesUsd { get; set; }
     public decimal CashSales { get; set; }
     public decimal CreditSales { get; set; }
     public decimal InstallmentSales { get; set; }
     public int InvoiceCount { get; set; }
     public decimal AverageInvoice { get; set; }
     public decimal TodaySales { get; set; }
+    public decimal TodaySalesUsd { get; set; }
     public decimal TotalCompanyFees { get; set; }
     public List<SalesReportRow> Rows { get; set; } = [];
     public List<DailyAmountPoint> DailyChart { get; set; } = [];
@@ -211,6 +214,8 @@ public class SalesReportRow
     public decimal PaidAmount { get; set; }
     public decimal RemainingAmount { get; set; }
     public bool IsCreditPaid { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
     public bool IsCredit => PaymentMethod == "آجل" && !IsReturn;
 }
 
@@ -227,9 +232,12 @@ public class DailyAmountPoint
 public class PurchasesReportResult
 {
     public decimal TotalPurchases { get; set; }
+    /// <summary>صافي المشتريات بالدولار — منفصل عن TotalPurchases بالدينار.</summary>
+    public decimal TotalPurchasesUsd { get; set; }
     public int InvoiceCount { get; set; }
     public decimal AverageInvoice { get; set; }
     public decimal TodayPurchases { get; set; }
+    public decimal TodayPurchasesUsd { get; set; }
     public List<PurchasesReportRow> Rows { get; set; } = [];
     public List<DailyAmountPoint> DailyChart { get; set; } = [];
     public List<NameAmountPoint> BySupplierChart { get; set; } = [];
@@ -252,6 +260,8 @@ public class PurchasesReportRow
     public decimal PaidAmount { get; set; }
     public decimal RemainingAmount { get; set; }
     public bool IsCreditPaid { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
     public bool IsCredit => PaymentMethod == "آجل" && !IsReturn;
 }
 
@@ -268,9 +278,13 @@ public class NameAmountPoint
 public class ProfitReportResult
 {
     public decimal TotalSales { get; set; }
+    /// <summary>مبيعات الدولار للفترة — إفصاح فقط؛ صافي الربح يبقى بالدينار.</summary>
+    public decimal TotalSalesUsd { get; set; }
     public decimal TotalPurchases { get; set; }
     public decimal GrossProfit { get; set; }
     public decimal TotalExpenses { get; set; }
+    /// <summary>مصروفات الدولار للفترة — إفصاح فقط.</summary>
+    public decimal TotalExpensesUsd { get; set; }
     public decimal TotalBankFees { get; set; }
     public decimal DistributedProfits { get; set; }
     public decimal ProfitOpeningBalance { get; set; }
@@ -437,7 +451,11 @@ public class CustomerStatementResult
     public string? CustomerFileNumber { get; set; }
     public decimal TotalDebit { get; set; }
     public decimal TotalCredit { get; set; }
+    public decimal TotalDebitUsd { get; set; }
+    public decimal TotalCreditUsd { get; set; }
     public decimal Balance { get; set; }
+    /// <summary>رصيد مستحق بالدولار (منفصل عن Balance بالدينار).</summary>
+    public decimal BalanceUsd { get; set; }
     public int TransactionCount { get; set; }
     public List<CustomerStatementRow> Rows { get; set; } = [];
 }
@@ -449,6 +467,8 @@ public class CustomerStatementRow
     public decimal Debit { get; set; }
     public decimal Credit { get; set; }
     public decimal RunningBalance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
     /// <summary>Invoice | Voucher | Installment</summary>
     public string SourceKind { get; set; } = string.Empty;
     public int DocumentId { get; set; }
@@ -460,6 +480,8 @@ public class SupplierStatementResult
     public decimal TotalDebit { get; set; }
     public decimal TotalCredit { get; set; }
     public decimal Balance { get; set; }
+    /// <summary>رصيد مستحق بالدولار (منفصل عن Balance بالدينار).</summary>
+    public decimal BalanceUsd { get; set; }
     public int InvoiceCount { get; set; }
     public List<SupplierStatementRow> Rows { get; set; } = [];
 }
@@ -471,6 +493,8 @@ public class SupplierStatementRow
     public decimal Debit { get; set; }
     public decimal Credit { get; set; }
     public decimal RunningBalance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
 }
 
 public class InvestorStatementResult
@@ -502,6 +526,7 @@ public class ExpensesReportResult
     public decimal TodayExpenses { get; set; }
     public decimal MonthExpenses { get; set; }
     public string TopExpenseType { get; set; } = string.Empty;
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public List<ExpenseReportRow> Rows { get; set; } = [];
     public List<NameAmountPoint> ByTypeChart { get; set; } = [];
     public List<DailyAmountPoint> DailyChart { get; set; } = [];
@@ -596,6 +621,7 @@ public class CashFlowResult
     public decimal TotalOutgoing { get; set; }
     public decimal NetFlow { get; set; }
     public decimal CurrentBalance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public List<CashFlowRow> Rows { get; set; } = [];
     public List<DailyAmountPoint> DailyIncomingChart { get; set; } = [];
     public List<DailyAmountPoint> DailyOutgoingChart { get; set; } = [];
@@ -640,6 +666,11 @@ public class BalanceSheetResult
     public List<BalanceSheetCashBoxRow> CashBoxes { get; set; } = [];
     public decimal BanksTotal { get; set; }
     public List<BalanceSheetBankRow> Banks { get; set; } = [];
+    /// <summary>إفصاح سيولة دولار — لا يُدمج في مجاميع الميزانية بالدينار.</summary>
+    public decimal CashBoxesTotalUsd { get; set; }
+    public decimal BanksTotalUsd { get; set; }
+    public decimal CustomerDebtsUsd { get; set; }
+    public decimal SupplierPayablesUsd { get; set; }
     public decimal CustomerDebts { get; set; }
     public decimal InventoryValue { get; set; }
     public decimal InstallmentReceivables { get; set; }
@@ -772,6 +803,8 @@ public class CustomerNetProfitRow
 public class InstallmentAgingReportResult
 {
     public decimal TotalOutstanding { get; set; }
+    /// <summary>متبقي أقساط الدولار — منفصل عن TotalOutstanding بالدينار.</summary>
+    public decimal TotalOutstandingUsd { get; set; }
     public int InstallmentCount { get; set; }
     public int CustomerCount { get; set; }
     public List<InstallmentAgingBucketSummary> Buckets { get; set; } = [];
@@ -783,6 +816,7 @@ public class InstallmentAgingBucketSummary
     public string BucketName { get; set; } = string.Empty;
     public int Count { get; set; }
     public decimal Amount { get; set; }
+    public decimal AmountUsd { get; set; }
 }
 
 public class InstallmentAgingRow
@@ -798,6 +832,8 @@ public class InstallmentAgingRow
     public decimal RemainingAmount { get; set; }
     public int DaysOverdue { get; set; }
     public string AgingBucket { get; set; } = string.Empty;
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -809,6 +845,7 @@ public class CustomersOverviewReportResult
     public decimal TotalSales { get; set; }
     public decimal TotalCollected { get; set; }
     public decimal TotalOutstanding { get; set; }
+    public decimal TotalOutstandingUsd { get; set; }
     public int CustomerCount { get; set; }
     public List<CustomerOverviewRow> Rows { get; set; } = [];
 }
@@ -823,6 +860,7 @@ public class CustomerOverviewRow
     public decimal SalesAmount { get; set; }
     public decimal CollectedAmount { get; set; }
     public decimal OutstandingBalance { get; set; }
+    public decimal OutstandingBalanceUsd { get; set; }
 }
 
 public class SuppliersOverviewReportResult
@@ -830,6 +868,7 @@ public class SuppliersOverviewReportResult
     public decimal TotalPurchases { get; set; }
     public decimal TotalPaid { get; set; }
     public decimal TotalOutstanding { get; set; }
+    public decimal TotalOutstandingUsd { get; set; }
     public int SupplierCount { get; set; }
     public List<SupplierOverviewRow> Rows { get; set; } = [];
 }
@@ -843,6 +882,7 @@ public class SupplierOverviewRow
     public decimal PurchaseAmount { get; set; }
     public decimal PaidAmount { get; set; }
     public decimal OutstandingBalance { get; set; }
+    public decimal OutstandingBalanceUsd { get; set; }
 }
 
 public class ProfitComparisonResult
@@ -1262,6 +1302,7 @@ public class OperatingProfitLineRow
 public class ReceivablesAgingReportResult
 {
     public decimal TotalOutstanding { get; set; }
+    public decimal TotalOutstandingUsd { get; set; }
     public int RowCount { get; set; }
     public int CustomerCount { get; set; }
     public List<AgingBucketSummary> Buckets { get; set; } = [];
@@ -1293,6 +1334,7 @@ public class ReceivablesAgingRow
 public class PayablesAgingReportResult
 {
     public decimal TotalOutstanding { get; set; }
+    public decimal TotalOutstandingUsd { get; set; }
     public int RowCount { get; set; }
     public int SupplierCount { get; set; }
     public List<AgingBucketSummary> Buckets { get; set; } = [];
@@ -1339,6 +1381,7 @@ public class CustomerCollectionRow
 public class OverdueCustomersReportResult
 {
     public decimal TotalOverdue { get; set; }
+    public decimal TotalOverdueUsd { get; set; }
     public int CustomerCount { get; set; }
     public int ItemCount { get; set; }
     public decimal AverageDaysOverdue { get; set; }
@@ -1388,6 +1431,7 @@ public class BankAccountStatementReportResult
     public decimal TotalIn { get; set; }
     public decimal TotalOut { get; set; }
     public decimal ClosingBalance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public List<BankAccountStatementRow> Rows { get; set; } = [];
     public List<DailyAmountPoint> DailyInChart { get; set; } = [];
     public List<DailyAmountPoint> DailyOutChart { get; set; } = [];
@@ -1410,6 +1454,7 @@ public class CashBoxMovementReportResult
     public decimal TotalIncoming { get; set; }
     public decimal TotalOutgoing { get; set; }
     public decimal ClosingBalance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public List<CashBoxMovementRow> Rows { get; set; } = [];
     public List<DailyAmountPoint> DailyIncomingChart { get; set; } = [];
     public List<DailyAmountPoint> DailyOutgoingChart { get; set; } = [];
@@ -1431,6 +1476,9 @@ public class CashBalancesSummaryReportResult
     public decimal CashBoxesTotal { get; set; }
     public decimal BanksTotal { get; set; }
     public decimal TotalLiquid { get; set; }
+    public decimal CashBoxesTotalUsd { get; set; }
+    public decimal BanksTotalUsd { get; set; }
+    public decimal TotalLiquidUsd { get; set; }
     public int AccountCount { get; set; }
     public List<CashBalanceRow> Rows { get; set; } = [];
     public List<NameAmountPoint> CompositionChart { get; set; } = [];
@@ -1442,11 +1490,14 @@ public class CashBalanceRow
     public string Name { get; set; } = string.Empty;
     public string AccountNumber { get; set; } = string.Empty;
     public decimal Balance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
 }
 
 public class TransfersReportResult
 {
     public decimal TotalAmount { get; set; }
+    public decimal TotalAmountUsd { get; set; }
     public int TransferCount { get; set; }
     public decimal AverageAmount { get; set; }
     public List<TransferReportRow> Rows { get; set; } = [];
@@ -1461,6 +1512,8 @@ public class TransferReportRow
     public string FromAccount { get; set; } = string.Empty;
     public string ToAccount { get; set; } = string.Empty;
     public decimal Amount { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "USD" : "د.ع";
     public string Notes { get; set; } = string.Empty;
     public string CreatedBy { get; set; } = string.Empty;
 }

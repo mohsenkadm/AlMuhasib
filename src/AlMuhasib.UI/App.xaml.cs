@@ -344,6 +344,7 @@ public partial class App : Application
         services.AddTransient<BackupRestoreViewModel>();
         services.AddTransient<CollectionDashboardViewModel>();
         services.AddTransient<BusinessFeaturesSettingsViewModel>();
+        services.AddTransient<ExchangeRatesViewModel>();
         services.AddTransient<CustomFieldSettingsViewModel>();
         services.AddTransient<MigrationWizardViewModel>();
         services.AddTransient<WarehouseTransferViewModel>();

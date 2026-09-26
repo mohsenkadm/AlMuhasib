@@ -15,6 +15,8 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class ReceivablesAgingReportViewModel : ReportViewModelBase
 {
     [ObservableProperty] private string _totalOutstanding = "0";
+    [ObservableProperty] private string _totalOutstandingUsd = "—";
+    [ObservableProperty] private bool _showTotalOutstandingUsd;
     [ObservableProperty] private string _rowCount = "0";
     [ObservableProperty] private string _customerCount = "0";
     [ObservableProperty] private string _bucketCount = "0";
@@ -54,6 +56,10 @@ public partial class ReceivablesAgingReportViewModel : ReportViewModelBase
             var result = await _reportService.GetReceivablesAgingReportAsync(AsOfDate ?? DateTime.Today, SelectedCustomerId);
 
             TotalOutstanding = FormatCurrency(result.TotalOutstanding);
+            ShowTotalOutstandingUsd = result.TotalOutstandingUsd != 0;
+            TotalOutstandingUsd = ShowTotalOutstandingUsd
+                ? FormatCurrency(result.TotalOutstandingUsd, AccountingCurrency.USD)
+                : "—";
             RowCount = result.RowCount.ToString("N0");
             CustomerCount = result.CustomerCount.ToString("N0");
             BucketCount = result.Buckets.Count.ToString("N0");

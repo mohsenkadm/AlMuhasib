@@ -1,8 +1,11 @@
+using AlMuhasib.Core.Enums;
+
 namespace AlMuhasib.Core;
 
 /// <summary>
 /// معادلة موحّدة لرصيد المورد (الذمم الدائنة) بين سطح المكتب والسحابة.
 /// الرصيد المستحق = متبقي فواتير المشتريات الآجلة − سندات الصرف غير المطبّقة.
+/// التسوية تتم لكل عملة على حدة.
 /// </summary>
 public static class SupplierBalanceHelper
 {
@@ -21,9 +24,15 @@ public static class SupplierBalanceHelper
         => Math.Max(0, Math.Max(0, creditInvoiceRemaining) - Math.Max(0, unappliedPayments));
 
     /// <summary>
-    /// توزيع FIFO لمبلغ سند صرف على فواتير مشتريات آجلة مفتوحة.
-    /// يُرجع التحديثات: (Id, NewPaid, NewRemaining, IsCreditPaid).
+    /// توزيع FIFO لمبلغ سند صرف على فواتير مشتريات آجلة بنفس العملة فقط.
     /// </summary>
+    public static List<(int Id, decimal PaidAmount, decimal RemainingAmount, bool IsCreditPaid)> AllocateToPurchaseInvoices(
+        IEnumerable<(int Id, DateTime Date, decimal NetAmount, decimal PaidAmount, decimal RemainingAmount, AccountingCurrency Currency)> invoices,
+        decimal amount,
+        AccountingCurrency currency)
+        => CustomerBalanceHelper.AllocateToCreditInvoices(invoices, amount, currency);
+
+    /// <summary>توافق خلفي: يفترض الدينار.</summary>
     public static List<(int Id, decimal PaidAmount, decimal RemainingAmount, bool IsCreditPaid)> AllocateToPurchaseInvoices(
         IEnumerable<(int Id, DateTime Date, decimal NetAmount, decimal PaidAmount, decimal RemainingAmount)> invoices,
         decimal amount)
@@ -48,7 +57,6 @@ public static class SupplierBalanceHelper
         if (paymentsBySupplier.Count == 0)
             return list.Where(r => getRemaining(r) > 0).ToList();
 
-        // حافظ على ترتيب الصفوف كما ورد (عادةً حسب الاستحقاق) لكل مورد
         var result = new List<T>(list.Count);
         var bySupplier = list
             .Select((row, index) => (row, index))

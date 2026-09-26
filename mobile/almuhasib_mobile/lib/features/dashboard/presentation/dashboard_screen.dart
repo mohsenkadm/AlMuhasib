@@ -78,7 +78,17 @@ class _DashboardBody extends StatelessWidget {
   final String companyName;
 
   double get _totalCash =>
-      data.cashBoxes.fold<double>(0, (sum, box) => sum + box.balance);
+      data.cashBalanceIqd ??
+      data.cashBoxes
+          .where((b) => b.currency == 0)
+          .fold<double>(0, (sum, box) => sum + box.balance);
+
+  double get _totalCashUsd =>
+      data.cashBalanceUsd != 0
+          ? data.cashBalanceUsd
+          : data.cashBoxes
+              .where((b) => b.currency == 1)
+              .fold<double>(0, (sum, box) => sum + box.balance);
 
   double get _totalLiquidity => _totalCash + data.bankBalance;
 
@@ -131,7 +141,8 @@ class _DashboardBody extends StatelessWidget {
           title: 'total_liquidity'.tr(),
           value: formatCurrency(_totalLiquidity),
           subtitle:
-              '${'cash_total'.tr()}: ${formatCurrency(_totalCash)}  ·  ${'bank_balance'.tr()}: ${formatCurrency(data.bankBalance)}',
+              '${'cash_total'.tr()}: ${formatCurrency(_totalCash)}  ·  ${'bank_balance'.tr()}: ${formatCurrency(data.bankBalance)}'
+              '${_totalCashUsd > 0 || data.bankBalanceUsd > 0 ? '\nUSD: ${formatCurrency(_totalCashUsd)} / ${formatCurrency(data.bankBalanceUsd)}' : ''}',
           trendLabel:
               '${'inventory_value'.tr()} ${formatCurrency(data.totalInventoryValue)}',
           trendPositive: true,
@@ -257,7 +268,8 @@ class _DashboardBody extends StatelessWidget {
           _SectionHeader(
             title: 'cash_boxes'.tr(),
             subtitle:
-                '${'cash_total'.tr()}: ${formatCurrency(_totalCash)}',
+                '${'cash_total'.tr()}: ${formatCurrency(_totalCash)}'
+                '${_totalCashUsd > 0 ? '  ·  USD: ${formatCurrency(_totalCashUsd)}' : ''}',
           ).fadeSlideIn(delayMs: 170),
           const SizedBox(height: 10),
           AppChartCard(
@@ -265,7 +277,7 @@ class _DashboardBody extends StatelessWidget {
             height: 180,
             child: AppDonutChart(
               sections: data.cashBoxes
-                  .where((c) => c.balance > 0)
+                  .where((c) => c.currency == 0 && c.balance > 0)
                   .toList()
                   .asMap()
                   .entries
@@ -406,7 +418,8 @@ class _DashboardBody extends StatelessWidget {
           _SectionHeader(
             title: 'cash_box_balances'.tr(),
             subtitle:
-                '${'cash_total'.tr()}: ${formatCurrency(_totalCash)}',
+                '${'cash_total'.tr()}: ${formatCurrency(_totalCash)}'
+                '${_totalCashUsd > 0 ? '  ·  USD: ${formatCurrency(_totalCashUsd)}' : ''}',
           ),
           const SizedBox(height: 8),
           ...data.cashBoxes.toList().asMap().entries.map(
@@ -416,6 +429,7 @@ class _DashboardBody extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 10),
                 child: AppEntityCard(
                   title: c.name,
+                  subtitle: currencyCodeLabel(c.currency),
                   leading: const _IconBadge(
                     icon: Icons.account_balance_wallet_outlined,
                     color: AppColors.moduleCyan,

@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -36,10 +37,15 @@ public class CustomerStatementQuickService : ICustomerStatementQuickService
             .FirstOrDefaultAsync(cancellationToken);
 
         var overdue = await context.Installments.AsNoTracking()
-            .Include(i => i.InstallmentPlan)
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Invoice)
             .Where(i => i.InstallmentPlan!.CustomerId == customerId
                         && i.Status == InstallmentStatus.Overdue
                         && i.RemainingAmount > 0)
+            .Select(i => new
+            {
+                i.RemainingAmount,
+                Currency = i.InstallmentPlan!.Invoice!.Currency
+            })
             .ToListAsync(cancellationToken);
 
         return new CustomerQuickStatementResult
@@ -48,17 +54,26 @@ public class CustomerStatementQuickService : ICustomerStatementQuickService
             CustomerName = statement.CustomerName,
             Phone = phone,
             Balance = statement.Balance,
+            BalanceUsd = statement.BalanceUsd,
             TotalDebit = statement.TotalDebit,
             TotalCredit = statement.TotalCredit,
+            TotalDebitUsd = statement.TotalDebitUsd,
+            TotalCreditUsd = statement.TotalCreditUsd,
             OverdueInstallmentCount = overdue.Count,
-            OverdueInstallmentAmount = overdue.Sum(i => i.RemainingAmount),
+            OverdueInstallmentAmount = overdue
+                .Where(i => i.Currency == AccountingCurrency.IQD)
+                .Sum(i => i.RemainingAmount),
+            OverdueInstallmentAmountUsd = overdue
+                .Where(i => i.Currency == AccountingCurrency.USD)
+                .Sum(i => i.RemainingAmount),
             Lines = statement.Rows.Select(r => new CustomerQuickStatementLine
             {
                 Date = r.Date,
                 Description = r.Description,
                 Debit = r.Debit,
                 Credit = r.Credit,
-                RunningBalance = r.RunningBalance
+                RunningBalance = r.RunningBalance,
+                CurrencyLabel = AccountingCurrencyHelper.GetLabel(r.Currency)
             }).ToList()
         };
     }
@@ -89,41 +104,58 @@ public class CustomerStatementQuickService : ICustomerStatementQuickService
     public void Print(int customerId)
     {
         var data = GetStatementAsync(customerId).GetAwaiter().GetResult();
-        var cols = new[] { "التاريخ", "البيان", "مدين", "دائن", "الرصيد" };
+        var cols = new[] { "التاريخ", "البيان", "العملة", "مدين", "دائن", "الرصيد" };
         var rows = data.Lines.Select(r => new object[]
         {
-            r.Date.ToString("yyyy/MM/dd"), r.Description, r.Debit, r.Credit, r.RunningBalance
+            r.Date.ToString("yyyy/MM/dd"), r.Description, r.CurrencyLabel, r.Debit, r.Credit, r.RunningBalance
         }).ToList();
-        _exportService.PrintTable($"كشف حساب {data.CustomerName}", cols, rows,
-        [
-            $"الرصيد: {data.Balance:N0} د.ع",
-            $"مدين: {data.TotalDebit:N0} د.ع",
-            $"دائن: {data.TotalCredit:N0} د.ع"
-        ]);
+        _exportService.PrintTable($"كشف حساب {data.CustomerName}", cols, rows, BuildSummaryLines(data));
     }
 
-    public static StatementPrintModel BuildStatementModel(CustomerQuickStatementResult data) =>
-        new()
+    public static StatementPrintModel BuildStatementModel(CustomerQuickStatementResult data)
+    {
+        return new StatementPrintModel
         {
             Title = $"كشف حساب — {data.CustomerName}",
             PartyName = data.CustomerName,
             PartyPhone = data.Phone,
             FromDate = DateTime.Today.AddYears(-2),
             ToDate = DateTime.Today,
-            Columns = ["التاريخ", "البيان", "مدين", "دائن", "الرصيد"],
+            Columns = ["التاريخ", "البيان", "العملة", "مدين", "دائن", "الرصيد"],
             Rows = data.Lines.Select(r => new object[]
             {
                 r.Date.ToString("yyyy/MM/dd"),
                 r.Description,
+                r.CurrencyLabel,
                 r.Debit,
                 r.Credit,
                 r.RunningBalance
             }).ToList(),
-            SummaryLines =
-            [
-                $"الرصيد: {data.Balance:N0} د.ع",
-                $"إجمالي المدين: {data.TotalDebit:N0} د.ع",
-                $"إجمالي الدائن: {data.TotalCredit:N0} د.ع"
-            ]
+            SummaryLines = BuildSummaryLines(data)
         };
+    }
+
+    private static List<string> BuildSummaryLines(CustomerQuickStatementResult data)
+    {
+        var summary = new List<string>
+        {
+            $"الرصيد د.ع: {data.Balance:N0}",
+            $"مدين د.ع: {data.TotalDebit:N0}",
+            $"دائن د.ع: {data.TotalCredit:N0}"
+        };
+        if (data.BalanceUsd != 0 || data.TotalDebitUsd != 0 || data.TotalCreditUsd != 0)
+        {
+            summary.Insert(1, $"الرصيد $: {data.BalanceUsd:N2}");
+            summary.Add($"مدين $: {data.TotalDebitUsd:N2}");
+            summary.Add($"دائن $: {data.TotalCreditUsd:N2}");
+        }
+        if (data.OverdueInstallmentCount > 0)
+        {
+            var overdue = $"أقساط متأخرة: {data.OverdueInstallmentCount} | {data.OverdueInstallmentAmount:N0} د.ع";
+            if (data.OverdueInstallmentAmountUsd != 0)
+                overdue += $" | {data.OverdueInstallmentAmountUsd:N2} $";
+            summary.Add(overdue);
+        }
+        return summary;
+    }
 }

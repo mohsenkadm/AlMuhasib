@@ -121,6 +121,22 @@ public class InstallmentService : IInstallmentService
             if (amount > installment.RemainingAmount)
                 throw new InvalidOperationException($"مبلغ الدفع ({amount:N0}) أكبر من المتبقي ({installment.RemainingAmount:N0})");
 
+            var cashBox = await context.CashBoxes.FindAsync(cashBoxId)
+                ?? throw new InvalidOperationException("القاصة غير موجودة");
+
+            if (installment.InstallmentPlan?.InvoiceId is int invoiceId)
+            {
+                var invoiceCurrency = await context.Invoices.AsNoTracking()
+                    .Where(i => i.Id == invoiceId)
+                    .Select(i => (AccountingCurrency?)i.Currency)
+                    .FirstOrDefaultAsync();
+                if (invoiceCurrency is not null)
+                {
+                    AccountingCurrencyRules.EnsureSameCurrency(
+                        invoiceCurrency.Value, cashBox.Currency, "فاتورة القسط", "القاصة");
+                }
+            }
+
             installment.PaidAmount += amount;
             installment.RemainingAmount = installment.Amount - installment.PaidAmount;
             installment.CashBoxId = cashBoxId;
@@ -129,13 +145,9 @@ public class InstallmentService : IInstallmentService
             installment.UpdatedAt = DateTime.UtcNow;
             installment.Status = installment.RemainingAmount <= 0 ? InstallmentStatus.Paid : InstallmentStatus.PartiallyPaid;
 
-            var cashBox = await context.CashBoxes.FindAsync(cashBoxId);
-            if (cashBox is not null)
-            {
-                cashBox.Balance += amount;
-                cashBox.UpdatedBy = username;
-                cashBox.UpdatedAt = DateTime.UtcNow;
-            }
+            cashBox.Balance += amount;
+            cashBox.UpdatedBy = username;
+            cashBox.UpdatedAt = DateTime.UtcNow;
             await context.SaveChangesAsync();
 
             if (_currentUserService.UserId.HasValue)
@@ -211,15 +223,26 @@ public class InstallmentService : IInstallmentService
             throw new InvalidOperationException("مبلغ التسديد يجب أن يكون أكبر من صفر");
 
         await using var context = await _contextFactory.CreateDbContextAsync();
+        var cashBoxCurrency = await context.CashBoxes.AsNoTracking()
+            .Where(c => c.Id == cashBoxId)
+            .Select(c => (AccountingCurrency?)c.Currency)
+            .FirstOrDefaultAsync()
+            ?? throw new InvalidOperationException("القاصة غير موجودة");
+
+        // أقساط بنفس عملة القاصة فقط — منع خلط دينار/دولار في التسديد الجماعي
         var unpaid = await context.Installments
-            .Include(i => i.InstallmentPlan)
-            .Where(i => i.InstallmentPlan.CustomerId == customerId && i.RemainingAmount > 0)
+            .Include(i => i.InstallmentPlan!)
+                .ThenInclude(p => p.Invoice)
+            .Where(i => i.InstallmentPlan!.CustomerId == customerId &&
+                        i.RemainingAmount > 0 &&
+                        i.InstallmentPlan!.Invoice!.Currency == cashBoxCurrency)
             .OrderBy(i => i.DueDate)
             .ThenBy(i => i.Id)
             .ToListAsync();
 
         if (unpaid.Count == 0)
-            throw new InvalidOperationException("لا توجد أقساط مستحقة لهذا العميل");
+            throw new InvalidOperationException(
+                $"لا توجد أقساط مستحقة لهذا العميل بعملة {AccountingCurrencyHelper.GetDisplayName(cashBoxCurrency)}");
 
         var remainingToApply = amount;
         var applied = 0m;
@@ -460,7 +483,8 @@ public class InstallmentService : IInstallmentService
         string? searchTerm,
         IReadOnlyCollection<InstallmentStatus>? statuses)
     {
-        var query = context.Installments.AsNoTracking().AsQueryable();
+        var query = context.Installments.AsNoTracking()
+            .Where(i => i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD);
 
         if (statuses is { Count: > 0 })
         {
@@ -560,6 +584,9 @@ public class InstallmentService : IInstallmentService
                 CustomerId = customerId,
                 WarehouseId = warehouse.Id,
                 PaymentMethod = PaymentMethod.Installment,
+                Currency = request.Currency,
+                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
+                    request.Currency, request.FxRate, "رصيد افتتاحي أقساط"),
                 TotalAmount = request.TotalAmount,
                 DiscountAmount = 0,
                 NetAmount = request.TotalAmount,
@@ -660,6 +687,8 @@ public class InstallmentService : IInstallmentService
             throw new InvalidOperationException("عدد الأقساط المسددة لا يمكن أن يتجاوز إجمالي الأقساط");
         if (request.CustomerId is null && string.IsNullOrWhiteSpace(request.CustomerName))
             throw new InvalidOperationException("يجب اختيار زبون أو إدخال اسمه");
+        AccountingCurrencyRules.EnsureValidFxRate(request.Currency, request.FxRate, "رصيد افتتاحي أقساط");
+        request.TotalAmount = AccountingCurrencyHelper.NormalizeAmount(request.TotalAmount, request.Currency);
     }
 
     private static async Task<int> ResolveCustomerIdAsync(

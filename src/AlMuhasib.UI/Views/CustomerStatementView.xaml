@@ -45,7 +45,7 @@
                 <TextBlock Text="كشف حساب عميل" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
 
                 <!-- ═══ Stat Cards ═══ -->
-                <UniformGrid Columns="4" Margin="0,0,0,20">
+                <UniformGrid Columns="5" Margin="0,0,0,20">
                     <controls:AnimatedStatCard
                         Title="اسم العميل"
                         TextValue="{Binding CustomerName}"
@@ -68,12 +68,20 @@
                         IconForeground="#2E7D32"
                         ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard
-                        Title="الرصيد"
+                        Title="الرصيد د.ع"
                         TextValue="{Binding Balance}"
                         Icon="ScaleBalance"
                         IconBackground="{DynamicResource AccentLightBrush}"
                         IconForeground="{DynamicResource AccentBrush}"
                         ValueForeground="{DynamicResource AccentBrush}"/>
+                    <controls:AnimatedStatCard
+                        Title="الرصيد $"
+                        TextValue="{Binding BalanceUsd}"
+                        Icon="CurrencyUsd"
+                        IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
+                        IconForeground="#1565C0"
+                        ValueForeground="#1565C0"
+                        Visibility="{Binding ShowBalanceUsd, Converter={StaticResource BoolToVis}}"/>
                 </UniformGrid>
 
                 <!-- ═══ Filter Bar ═══ -->
@@ -140,6 +148,8 @@
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Date"/>
                                 <DataGridTextColumn Header="البيان" Binding="{Binding Description}" Width="*"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Description"/>
+                                <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrencyLabel"/>
                                 <DataGridTextColumn Header="مدين" Binding="{Binding Debit, StringFormat=N0}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Debit"/>
                                 <DataGridTextColumn Header="دائن" Binding="{Binding Credit, StringFormat=N0}" Width="120"

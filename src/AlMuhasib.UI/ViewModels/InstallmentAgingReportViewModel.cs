@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Charts;
@@ -14,6 +15,8 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class InstallmentAgingReportViewModel : ReportViewModelBase
 {
     [ObservableProperty] private string _totalOutstanding = "0";
+    [ObservableProperty] private string _totalOutstandingUsd = "0";
+    [ObservableProperty] private bool _showTotalOutstandingUsd;
     [ObservableProperty] private string _installmentCount = "0";
     [ObservableProperty] private string _customerCount = "0";
     [ObservableProperty] private DateTime _asOfDate = DateTime.Today;
@@ -62,6 +65,10 @@ public partial class InstallmentAgingReportViewModel : ReportViewModelBase
             var result = await _reportService.GetInstallmentAgingReportAsync(AsOfDate, SelectedCustomerId);
 
             TotalOutstanding = FormatCurrency(result.TotalOutstanding);
+            ShowTotalOutstandingUsd = result.TotalOutstandingUsd != 0;
+            TotalOutstandingUsd = ShowTotalOutstandingUsd
+                ? FormatCurrency(result.TotalOutstandingUsd, AccountingCurrency.USD)
+                : "0";
             InstallmentCount = result.InstallmentCount.ToString("N0");
             CustomerCount = result.CustomerCount.ToString("N0");
 
@@ -95,10 +102,10 @@ public partial class InstallmentAgingReportViewModel : ReportViewModelBase
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "أعمار_الأقساط.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "العميل", "الهاتف", "الخطة", "الاستحقاق", "المبلغ", "المتبقي", "أيام التأخير", "الفئة" };
+        var cols = new[] { "العميل", "الهاتف", "الخطة", "العملة", "الاستحقاق", "المبلغ", "المتبقي", "أيام التأخير", "الفئة" };
         var rows = _allRows.Select(r => new object[]
         {
-            r.CustomerName, r.Phone, r.PlanNumber,
+            r.CustomerName, r.Phone, r.PlanNumber, r.CurrencyLabel,
             r.DueDate.ToString("yyyy/MM/dd"), r.Amount, r.RemainingAmount, r.DaysOverdue, r.AgingBucket
         }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "أعمار الأقساط", cols, rows);
@@ -108,11 +115,13 @@ public partial class InstallmentAgingReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "العميل", "الهاتف", "الخطة", "الاستحقاق", "المبلغ", "المتبقي", "أيام التأخير", "الفئة" };
+        var cols = new[] { "العميل", "الهاتف", "الخطة", "العملة", "الاستحقاق", "المبلغ", "المتبقي", "أيام التأخير", "الفئة" };
         var rows = _allRows.Select(r => new object[]
         {
-            r.CustomerName, r.Phone, r.PlanNumber,
-            r.DueDate.ToString("yyyy/MM/dd"), r.Amount.ToString("N0"), r.RemainingAmount.ToString("N0"),
+            r.CustomerName, r.Phone, r.PlanNumber, r.CurrencyLabel,
+            r.DueDate.ToString("yyyy/MM/dd"),
+            r.Currency == AccountingCurrency.USD ? r.Amount.ToString("N2") : r.Amount.ToString("N0"),
+            r.Currency == AccountingCurrency.USD ? r.RemainingAmount.ToString("N2") : r.RemainingAmount.ToString("N0"),
             r.DaysOverdue, r.AgingBucket
         }).ToList();
         _exportService.PrintTable("أعمار ذمم الأقساط", cols, rows);

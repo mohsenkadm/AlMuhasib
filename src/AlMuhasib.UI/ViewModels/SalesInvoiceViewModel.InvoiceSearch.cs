@@ -194,6 +194,8 @@ public partial class SalesInvoiceViewModel
         else
             CreditDueDate = null;
 
+        ApplyCurrencyFromDocument(invoice.Currency, invoice.FxRate);
+
         if (IsCashPayment && invoice.CashBoxId.HasValue)
             SelectedCashBox = CashBoxes.FirstOrDefault(c => c.Id == invoice.CashBoxId);
 

@@ -44,12 +44,20 @@
 
                 <UniformGrid Columns="4" Margin="0,0,0,20">
                     <controls:AnimatedStatCard
-                        Title="إجمالي المستحق"
+                        Title="إجمالي المستحق (د.ع)"
                         TextValue="{Binding TotalOutstanding}"
                         Icon="AccountCash"
                         IconBackground="{DynamicResource DashboardKpiRedLightBrush}"
                         IconForeground="#C62828"
                         ValueForeground="#C62828"/>
+                    <controls:AnimatedStatCard
+                        Title="إجمالي المستحق ($)"
+                        TextValue="{Binding TotalOutstandingUsd}"
+                        Icon="CurrencyUsd"
+                        IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
+                        IconForeground="#2E7D32"
+                        ValueForeground="#2E7D32"
+                        Visibility="{Binding ShowTotalOutstandingUsd, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     <controls:AnimatedStatCard
                         Title="عدد البنود"
                         TextValue="{Binding RowCount}"

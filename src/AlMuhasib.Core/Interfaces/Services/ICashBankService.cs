@@ -8,14 +8,14 @@ public interface ICashBankService
 {
     // ── CashBoxes ────────────────────────────────────────
     Task<IEnumerable<CashBox>> GetAllCashBoxesAsync();
-    Task<CashBox> AddCashBoxAsync(string name, decimal initialBalance = 0);
+    Task<CashBox> AddCashBoxAsync(string name, decimal initialBalance = 0, AccountingCurrency currency = AccountingCurrency.IQD);
     Task UpdateCashBoxAsync(int id, string name);
     Task DeleteCashBoxAsync(int id);
     Task AdjustCashBoxBalanceAsync(int cashBoxId, decimal delta, string reason, DateTime date);
 
     // ── BankAccounts ─────────────────────────────────────
     Task<IEnumerable<BankAccount>> GetAllBankAccountsAsync();
-    Task<BankAccount> AddBankAccountAsync(string name, string? accountNumber, decimal initialBalance = 0);
+    Task<BankAccount> AddBankAccountAsync(string name, string? accountNumber, decimal initialBalance = 0, AccountingCurrency currency = AccountingCurrency.IQD);
     Task UpdateBankAccountAsync(int id, string name, string? accountNumber);
     Task DeleteBankAccountAsync(int id);
     Task AdjustBankBalanceAsync(int bankAccountId, decimal delta, string reason, DateTime date);

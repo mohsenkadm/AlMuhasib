@@ -18,6 +18,12 @@ public class TransferConfiguration : IEntityTypeConfiguration<Transfer>
             .HasConversion<string>()
             .HasMaxLength(20);
 
+        builder.Property(t => t.Currency)
+            .HasConversion<string>()
+            .HasMaxLength(10)
+            .HasDefaultValue(AlMuhasib.Core.Enums.AccountingCurrency.IQD);
+
+        builder.Property(t => t.FxRate).HasPrecision(18, 4);
         builder.Property(t => t.Amount).HasPrecision(18, 2);
         builder.Property(t => t.Notes).HasMaxLength(1000);
 

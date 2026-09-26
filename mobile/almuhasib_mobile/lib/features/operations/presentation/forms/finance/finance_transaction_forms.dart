@@ -13,10 +13,13 @@ class ExpenseFormController extends GetxController {
   final formKey = GlobalKey<FormState>();
   final amountController = TextEditingController();
   final notesController = TextEditingController();
+  final fxRateController = TextEditingController();
   final date = DateTime.now().obs;
   final expenseType = Rxn<LookupItem>();
   final cashBox = Rxn<LookupItem>();
   final saving = false.obs;
+
+  int get selectedCurrency => lookupCurrencyCode(cashBox.value?.extra);
 
   @override
   void onInit() {
@@ -48,7 +51,12 @@ class ExpenseFormController extends GetxController {
       title: 'select_cashbox'.tr(),
       loadItems: (s) => AppServices.data.getCashBoxes(search: s),
     );
-    if (selected != null) cashBox.value = selected;
+    if (selected != null) {
+      cashBox.value = selected;
+      if (lookupCurrencyCode(selected.extra) == 0) {
+        fxRateController.clear();
+      }
+    }
   }
 
   Future<void> pickDate(BuildContext context) async {
@@ -76,11 +84,21 @@ class ExpenseFormController extends GetxController {
       AppExceptionHandler.showError('invalid_amount'.tr());
       return;
     }
+    final currency = selectedCurrency;
+    final fxRate = currency == 1
+        ? (double.tryParse(fxRateController.text) ?? 0)
+        : 1.0;
+    if (currency == 1 && fxRate <= 0) {
+      AppExceptionHandler.showError('fx_rate_required'.tr());
+      return;
+    }
     saving.value = true;
     try {
       final response = await AppServices.operations.createExpense(
         CreateExpenseRequest(
           expenseTypeSyncId: expenseType.value!.syncId,
+          currency: currency,
+          fxRate: fxRate,
           amount: amount,
           date: date.value,
           cashBoxSyncId: cashBox.value!.syncId,
@@ -106,6 +124,7 @@ class ExpenseFormController extends GetxController {
   void onClose() {
     amountController.dispose();
     notesController.dispose();
+    fxRateController.dispose();
     super.onClose();
   }
 }
@@ -162,11 +181,39 @@ class ExpenseFormScreen extends GetView<ExpenseFormController> {
                 leading: const Icon(Icons.account_balance_wallet_outlined),
                 title: Text('cash_box'.tr()),
                 subtitle: Text(
-                  controller.cashBox.value?.name ?? 'select_cashbox'.tr(),
+                  controller.cashBox.value == null
+                      ? 'select_cashbox'.tr()
+                      : '${controller.cashBox.value!.name} (${currencyCodeLabel(controller.selectedCurrency)})',
                 ),
                 onTap: () => controller.pickCashBox(context),
               ),
             ),
+            Obx(() {
+              if (controller.selectedCurrency != 1) {
+                return const SizedBox.shrink();
+              }
+              return Column(
+                children: [
+                  const SizedBox(height: AppSpacing.md),
+                  AppTextField(
+                    controller: controller.fxRateController,
+                    label: 'fx_rate'.tr(),
+                    prefixIcon: Icons.currency_exchange,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (v) {
+                      if (controller.selectedCurrency != 1) return null;
+                      final parsed = double.tryParse(v ?? '');
+                      if (parsed == null || parsed <= 0) {
+                        return 'fx_rate_required'.tr();
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              );
+            }),
             AppTextField(
               controller: controller.notesController,
               label: 'notes'.tr(),
@@ -184,12 +231,15 @@ class TransferFormController extends GetxController {
   final formKey = GlobalKey<FormState>();
   final amountController = TextEditingController();
   final notesController = TextEditingController();
+  final fxRateController = TextEditingController();
   final fromType = 0.obs;
   final toType = 1.obs;
   final fromAccount = Rxn<LookupItem>();
   final toAccount = Rxn<LookupItem>();
   final date = DateTime.now().obs;
   final saving = false.obs;
+
+  int get selectedCurrency => lookupCurrencyCode(fromAccount.value?.extra);
 
   Future<void> pickFrom(BuildContext context) async {
     final selected = await showLookupPickerSheet<LookupItem>(
@@ -201,18 +251,32 @@ class TransferFormController extends GetxController {
           ? AppServices.data.getCashBoxes(search: s)
           : AppServices.data.getBankAccounts(search: s),
     );
-    if (selected != null) fromAccount.value = selected;
+    if (selected != null) {
+      fromAccount.value = selected;
+      toAccount.value = null;
+      if (lookupCurrencyCode(selected.extra) == 0) {
+        fxRateController.clear();
+      }
+    }
   }
 
   Future<void> pickTo(BuildContext context) async {
+    final fromCurrency = selectedCurrency;
+    final code = currencyCodeLabel(fromCurrency);
     final selected = await showLookupPickerSheet<LookupItem>(
       context: context,
       title: toType.value == 0
           ? 'select_cashbox'.tr()
           : 'select_bank_account'.tr(),
-      loadItems: (s) => toType.value == 0
-          ? AppServices.data.getCashBoxes(search: s)
-          : AppServices.data.getBankAccounts(search: s),
+      loadItems: (s) async {
+        final items = toType.value == 0
+            ? await AppServices.data.getCashBoxes(search: s)
+            : await AppServices.data.getBankAccounts(search: s);
+        if (fromAccount.value == null) return items;
+        return items
+            .where((b) => (b.extra ?? 'IQD').toUpperCase() == code)
+            .toList();
+      },
     );
     if (selected != null) toAccount.value = selected;
   }
@@ -238,6 +302,19 @@ class TransferFormController extends GetxController {
       AppExceptionHandler.showError('invalid_amount'.tr());
       return;
     }
+    final currency = selectedCurrency;
+    final toCurrency = lookupCurrencyCode(toAccount.value!.extra);
+    if (currency != toCurrency) {
+      AppExceptionHandler.showError('currency_mismatch'.tr());
+      return;
+    }
+    final fxRate = currency == 1
+        ? (double.tryParse(fxRateController.text) ?? 0)
+        : 1.0;
+    if (currency == 1 && fxRate <= 0) {
+      AppExceptionHandler.showError('fx_rate_required'.tr());
+      return;
+    }
     saving.value = true;
     try {
       final response = await AppServices.operations.createTransfer(
@@ -246,6 +323,8 @@ class TransferFormController extends GetxController {
           fromSyncId: fromAccount.value!.syncId,
           toType: toType.value,
           toSyncId: toAccount.value!.syncId,
+          currency: currency,
+          fxRate: fxRate,
           amount: amount,
           date: date.value,
           notes: notesController.text.trim().isEmpty
@@ -270,6 +349,7 @@ class TransferFormController extends GetxController {
   void onClose() {
     amountController.dispose();
     notesController.dispose();
+    fxRateController.dispose();
     super.onClose();
   }
 }
@@ -311,7 +391,9 @@ class TransferFormScreen extends GetView<TransferFormController> {
                 leading: const Icon(Icons.outbox_outlined),
                 title: Text('from_account'.tr()),
                 subtitle: Text(
-                  controller.fromAccount.value?.name ?? 'select'.tr(),
+                  controller.fromAccount.value == null
+                      ? 'select'.tr()
+                      : '${controller.fromAccount.value!.name} (${currencyCodeLabel(controller.selectedCurrency)})',
                 ),
                 onTap: () => controller.pickFrom(context),
               ),
@@ -351,6 +433,32 @@ class TransferFormScreen extends GetView<TransferFormController> {
               validator: (v) =>
                   v == null || v.trim().isEmpty ? 'required_field'.tr() : null,
             ),
+            Obx(() {
+              if (controller.selectedCurrency != 1) {
+                return const SizedBox.shrink();
+              }
+              return Column(
+                children: [
+                  const SizedBox(height: AppSpacing.md),
+                  AppTextField(
+                    controller: controller.fxRateController,
+                    label: 'fx_rate'.tr(),
+                    prefixIcon: Icons.currency_exchange,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    validator: (v) {
+                      if (controller.selectedCurrency != 1) return null;
+                      final parsed = double.tryParse(v ?? '');
+                      if (parsed == null || parsed <= 0) {
+                        return 'fx_rate_required'.tr();
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              );
+            }),
             const SizedBox(height: AppSpacing.md),
             Obx(
               () => ListTile(

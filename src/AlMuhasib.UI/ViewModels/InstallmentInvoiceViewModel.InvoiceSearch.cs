@@ -175,7 +175,15 @@ public partial class InstallmentInvoiceViewModel
             : null;
 
         if (invoice.CashBoxId.HasValue && invoice.CashBoxId > 0)
-            SelectedCashBox = CashBoxes.FirstOrDefault(c => c.Id == invoice.CashBoxId);
+        {
+            SelectedCashBox = CashBoxes.FirstOrDefault(c => c.Id == invoice.CashBoxId)
+                ?? CashBoxes.FirstOrDefault(c => c.Currency == invoice.Currency);
+        }
+        else if (invoice.Currency != AccountingCurrency.IQD)
+        {
+            SelectedCashBox = CashBoxes.FirstOrDefault(c => c.Currency == invoice.Currency)
+                ?? SelectedCashBox;
+        }
 
         if (plan is not null)
         {

@@ -14,10 +14,14 @@ public class CustomerQuickStatementResult
     public string? CustomerFileNumber { get; set; }
     public string? Phone { get; set; }
     public decimal Balance { get; set; }
+    public decimal BalanceUsd { get; set; }
     public decimal TotalDebit { get; set; }
     public decimal TotalCredit { get; set; }
+    public decimal TotalDebitUsd { get; set; }
+    public decimal TotalCreditUsd { get; set; }
     public int OverdueInstallmentCount { get; set; }
     public decimal OverdueInstallmentAmount { get; set; }
+    public decimal OverdueInstallmentAmountUsd { get; set; }
     public List<CustomerQuickStatementLine> Lines { get; set; } = [];
 }
 
@@ -28,4 +32,5 @@ public class CustomerQuickStatementLine
     public decimal Debit { get; set; }
     public decimal Credit { get; set; }
     public decimal RunningBalance { get; set; }
+    public string CurrencyLabel { get; set; } = "د.ع";
 }

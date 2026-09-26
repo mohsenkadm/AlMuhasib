@@ -29,6 +29,8 @@ public partial class MigrationWizardViewModel : ViewModelBase
     private readonly IInstallmentService _installmentService;
     private readonly HashSet<MigrationStepKind> _savedSteps = [];
     private bool _needsCapital = true;
+    private bool _needsPricingTypes = true;
+    private bool _needsProductPricing = true;
 
     [ObservableProperty] private int _currentStepIndex;
     [ObservableProperty] private string _statusMessage = string.Empty;
@@ -49,10 +51,13 @@ public partial class MigrationWizardViewModel : ViewModelBase
     [ObservableProperty] private decimal _newRowAmount;
     [ObservableProperty] private decimal _newRowAmount2;
     [ObservableProperty] private decimal _newRowAmount3;
-    [ObservableProperty] private int _newRowInt;
+    [ObservableProperty] private int _newRowInt = 1;
     [ObservableProperty] private int _newRowInt2;
     [ObservableProperty] private DateTime _newRowDate = DateTime.Today;
     [ObservableProperty] private string _newRowKind = "Cash";
+    [ObservableProperty] private string? _selectedWarehouseName;
+    [ObservableProperty] private string _progressText = string.Empty;
+    [ObservableProperty] private double _progressPercent;
 
     public ObservableCollection<MigrationStepInfo> Steps { get; } = [];
     public ObservableCollection<MigrationNamedBalanceRow> CurrentRows { get; } = [];
@@ -60,6 +65,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
     public ObservableCollection<string> AvailableProducts { get; } = [];
     public ObservableCollection<string> AvailablePricingTypes { get; } = [];
     public ObservableCollection<string> AvailableWarehouses { get; } = [];
+    public ObservableCollection<string> AccountKinds { get; } = ["قاصة", "مصرف"];
 
     public int TotalSteps => Steps.Count;
     public MigrationStepInfo? CurrentStepInfo =>
@@ -69,13 +75,51 @@ public partial class MigrationWizardViewModel : ViewModelBase
     public string StepDescription => CurrentStepInfo?.Description ?? "تم إكمال جميع خطوات النقل.";
     public bool CanGoBack => CurrentStepIndex > 0 && !IsCompleted;
     public bool IsLastStep => CurrentStepIndex >= TotalSteps - 1 && TotalSteps > 0;
-    public bool CanGoNext => !IsCompleted;
+    public bool CanGoNext => !IsCompleted && !IsBusy;
+    public bool CanSkip
+    {
+        get
+        {
+            if (IsCompleted || IsBusy || CurrentStepInfo is null) return false;
+            if (CurrentKind is MigrationStepKind.Capital or MigrationStepKind.Warehouses) return false;
+            if (CurrentKind == MigrationStepKind.PricingTypes && _needsPricingTypes) return false;
+            if (CurrentKind == MigrationStepKind.ProductPricing && _needsProductPricing) return false;
+            return CurrentStepInfo.IsOptional;
+        }
+    }
     public bool HasLastResult => LastImportedCount > 0 || LastSkippedCount > 0;
     public bool HasRows => CurrentRows.Count > 0;
     public bool IsCapitalStep => CurrentKind == MigrationStepKind.Capital;
+    public bool IsCashStep => CurrentKind == MigrationStepKind.CashAndBank;
+    public bool IsInvestorsStep => CurrentKind == MigrationStepKind.Investors;
+    public bool IsWarehousesStep => CurrentKind == MigrationStepKind.Warehouses;
+    public bool IsCategoriesStep => CurrentKind == MigrationStepKind.Categories;
+    public bool IsProductsStep => CurrentKind == MigrationStepKind.Products;
+    public bool IsPricingTypesStep => CurrentKind == MigrationStepKind.PricingTypes;
+    public bool IsProductPricingStep => CurrentKind == MigrationStepKind.ProductPricing;
+    public bool IsCustomersStep => CurrentKind == MigrationStepKind.Customers;
+    public bool IsSuppliersStep => CurrentKind == MigrationStepKind.Suppliers;
+    public bool IsExpenseTypesStep => CurrentKind == MigrationStepKind.ExpenseTypes;
+    public bool IsInstallmentsStep => CurrentKind == MigrationStepKind.Installments;
+    public bool IsSimpleNameStep => IsCategoriesStep || IsPricingTypesStep || IsExpenseTypesStep;
     public bool ShowManualEntryForm => IsManualEntryMode && !IsCapitalStep && !IsCompleted;
     public bool ShowExcelPanel => IsExcelMode && !IsCapitalStep && !IsCompleted;
     public bool ShowDataGrid => !IsCapitalStep && HasRows && !IsCompleted;
+    public string EntryHint => CurrentKind switch
+    {
+        MigrationStepKind.CashAndBank => "أدخل اسم القاصة/المصرف والرصيد ثم Enter أو إضافة",
+        MigrationStepKind.Investors => "الاسم + الهاتف + نسبة الربح + الرصيد الافتتاحي",
+        MigrationStepKind.Warehouses => "اسم المخزن والموقع (اختياري)",
+        MigrationStepKind.Categories => "اسم الصنف فقط — يمكن إضافة عدة أصناف بسرعة",
+        MigrationStepKind.Products => "المنتج + الصنف + السعر + الكمية + التكلفة",
+        MigrationStepKind.PricingTypes => "اسم نوع التسعير (مفرد، جملة، وكيل...)",
+        MigrationStepKind.ProductPricing => "اختر المنتج ونوع التسعير وأدخل سعر البيع/الشراء",
+        MigrationStepKind.Customers => "اسم العميل + الهاتف + رقم الملف + الرصيد الآجل",
+        MigrationStepKind.Suppliers => "اسم المورد + الهاتف + الرصيد الآجل",
+        MigrationStepKind.ExpenseTypes => "اسم نوع المصروف",
+        MigrationStepKind.Installments => "الزبون + المبلغ الكلي + عدد الأقساط + المسدد",
+        _ => "أدخل البيانات ثم احفظ قبل الانتقال"
+    };
 
     public MigrationWizardViewModel(
         IUnitOfWork unitOfWork,
@@ -107,70 +151,102 @@ public partial class MigrationWizardViewModel : ViewModelBase
     public override async Task InitializeAsync()
     {
         _needsCapital = !await _unitOfWork.CapitalEntries.AnyAsync();
+        await RefreshPricingNeedFlagsAsync();
         BuildSteps();
         await RefreshLookupsAsync();
+        UpdateProgress();
         NotifyStepProps();
+        await PrepareCurrentStepAsync();
+    }
+
+    private async Task RefreshPricingNeedFlagsAsync()
+    {
+        var types = (await _pricingTypeService.GetActiveAsync()).ToList();
+        _needsPricingTypes = types.Count == 0;
+
+        var productIds = (await _unitOfWork.Products.GetAllAsync()).Select(p => p.Id).ToHashSet();
+        if (productIds.Count == 0)
+        {
+            // ستُضاف المنتجات لاحقاً في المعالج — نُبقي خطوة التسعير ظاهرة ومرنة
+            _needsProductPricing = true;
+            return;
+        }
+
+        var pricedProductIds = (await _unitOfWork.ProductPrices.GetAllAsync())
+            .Select(p => p.ProductId)
+            .ToHashSet();
+        _needsProductPricing = productIds.Any(id => !pricedProductIds.Contains(id));
     }
 
     private void BuildSteps()
     {
         Steps.Clear();
-        var defs = new List<(MigrationStepKind Kind, string ShortTitle, string Desc, PackIconKind Icon, bool Optional)>();
+        void Add(MigrationStepKind kind, string shortTitle, string desc, PackIconKind icon, bool optional = true)
+            => Steps.Add(new MigrationStepInfo
+            {
+                Kind = kind,
+                ShortTitle = shortTitle,
+                Description = desc,
+                Icon = icon,
+                IsOptional = optional
+            });
 
         if (_needsCapital)
         {
-            defs.Add((MigrationStepKind.Capital, "رأس المال",
-                "أدخل رأس المال والأرباح الافتتاحية إن لم تكن محفوظة بعد.",
-                PackIconKind.Cash, false));
+            Add(MigrationStepKind.Capital, "رأس المال",
+                "أدخل رأس المال والأرباح الافتتاحية مرة واحدة لبدء النظام.",
+                PackIconKind.Cash, optional: false);
         }
 
-        defs.Add((MigrationStepKind.CashAndBank, "قاصات",
-            "أدخل القاصات وحسابات المصرف مع أرصدتها الافتتاحية (يدوياً أو من Excel).",
-            PackIconKind.SafeSquareOutline, true));
-        defs.Add((MigrationStepKind.Investors, "مستثمرون",
-            "أدخل المستثمرين حتى لو لم يكونوا موجودين مسبقاً مع الرصيد الافتتاحي.",
-            PackIconKind.AccountCash, true));
-        defs.Add((MigrationStepKind.Warehouses, "مخازن",
-            "أنشئ المخازن قبل إدخال المنتجات والأرصدة الافتتاحية.",
-            PackIconKind.Warehouse, false));
-        defs.Add((MigrationStepKind.Categories, "أصناف",
-            "أدخل تصنيفات المنتجات قبل إضافة المنتجات.",
-            PackIconKind.Shape, true));
-        defs.Add((MigrationStepKind.Products, "منتجات",
-            "أدخل المنتجات مع الصنف والسعر المفرد والرصيد الافتتاحي (كمية × تكلفة).",
-            PackIconKind.PackageVariant, true));
-        defs.Add((MigrationStepKind.PricingTypes, "تسعير",
-            "أدخل أنواع التسعير (مفرد، جملة، وكيل...).",
-            PackIconKind.TagMultiple, true));
-        defs.Add((MigrationStepKind.ProductPricing, "أسعار",
-            "حدد أسعار البيع/الشراء للمنتجات المضافة حسب نوع التسعير.",
-            PackIconKind.TagOutline, true));
-        defs.Add((MigrationStepKind.Customers, "عملاء",
-            "أدخل العملاء مع أرصدة افتتاحية آجلة — يُنشأ العميل إن لم يكن موجوداً.",
-            PackIconKind.AccountGroup, true));
-        defs.Add((MigrationStepKind.Suppliers, "موردون",
-            "أدخل الموردين مع أرصدة افتتاحية آجلة — يُنشأ المورد إن لم يكن موجوداً.",
-            PackIconKind.TruckDelivery, true));
-        defs.Add((MigrationStepKind.ExpenseTypes, "مصاريف",
-            "أدخل أنواع المصاريف الافتتاحية للنظام.",
-            PackIconKind.CashMinus, true));
-        defs.Add((MigrationStepKind.Installments, "أقساط",
-            "أدخل أرصدة الأقساط الافتتاحية كما في شاشة أرصدة الأقساط.",
-            PackIconKind.CashClock, true));
+        Add(MigrationStepKind.CashAndBank, "القاصات والمصرف",
+            "أنشئ القاصات وحسابات المصرف مع أرصدتها الافتتاحية.",
+            PackIconKind.SafeSquareOutline);
+        Add(MigrationStepKind.Investors, "المستثمرون",
+            "أضف المستثمرين مع الرصيد الافتتاحي — يُنشأ الاسم إن لم يكن موجوداً.",
+            PackIconKind.AccountCash);
+        Add(MigrationStepKind.Warehouses, "المخازن",
+            "المخزن مطلوب قبل المنتجات والأرصدة والأقساط.",
+            PackIconKind.Warehouse, optional: false);
+        Add(MigrationStepKind.Categories, "الأصناف",
+            "تصنيفات المنتجات (اختياري — يُنشأ «عام» تلقائياً عند الحاجة).",
+            PackIconKind.Shape);
+        Add(MigrationStepKind.Products, "المنتجات",
+            "المنتجات مع الصنف والسعر المفرد والكمية الافتتاحية والتكلفة.",
+            PackIconKind.PackageVariant);
 
-        for (var i = 0; i < defs.Count; i++)
+        // أنواع التسعير: إلزامية إن لم تكن موجودة، وإلا اختيارية لإضافة المزيد
+        Add(MigrationStepKind.PricingTypes, "أنواع التسعير",
+            _needsPricingTypes
+                ? "لا توجد أنواع تسعير بعد — أضفها الآن (مثل: سعر مفرد، جملة، وكيل)."
+                : "أضف أنواع تسعير إضافية أو تخطَّ إن كانت مكتملة.",
+            PackIconKind.TagMultiple,
+            optional: !_needsPricingTypes);
+
+        // تسعير المنتجات: إلزامية إن وُجدت منتجات بلا أسعار
+        Add(MigrationStepKind.ProductPricing, "تسعير المنتجات",
+            _needsProductPricing
+                ? "سعّر المنتجات المضافة — يُنشأ النوع الافتراضي تلقائياً إن لم يوجد."
+                : "حدّث أسعار المنتجات أو تخطَّ إن كانت مسعّرة مسبقاً.",
+            PackIconKind.TagOutline,
+            optional: !_needsProductPricing);
+
+        Add(MigrationStepKind.Customers, "العملاء",
+            "العملاء مع أرصدة آجلة افتتاحية — يُنشأ العميل تلقائياً.",
+            PackIconKind.AccountGroup);
+        Add(MigrationStepKind.Suppliers, "الموردون",
+            "الموردون مع أرصدة آجلة افتتاحية — يُنشأ المورد تلقائياً.",
+            PackIconKind.TruckDelivery);
+        Add(MigrationStepKind.ExpenseTypes, "أنواع المصاريف",
+            "أنواع المصاريف الافتتاحية للنظام.",
+            PackIconKind.CashMinus);
+        Add(MigrationStepKind.Installments, "الأقساط",
+            "أرصدة الأقساط الافتتاحية بنفس منطق شاشة الأرصدة الافتتاحية.",
+            PackIconKind.CashClock);
+
+        for (var i = 0; i < Steps.Count; i++)
         {
-            var d = defs[i];
-            Steps.Add(new MigrationStepInfo
-            {
-                Kind = d.Kind,
-                Title = $"{ToArabicNumeral(i + 1)} — {d.ShortTitle}",
-                ShortTitle = d.ShortTitle,
-                Description = d.Desc,
-                Icon = d.Icon,
-                IsOptional = d.Optional,
-                IsActive = i == 0
-            });
+            Steps[i].Title = $"{ToArabicNumeral(i + 1)} — {Steps[i].ShortTitle}";
+            Steps[i].IsActive = i == 0;
         }
     }
 
@@ -183,12 +259,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
 
     partial void OnCurrentStepIndexChanged(int value)
     {
-        for (var i = 0; i < Steps.Count; i++)
-        {
-            Steps[i].IsActive = i == value;
-            Steps[i].IsCompleted = i < value || _savedSteps.Contains(Steps[i].Kind);
-            Steps[i].IsSaved = _savedSteps.Contains(Steps[i].Kind);
-        }
+        SyncStepFlags();
         CurrentRows.Clear();
         SelectedFilePath = null;
         LastImportedCount = 0;
@@ -196,8 +267,144 @@ public partial class MigrationWizardViewModel : ViewModelBase
         StatusMessage = string.Empty;
         ResetNewRowFields();
         StepTransitionToken++;
+        UpdateProgress();
         NotifyStepProps();
-        _ = RefreshLookupsAsync();
+        _ = PrepareStepAfterNavigationAsync();
+    }
+
+    private async Task PrepareStepAfterNavigationAsync()
+    {
+        await RefreshLookupsAsync();
+        await PrepareCurrentStepAsync();
+        NotifyStepProps();
+    }
+
+    /// <summary>
+    /// يجهّز محتوى الخطوة: يقترح أنواع تسعير إن لم توجد، ويملأ جدول تسعير المنتجات للمنتجات بلا أسعار.
+    /// </summary>
+    private async Task PrepareCurrentStepAsync()
+    {
+        if (CurrentKind is null || IsCompleted) return;
+
+        try
+        {
+            if (CurrentKind == MigrationStepKind.PricingTypes)
+            {
+                await RefreshPricingNeedFlagsAsync();
+                UpdatePricingStepOptionality();
+                if (CurrentRows.Count == 0 && _needsPricingTypes)
+                {
+                    foreach (var name in new[] { "سعر مفرد", "جملة", "وكيل" })
+                        CurrentRows.Add(new MigrationNamedBalanceRow { Name = name });
+                    StatusMessage = "تم اقتراح أنواع تسعير افتراضية — عدّلها ثم احفظ";
+                }
+            }
+            else if (CurrentKind == MigrationStepKind.ProductPricing)
+            {
+                await _pricingTypeService.EnsureDefaultExistsAsync();
+                await RefreshLookupsAsync();
+                await RefreshPricingNeedFlagsAsync();
+                UpdatePricingStepOptionality();
+
+                if (CurrentRows.Count == 0)
+                    await PrefillProductPricingRowsAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"تعذّر تجهيز الخطوة: {ex.Message}";
+        }
+
+        OnPropertyChanged(nameof(HasRows));
+        OnPropertyChanged(nameof(ShowDataGrid));
+        OnPropertyChanged(nameof(CanSkip));
+        OnPropertyChanged(nameof(StepDescription));
+    }
+
+    private void UpdatePricingStepOptionality()
+    {
+        foreach (var step in Steps)
+        {
+            if (step.Kind == MigrationStepKind.PricingTypes)
+            {
+                step.IsOptional = !_needsPricingTypes;
+                step.Description = _needsPricingTypes
+                    ? "لا توجد أنواع تسعير بعد — أضفها الآن (مثل: سعر مفرد، جملة، وكيل)."
+                    : "أضف أنواع تسعير إضافية أو تخطَّ إن كانت مكتملة.";
+            }
+            else if (step.Kind == MigrationStepKind.ProductPricing)
+            {
+                step.IsOptional = !_needsProductPricing;
+                step.Description = _needsProductPricing
+                    ? "سعّر المنتجات المضافة — يُنشأ النوع الافتراضي تلقائياً إن لم يوجد."
+                    : "حدّث أسعار المنتجات أو تخطَّ إن كانت مسعّرة مسبقاً.";
+            }
+        }
+    }
+
+    private async Task PrefillProductPricingRowsAsync()
+    {
+        var products = (await _unitOfWork.Products.GetAllAsync()).ToList();
+        if (products.Count == 0)
+        {
+            StatusMessage = "لا توجد منتجات بعد — أضف منتجات في الخطوة السابقة أو تخطَّ";
+            return;
+        }
+
+        var types = (await _pricingTypeService.GetActiveAsync()).ToList();
+        if (types.Count == 0)
+        {
+            await _pricingTypeService.EnsureDefaultExistsAsync();
+            types = (await _pricingTypeService.GetActiveAsync()).ToList();
+        }
+
+        var defaultType = types.FirstOrDefault(t => t.IsDefault) ?? types.FirstOrDefault();
+        var existingPrices = (await _unitOfWork.ProductPrices.GetAllAsync()).ToList();
+        var pricedKeys = existingPrices
+            .Select(p => (p.ProductId, p.PricingTypeId))
+            .ToHashSet();
+
+        var added = 0;
+        foreach (var product in products)
+        {
+            if (defaultType is null) break;
+            if (pricedKeys.Contains((product.Id, defaultType.Id))) continue;
+
+            var existingUnit = existingPrices.FirstOrDefault(p => p.ProductId == product.Id);
+            CurrentRows.Add(new MigrationNamedBalanceRow
+            {
+                Name = product.Name,
+                ProductName = product.Name,
+                PricingTypeName = defaultType.Name,
+                SalePrice = existingUnit?.SalePrice ?? 0,
+                Amount = existingUnit?.SalePrice ?? 0,
+                PurchasePrice = existingUnit?.PurchasePrice ?? 0,
+                UnitCost = existingUnit?.PurchasePrice ?? 0
+            });
+            added++;
+        }
+
+        // إن كانت كل المنتجات مسعّرة للنوع الافتراضي، اعرض صفوفاً فارغة للأنواع الأخرى عند الحاجة
+        if (added == 0 && _needsProductPricing == false)
+        {
+            StatusMessage = "كل المنتجات لديها أسعار للنوع الافتراضي — يمكنك إضافة تسعير لأنواع أخرى";
+        }
+        else if (added > 0)
+        {
+            StatusMessage = $"تم تجهيز {added} منتج بدون سعر — أكمل الأسعار ثم احفظ";
+            _needsProductPricing = true;
+            UpdatePricingStepOptionality();
+        }
+    }
+
+    private void SyncStepFlags()
+    {
+        for (var i = 0; i < Steps.Count; i++)
+        {
+            Steps[i].IsActive = i == CurrentStepIndex;
+            Steps[i].IsCompleted = i < CurrentStepIndex || _savedSteps.Contains(Steps[i].Kind);
+            Steps[i].IsSaved = _savedSteps.Contains(Steps[i].Kind);
+        }
     }
 
     partial void OnIsManualEntryModeChanged(bool value)
@@ -212,6 +419,20 @@ public partial class MigrationWizardViewModel : ViewModelBase
         NotifyStepProps();
     }
 
+    private void UpdateProgress()
+    {
+        if (TotalSteps == 0)
+        {
+            ProgressText = string.Empty;
+            ProgressPercent = 0;
+            return;
+        }
+
+        var done = _savedSteps.Count;
+        ProgressPercent = Math.Min(100, done * 100.0 / TotalSteps);
+        ProgressText = $"التقدم: {done} من {TotalSteps} · الخطوة {CurrentStepIndex + 1}";
+    }
+
     private void NotifyStepProps()
     {
         OnPropertyChanged(nameof(TotalSteps));
@@ -222,12 +443,26 @@ public partial class MigrationWizardViewModel : ViewModelBase
         OnPropertyChanged(nameof(CanGoBack));
         OnPropertyChanged(nameof(IsLastStep));
         OnPropertyChanged(nameof(CanGoNext));
+        OnPropertyChanged(nameof(CanSkip));
         OnPropertyChanged(nameof(HasLastResult));
         OnPropertyChanged(nameof(HasRows));
         OnPropertyChanged(nameof(IsCapitalStep));
+        OnPropertyChanged(nameof(IsCashStep));
+        OnPropertyChanged(nameof(IsInvestorsStep));
+        OnPropertyChanged(nameof(IsWarehousesStep));
+        OnPropertyChanged(nameof(IsCategoriesStep));
+        OnPropertyChanged(nameof(IsProductsStep));
+        OnPropertyChanged(nameof(IsPricingTypesStep));
+        OnPropertyChanged(nameof(IsProductPricingStep));
+        OnPropertyChanged(nameof(IsCustomersStep));
+        OnPropertyChanged(nameof(IsSuppliersStep));
+        OnPropertyChanged(nameof(IsExpenseTypesStep));
+        OnPropertyChanged(nameof(IsInstallmentsStep));
+        OnPropertyChanged(nameof(IsSimpleNameStep));
         OnPropertyChanged(nameof(ShowManualEntryForm));
         OnPropertyChanged(nameof(ShowExcelPanel));
         OnPropertyChanged(nameof(ShowDataGrid));
+        OnPropertyChanged(nameof(EntryHint));
     }
 
     private void ResetNewRowFields()
@@ -238,10 +473,10 @@ public partial class MigrationWizardViewModel : ViewModelBase
         NewRowAmount = 0;
         NewRowAmount2 = 0;
         NewRowAmount3 = 0;
-        NewRowInt = 0;
+        NewRowInt = 1;
         NewRowInt2 = 0;
         NewRowDate = DateTime.Today;
-        NewRowKind = "Cash";
+        NewRowKind = "قاصة";
     }
 
     private async Task RefreshLookupsAsync()
@@ -263,10 +498,13 @@ public partial class MigrationWizardViewModel : ViewModelBase
             AvailableWarehouses.Clear();
             foreach (var w in await _unitOfWork.Warehouses.GetAllAsync())
                 AvailableWarehouses.Add(w.Name);
+
+            if (string.IsNullOrWhiteSpace(SelectedWarehouseName) && AvailableWarehouses.Count > 0)
+                SelectedWarehouseName = AvailableWarehouses[0];
         }
         catch
         {
-            // lookups are best-effort during wizard
+            // best-effort
         }
     }
 
@@ -285,6 +523,24 @@ public partial class MigrationWizardViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void GoToStep(MigrationStepInfo? step)
+    {
+        if (step is null || IsCompleted || IsBusy) return;
+        var index = Steps.IndexOf(step);
+        if (index < 0) return;
+
+        // فقط الرجوع لخطوات سابقة أو محفوظة — منع القفز للأمام
+        if (index > CurrentStepIndex && !_savedSteps.Contains(Steps[CurrentStepIndex].Kind))
+        {
+            Warn("احفظ الخطوة الحالية أو تخطَّها قبل الانتقال لخطوة لاحقة");
+            return;
+        }
+
+        if (index <= CurrentStepIndex || _savedSteps.Contains(Steps[Math.Max(0, index - 1)].Kind))
+            CurrentStepIndex = index;
+    }
+
+    [RelayCommand]
     private void AddManualRow()
     {
         if (CurrentKind is null || IsCapitalStep) return;
@@ -297,8 +553,9 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 if (string.IsNullOrWhiteSpace(NewRowName)) { Warn("أدخل اسم القاصة أو المصرف"); return; }
                 row.Name = NewRowName.Trim();
                 row.Amount = NewRowAmount;
-                row.Kind = NewRowKind;
+                row.Kind = NewRowKind.Contains("مصرف", StringComparison.Ordinal) ? "Bank" : "Cash";
                 row.AccountNumber = NewRowExtra;
+                row.Notes = NewRowKind;
                 break;
             case MigrationStepKind.Investors:
                 if (string.IsNullOrWhiteSpace(NewRowName)) { Warn("أدخل اسم المستثمر"); return; }
@@ -322,7 +579,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 if (string.IsNullOrWhiteSpace(NewRowName)) { Warn("أدخل اسم المنتج"); return; }
                 row.Name = NewRowName.Trim();
                 row.CategoryName = string.IsNullOrWhiteSpace(NewRowExtra) ? "عام" : NewRowExtra.Trim();
-                row.Barcode = NewRowPhone;
+                row.Barcode = string.IsNullOrWhiteSpace(NewRowPhone) ? null : NewRowPhone.Trim();
                 row.UnitPrice = NewRowAmount;
                 row.Amount = NewRowAmount;
                 row.Quantity = NewRowAmount2;
@@ -330,7 +587,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 break;
             case MigrationStepKind.ProductPricing:
                 if (string.IsNullOrWhiteSpace(NewRowName) || string.IsNullOrWhiteSpace(NewRowExtra))
-                { Warn("أدخل اسم المنتج ونوع التسعير"); return; }
+                { Warn("اختر المنتج ونوع التسعير"); return; }
                 row.ProductName = NewRowName.Trim();
                 row.Name = NewRowName.Trim();
                 row.PricingTypeName = NewRowExtra.Trim();
@@ -368,7 +625,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
         ResetNewRowFields();
         OnPropertyChanged(nameof(HasRows));
         OnPropertyChanged(nameof(ShowDataGrid));
-        StatusMessage = $"أُضيف صف — الإجمالي {CurrentRows.Count}";
+        StatusMessage = $"صفوف جاهزة: {CurrentRows.Count}";
     }
 
     [RelayCommand]
@@ -378,6 +635,18 @@ public partial class MigrationWizardViewModel : ViewModelBase
         CurrentRows.Remove(row);
         OnPropertyChanged(nameof(HasRows));
         OnPropertyChanged(nameof(ShowDataGrid));
+    }
+
+    [RelayCommand]
+    private void ClearRows()
+    {
+        if (CurrentRows.Count == 0) return;
+        if (!BeautifulMessageDialog.ShowConfirm("مسح جميع صفوف هذه الخطوة؟", "تأكيد"))
+            return;
+        CurrentRows.Clear();
+        OnPropertyChanged(nameof(HasRows));
+        OnPropertyChanged(nameof(ShowDataGrid));
+        StatusMessage = "تم مسح الصفوف";
     }
 
     [RelayCommand]
@@ -399,8 +668,8 @@ public partial class MigrationWizardViewModel : ViewModelBase
             CurrentRows.Clear();
             await LoadExcelIntoRowsAsync(CurrentKind.Value, SelectedFilePath);
             StatusMessage = CurrentRows.Count == 0
-                ? "الملف لا يحتوي على بيانات"
-                : $"معاينة: {CurrentRows.Count} صف جاهز للحفظ";
+                ? "الملف لا يحتوي على بيانات صالحة"
+                : $"تم تحميل {CurrentRows.Count} صف — راجع الجدول ثم احفظ";
             OnPropertyChanged(nameof(HasRows));
             OnPropertyChanged(nameof(ShowDataGrid));
         }
@@ -408,7 +677,11 @@ public partial class MigrationWizardViewModel : ViewModelBase
         {
             BeautifulMessageDialog.ShowError(ex.Message);
         }
-        finally { IsBusy = false; }
+        finally
+        {
+            IsBusy = false;
+            NotifyStepProps();
+        }
     }
 
     [RelayCommand]
@@ -467,7 +740,8 @@ public partial class MigrationWizardViewModel : ViewModelBase
                                r[0].Contains("Bank", StringComparison.OrdinalIgnoreCase) ? "Bank" : "Cash",
                         Name = r[1],
                         Amount = MigrationExcelHelper.ParseDecimal(r[2]),
-                        AccountNumber = r[3]
+                        AccountNumber = r[3],
+                        Notes = r[0]
                     });
                 break;
             case MigrationStepKind.Investors:
@@ -493,7 +767,8 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 foreach (var r in MigrationExcelHelper.ReadDataRows(path, 6))
                     CurrentRows.Add(new MigrationNamedBalanceRow
                     {
-                        Name = r[0], Barcode = r[1], CategoryName = string.IsNullOrWhiteSpace(r[2]) ? "عام" : r[2],
+                        Name = r[0], Barcode = r[1],
+                        CategoryName = string.IsNullOrWhiteSpace(r[2]) ? "عام" : r[2],
                         UnitPrice = MigrationExcelHelper.ParseDecimal(r[3]),
                         Amount = MigrationExcelHelper.ParseDecimal(r[3]),
                         Quantity = MigrationExcelHelper.ParseDecimal(r[4]),
@@ -531,7 +806,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
                         Date = r.StartDate,
                         Notes = r.Notes,
                         IsValid = r.IsValid,
-                        ErrorText = r.ErrorsText
+                        ErrorText = r.IsValid ? null : r.ErrorsText
                     });
                 break;
             default:
@@ -549,59 +824,103 @@ public partial class MigrationWizardViewModel : ViewModelBase
         Date = r.Date,
         Notes = r.Notes,
         IsValid = r.IsValid,
-        ErrorText = r.ErrorsText
+        ErrorText = r.IsValid ? null : r.ErrorsText
     };
 
     [RelayCommand]
     private async Task SaveCurrentStepAsync()
     {
-        if (CurrentKind is null || IsCompleted) return;
+        if (CurrentKind is null || IsCompleted || IsBusy) return;
         try
         {
             IsBusy = true;
+            NotifyStepProps();
             var ok = await PersistStepAsync(CurrentKind.Value);
             if (!ok) return;
 
-            _savedSteps.Add(CurrentKind.Value);
-            if (CurrentStepInfo is not null) CurrentStepInfo.IsSaved = true;
-            LastImportedCount = Math.Max(LastImportedCount, CurrentRows.Count);
-            OnPropertyChanged(nameof(HasLastResult));
-            StatusMessage = "تم حفظ الخطوة بنجاح";
+            MarkSaved(CurrentKind.Value);
+            StatusMessage = "تم حفظ الخطوة بنجاح — يمكنك الانتقال للتالي";
             BeautifulMessageDialog.ShowSuccess(StatusMessage);
             await RefreshLookupsAsync();
         }
         catch (Exception ex)
         {
-            BeautifulMessageDialog.ShowError(ex.Message);
+            BeautifulMessageDialog.ShowError($"تعذّر الحفظ:\n{ex.InnerException?.Message ?? ex.Message}");
         }
-        finally { IsBusy = false; }
+        finally
+        {
+            IsBusy = false;
+            NotifyStepProps();
+        }
+    }
+
+    [RelayCommand]
+    private async Task SkipStepAsync()
+    {
+        if (!CanSkip || CurrentKind is null) return;
+
+        if (CurrentRows.Count > 0)
+        {
+            if (!BeautifulMessageDialog.ShowConfirm(
+                    "توجد صفوف غير محفوظة في هذه الخطوة. هل تريد تخطيها بدون حفظ؟",
+                    "تخطي الخطوة"))
+                return;
+            CurrentRows.Clear();
+        }
+
+        MarkSaved(CurrentKind.Value);
+        StatusMessage = "تم تخطي الخطوة";
+        await AdvanceAsync();
     }
 
     [RelayCommand]
     private async Task NextStepAsync()
     {
-        if (IsCompleted || CurrentKind is null) return;
+        if (IsCompleted || CurrentKind is null || IsBusy) return;
 
-        if (!_savedSteps.Contains(CurrentKind.Value))
+        try
         {
-            var canSkipEmpty = CurrentStepInfo?.IsOptional == true
-                               && !IsCapitalStep
-                               && CurrentRows.Count == 0;
+            IsBusy = true;
+            NotifyStepProps();
 
-            if (canSkipEmpty)
+            if (!_savedSteps.Contains(CurrentKind.Value))
             {
-                // allow skip of empty optional step
-                _savedSteps.Add(CurrentKind.Value);
+                var hasData = IsCapitalStep
+                    ? CapitalAmount > 0 || ProfitOpeningBalance != 0
+                    : CurrentRows.Any(r => !string.IsNullOrWhiteSpace(r.Name) || !string.IsNullOrWhiteSpace(r.ProductName));
+
+                if (!hasData && CurrentStepInfo?.IsOptional == true)
+                {
+                    MarkSaved(CurrentKind.Value);
+                }
+                else if (!hasData && CurrentKind == MigrationStepKind.Warehouses
+                         && await _unitOfWork.Warehouses.AnyAsync())
+                {
+                    MarkSaved(CurrentKind.Value);
+                }
+                else
+                {
+                    var ok = await PersistStepAsync(CurrentKind.Value);
+                    if (!ok) return;
+                    MarkSaved(CurrentKind.Value);
+                }
             }
-            else
-            {
-                var ok = await PersistStepAsync(CurrentKind.Value);
-                if (!ok) return;
-                _savedSteps.Add(CurrentKind.Value);
-                if (CurrentStepInfo is not null) CurrentStepInfo.IsSaved = true;
-            }
+
+            await AdvanceAsync();
         }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذّر الانتقال:\n{ex.InnerException?.Message ?? ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+            NotifyStepProps();
+        }
+    }
 
+    private async Task AdvanceAsync()
+    {
         if (IsLastStep)
         {
             Finish();
@@ -609,12 +928,23 @@ public partial class MigrationWizardViewModel : ViewModelBase
         }
 
         CurrentStepIndex++;
+        await Task.CompletedTask;
+    }
+
+    private void MarkSaved(MigrationStepKind kind)
+    {
+        _savedSteps.Add(kind);
+        if (CurrentStepInfo is not null) CurrentStepInfo.IsSaved = true;
+        LastImportedCount = Math.Max(LastImportedCount, CurrentRows.Count);
+        UpdateProgress();
+        SyncStepFlags();
+        OnPropertyChanged(nameof(HasLastResult));
     }
 
     [RelayCommand]
     private void PreviousStep()
     {
-        if (CurrentStepIndex > 0 && !IsCompleted)
+        if (CurrentStepIndex > 0 && !IsCompleted && !IsBusy)
             CurrentStepIndex--;
     }
 
@@ -622,42 +952,27 @@ public partial class MigrationWizardViewModel : ViewModelBase
     private void Finish()
     {
         IsCompleted = true;
+        UpdateProgress();
         NotifyStepProps();
-        BeautifulMessageDialog.ShowSuccess("اكتمل معالج النقل — راجع البيانات في الشاشات المناسبة");
+        BeautifulMessageDialog.ShowSuccess("اكتمل معالج النقل — يمكنك متابعة العمل بشكل طبيعي");
     }
 
-    private async Task<bool> PersistStepAsync(MigrationStepKind kind)
+    private async Task<bool> PersistStepAsync(MigrationStepKind kind) => kind switch
     {
-        switch (kind)
-        {
-            case MigrationStepKind.Capital:
-                return await SaveCapitalAsync();
-            case MigrationStepKind.CashAndBank:
-                return await SaveCashAndBankAsync();
-            case MigrationStepKind.Investors:
-                return await SaveInvestorsAsync();
-            case MigrationStepKind.Warehouses:
-                return await SaveWarehousesAsync();
-            case MigrationStepKind.Categories:
-                return await SaveCategoriesAsync();
-            case MigrationStepKind.Products:
-                return await SaveProductsAsync();
-            case MigrationStepKind.PricingTypes:
-                return await SavePricingTypesAsync();
-            case MigrationStepKind.ProductPricing:
-                return await SaveProductPricingAsync();
-            case MigrationStepKind.Customers:
-                return await SaveCustomersAsync();
-            case MigrationStepKind.Suppliers:
-                return await SaveSuppliersAsync();
-            case MigrationStepKind.ExpenseTypes:
-                return await SaveExpenseTypesAsync();
-            case MigrationStepKind.Installments:
-                return await SaveInstallmentsAsync();
-            default:
-                return false;
-        }
-    }
+        MigrationStepKind.Capital => await SaveCapitalAsync(),
+        MigrationStepKind.CashAndBank => await SaveCashAndBankAsync(),
+        MigrationStepKind.Investors => await SaveInvestorsAsync(),
+        MigrationStepKind.Warehouses => await SaveWarehousesAsync(),
+        MigrationStepKind.Categories => await SaveCategoriesAsync(),
+        MigrationStepKind.Products => await SaveProductsAsync(),
+        MigrationStepKind.PricingTypes => await SavePricingTypesAsync(),
+        MigrationStepKind.ProductPricing => await SaveProductPricingAsync(),
+        MigrationStepKind.Customers => await SaveCustomersAsync(),
+        MigrationStepKind.Suppliers => await SaveSuppliersAsync(),
+        MigrationStepKind.ExpenseTypes => await SaveExpenseTypesAsync(),
+        MigrationStepKind.Installments => await SaveInstallmentsAsync(),
+        _ => false
+    };
 
     private async Task<bool> SaveCapitalAsync()
     {
@@ -713,56 +1028,59 @@ public partial class MigrationWizardViewModel : ViewModelBase
 
     private async Task<bool> SaveCashAndBankAsync()
     {
-        if (CurrentRows.Count == 0) { Warn("أضف قاصة أو مصرفاً واحداً على الأقل، أو تخطَّ إن كانت موجودة"); return false; }
+        var rows = CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name)).ToList();
+        if (rows.Count == 0)
+        {
+            if (await _unitOfWork.CashBoxes.AnyAsync() || await _unitOfWork.BankAccounts.AnyAsync())
+                return true;
+            Warn("أضف قاصة أو مصرفاً، أو تخطَّ الخطوة إن كانت موجودة مسبقاً");
+            return false;
+        }
+
         var existingCash = (await _unitOfWork.CashBoxes.GetAllAsync()).ToList();
         var existingBank = (await _unitOfWork.BankAccounts.GetAllAsync()).ToList();
         var saved = 0;
-        foreach (var row in CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name)))
+        foreach (var row in rows)
         {
             var name = row.Name.Trim();
             if (string.Equals(row.Kind, "Bank", StringComparison.OrdinalIgnoreCase))
             {
                 if (existingBank.Any(b => string.Equals(b.Name, name, StringComparison.OrdinalIgnoreCase)))
                     continue;
-                await _unitOfWork.BankAccounts.AddAsync(new BankAccount
-                {
-                    Name = name,
-                    AccountNumber = row.AccountNumber,
-                    Balance = row.Amount
-                });
+                var bank = new BankAccount { Name = name, AccountNumber = row.AccountNumber, Balance = row.Amount };
+                await _unitOfWork.BankAccounts.AddAsync(bank);
+                existingBank.Add(bank);
             }
             else
             {
                 if (existingCash.Any(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)))
                     continue;
-                await _unitOfWork.CashBoxes.AddAsync(new CashBox
-                {
-                    Name = name,
-                    Balance = row.Amount
-                });
+                var cash = new CashBox { Name = name, Balance = row.Amount };
+                await _unitOfWork.CashBoxes.AddAsync(cash);
+                existingCash.Add(cash);
             }
             saved++;
         }
         await _unitOfWork.SaveChangesAsync();
         LastImportedCount = saved;
-        return saved > 0 || existingCash.Count + existingBank.Count > 0;
+        LastSkippedCount = rows.Count - saved;
+        return true;
     }
 
     private async Task<bool> SaveInvestorsAsync()
     {
-        if (CurrentRows.Count == 0) { Warn("أضف مستثمراً واحداً على الأقل أو تخطَّ الخطوة"); return false; }
+        var rows = CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name)).ToList();
+        if (rows.Count == 0) { Warn("أضف مستثمراً أو اضغط تخطي"); return false; }
+
         var existing = (await _investorService.GetAllInvestorsAsync()).ToList();
         var openingItems = new List<InvestorOpeningBalanceItem>();
-        var saved = 0;
-
-        foreach (var row in CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name)))
+        foreach (var row in rows)
         {
             var match = existing.FirstOrDefault(i =>
                 string.Equals(i.Name, row.Name.Trim(), StringComparison.OrdinalIgnoreCase));
             if (match is null)
             {
-                match = await _investorService.AddInvestorAsync(
-                    row.Name.Trim(), row.Phone, row.ProfitPercentage);
+                match = await _investorService.AddInvestorAsync(row.Name.Trim(), row.Phone, row.ProfitPercentage);
                 existing.Add(match);
             }
 
@@ -771,40 +1089,39 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 InvestorId = match.Id,
                 Name = match.Name,
                 Phone = match.Phone,
-                ProfitPercentage = match.ProfitPercentage,
+                ProfitPercentage = row.ProfitPercentage > 0 ? row.ProfitPercentage : match.ProfitPercentage,
                 OpeningBalance = row.Amount
             });
-            saved++;
         }
 
-        if (openingItems.Count > 0)
-            await _investorService.SaveOpeningBalancesAsync(openingItems);
-
-        LastImportedCount = saved;
-        return saved > 0;
+        await _investorService.SaveOpeningBalancesAsync(openingItems);
+        LastImportedCount = openingItems.Count;
+        return true;
     }
 
     private async Task<bool> SaveWarehousesAsync()
     {
-        var existingCount = await _unitOfWork.Warehouses.CountAsync();
-        if (CurrentRows.Count == 0 && existingCount > 0) return true;
-        if (CurrentRows.Count == 0)
+        var existing = (await _unitOfWork.Warehouses.GetAllAsync()).ToList();
+        var rows = CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name)).ToList();
+        if (rows.Count == 0 && existing.Count > 0) return true;
+        if (rows.Count == 0)
         {
-            Warn("يجب إدخال مخزن واحد على الأقل قبل متابعة المنتجات والأرصدة");
+            Warn("أدخل مخزناً واحداً على الأقل — مطلوب قبل المنتجات");
             return false;
         }
 
-        var existing = (await _unitOfWork.Warehouses.GetAllAsync()).ToList();
         var saved = 0;
-        foreach (var row in CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name)))
+        foreach (var row in rows)
         {
             if (existing.Any(w => string.Equals(w.Name, row.Name.Trim(), StringComparison.OrdinalIgnoreCase)))
                 continue;
-            await _unitOfWork.Warehouses.AddAsync(new Warehouse
+            var wh = new Warehouse
             {
                 Name = row.Name.Trim(),
                 Location = string.IsNullOrWhiteSpace(row.Notes) ? null : row.Notes
-            });
+            };
+            await _unitOfWork.Warehouses.AddAsync(wh);
+            existing.Add(wh);
             saved++;
         }
         await _unitOfWork.SaveChangesAsync();
@@ -814,14 +1131,17 @@ public partial class MigrationWizardViewModel : ViewModelBase
 
     private async Task<bool> SaveCategoriesAsync()
     {
-        if (CurrentRows.Count == 0) { Warn("أضف صنفاً أو تخطَّ الخطوة"); return false; }
+        var rows = CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name)).ToList();
+        if (rows.Count == 0) { Warn("أضف أصنافاً أو اضغط تخطي"); return false; }
         var existing = (await _unitOfWork.Categories.GetAllAsync()).ToList();
         var saved = 0;
-        foreach (var row in CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name)))
+        foreach (var row in rows.GroupBy(r => r.Name.Trim(), StringComparer.OrdinalIgnoreCase).Select(g => g.First()))
         {
             if (existing.Any(c => string.Equals(c.Name, row.Name.Trim(), StringComparison.OrdinalIgnoreCase)))
                 continue;
-            await _unitOfWork.Categories.AddAsync(new Category { Name = row.Name.Trim() });
+            var cat = new Category { Name = row.Name.Trim() };
+            await _unitOfWork.Categories.AddAsync(cat);
+            existing.Add(cat);
             saved++;
         }
         await _unitOfWork.SaveChangesAsync();
@@ -831,7 +1151,15 @@ public partial class MigrationWizardViewModel : ViewModelBase
 
     private async Task<bool> SaveProductsAsync()
     {
-        if (CurrentRows.Count == 0) { Warn("أضف منتجات أو تخطَّ الخطوة"); return false; }
+        // دمج الصفوف المكررة بالاسم (آخر قيمة تفوز) لتفادي فهرس المخزون الفريد
+        var rows = CurrentRows
+            .Where(r => !string.IsNullOrWhiteSpace(r.Name))
+            .GroupBy(r => r.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.Last())
+            .ToList();
+
+        if (rows.Count == 0) { Warn("أضف منتجات أو اضغط تخطي"); return false; }
+
         var warehouses = (await _unitOfWork.Warehouses.GetAllAsync()).ToList();
         if (warehouses.Count == 0)
         {
@@ -839,23 +1167,28 @@ public partial class MigrationWizardViewModel : ViewModelBase
             return false;
         }
 
-        var warehouseId = warehouses[0].Id;
+        var warehouse = warehouses.FirstOrDefault(w =>
+            string.Equals(w.Name, SelectedWarehouseName, StringComparison.OrdinalIgnoreCase))
+            ?? warehouses[0];
+
         var categories = (await _unitOfWork.Categories.GetAllAsync()).ToList();
         var products = (await _unitOfWork.Products.GetAllAsync()).ToList();
+        var stocks = (await _unitOfWork.WarehouseStocks.FindAsync(s => s.WarehouseId == warehouse.Id)).ToList();
+        var prices = (await _unitOfWork.ProductPrices.GetAllAsync()).ToList();
+
         var pricingTypes = (await _pricingTypeService.GetActiveAsync()).ToList();
         if (pricingTypes.Count == 0)
         {
             await _pricingTypeService.EnsureDefaultExistsAsync();
             pricingTypes = (await _pricingTypeService.GetActiveAsync()).ToList();
         }
-
         var defaultPricing = pricingTypes.FirstOrDefault(t => t.IsDefault) ?? pricingTypes.FirstOrDefault();
-        var saved = 0;
 
+        var saved = 0;
         await _unitOfWork.BeginTransactionAsync();
         try
         {
-            foreach (var row in CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name)))
+            foreach (var row in rows)
             {
                 var catName = string.IsNullOrWhiteSpace(row.CategoryName) ? "عام" : row.CategoryName.Trim();
                 var category = categories.FirstOrDefault(c =>
@@ -875,58 +1208,65 @@ public partial class MigrationWizardViewModel : ViewModelBase
                     product = new Product
                     {
                         Name = row.Name.Trim(),
-                        Barcode = string.IsNullOrWhiteSpace(row.Barcode) ? null : row.Barcode,
+                        Barcode = string.IsNullOrWhiteSpace(row.Barcode) ? null : row.Barcode.Trim(),
                         CategoryId = category.Id
                     };
                     await _unitOfWork.Products.AddAsync(product);
                     await _unitOfWork.SaveChangesAsync();
                     products.Add(product);
                 }
+                else if (!string.IsNullOrWhiteSpace(row.Barcode) && string.IsNullOrWhiteSpace(product.Barcode))
+                {
+                    product.Barcode = row.Barcode.Trim();
+                    _unitOfWork.Products.Update(product);
+                }
 
                 if (row.Quantity > 0)
                 {
-                    var stock = (await _unitOfWork.WarehouseStocks.FindAsync(s =>
-                        s.WarehouseId == warehouseId && s.ProductId == product.Id)).FirstOrDefault();
+                    var stock = stocks.FirstOrDefault(s => s.ProductId == product.Id);
                     if (stock is null)
                     {
-                        await _unitOfWork.WarehouseStocks.AddAsync(new WarehouseStock
+                        stock = new WarehouseStock
                         {
-                            WarehouseId = warehouseId,
+                            WarehouseId = warehouse.Id,
                             ProductId = product.Id,
                             Quantity = row.Quantity,
                             OpeningQuantity = row.Quantity,
                             UnitCost = row.UnitCost,
                             CreatedAt = DateTime.UtcNow
-                        });
+                        };
+                        await _unitOfWork.WarehouseStocks.AddAsync(stock);
+                        stocks.Add(stock);
                     }
                     else
                     {
                         stock.OpeningQuantity = row.Quantity;
                         stock.Quantity = Math.Max(stock.Quantity, row.Quantity);
-                        stock.UnitCost = row.UnitCost > 0 ? row.UnitCost : stock.UnitCost;
+                        if (row.UnitCost > 0) stock.UnitCost = row.UnitCost;
                         _unitOfWork.WarehouseStocks.Update(stock);
                     }
                 }
 
                 if (defaultPricing is not null && row.UnitPrice > 0)
                 {
-                    var existingPrice = (await _unitOfWork.ProductPrices.FindAsync(p =>
-                        p.ProductId == product.Id && p.PricingTypeId == defaultPricing.Id)).FirstOrDefault();
+                    var existingPrice = prices.FirstOrDefault(p =>
+                        p.ProductId == product.Id && p.PricingTypeId == defaultPricing.Id);
                     if (existingPrice is null)
                     {
-                        await _unitOfWork.ProductPrices.AddAsync(new ProductPrice
+                        existingPrice = new ProductPrice
                         {
                             ProductId = product.Id,
                             PricingTypeId = defaultPricing.Id,
                             SalePrice = row.UnitPrice,
                             PurchasePrice = row.UnitCost
-                        });
+                        };
+                        await _unitOfWork.ProductPrices.AddAsync(existingPrice);
+                        prices.Add(existingPrice);
                     }
                     else
                     {
                         existingPrice.SalePrice = row.UnitPrice;
-                        if (row.UnitCost > 0)
-                            existingPrice.PurchasePrice = row.UnitCost;
+                        if (row.UnitCost > 0) existingPrice.PurchasePrice = row.UnitCost;
                         _unitOfWork.ProductPrices.Update(existingPrice);
                     }
                 }
@@ -937,7 +1277,17 @@ public partial class MigrationWizardViewModel : ViewModelBase
             await _unitOfWork.SaveChangesAsync();
             await _unitOfWork.CommitTransactionAsync();
             LastImportedCount = saved;
-            return saved > 0;
+            if (saved == 0)
+            {
+                Warn("لم يُحفظ أي منتج — تحقق من الأسماء");
+                return false;
+            }
+
+            await RefreshPricingNeedFlagsAsync();
+            // بعد إضافة منتجات جديدة نحتاج خطوة التسعير إن وُجدت منتجات بلا أسعار
+            _needsProductPricing = true;
+            UpdatePricingStepOptionality();
+            return true;
         }
         catch
         {
@@ -948,10 +1298,20 @@ public partial class MigrationWizardViewModel : ViewModelBase
 
     private async Task<bool> SavePricingTypesAsync()
     {
-        if (CurrentRows.Count == 0) { Warn("أضف نوع تسعير أو تخطَّ الخطوة"); return false; }
+        var rows = CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name))
+            .GroupBy(r => r.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First()).ToList();
+
+        if (rows.Count == 0)
+        {
+            if (!_needsPricingTypes) return true;
+            Warn("أضف نوع تسعير واحداً على الأقل (مثل: سعر مفرد)");
+            return false;
+        }
+
         var existing = (await _pricingTypeService.GetActiveAsync()).ToList();
         var saved = 0;
-        foreach (var row in CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name)))
+        foreach (var row in rows)
         {
             if (existing.Any(t => string.Equals(t.Name, row.Name.Trim(), StringComparison.OrdinalIgnoreCase)))
                 continue;
@@ -963,36 +1323,101 @@ public partial class MigrationWizardViewModel : ViewModelBase
             });
             saved++;
         }
-        LastImportedCount = saved;
+
+        // ضمان وجود نوع افتراضي دائماً
+        await _pricingTypeService.EnsureDefaultExistsAsync();
+        await RefreshPricingNeedFlagsAsync();
+        UpdatePricingStepOptionality();
+
+        LastImportedCount = Math.Max(saved, rows.Count);
+        if (_needsPricingTypes && saved == 0 && existing.Count == 0)
+        {
+            Warn("تعذّر إنشاء أنواع التسعير");
+            return false;
+        }
+        _needsPricingTypes = false;
+        UpdatePricingStepOptionality();
         return true;
     }
 
     private async Task<bool> SaveProductPricingAsync()
     {
-        if (CurrentRows.Count == 0) { Warn("أضف أسعار منتجات أو تخطَّ الخطوة"); return false; }
-        var products = (await _unitOfWork.Products.GetAllAsync()).ToList();
+        // إن لم توجد أنواع تسعير أنشئ الافتراضي أولاً
         var types = (await _pricingTypeService.GetActiveAsync()).ToList();
+        if (types.Count == 0)
+        {
+            await _pricingTypeService.EnsureDefaultExistsAsync();
+            types = (await _pricingTypeService.GetActiveAsync()).ToList();
+            await RefreshLookupsAsync();
+        }
+
+        if (types.Count == 0)
+        {
+            Warn("لا توجد أنواع تسعير — ارجع لخطوة أنواع التسعير أولاً");
+            return false;
+        }
+
+        var rows = CurrentRows.Where(r =>
+                !string.IsNullOrWhiteSpace(r.ProductName ?? r.Name))
+            .ToList();
+
+        // إن كانت الخطوة إلزامية والجدول فارغ — عبّئه ثم اطلب الإدخال
+        if (rows.Count == 0)
+        {
+            await PrefillProductPricingRowsAsync();
+            rows = CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.ProductName ?? r.Name)).ToList();
+        }
+
+        if (rows.Count == 0)
+        {
+            if (!_needsProductPricing) return true;
+            Warn("لا توجد منتجات لتسعيرها — أضف منتجات أولاً أو تخطَّ لاحقاً بعد إضافة المنتجات");
+            return false;
+        }
+
+        // صفوف بلا نوع تسعير → استخدم الافتراضي
+        var defaultType = types.FirstOrDefault(t => t.IsDefault) ?? types.First();
+        foreach (var row in rows.Where(r => string.IsNullOrWhiteSpace(r.PricingTypeName)))
+            row.PricingTypeName = defaultType.Name;
+
+        var products = (await _unitOfWork.Products.GetAllAsync()).ToList();
         var prices = new List<ProductPrice>();
         var skipped = 0;
 
-        foreach (var row in CurrentRows)
+        foreach (var row in rows)
         {
+            var productName = (row.ProductName ?? row.Name).Trim();
             var product = products.FirstOrDefault(p =>
-                string.Equals(p.Name, row.ProductName?.Trim(), StringComparison.OrdinalIgnoreCase));
+                string.Equals(p.Name, productName, StringComparison.OrdinalIgnoreCase));
             var type = types.FirstOrDefault(t =>
-                string.Equals(t.Name, row.PricingTypeName?.Trim(), StringComparison.OrdinalIgnoreCase));
+                string.Equals(t.Name, row.PricingTypeName!.Trim(), StringComparison.OrdinalIgnoreCase));
             if (product is null || type is null)
             {
                 skipped++;
+                row.IsValid = false;
+                row.ErrorText = product is null ? "المنتج غير موجود" : "نوع التسعير غير موجود";
                 continue;
             }
+
+            var sale = row.SalePrice > 0 ? row.SalePrice : row.Amount;
+            var purchase = row.PurchasePrice > 0 ? row.PurchasePrice : row.UnitCost;
+            if (sale <= 0 && purchase <= 0)
+            {
+                skipped++;
+                row.IsValid = false;
+                row.ErrorText = "أدخل سعر البيع أو الشراء";
+                continue;
+            }
+
             prices.Add(new ProductPrice
             {
                 ProductId = product.Id,
                 PricingTypeId = type.Id,
-                SalePrice = row.SalePrice,
-                PurchasePrice = row.PurchasePrice
+                SalePrice = sale,
+                PurchasePrice = purchase
             });
+            row.IsValid = true;
+            row.ErrorText = null;
         }
 
         if (prices.Count > 0)
@@ -1000,74 +1425,92 @@ public partial class MigrationWizardViewModel : ViewModelBase
 
         LastImportedCount = prices.Count;
         LastSkippedCount = skipped;
+        await RefreshPricingNeedFlagsAsync();
+        UpdatePricingStepOptionality();
+
         if (prices.Count == 0)
         {
-            Warn("لم يُحفظ أي سعر — تأكد من أسماء المنتجات وأنواع التسعير");
+            Warn("لم يُحفظ أي سعر — تأكد من أسماء المنتجات وأنواع التسعير وأدخل مبلغاً أكبر من صفر");
             return false;
         }
+
+        _needsProductPricing = false;
+        UpdatePricingStepOptionality();
         return true;
     }
 
     private async Task<bool> SaveCustomersAsync()
     {
-        if (CurrentRows.Count == 0) { Warn("أضف عملاء أو تخطَّ الخطوة"); return false; }
-        var invalid = CurrentRows.Count(r => !r.IsValid || string.IsNullOrWhiteSpace(r.Name) || r.Amount <= 0);
-        if (invalid > 0) { Warn($"يوجد {invalid} صف غير صالح"); return false; }
-
-        var requests = CurrentRows.Select(r => new OpeningPartyBalanceRequest
+        var rows = CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name) && r.Amount > 0).ToList();
+        if (rows.Count == 0) { Warn("أضف عملاء مع رصيد أو اضغط تخطي"); return false; }
+        if (CurrentRows.Any(r => !r.IsValid))
         {
-            PartyName = r.Name.Trim(),
-            Phone = r.Phone,
-            FileNumber = r.FileNumber,
-            Amount = r.Amount,
-            Date = r.Date,
-            Notes = r.Notes
-        }).ToList();
+            Warn("صحّح الصفوف غير الصالحة أولاً");
+            return false;
+        }
 
-        var result = await _openingPartyBalance.CreateCustomerOpeningBalancesBatchAsync(requests);
+        var result = await _openingPartyBalance.CreateCustomerOpeningBalancesBatchAsync(
+            rows.Select(r => new OpeningPartyBalanceRequest
+            {
+                PartyName = r.Name.Trim(),
+                Phone = r.Phone,
+                FileNumber = r.FileNumber,
+                Amount = r.Amount,
+                Date = r.Date,
+                Notes = r.Notes
+            }).ToList());
+
         LastImportedCount = result.SuccessCount;
         LastSkippedCount = result.FailedCount;
-        if (result.FailedCount > 0 && result.SuccessCount == 0)
+        if (result.SuccessCount == 0)
         {
             BeautifulMessageDialog.ShowError(string.Join("\n", result.Errors.Take(5)));
             return false;
         }
-        return result.SuccessCount > 0;
+        return true;
     }
 
     private async Task<bool> SaveSuppliersAsync()
     {
-        if (CurrentRows.Count == 0) { Warn("أضف موردين أو تخطَّ الخطوة"); return false; }
-        var invalid = CurrentRows.Count(r => !r.IsValid || string.IsNullOrWhiteSpace(r.Name) || r.Amount <= 0);
-        if (invalid > 0) { Warn($"يوجد {invalid} صف غير صالح"); return false; }
-
-        var requests = CurrentRows.Select(r => new OpeningPartyBalanceRequest
+        var rows = CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name) && r.Amount > 0).ToList();
+        if (rows.Count == 0) { Warn("أضف موردين مع رصيد أو اضغط تخطي"); return false; }
+        if (CurrentRows.Any(r => !r.IsValid))
         {
-            PartyName = r.Name.Trim(),
-            Phone = r.Phone,
-            FileNumber = r.FileNumber,
-            Amount = r.Amount,
-            Date = r.Date,
-            Notes = r.Notes
-        }).ToList();
+            Warn("صحّح الصفوف غير الصالحة أولاً");
+            return false;
+        }
 
-        var result = await _openingPartyBalance.CreateSupplierOpeningBalancesBatchAsync(requests);
+        var result = await _openingPartyBalance.CreateSupplierOpeningBalancesBatchAsync(
+            rows.Select(r => new OpeningPartyBalanceRequest
+            {
+                PartyName = r.Name.Trim(),
+                Phone = r.Phone,
+                FileNumber = r.FileNumber,
+                Amount = r.Amount,
+                Date = r.Date,
+                Notes = r.Notes
+            }).ToList());
+
         LastImportedCount = result.SuccessCount;
         LastSkippedCount = result.FailedCount;
-        if (result.FailedCount > 0 && result.SuccessCount == 0)
+        if (result.SuccessCount == 0)
         {
             BeautifulMessageDialog.ShowError(string.Join("\n", result.Errors.Take(5)));
             return false;
         }
-        return result.SuccessCount > 0;
+        return true;
     }
 
     private async Task<bool> SaveExpenseTypesAsync()
     {
-        if (CurrentRows.Count == 0) { Warn("أضف أنواع مصاريف أو تخطَّ الخطوة"); return false; }
+        var rows = CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name))
+            .GroupBy(r => r.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.First()).ToList();
+        if (rows.Count == 0) { Warn("أضف أنواع مصاريف أو اضغط تخطي"); return false; }
+
         var existing = (await _expenseService.GetAllExpenseTypesAsync()).ToList();
         var saved = 0;
-        foreach (var row in CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name)))
+        foreach (var row in rows)
         {
             if (existing.Any(e => string.Equals(e.Name, row.Name.Trim(), StringComparison.OrdinalIgnoreCase)))
                 continue;
@@ -1080,25 +1523,26 @@ public partial class MigrationWizardViewModel : ViewModelBase
 
     private async Task<bool> SaveInstallmentsAsync()
     {
-        if (CurrentRows.Count == 0) { Warn("أضف أرصدة أقساط أو تخطَّ الخطوة"); return false; }
+        var rows = CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name) && r.Amount > 0 && r.NumberOfInstallments > 0).ToList();
+        if (rows.Count == 0) { Warn("أضف أرصدة أقساط أو اضغط تخطي"); return false; }
         if (CurrentRows.Any(r => !r.IsValid))
         {
             Warn("صحّح الصفوف غير الصالحة أولاً");
             return false;
         }
 
-        var requests = CurrentRows.Select(r => new OpeningInstallmentBalanceRequest
-        {
-            CustomerName = r.Name.Trim(),
-            FileNumber = r.FileNumber,
-            TotalAmount = r.Amount,
-            NumberOfInstallments = r.NumberOfInstallments,
-            PaidInstallmentsCount = r.PaidInstallmentsCount,
-            StartDate = r.Date,
-            Notes = r.Notes
-        }).ToList();
+        var result = await _installmentService.CreateOpeningBalancePlansBatchAsync(
+            rows.Select(r => new OpeningInstallmentBalanceRequest
+            {
+                CustomerName = r.Name.Trim(),
+                FileNumber = r.FileNumber,
+                TotalAmount = r.Amount,
+                NumberOfInstallments = r.NumberOfInstallments,
+                PaidInstallmentsCount = r.PaidInstallmentsCount,
+                StartDate = r.Date,
+                Notes = r.Notes
+            }).ToList());
 
-        var result = await _installmentService.CreateOpeningBalancePlansBatchAsync(requests);
         LastImportedCount = result.SuccessCount;
         LastSkippedCount = result.FailedCount;
         if (result.SuccessCount == 0)

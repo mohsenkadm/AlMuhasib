@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
@@ -39,6 +41,13 @@ public partial class OpeningInstallmentBalanceViewModel : ViewModelBase
     [ObservableProperty] private string _quickCustomerName = string.Empty;
     [ObservableProperty] private string _quickCustomerPhone = string.Empty;
     [ObservableProperty] private string _quickCustomerError = string.Empty;
+    [ObservableProperty] private CurrencyOption? _selectedCurrencyOption;
+    [ObservableProperty] private decimal _fxRate = 1m;
+    [ObservableProperty] private bool _showFxRateInput;
+
+    public ObservableCollection<CurrencyOption> CurrencyOptions { get; } = new(CurrencyOption.All);
+    public string AmountCurrencyLabel =>
+        AccountingCurrencyHelper.GetLabel(SelectedCurrencyOption?.Currency ?? AccountingCurrency.IQD);
 
     public decimal RemainingAmount => Math.Max(0, TotalAmount - PaidPreviewTotal);
     public decimal PaidPreviewTotal => SchedulePreview.Where(r => r.IsPaid).Sum(r => r.Amount);
@@ -61,6 +70,7 @@ public partial class OpeningInstallmentBalanceViewModel : ViewModelBase
         _currentUserService = currentUserService;
         _excelService = excelService;
         PageTitle = "أرصدة الأقساط الافتتاحية";
+        SelectedCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
     }
 
     public override async Task InitializeAsync()
@@ -198,9 +208,10 @@ public partial class OpeningInstallmentBalanceViewModel : ViewModelBase
                 SelectedCustomer?.Name ?? CustomerSearchText.Trim());
 
             await _installmentService.CreateOpeningBalancePlanAsync(request);
+            var currency = request.Currency;
             BeautifulMessageDialog.ShowSuccess(
                 $"تم حفظ رصيد الأقساط الافتتاحي للزبون «{request.CustomerName ?? SelectedCustomer?.Name}» بنجاح.\n" +
-                $"المسدد سابقاً: {PaidPreviewTotal:N0} د.ع | المتبقي: {UnpaidPreviewTotal:N0} د.ع");
+                $"المسدد سابقاً: {AccountingCurrencyHelper.Format(PaidPreviewTotal, currency)} | المتبقي: {AccountingCurrencyHelper.Format(UnpaidPreviewTotal, currency)}");
 
             ResetManualForm();
         }
@@ -211,17 +222,23 @@ public partial class OpeningInstallmentBalanceViewModel : ViewModelBase
         finally { IsBusy = false; }
     }
 
-    private OpeningInstallmentBalanceRequest BuildRequest(int? customerId, string? customerName) => new()
+    private OpeningInstallmentBalanceRequest BuildRequest(int? customerId, string? customerName)
     {
-        CustomerId = customerId,
-        CustomerName = customerId is null ? customerName : null,
-        FileNumber = string.IsNullOrWhiteSpace(FileNumber) ? null : FileNumber.Trim(),
-        TotalAmount = TotalAmount,
-        NumberOfInstallments = NumberOfInstallments,
-        PaidInstallmentsCount = PaidInstallmentsCount,
-        StartDate = StartDate.Date,
-        Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
-    };
+        var currency = SelectedCurrencyOption?.Currency ?? AccountingCurrency.IQD;
+        return new OpeningInstallmentBalanceRequest
+        {
+            CustomerId = customerId,
+            CustomerName = customerId is null ? customerName : null,
+            FileNumber = string.IsNullOrWhiteSpace(FileNumber) ? null : FileNumber.Trim(),
+            TotalAmount = TotalAmount,
+            NumberOfInstallments = NumberOfInstallments,
+            PaidInstallmentsCount = PaidInstallmentsCount,
+            StartDate = StartDate.Date,
+            Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
+            Currency = currency,
+            FxRate = currency == AccountingCurrency.IQD ? 1m : FxRate
+        };
+    }
 
     private void ResetManualForm()
     {
@@ -233,7 +250,18 @@ public partial class OpeningInstallmentBalanceViewModel : ViewModelBase
         PaidInstallmentsCount = 0;
         StartDate = DateTime.Today.AddMonths(-3);
         Notes = string.Empty;
+        SelectedCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
+        FxRate = 1m;
+        ShowFxRateInput = false;
         GenerateSchedulePreview();
+    }
+
+    partial void OnSelectedCurrencyOptionChanged(CurrencyOption? value)
+    {
+        ShowFxRateInput = value?.Currency == AccountingCurrency.USD;
+        if (value?.Currency == AccountingCurrency.IQD)
+            FxRate = 1m;
+        OnPropertyChanged(nameof(AmountCurrencyLabel));
     }
 
     [RelayCommand]

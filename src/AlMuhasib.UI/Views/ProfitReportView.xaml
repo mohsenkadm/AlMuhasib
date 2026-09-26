@@ -52,18 +52,24 @@
 
                 <!-- Stat Cards -->
                 <UniformGrid Columns="5" Margin="0,0,0,20">
-                    <controls:AnimatedStatCard Title="إجمالي المبيعات" TextValue="{Binding TotalSales}"
+                    <controls:AnimatedStatCard Title="إجمالي المبيعات (د.ع)" TextValue="{Binding TotalSales}"
                                                 Icon="CashRegister" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"
                                                 ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="sales"/>
+                    <controls:AnimatedStatCard Title="مبيعات ($)" TextValue="{Binding TotalSalesUsd}"
+                                                Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"
+                                                Visibility="{Binding ShowTotalSalesUsd, Converter={StaticResource BoolToVis}}"/>
                     <controls:AnimatedStatCard Title="تكلفة المبيعات" TextValue="{Binding CostOfSales}"
                                                 Icon="CartArrowDown" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#E65100" ValueForeground="#E65100"
                                                 ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="cogs"/>
                     <controls:AnimatedStatCard Title="إجمالي الربح" TextValue="{Binding GrossProfit}"
                                                 Icon="TrendingUp" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"
                                                 ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="gross"/>
-                    <controls:AnimatedStatCard Title="إجمالي المصاريف" TextValue="{Binding TotalExpenses}"
+                    <controls:AnimatedStatCard Title="إجمالي المصاريف (د.ع)" TextValue="{Binding TotalExpenses}"
                                                 Icon="CashMinus" IconBackground="{DynamicResource DashboardKpiPinkLightBrush}" IconForeground="#C2185B" ValueForeground="#C2185B"
                                                 ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="expenses"/>
+                    <controls:AnimatedStatCard Title="مصاريف ($)" TextValue="{Binding TotalExpensesUsd}"
+                                                Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiPinkLightBrush}" IconForeground="#C2185B" ValueForeground="#C2185B"
+                                                Visibility="{Binding ShowTotalExpensesUsd, Converter={StaticResource BoolToVis}}"/>
                     <controls:AnimatedStatCard Title="صافي الأرباح" TextValue="{Binding NetProfit}"
                                                 Icon="Finance" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="#00695C" ValueForeground="#00695C"
                                                 ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="net"/>

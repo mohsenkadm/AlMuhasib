@@ -21,6 +21,7 @@ public interface IFeatureFlagService
     bool LoyaltySystem { get; }
     bool ProductOffers { get; }
     bool TransportFees { get; }
+    bool MultiCurrency { get; }
     bool WarehouseInvoiceAndDriver { get; }
     bool SalesRepresentatives { get; }
     bool DamageInvoices { get; }

@@ -50,6 +50,7 @@ public sealed class BusinessSettingsSyncDto : SyncDtoBase
     public bool UpdateProductPriceOnPurchase { get; set; }
     public bool PeriodLockEnabled { get; set; }
     public DateTime? LockedThroughDate { get; set; }
+    public bool MultiCurrencyEnabled { get; set; }
 }
 
 public sealed class WarehouseSyncDto : SyncDtoBase
@@ -81,6 +82,7 @@ public sealed class CashBoxSyncDto : SyncDtoBase
 {
     public string Name { get; set; } = string.Empty;
     public decimal Balance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
 }
 
 public sealed class BankAccountSyncDto : SyncDtoBase
@@ -88,6 +90,14 @@ public sealed class BankAccountSyncDto : SyncDtoBase
     public string Name { get; set; } = string.Empty;
     public string? AccountNumber { get; set; }
     public decimal Balance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+}
+
+public sealed class ExchangeRateSyncDto : SyncDtoBase
+{
+    public DateTime RateDate { get; set; }
+    public decimal UsdToIqd { get; set; }
+    public string Notes { get; set; } = string.Empty;
 }
 
 public sealed class InvestorSyncDto : SyncDtoBase

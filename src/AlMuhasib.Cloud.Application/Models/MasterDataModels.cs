@@ -46,6 +46,7 @@ public sealed class BusinessSettingsDto
     public bool UpdateProductPriceOnPurchase { get; set; }
     public bool PeriodLockEnabled { get; set; }
     public DateTime? LockedThroughDate { get; set; }
+    public bool MultiCurrencyEnabled { get; set; }
 }
 
 public sealed class MasterDataBundle

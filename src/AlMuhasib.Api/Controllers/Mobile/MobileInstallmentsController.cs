@@ -39,6 +39,7 @@ public sealed class MobileInstallmentsController : ControllerBase
         var query = _db.Installments.AsNoTracking()
             .ForTenant(tenantId)
             .Include(i => i.InstallmentPlan).ThenInclude(p => p.Customer)
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p.Invoice)
             .Include(i => i.CashBox)
             .AsQueryable();
 
@@ -152,7 +153,8 @@ public sealed class MobileInstallmentsController : ControllerBase
                         : i.Status,
                     PaymentDate = i.PaymentDate,
                     CashBoxSyncId = i.CashBox?.SyncId,
-                    CashBoxName = i.CashBox?.Name
+                    CashBoxName = i.CashBox?.Name,
+                    Currency = plan.Invoice?.Currency ?? AccountingCurrency.IQD
                 })
                 .ToList()
         });
@@ -178,7 +180,8 @@ public sealed class MobileInstallmentsController : ControllerBase
             Status = effectiveStatus,
             PaymentDate = i.PaymentDate,
             CashBoxSyncId = i.CashBox?.SyncId,
-            CashBoxName = i.CashBox?.Name
+            CashBoxName = i.CashBox?.Name,
+            Currency = i.InstallmentPlan.Invoice?.Currency ?? AccountingCurrency.IQD
         };
     }
 

@@ -95,6 +95,7 @@ public sealed class InstallmentListItem
     public DateTime? PaymentDate { get; set; }
     public Guid? CashBoxSyncId { get; set; }
     public string? CashBoxName { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
 }
 
 public sealed class InstallmentPlanDetailResponse

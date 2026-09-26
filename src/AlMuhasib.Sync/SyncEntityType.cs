@@ -7,6 +7,7 @@ public enum SyncEntityType
     PricingType,
     ProductPrice,
     BusinessSettings,
+    ExchangeRate,
     Warehouse,
     Customer,
     Supplier,

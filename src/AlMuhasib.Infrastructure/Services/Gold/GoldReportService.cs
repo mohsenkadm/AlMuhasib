@@ -52,12 +52,14 @@ public sealed class GoldReportService : IGoldReportService
             if (sale.PricingCurrency == GoldCurrency.USD)
             {
                 makingUsd += making;
-                makingIqd += making * (sale.FxRate > 0 ? sale.FxRate : 1m);
+                if (sale.FxRate > 0)
+                    makingIqd += making * sale.FxRate;
             }
             else
             {
                 makingIqd += making;
-                makingUsd += making / (sale.FxRate > 0 ? sale.FxRate : 1m);
+                if (sale.FxRate > 0)
+                    makingUsd += making / sale.FxRate;
             }
         }
 
@@ -204,12 +206,17 @@ public sealed class GoldReportService : IGoldReportService
                 foreach (var inv in g)
                 {
                     var age = (today - inv.InvoiceDate.Date).Days;
+                    // لا نستخدم FxRate=1 الصامت — عند غياب السعر نُبقي المبلغ بعملته فقط
                     var amountIqd = inv.PricingCurrency == GoldCurrency.IQD
                         ? inv.RemainingAmount
-                        : GoldCurrencyHelper.ConvertAmount(inv.RemainingAmount, GoldCurrency.USD, GoldCurrency.IQD, inv.FxRate > 0 ? inv.FxRate : 1m);
+                        : (inv.FxRate > 0
+                            ? GoldCurrencyHelper.ConvertAmount(inv.RemainingAmount, GoldCurrency.USD, GoldCurrency.IQD, inv.FxRate)
+                            : 0m);
                     var amountUsd = inv.PricingCurrency == GoldCurrency.USD
                         ? inv.RemainingAmount
-                        : GoldCurrencyHelper.ConvertAmount(inv.RemainingAmount, GoldCurrency.IQD, GoldCurrency.USD, inv.FxRate > 0 ? inv.FxRate : 1m);
+                        : (inv.FxRate > 0
+                            ? GoldCurrencyHelper.ConvertAmount(inv.RemainingAmount, GoldCurrency.IQD, GoldCurrency.USD, inv.FxRate)
+                            : 0m);
                     totalUsd += amountUsd;
 
                     if (age <= 0)
@@ -390,13 +397,13 @@ public sealed class GoldReportService : IGoldReportService
                 foreach (var x in g)
                 {
                     weight += x.Line.WeightGrams;
-                    var fx = x.Sale.FxRate > 0 ? x.Sale.FxRate : 1m;
+                    var fx = x.Sale.FxRate > 0 ? x.Sale.FxRate : 0m;
                     var goldIqd = x.Sale.PricingCurrency == GoldCurrency.IQD
                         ? x.Line.GoldValue
-                        : x.Line.GoldValue * fx;
+                        : (fx > 0 ? x.Line.GoldValue * fx : 0m);
                     var making = x.Sale.PricingCurrency == GoldCurrency.IQD
                         ? x.Line.MakingCharge
-                        : x.Line.MakingCharge * fx;
+                        : (fx > 0 ? x.Line.MakingCharge * fx : 0m);
                     salesValueIqd += goldIqd;
                     makingIqd += making;
                     avgCosts.TryGetValue(x.Line.KaratValue, out var avgCost);

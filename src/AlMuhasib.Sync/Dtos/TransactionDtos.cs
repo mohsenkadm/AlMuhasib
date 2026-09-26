@@ -10,6 +10,8 @@ public sealed class InvoiceSyncDto : SyncDtoBase
     public Guid? SupplierSyncId { get; set; }
     public Guid WarehouseSyncId { get; set; }
     public PaymentMethod PaymentMethod { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public decimal FxRate { get; set; } = 1m;
     public decimal TotalAmount { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal NetAmount { get; set; }
@@ -73,6 +75,8 @@ public sealed class VoucherSyncDto : SyncDtoBase
 {
     public string VoucherNumber { get; set; } = string.Empty;
     public VoucherType VoucherType { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public decimal FxRate { get; set; } = 1m;
     public decimal Amount { get; set; }
     public decimal BankFees { get; set; }
     public Guid? CustomerSyncId { get; set; }
@@ -92,6 +96,8 @@ public sealed class VoucherSyncDto : SyncDtoBase
 public sealed class ExpenseSyncDto : SyncDtoBase
 {
     public Guid ExpenseTypeSyncId { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public decimal FxRate { get; set; } = 1m;
     public decimal Amount { get; set; }
     public DateTime Date { get; set; }
     public Guid CashBoxSyncId { get; set; }
@@ -104,6 +110,8 @@ public sealed class TransferSyncDto : SyncDtoBase
     public Guid FromSyncId { get; set; }
     public TransferAccountType ToType { get; set; }
     public Guid ToSyncId { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public decimal FxRate { get; set; } = 1m;
     public decimal Amount { get; set; }
     public DateTime Date { get; set; }
     public string? Notes { get; set; }

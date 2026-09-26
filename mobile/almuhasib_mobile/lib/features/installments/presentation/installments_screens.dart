@@ -472,15 +472,31 @@ class InstallmentPayController extends GetxController {
   Future<void> _preload() async {
     try {
       final boxes = await AppServices.data.getCashBoxes();
-      if (boxes.length == 1) cashBox.value = boxes.first;
+      final currency = item?.currency ?? 0;
+      final code = currencyCodeLabel(currency);
+      final matched = boxes
+          .where((b) => (b.extra ?? 'IQD').toUpperCase() == code)
+          .toList();
+      if (matched.length == 1) {
+        cashBox.value = matched.first;
+      } else if (matched.isEmpty && boxes.length == 1) {
+        cashBox.value = boxes.first;
+      }
     } catch (_) {}
   }
 
   Future<void> pickCashBox(BuildContext context) async {
+    final currency = item?.currency ?? 0;
+    final code = currencyCodeLabel(currency);
     final selected = await showLookupPickerSheet<LookupItem>(
       context: context,
       title: 'select_cashbox'.tr(),
-      loadItems: (s) => AppServices.data.getCashBoxes(search: s),
+      loadItems: (s) async {
+        final boxes = await AppServices.data.getCashBoxes(search: s);
+        return boxes
+            .where((b) => (b.extra ?? 'IQD').toUpperCase() == code)
+            .toList();
+      },
     );
     if (selected != null) cashBox.value = selected;
   }

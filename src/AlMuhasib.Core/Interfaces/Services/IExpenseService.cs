@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Enums;
 
 namespace AlMuhasib.Core.Interfaces.Services;
 
@@ -11,7 +12,14 @@ public interface IExpenseService
     Task DeleteExpenseTypeAsync(int id);
 
     // ── Expense operations ──
-    Task<Expense> AddExpenseAsync(int expenseTypeId, decimal amount, DateTime date, int cashBoxId, string? notes);
+    Task<Expense> AddExpenseAsync(
+        int expenseTypeId,
+        decimal amount,
+        DateTime date,
+        int cashBoxId,
+        string? notes,
+        AccountingCurrency? currency = null,
+        decimal fxRate = 1m);
     Task DeleteExpenseAsync(int id);
 
     Task<(IEnumerable<Expense> Items, int TotalCount)> GetPagedExpensesAsync(

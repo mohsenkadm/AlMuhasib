@@ -229,6 +229,8 @@
                                                         behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PartyName"/>
                                     <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="120"
                                                         behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Phone"/>
+                                    <DataGridTextColumn Header="العملة" Binding="{Binding Currency}" Width="70"
+                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Currency"/>
                                     <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="110"
                                                         behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
                                     <DataGridTextColumn Header="المسدد" Binding="{Binding PaidAmount, StringFormat=N0}" Width="100"
@@ -415,6 +417,24 @@
                                     materialDesign:HintAssist.Hint="التاريخ"
                                     Style="{StaticResource FilledDatePicker}"
                                     Margin="0,0,0,12"/>
+
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0" Margin="0,0,8,0"
+                                      ItemsSource="{Binding CurrencyOptions}"
+                                      SelectedItem="{Binding SelectedCurrencyOption}"
+                                      DisplayMemberPath="DisplayName"
+                                      materialDesign:HintAssist.Hint="العملة"
+                                      Style="{StaticResource FilledComboBox}"/>
+                            <TextBox Grid.Column="1" Margin="8,0,0,0"
+                                     Text="{Binding FxRate, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="سعر الصرف (دولار→دينار)"
+                                     Style="{StaticResource NumericTextBox}"
+                                     Visibility="{Binding ShowFxRateInput, Converter={StaticResource BoolToVis}}"/>
+                        </Grid>
 
                         <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
                                  materialDesign:HintAssist.Hint="ملاحظات"
