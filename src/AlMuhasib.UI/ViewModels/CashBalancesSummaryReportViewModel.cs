@@ -18,6 +18,8 @@ public partial class CashBalancesSummaryReportViewModel : ReportViewModelBase
     [ObservableProperty] private string _cashBoxesTotal = "0";
     [ObservableProperty] private string _banksTotal = "0";
     [ObservableProperty] private string _totalLiquidUsd = "0";
+    [ObservableProperty] private string _cashBoxesTotalUsd = "0";
+    [ObservableProperty] private string _banksTotalUsd = "0";
     [ObservableProperty] private string _accountCount = "0";
 
 
@@ -55,6 +57,12 @@ public partial class CashBalancesSummaryReportViewModel : ReportViewModelBase
             BanksTotal = FormatCurrency(result.BanksTotal);
             TotalLiquidUsd = result.TotalLiquidUsd > 0
                 ? result.TotalLiquidUsd.ToString("N2") + " $"
+                : "0 $";
+            CashBoxesTotalUsd = result.CashBoxesTotalUsd > 0
+                ? result.CashBoxesTotalUsd.ToString("N2") + " $"
+                : "0 $";
+            BanksTotalUsd = result.BanksTotalUsd > 0
+                ? result.BanksTotalUsd.ToString("N2") + " $"
                 : "0 $";
             AccountCount = result.AccountCount.ToString("N0");
             if (result.CompositionChart.Count > 0)

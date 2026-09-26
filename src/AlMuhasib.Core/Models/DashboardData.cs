@@ -111,4 +111,5 @@ public class CashBoxSummary
     public string Name { get; set; } = string.Empty;
     public decimal Balance { get; set; }
     public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "USD" : "د.ع";
 }
