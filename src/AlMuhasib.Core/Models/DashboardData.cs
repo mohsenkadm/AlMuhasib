@@ -6,7 +6,11 @@ public class DashboardData
 {
     // Summary cards
     public decimal TodaySales { get; set; }
+    /// <summary>مبيعات اليوم بالدولار — إفصاح منفصل عن TodaySales.</summary>
+    public decimal TodaySalesUsd { get; set; }
     public decimal TodayPurchases { get; set; }
+    /// <summary>مشتريات اليوم بالدولار — إفصاح منفصل.</summary>
+    public decimal TodayPurchasesUsd { get; set; }
     public decimal NetProfit { get; set; }
     public int OverdueInstallmentsCount { get; set; }
 

@@ -17,8 +17,11 @@ public class CustomerQuickStatementResult
     public decimal BalanceUsd { get; set; }
     public decimal TotalDebit { get; set; }
     public decimal TotalCredit { get; set; }
+    public decimal TotalDebitUsd { get; set; }
+    public decimal TotalCreditUsd { get; set; }
     public int OverdueInstallmentCount { get; set; }
     public decimal OverdueInstallmentAmount { get; set; }
+    public decimal OverdueInstallmentAmountUsd { get; set; }
     public List<CustomerQuickStatementLine> Lines { get; set; } = [];
 }
 

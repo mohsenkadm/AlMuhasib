@@ -317,6 +317,10 @@ public partial class OpeningSupplierBalanceViewModel : ViewModelBase
         Amount = item.Amount;
         BalanceDate = item.Date;
         Notes = item.UserNotes;
+        SelectedCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == item.Currency)
+            ?? CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
+        FxRate = item.Currency == AccountingCurrency.IQD ? 1m : item.FxRate;
+        ShowFxRateInput = item.Currency == AccountingCurrency.USD;
         DialogError = string.Empty;
         IsDialogOpen = true;
     }

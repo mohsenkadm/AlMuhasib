@@ -35,6 +35,10 @@ public class DashboardService : IDashboardService
             data.TodaySales = await InvoiceSignedSums.SumSignedNetAsync(
                 InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
                     .Where(i => i.Date >= today && i.Date < tomorrow));
+            data.TodaySalesUsd = await InvoiceSignedSums.SumSignedNetAsync(
+                InvoiceFilters.ForProfitAndSalesTotals(
+                        context.Invoices, context.InstallmentPlans, AccountingCurrency.USD)
+                    .Where(i => i.Date >= today && i.Date < tomorrow));
         }
         catch (Exception ex)
         {
@@ -45,6 +49,9 @@ public class DashboardService : IDashboardService
         {
             data.TodayPurchases = await InvoiceSignedSums.SumSignedNetAsync(
                 InvoiceFilters.ForPurchasesTotals(context.Invoices)
+                    .Where(i => i.Date >= today && i.Date < tomorrow));
+            data.TodayPurchasesUsd = await InvoiceSignedSums.SumSignedNetAsync(
+                InvoiceFilters.ForPurchasesTotals(context.Invoices, AccountingCurrency.USD)
                     .Where(i => i.Date >= today && i.Date < tomorrow));
         }
         catch (Exception ex)

@@ -128,13 +128,26 @@ public static class InstallmentPrintDocumentBuilder
         table.RowGroups.Add(dataGroup);
         doc.Blocks.Add(table);
 
-        AppendStatisticsCards(doc,
+        var cards = new List<(string Label, string Value)>
+        {
             ("عدد الخطط", model.PlanCount.ToString("N0")),
-            ("إجمالي المبالغ", $"{model.TotalAmount:N0} د.ع"),
-            ("المسدد", $"{model.PaidAmount:N0} د.ع"),
-            ("المتبقي", $"{model.RemainingAmount:N0} د.ع"),
-            ("نسبة التحصيل", model.TotalAmount > 0 ? $"{model.PaidAmount * 100m / model.TotalAmount:N1}%" : "0%"),
-            ("أقساط مسددة", model.PaidInstallmentCount.ToString("N0")));
+            ("إجمالي د.ع", $"{model.TotalAmount:N0}"),
+            ("مسدد د.ع", $"{model.PaidAmount:N0}"),
+            ("متبقي د.ع", $"{model.RemainingAmount:N0}"),
+            ("أقساط مسددة", model.PaidInstallmentCount.ToString("N0"))
+        };
+        if (model.TotalAmountUsd != 0 || model.PaidAmountUsd != 0 || model.RemainingAmountUsd != 0)
+        {
+            cards.Add(("إجمالي $", $"{model.TotalAmountUsd:N2}"));
+            cards.Add(("مسدد $", $"{model.PaidAmountUsd:N2}"));
+            cards.Add(("متبقي $", $"{model.RemainingAmountUsd:N2}"));
+        }
+        else if (model.TotalAmount > 0)
+        {
+            cards.Insert(4, ("نسبة التحصيل", $"{model.PaidAmount * 100m / model.TotalAmount:N1}%"));
+        }
+
+        AppendStatisticsCards(doc, cards.ToArray());
 
         return doc;
     }

@@ -40,8 +40,12 @@ public class CustomerStatementQuickService : ICustomerStatementQuickService
             .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Invoice)
             .Where(i => i.InstallmentPlan!.CustomerId == customerId
                         && i.Status == InstallmentStatus.Overdue
-                        && i.RemainingAmount > 0
-                        && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
+                        && i.RemainingAmount > 0)
+            .Select(i => new
+            {
+                i.RemainingAmount,
+                Currency = i.InstallmentPlan!.Invoice!.Currency
+            })
             .ToListAsync(cancellationToken);
 
         return new CustomerQuickStatementResult
@@ -53,8 +57,15 @@ public class CustomerStatementQuickService : ICustomerStatementQuickService
             BalanceUsd = statement.BalanceUsd,
             TotalDebit = statement.TotalDebit,
             TotalCredit = statement.TotalCredit,
+            TotalDebitUsd = statement.TotalDebitUsd,
+            TotalCreditUsd = statement.TotalCreditUsd,
             OverdueInstallmentCount = overdue.Count,
-            OverdueInstallmentAmount = overdue.Sum(i => i.RemainingAmount),
+            OverdueInstallmentAmount = overdue
+                .Where(i => i.Currency == AccountingCurrency.IQD)
+                .Sum(i => i.RemainingAmount),
+            OverdueInstallmentAmountUsd = overdue
+                .Where(i => i.Currency == AccountingCurrency.USD)
+                .Sum(i => i.RemainingAmount),
             Lines = statement.Rows.Select(r => new CustomerQuickStatementLine
             {
                 Date = r.Date,
@@ -98,28 +109,11 @@ public class CustomerStatementQuickService : ICustomerStatementQuickService
         {
             r.Date.ToString("yyyy/MM/dd"), r.Description, r.CurrencyLabel, r.Debit, r.Credit, r.RunningBalance
         }).ToList();
-        var summary = new List<string>
-        {
-            $"الرصيد د.ع: {data.Balance:N0}",
-            $"مدين: {data.TotalDebit:N0} د.ع",
-            $"دائن: {data.TotalCredit:N0} د.ع"
-        };
-        if (data.BalanceUsd != 0)
-            summary.Insert(1, $"الرصيد $: {data.BalanceUsd:N2}");
-        _exportService.PrintTable($"كشف حساب {data.CustomerName}", cols, rows, summary);
+        _exportService.PrintTable($"كشف حساب {data.CustomerName}", cols, rows, BuildSummaryLines(data));
     }
 
     public static StatementPrintModel BuildStatementModel(CustomerQuickStatementResult data)
     {
-        var summary = new List<string>
-        {
-            $"الرصيد د.ع: {data.Balance:N0}",
-            $"إجمالي المدين: {data.TotalDebit:N0} د.ع",
-            $"إجمالي الدائن: {data.TotalCredit:N0} د.ع"
-        };
-        if (data.BalanceUsd != 0)
-            summary.Insert(1, $"الرصيد $: {data.BalanceUsd:N2}");
-
         return new StatementPrintModel
         {
             Title = $"كشف حساب — {data.CustomerName}",
@@ -137,7 +131,31 @@ public class CustomerStatementQuickService : ICustomerStatementQuickService
                 r.Credit,
                 r.RunningBalance
             }).ToList(),
-            SummaryLines = summary
+            SummaryLines = BuildSummaryLines(data)
         };
+    }
+
+    private static List<string> BuildSummaryLines(CustomerQuickStatementResult data)
+    {
+        var summary = new List<string>
+        {
+            $"الرصيد د.ع: {data.Balance:N0}",
+            $"مدين د.ع: {data.TotalDebit:N0}",
+            $"دائن د.ع: {data.TotalCredit:N0}"
+        };
+        if (data.BalanceUsd != 0 || data.TotalDebitUsd != 0 || data.TotalCreditUsd != 0)
+        {
+            summary.Insert(1, $"الرصيد $: {data.BalanceUsd:N2}");
+            summary.Add($"مدين $: {data.TotalDebitUsd:N2}");
+            summary.Add($"دائن $: {data.TotalCreditUsd:N2}");
+        }
+        if (data.OverdueInstallmentCount > 0)
+        {
+            var overdue = $"أقساط متأخرة: {data.OverdueInstallmentCount} | {data.OverdueInstallmentAmount:N0} د.ع";
+            if (data.OverdueInstallmentAmountUsd != 0)
+                overdue += $" | {data.OverdueInstallmentAmountUsd:N2} $";
+            summary.Add(overdue);
+        }
+        return summary;
     }
 }

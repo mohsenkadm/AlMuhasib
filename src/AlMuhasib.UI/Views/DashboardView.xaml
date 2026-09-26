@@ -648,6 +648,11 @@
                                             <TextBlock Text="مبيعات اليوم" FontSize="11" Foreground="#E1F5FE" />
                                             <TextBlock Text="{Binding TodaySales, Converter={StaticResource CurrencyFormat}}"
                                                        FontSize="20" FontWeight="Bold" Foreground="White" Margin="0,4,0,0" />
+                                            <TextBlock FontSize="12" Foreground="#B3E5FC" Margin="0,2,0,0"
+                                                       Visibility="{Binding ShowTodaySalesUsd, Converter={StaticResource BoolToVis}}">
+                                                <Run Text="$ "/>
+                                                <Run Text="{Binding TodaySalesUsd, StringFormat=N2}"/>
+                                            </TextBlock>
                                         </StackPanel>
                                     </Border>
                                     <Border Background="{DynamicResource DashboardGlassChipBrush}" CornerRadius="16"

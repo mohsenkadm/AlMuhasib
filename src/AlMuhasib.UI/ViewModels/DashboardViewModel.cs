@@ -59,7 +59,17 @@ public partial class DashboardViewModel : ViewModelBase
     private decimal _todaySales;
 
     [ObservableProperty]
+    private decimal _todaySalesUsd;
+
+    public bool ShowTodaySalesUsd => TodaySalesUsd != 0;
+
+    [ObservableProperty]
     private decimal _todayPurchases;
+
+    [ObservableProperty]
+    private decimal _todayPurchasesUsd;
+
+    public bool ShowTodayPurchasesUsd => TodayPurchasesUsd != 0;
 
     [ObservableProperty]
     private decimal _netProfit;
@@ -526,7 +536,11 @@ public partial class DashboardViewModel : ViewModelBase
             {
                 // Summary
                 TodaySales = data.TodaySales;
+                TodaySalesUsd = data.TodaySalesUsd;
                 TodayPurchases = data.TodayPurchases;
+                TodayPurchasesUsd = data.TodayPurchasesUsd;
+                OnPropertyChanged(nameof(ShowTodaySalesUsd));
+                OnPropertyChanged(nameof(ShowTodayPurchasesUsd));
                 NetProfit = data.NetProfit;
                 NetProfitSales = data.NetProfitSales;
                 NetProfitPurchases = data.NetProfitPurchases;

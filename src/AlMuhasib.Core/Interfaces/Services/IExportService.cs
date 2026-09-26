@@ -179,6 +179,9 @@ public class InstallmentPlansSummaryPrintModel
     public decimal TotalAmount { get; set; }
     public decimal PaidAmount { get; set; }
     public decimal RemainingAmount { get; set; }
+    public decimal TotalAmountUsd { get; set; }
+    public decimal PaidAmountUsd { get; set; }
+    public decimal RemainingAmountUsd { get; set; }
     public int PaidInstallmentCount { get; set; }
 }
 
