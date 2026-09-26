@@ -52,10 +52,10 @@ public partial class CashFlowReportViewModel : ReportViewModelBase
             IsBusy = true;
             var result = await _reportService.GetCashFlowReportAsync(_selectedCashBoxId, DateFrom, DateTo);
 
-            TotalIncoming = FormatCurrency(result.TotalIncoming);
-            TotalOutgoing = FormatCurrency(result.TotalOutgoing);
-            NetFlow = FormatCurrency(result.NetFlow);
-            CurrentBalance = FormatCurrency(result.CurrentBalance);
+            TotalIncoming = FormatCurrency(result.TotalIncoming, result.Currency);
+            TotalOutgoing = FormatCurrency(result.TotalOutgoing, result.Currency);
+            NetFlow = FormatCurrency(result.NetFlow, result.Currency);
+            CurrentBalance = FormatCurrency(result.CurrentBalance, result.Currency);
 
             var allDates = result.DailyIncomingChart.Select(d => d.Date).Union(result.DailyOutgoingChart.Select(d => d.Date)).Distinct().OrderBy(d => d).ToList();
             if (allDates.Count > 0)

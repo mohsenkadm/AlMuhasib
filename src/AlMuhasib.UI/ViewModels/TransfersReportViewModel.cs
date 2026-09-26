@@ -15,6 +15,8 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class TransfersReportViewModel : ReportViewModelBase
 {
     [ObservableProperty] private string _totalAmount = "0";
+    [ObservableProperty] private string _totalAmountUsd = "—";
+    [ObservableProperty] private bool _showTotalAmountUsd;
     [ObservableProperty] private string _transferCount = "0";
     [ObservableProperty] private string _averageAmount = "0";
     [ObservableProperty] private string _opsCount = "0";
@@ -53,6 +55,8 @@ public partial class TransfersReportViewModel : ReportViewModelBase
             var result = await _reportService.GetTransfersReportAsync(DateFrom, DateTo);
 
             TotalAmount = FormatCurrency(result.TotalAmount);
+            ShowTotalAmountUsd = result.TotalAmountUsd != 0;
+            TotalAmountUsd = ShowTotalAmountUsd ? FormatCurrency(result.TotalAmountUsd, AccountingCurrency.USD) : "—";
             TransferCount = result.TransferCount.ToString("N0");
             AverageAmount = FormatCurrency(result.AverageAmount);
             OpsCount = result.TransferCount.ToString("N0");

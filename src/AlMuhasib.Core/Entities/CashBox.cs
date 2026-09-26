@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 
 namespace AlMuhasib.Core.Entities;
 
@@ -10,4 +11,7 @@ public class CashBox : BaseEntity
 
     /// <summary>عملة القاصة الثابتة — افتراضي دينار للحفاظ على التوافق مع البيانات القديمة.</summary>
     public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+
+    public string DisplayNameWithCurrency =>
+        $"{Name} ({AccountingCurrencyHelper.GetLabel(Currency)})";
 }

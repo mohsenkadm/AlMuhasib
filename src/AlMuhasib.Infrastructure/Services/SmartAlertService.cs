@@ -31,7 +31,9 @@ public class SmartAlertService : ISmartAlertService
         var tasks = new List<DailyTaskItem>();
 
         var overdue = await context.Installments.AsNoTracking()
-            .Where(i => i.Status == InstallmentStatus.Overdue && i.RemainingAmount > 0)
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Invoice)
+            .Where(i => i.Status == InstallmentStatus.Overdue && i.RemainingAmount > 0
+                        && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
             .ToListAsync(cancellationToken);
 
         if (overdue.Count > 0)
@@ -58,7 +60,8 @@ public class SmartAlertService : ISmartAlertService
         var dueToday = await context.Installments.AsNoTracking()
             .Where(i => i.DueDate.Date == today
                         && i.RemainingAmount > 0
-                        && i.Status != InstallmentStatus.Paid)
+                        && i.Status != InstallmentStatus.Paid
+                        && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
             .CountAsync(cancellationToken);
 
         if (dueToday > 0)
@@ -82,10 +85,12 @@ public class SmartAlertService : ISmartAlertService
 
         var weekEnd = today.AddDays(7);
         var dueThisWeek = await context.Installments.AsNoTracking()
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Invoice)
             .Where(i => i.DueDate.Date > today
                         && i.DueDate.Date <= weekEnd
                         && i.RemainingAmount > 0
-                        && i.Status != InstallmentStatus.Paid)
+                        && i.Status != InstallmentStatus.Paid
+                        && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
             .ToListAsync(cancellationToken);
 
         if (dueThisWeek.Count > 0)
