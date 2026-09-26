@@ -4,6 +4,7 @@ using System.Windows;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Shared.Services;
@@ -887,6 +888,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             InstallmentAmount = _savedPlan?.InstallmentAmount,
             ShowLineDiscount = ShowProductDiscount,
             ShowCarShowroomFields = _featureFlags.CarShowroom,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(_savedInvoice.Currency),
             Items = _savedItems.Select((item, i) =>
             {
                 var warehouseName = item.WarehouseId is int wid
@@ -947,6 +949,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             PaymentMethod = source.PaymentMethod,
             Notes = source.Notes,
             FileNumber = source.FileNumber,
+            CurrencyLabel = source.CurrencyLabel,
             HideAmounts = true,
             Items = source.Items.Select(i => new InvoicePrintItem
             {

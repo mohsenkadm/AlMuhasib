@@ -142,6 +142,8 @@
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Date"/>
                                 <DataGridTextColumn Header="البيان" Binding="{Binding Description}" Width="*"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Description"/>
+                                <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrencyLabel"/>
                                 <DataGridTextColumn Header="مدين" Binding="{Binding Debit, StringFormat=N0}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Debit"/>
                                 <DataGridTextColumn Header="دائن" Binding="{Binding Credit, StringFormat=N0}" Width="120"

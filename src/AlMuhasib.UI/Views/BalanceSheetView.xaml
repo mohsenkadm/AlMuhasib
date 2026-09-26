@@ -379,9 +379,50 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock Grid.Column="0" Text="الإجمالي" Style="{StaticResource TotalLabel}"/>
+                        <TextBlock Grid.Column="0" Text="الإجمالي (د.ع)" Style="{StaticResource TotalLabel}"/>
                         <TextBlock Grid.Column="1" Text="{Binding AssetsTotal, StringFormat=N0}" Style="{StaticResource TotalValue}" Foreground="#2E7D32"/>
                     </Grid>
+
+                    <!-- إفصاح دولار — لا يُدمج في مجاميع الميزانية -->
+                    <StackPanel Margin="0,16,0,0"
+                                Visibility="{Binding ShowUsdDisclosure, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="إفصاح دولار (لا يُدمج في الميزانية)"
+                                   Style="{StaticResource SectionTitle}"
+                                   Foreground="#1565C0"
+                                   FontSize="14"/>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="قاصات دولار" Style="{StaticResource SubLabel}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding CashBoxesTotalUsd, StringFormat=N2}" Style="{StaticResource SubValue}" Foreground="#1565C0"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="مصارف دولار" Style="{StaticResource SubLabel}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding BanksTotalUsd, StringFormat=N2}" Style="{StaticResource SubValue}" Foreground="#1565C0"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="ذمم عملاء دولار" Style="{StaticResource SubLabel}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding CustomerDebtsUsd, StringFormat=N2}" Style="{StaticResource SubValue}" Foreground="#1565C0"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="ذمم موردين دولار" Style="{StaticResource SubLabel}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding SupplierPayablesUsd, StringFormat=N2}" Style="{StaticResource SubValue}" Foreground="#EF6C00"/>
+                        </Grid>
+                    </StackPanel>
                 </StackPanel>
             </md:Card>
         </Grid>

@@ -55,6 +55,13 @@ public partial class BalanceSheetViewModel : ViewModelBase
     [ObservableProperty] private decimal _installmentReceivables;
     [ObservableProperty] private decimal _assetsTotal;
 
+    // إفصاح دولار — لا يُدمج في مجاميع الميزانية بالدينار
+    [ObservableProperty] private decimal _cashBoxesTotalUsd;
+    [ObservableProperty] private decimal _banksTotalUsd;
+    [ObservableProperty] private decimal _customerDebtsUsd;
+    [ObservableProperty] private decimal _supplierPayablesUsd;
+    [ObservableProperty] private bool _showUsdDisclosure;
+
     public ObservableCollection<CashBoxLine> CashBoxLines { get; } = [];
     public ObservableCollection<BankLine> BankLines { get; } = [];
 
@@ -106,6 +113,15 @@ public partial class BalanceSheetViewModel : ViewModelBase
             InventoryValue = result.InventoryValue;
             InstallmentReceivables = result.InstallmentReceivables;
             AssetsTotal = result.AssetsTotal;
+
+            CashBoxesTotalUsd = result.CashBoxesTotalUsd;
+            BanksTotalUsd = result.BanksTotalUsd;
+            CustomerDebtsUsd = result.CustomerDebtsUsd;
+            SupplierPayablesUsd = result.SupplierPayablesUsd;
+            ShowUsdDisclosure = result.CashBoxesTotalUsd != 0
+                || result.BanksTotalUsd != 0
+                || result.CustomerDebtsUsd != 0
+                || result.SupplierPayablesUsd != 0;
 
             // Status
             IsBalanced = result.IsBalanced;
@@ -174,6 +190,15 @@ public partial class BalanceSheetViewModel : ViewModelBase
         rows.Add(new object[] { "قيمة مواد المخزون", InventoryValue });
         rows.Add(new object[] { "المبالغ المطلوبة (أقساط)", InstallmentReceivables });
         rows.Add(new object[] { "إجمالي الموجودات", AssetsTotal });
+        if (ShowUsdDisclosure)
+        {
+            rows.Add(new object[] { "", "" });
+            rows.Add(new object[] { "═══ إفصاح دولار (لا يُدمج) ═══", "" });
+            rows.Add(new object[] { "قاصات دولار", CashBoxesTotalUsd });
+            rows.Add(new object[] { "مصارف دولار", BanksTotalUsd });
+            rows.Add(new object[] { "ذمم عملاء دولار", CustomerDebtsUsd });
+            rows.Add(new object[] { "ذمم موردين دولار", SupplierPayablesUsd });
+        }
         rows.Add(new object[] { "", "" });
         rows.Add(new object[] { BalanceStatusText, "" });
         return rows;

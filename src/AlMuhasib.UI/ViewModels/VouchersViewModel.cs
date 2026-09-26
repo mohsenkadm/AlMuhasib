@@ -3,6 +3,7 @@ using System.Windows;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -922,7 +923,8 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             PartyPhone = partyPhone,
             CashBoxName = voucher.CashBox?.Name,
             BankAccountName = voucher.BankAccount?.Name,
-            Notes = voucher.Notes
+            Notes = voucher.Notes,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(voucher.Currency)
         };
     }
 

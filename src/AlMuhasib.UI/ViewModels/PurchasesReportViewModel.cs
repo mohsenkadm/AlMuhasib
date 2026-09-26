@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -198,6 +199,7 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
             Subtotal = invoice.TotalAmount,
             RoundingAmount = invoice.RoundingAmount,
             GrandTotal = invoice.NetAmount,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(invoice.Currency),
             Items = invoice.Items.Select((item, i) => new InvoicePrintItem
             {
                 Number = i + 1,

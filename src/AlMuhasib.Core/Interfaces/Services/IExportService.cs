@@ -211,6 +211,7 @@ public class VoucherPrintModel
     public DateTime Date { get; set; } = DateTime.Now;
     public decimal Amount { get; set; }
     public decimal BankFees { get; set; }
+    public string CurrencyLabel { get; set; } = "د.ع";
     public string? PartyLabel { get; set; }
     public string? PartyName { get; set; }
     public string? PartyPhone { get; set; }
