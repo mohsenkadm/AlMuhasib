@@ -673,6 +673,8 @@ public class CashBankService : ICashBankService
                 case VoucherType.InvestorDeposit:
                     if (!voucher.InvestorId.HasValue)
                         throw new InvalidOperationException("يجب تحديد المستثمر لسند إيداع المستثمر");
+                    if (voucher.Currency != AccountingCurrency.IQD)
+                        throw new InvalidOperationException("سندات المستثمرين بالدينار فقط — دفتر المستثمر لا يدعم الدولار حالياً.");
                     await AdjustCashBoxBalance(context, voucher.CashBoxId, voucher.Amount, username);
                     await AdjustInvestorDeposit(context, voucher.InvestorId.Value, voucher.Amount, username);
                     await CreateInvestorTransaction(context, voucher.InvestorId.Value,
@@ -682,6 +684,8 @@ public class CashBankService : ICashBankService
                 case VoucherType.InvestorWithdrawal:
                     if (!voucher.InvestorId.HasValue)
                         throw new InvalidOperationException("يجب تحديد المستثمر لسند سحب المستثمر");
+                    if (voucher.Currency != AccountingCurrency.IQD)
+                        throw new InvalidOperationException("سندات المستثمرين بالدينار فقط — دفتر المستثمر لا يدعم الدولار حالياً.");
                     await ValidateAndDeductCashBox(context, voucher.CashBoxId, voucher.Amount, username);
                     await AdjustInvestorDeposit(context, voucher.InvestorId.Value, -voucher.Amount, username);
                     await CreateInvestorTransaction(context, voucher.InvestorId.Value,

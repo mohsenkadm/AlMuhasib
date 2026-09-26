@@ -562,10 +562,15 @@ public sealed class CloudGoldOpsHelper
         return $"{fullPrefix}{next:D4}";
     }
 
-    private async Task<decimal> LatestFxAsync(int tenantId, CancellationToken ct) =>
-        (await _db.GoldFxRates.Where(r => r.TenantId == tenantId)
+    private async Task<decimal> LatestFxAsync(int tenantId, CancellationToken ct)
+    {
+        var fx = (await _db.GoldFxRates.Where(r => r.TenantId == tenantId)
             .OrderByDescending(r => r.RateDate).ThenByDescending(r => r.Id)
-            .Select(r => (decimal?)r.UsdToIqd).FirstOrDefaultAsync(ct)) ?? 1m;
+            .Select(r => (decimal?)r.UsdToIqd).FirstOrDefaultAsync(ct)) ?? 0m;
+        if (fx <= 0)
+            throw new InvalidOperationException("سعر صرف الذهب مطلوب وصالح قبل تنفيذ العملية.");
+        return fx;
+    }
 
     private async Task<int> ResolveWarehouseIdAsync(int tenantId, int? warehouseId, string username, CancellationToken ct)
     {
@@ -641,7 +646,9 @@ public sealed class CloudGoldOpsHelper
 
     private static void ApplyDualTotals(CloudGoldInvoice invoice)
     {
-        var fx = invoice.FxRate <= 0 ? 1m : invoice.FxRate;
+        if (invoice.FxRate <= 0)
+            throw new InvalidOperationException("سعر صرف الذهب مطلوب وصالح قبل حفظ الفاتورة.");
+        var fx = invoice.FxRate;
         if (invoice.PricingCurrency == GoldCurrency.USD)
         {
             invoice.TotalAmountUsd = invoice.TotalAmount;
@@ -657,8 +664,9 @@ public sealed class CloudGoldOpsHelper
     private static decimal ConvertAmount(decimal amount, GoldCurrency from, GoldCurrency to, decimal fxRate)
     {
         if (from == to) return amount;
-        var fx = fxRate <= 0 ? 1m : fxRate;
-        return from == GoldCurrency.USD ? amount * fx : amount / fx;
+        if (fxRate <= 0)
+            throw new InvalidOperationException("لا يمكن تحويل مبلغ ذهب بدون سعر صرف صالح.");
+        return from == GoldCurrency.USD ? amount * fxRate : amount / fxRate;
     }
 
     private static GoldInvoiceStatus ResolveStatus(decimal totalAmount, decimal paidAmount, GoldPaymentMethod method)

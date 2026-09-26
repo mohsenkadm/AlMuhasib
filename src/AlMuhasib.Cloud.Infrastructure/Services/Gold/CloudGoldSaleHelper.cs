@@ -37,7 +37,9 @@ public sealed class CloudGoldSaleHelper
                     .OrderByDescending(r => r.RateDate)
                     .ThenByDescending(r => r.Id)
                     .Select(r => (decimal?)r.UsdToIqd)
-                    .FirstOrDefaultAsync(ct)) ?? 1m;
+                    .FirstOrDefaultAsync(ct)) ?? 0m;
+            if (fx <= 0)
+                throw new InvalidOperationException("سعر صرف الذهب مطلوب وصالح قبل حفظ الفاتورة.");
 
             CloudGoldCustomer? customer = null;
             if (request.CustomerId.HasValue)
@@ -368,8 +370,9 @@ public sealed class CloudGoldSaleHelper
     private static decimal ConvertAmount(decimal amount, GoldCurrency from, GoldCurrency to, decimal fxRate)
     {
         if (from == to) return amount;
-        var fx = fxRate <= 0 ? 1m : fxRate;
-        return from == GoldCurrency.USD ? amount * fx : amount / fx;
+        if (fxRate <= 0)
+            throw new InvalidOperationException("لا يمكن تحويل مبلغ ذهب بدون سعر صرف صالح.");
+        return from == GoldCurrency.USD ? amount * fxRate : amount / fxRate;
     }
 
     private static GoldInvoiceStatus ResolveStatus(decimal totalAmount, decimal paidAmount, GoldPaymentMethod method)

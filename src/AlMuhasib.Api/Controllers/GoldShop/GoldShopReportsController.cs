@@ -446,9 +446,13 @@ public sealed class GoldShopReportsController : GoldShopApiControllerBase
                 foreach (var x in g)
                 {
                     weight += x.Line.WeightGrams;
-                    var fx = x.Sale.FxRate > 0 ? x.Sale.FxRate : 1m;
-                    salesValue += x.Sale.PricingCurrency == GoldCurrency.IQD ? x.Line.GoldValue : x.Line.GoldValue * fx;
-                    making += x.Sale.PricingCurrency == GoldCurrency.IQD ? x.Line.MakingCharge : x.Line.MakingCharge * fx;
+                    var fx = x.Sale.FxRate > 0 ? x.Sale.FxRate : 0m;
+                    salesValue += x.Sale.PricingCurrency == GoldCurrency.IQD
+                        ? x.Line.GoldValue
+                        : (fx > 0 ? x.Line.GoldValue * fx : 0m);
+                    making += x.Sale.PricingCurrency == GoldCurrency.IQD
+                        ? x.Line.MakingCharge
+                        : (fx > 0 ? x.Line.MakingCharge * fx : 0m);
                     avgCosts.TryGetValue(x.Line.KaratValue, out var avg);
                     cost += x.Line.WeightGrams * avg;
                 }

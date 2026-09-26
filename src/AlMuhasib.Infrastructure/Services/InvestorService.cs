@@ -1,6 +1,7 @@
 ﻿using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Data;
@@ -168,6 +169,7 @@ public class InvestorService : IInvestorService
         {
             var investor = await context.Investors.FindAsync(investorId) ?? throw new InvalidOperationException("المستثمر غير موجود");
             var cashBox = await context.CashBoxes.FindAsync(cashBoxId) ?? throw new InvalidOperationException("القاصة غير موجودة");
+            EnsureInvestorCashBoxIsIqd(cashBox);
             cashBox.Balance += amount; investor.TotalDeposit += amount;
             var tx = new InvestorTransaction { InvestorId = investorId, Type = InvestorTransactionType.Deposit, Amount = amount, Date = date, Notes = notes };
             await context.InvestorTransactions.AddAsync(tx);
@@ -186,6 +188,7 @@ public class InvestorService : IInvestorService
         {
             var investor = await context.Investors.FindAsync(investorId) ?? throw new InvalidOperationException("المستثمر غير موجود");
             var cashBox = await context.CashBoxes.FindAsync(cashBoxId) ?? throw new InvalidOperationException("القاصة غير موجودة");
+            EnsureInvestorCashBoxIsIqd(cashBox);
             if (amount > investor.TotalDeposit) throw new InvalidOperationException($"مبلغ السحب ({amount:N0}) يتجاوز رصيد الإيداع ({investor.TotalDeposit:N0})");
             if (amount > cashBox.Balance) throw new InvalidOperationException($"رصيد القاصة غير كافٍ. الرصيد الحالي: {cashBox.Balance:N0}");
             cashBox.Balance -= amount; investor.TotalDeposit -= amount;
@@ -284,6 +287,7 @@ public class InvestorService : IInvestorService
         try
         {
             var cashBox = await context.CashBoxes.FindAsync(cashBoxId) ?? throw new InvalidOperationException("القاصة غير موجودة");
+            EnsureInvestorCashBoxIsIqd(cashBox);
             if (totalToDistribute > cashBox.Balance) throw new InvalidOperationException($"رصيد القاصة غير كافٍ. الرصيد: {cashBox.Balance:N0}, المطلوب: {totalToDistribute:N0}");
             cashBox.Balance -= totalToDistribute;
 
@@ -325,6 +329,18 @@ public class InvestorService : IInvestorService
             .Where(t => t.InvestorId == investor.Id && t.Type == InvestorTransactionType.Withdrawal)
             .SumAsync(t => (decimal?)t.Amount ?? 0);
         investor.TotalDeposit = investor.OpeningBalance + deposits - withdrawals;
+    }
+
+    /// <summary>
+    /// دفتر المستثمر ورأس المال بالدينار فقط حالياً — منع خلط دولار في TotalDeposit/التوزيع.
+    /// </summary>
+    private static void EnsureInvestorCashBoxIsIqd(CashBox cashBox)
+    {
+        if (cashBox.Currency == AccountingCurrency.IQD)
+            return;
+
+        throw new InvalidOperationException(
+            $"عمليات المستثمرين بالدينار فقط. القاصة '{cashBox.Name}' بعملة {AccountingCurrencyHelper.GetDisplayName(cashBox.Currency)}. اختر قاصة دينار.");
     }
 
     private async Task CreateAuditLogAsync(AppDbContext context, string entityName, int entityId, string description)

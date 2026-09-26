@@ -584,8 +584,9 @@ public class InstallmentService : IInstallmentService
                 CustomerId = customerId,
                 WarehouseId = warehouse.Id,
                 PaymentMethod = PaymentMethod.Installment,
-                Currency = AccountingCurrency.IQD,
-                FxRate = 1m,
+                Currency = request.Currency,
+                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
+                    request.Currency, request.FxRate, "رصيد افتتاحي أقساط"),
                 TotalAmount = request.TotalAmount,
                 DiscountAmount = 0,
                 NetAmount = request.TotalAmount,
@@ -686,6 +687,8 @@ public class InstallmentService : IInstallmentService
             throw new InvalidOperationException("عدد الأقساط المسددة لا يمكن أن يتجاوز إجمالي الأقساط");
         if (request.CustomerId is null && string.IsNullOrWhiteSpace(request.CustomerName))
             throw new InvalidOperationException("يجب اختيار زبون أو إدخال اسمه");
+        AccountingCurrencyRules.EnsureValidFxRate(request.Currency, request.FxRate, "رصيد افتتاحي أقساط");
+        request.TotalAmount = AccountingCurrencyHelper.NormalizeAmount(request.TotalAmount, request.Currency);
     }
 
     private static async Task<int> ResolveCustomerIdAsync(

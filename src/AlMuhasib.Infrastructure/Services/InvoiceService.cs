@@ -675,8 +675,27 @@ public class InvoiceService : IInvoiceService
             foreach (var item in invoice.Items)
                 item.MarkSoftDeleted(username);
 
+            // أقساط سُددت مباشرة عبر PayInstallmentAsync (بدون سند) — عكس أثرها النقدي قبل الحذف
             foreach (var plan in invoice.InstallmentPlans)
             {
+                foreach (var installment in plan.Installments.Where(i => i.PaidAmount > 0 && i.CashBoxId.HasValue))
+                {
+                    var hasVoucher = await context.Vouchers
+                        .AnyAsync(v => v.InstallmentId == installment.Id && !v.IsDeleted);
+                    if (hasVoucher)
+                        continue; // عُكس عبر مسار السندات أعلاه أو سيُعكس معها
+
+                    var box = await context.CashBoxes.FindAsync(installment.CashBoxId!.Value);
+                    if (box is null)
+                        continue;
+                    if (box.Balance < installment.PaidAmount)
+                        throw new InvalidOperationException(
+                            $"رصيد القاصة '{box.Name}' غير كافٍ لعكس تسديد قسط عند حذف الفاتورة");
+                    box.Balance -= installment.PaidAmount;
+                    box.UpdatedBy = username;
+                    box.UpdatedAt = DateTime.UtcNow;
+                }
+
                 plan.MarkSoftDeleted(username);
                 foreach (var installment in plan.Installments)
                     installment.MarkSoftDeleted(username);
@@ -840,7 +859,27 @@ public class InvoiceService : IInvoiceService
             {
                 plan.RestoreFromSoftDelete(username);
                 foreach (var installment in plan.Installments)
+                {
                     installment.RestoreFromSoftDelete(username);
+
+                    // إعادة تطبيق نقد الأقساط المسددة مباشرة (بدون سند)
+                    if (installment.PaidAmount > 0 && installment.CashBoxId.HasValue)
+                    {
+                        var hasVoucher = await context.Vouchers
+                            .IgnoreQueryFilters()
+                            .AnyAsync(v => v.InstallmentId == installment.Id);
+                        if (!hasVoucher)
+                        {
+                            var box = await context.CashBoxes.FindAsync(installment.CashBoxId.Value);
+                            if (box is not null)
+                            {
+                                box.Balance += installment.PaidAmount;
+                                box.UpdatedBy = username;
+                                box.UpdatedAt = DateTime.UtcNow;
+                            }
+                        }
+                    }
+                }
             }
 
             foreach (var voucher in linkedVouchersForRestore)

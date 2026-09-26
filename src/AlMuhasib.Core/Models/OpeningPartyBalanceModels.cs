@@ -84,6 +84,8 @@ public class OpeningPartyBalanceListItem
     public string? Notes { get; set; }
     public string UserNotes { get; set; } = string.Empty;
     public bool IsFullyPaid { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public decimal FxRate { get; set; } = 1m;
     public bool CanModify => PaidAmount <= 0 && !IsFullyPaid;
 }
 

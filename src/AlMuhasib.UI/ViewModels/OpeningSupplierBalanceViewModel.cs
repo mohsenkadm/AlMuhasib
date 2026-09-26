@@ -2,10 +2,13 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -53,6 +56,11 @@ public partial class OpeningSupplierBalanceViewModel : ViewModelBase
     [ObservableProperty] private DateTime _balanceDate = DateTime.Today;
     [ObservableProperty] private string _notes = string.Empty;
     [ObservableProperty] private string _dialogError = string.Empty;
+    [ObservableProperty] private CurrencyOption? _selectedCurrencyOption;
+    [ObservableProperty] private decimal _fxRate = 1m;
+    [ObservableProperty] private bool _showFxRateInput;
+
+    public ObservableCollection<CurrencyOption> CurrencyOptions { get; } = new(CurrencyOption.All);
 
     [ObservableProperty] private bool _isDeleteDialogOpen;
     [ObservableProperty] private OpeningPartyBalanceListItem? _itemToDelete;
@@ -389,6 +397,7 @@ public partial class OpeningSupplierBalanceViewModel : ViewModelBase
         try
         {
             IsBusy = true;
+            var currency = SelectedCurrencyOption?.Currency ?? AccountingCurrency.IQD;
             var request = new OpeningPartyBalanceRequest
             {
                 PartyId = SelectedSupplier?.Id,
@@ -396,13 +405,15 @@ public partial class OpeningSupplierBalanceViewModel : ViewModelBase
                 Phone = string.IsNullOrWhiteSpace(Phone) ? null : Phone.Trim(),
                 Amount = Amount,
                 Date = BalanceDate.Date,
-                Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
+                Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
+                Currency = currency,
+                FxRate = currency == AccountingCurrency.IQD ? 1m : FxRate
             };
 
             await _balanceService.CreateSupplierOpeningBalanceAsync(request);
             IsDialogOpen = false;
             BeautifulMessageDialog.ShowSuccess(
-                $"تم حفظ الرصيد الافتتاحي للمورد «{request.PartyName}» بمبلغ {Amount:N0} د.ع");
+                $"تم حفظ الرصيد الافتتاحي للمورد «{request.PartyName}» بمبلغ {AccountingCurrencyHelper.Format(Amount, currency)}");
             await LoadSuppliersAsync();
             await LoadItemsAsync();
         }
@@ -424,6 +435,16 @@ public partial class OpeningSupplierBalanceViewModel : ViewModelBase
         Amount = 0;
         BalanceDate = DateTime.Today;
         Notes = string.Empty;
+        SelectedCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
+        FxRate = 1m;
+        ShowFxRateInput = false;
+    }
+
+    partial void OnSelectedCurrencyOptionChanged(CurrencyOption? value)
+    {
+        ShowFxRateInput = value?.Currency == AccountingCurrency.USD;
+        if (value?.Currency == AccountingCurrency.IQD)
+            FxRate = 1m;
     }
 
     [RelayCommand]
