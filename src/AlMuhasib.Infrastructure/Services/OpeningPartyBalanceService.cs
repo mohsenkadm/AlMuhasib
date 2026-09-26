@@ -206,7 +206,9 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
                 i.RemainingAmount,
                 i.Date,
                 i.Notes,
-                i.IsCreditPaid
+                i.IsCreditPaid,
+                i.Currency,
+                i.FxRate
             })
             .ToListAsync();
 
@@ -224,7 +226,9 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
             Date = i.Date,
             Notes = i.Notes,
             UserNotes = OpeningCreditBalanceMarkers.ExtractUserNotes(i.Notes),
-            IsFullyPaid = i.IsCreditPaid || i.RemainingAmount <= 0
+            IsFullyPaid = i.IsCreditPaid || i.RemainingAmount <= 0,
+            Currency = i.Currency,
+            FxRate = i.FxRate
         }).ToList();
 
         return new OpeningPartyBalancePagedResult

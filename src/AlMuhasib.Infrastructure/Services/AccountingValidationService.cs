@@ -110,7 +110,8 @@ public class AccountingValidationService : IAccountingValidationService
         var installmentPayments = await context.Installments
             .Where(inst => inst.CashBoxId == cashBoxId &&
                            inst.PaidAmount > 0 &&
-                           !voucherInstallmentIds.Contains(inst.Id))
+                           !voucherInstallmentIds.Contains(inst.Id) &&
+                           inst.InstallmentPlan!.Invoice!.Currency == cashBox.Currency)
             .SumAsync(inst => (decimal?)inst.PaidAmount) ?? 0;
 
         var expenses = await context.Expenses

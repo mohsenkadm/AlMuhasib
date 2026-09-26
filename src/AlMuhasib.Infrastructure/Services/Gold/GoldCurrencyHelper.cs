@@ -6,6 +6,16 @@ namespace AlMuhasib.Infrastructure.Services.Gold;
 
 internal static class GoldCurrencyHelper
 {
+    public static decimal RequirePositiveFxRate(decimal fxRate, string? context = null)
+    {
+        if (fxRate > 0)
+            return fxRate;
+
+        var where = string.IsNullOrWhiteSpace(context) ? string.Empty : $" ({context})";
+        throw new InvalidOperationException(
+            $"سعر الصرف مطلوب وصالح لعمليات الذهب{where}. سجّل سعر صرف الذهب أولاً.");
+    }
+
     public static decimal ConvertAmount(
         decimal amount,
         GoldCurrency from,
@@ -13,9 +23,9 @@ internal static class GoldCurrencyHelper
         decimal fxRate)
     {
         if (from == to)
-            return amount;
+            return from == GoldCurrency.USD ? Round(amount, 2) : Round(amount, 0);
 
-        var fx = fxRate <= 0 ? 1m : fxRate;
+        var fx = RequirePositiveFxRate(fxRate, "تحويل عملة");
         var converted = from == GoldCurrency.USD
             ? amount * fx
             : amount / fx;
@@ -28,7 +38,7 @@ internal static class GoldCurrencyHelper
 
     public static void ApplyDualTotals(GoldInvoice invoice)
     {
-        var fx = invoice.FxRate <= 0 ? 1m : invoice.FxRate;
+        var fx = RequirePositiveFxRate(invoice.FxRate, "فاتورة ذهب");
         if (invoice.PricingCurrency == GoldCurrency.USD)
         {
             invoice.TotalAmountUsd = invoice.TotalAmount;
@@ -37,7 +47,7 @@ internal static class GoldCurrencyHelper
         else
         {
             invoice.TotalAmountIqd = invoice.TotalAmount;
-            invoice.TotalAmountUsd = Round(invoice.TotalAmount / fx);
+            invoice.TotalAmountUsd = Round(invoice.TotalAmount / fx, 2);
         }
     }
 

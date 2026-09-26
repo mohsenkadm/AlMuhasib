@@ -76,7 +76,8 @@ public sealed class GoldExchangeService : IGoldExchangeService
                     .OrderByDescending(r => r.RateDate)
                     .ThenByDescending(r => r.Id)
                     .Select(r => (decimal?)r.UsdToIqd)
-                    .FirstOrDefaultAsync(cancellationToken)) ?? 1m;
+                    .FirstOrDefaultAsync(cancellationToken)) ?? 0m;
+            fx = GoldCurrencyHelper.RequirePositiveFxRate(fx, "فاتورة تبادل ذهب");
 
             GoldCustomer? customer = null;
             if (request.CustomerId.HasValue)
