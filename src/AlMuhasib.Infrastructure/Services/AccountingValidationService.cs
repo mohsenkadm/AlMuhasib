@@ -497,6 +497,65 @@ public class AccountingValidationService : IAccountingValidationService
         var equityAndLiabilities = totalEquity + totalLiabilities;
         var diff = Math.Abs(totalAssets - equityAndLiabilities);
 
+        // إفصاح دولار فقط — لا يدخل في معادلة التوازن بالدينار
+        var cashBoxesUsd = await context.CashBoxes
+            .Where(c => c.Currency == AccountingCurrency.USD)
+            .SumAsync(c => (decimal?)c.Balance) ?? 0;
+        var banksUsd = await context.BankAccounts
+            .Where(b => b.Currency == AccountingCurrency.USD)
+            .SumAsync(b => (decimal?)b.Balance) ?? 0;
+        var creditRemainingUsd = await context.Invoices
+            .Where(i => i.CustomerId != null &&
+                        (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.USD &&
+                        i.Date <= endOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var installmentReceivablesUsd = await context.Installments
+            .Where(i => i.RemainingAmount > 0 &&
+                        i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.USD)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var unappliedDebtUsd = await context.Vouchers
+            .Where(v => v.CustomerId != null &&
+                        v.VoucherType == VoucherType.DebtReceipt &&
+                        v.Currency == AccountingCurrency.USD &&
+                        v.Date <= endOfDay &&
+                        !v.InvoiceId.HasValue &&
+                        !v.InstallmentId.HasValue &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var unappliedReceiptsUsd = await context.Vouchers
+            .Where(v => v.CustomerId != null &&
+                        v.VoucherType == VoucherType.Receipt &&
+                        v.Currency == AccountingCurrency.USD &&
+                        v.Date <= endOfDay &&
+                        !v.InvoiceId.HasValue &&
+                        !v.InstallmentId.HasValue &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var customerDebtsUsd = CustomerBalanceHelper.ComputeOutstandingBalance(
+            creditRemainingUsd, installmentReceivablesUsd, unappliedDebtUsd, unappliedReceiptsUsd);
+        var supplierCreditRemainingUsd = await context.Invoices
+            .Where(i => i.InvoiceType == InvoiceType.Purchase &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.USD &&
+                        i.Date <= endOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var unappliedSupplierPaymentsUsd = await context.Vouchers
+            .Where(v => v.SupplierId != null &&
+                        v.VoucherType == VoucherType.Payment &&
+                        v.Currency == AccountingCurrency.USD &&
+                        v.Date <= endOfDay &&
+                        !v.InvoiceId.HasValue &&
+                        (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var supplierPayablesUsd = SupplierBalanceHelper.ComputeOutstandingPayables(
+            supplierCreditRemainingUsd, unappliedSupplierPaymentsUsd);
+
+        var usdDisclosure =
+            $" | نقد $ {cashBoxesUsd:N2} | بنوك $ {banksUsd:N2}" +
+            $" | ذمم مدينة $ {customerDebtsUsd:N2} | ذمم دائنة $ {supplierPayablesUsd:N2}";
+
         return new ValidationResult
         {
             Category = "الميزانية العمومية",
@@ -505,9 +564,10 @@ public class AccountingValidationService : IAccountingValidationService
             ExpectedValue = equityAndLiabilities,
             ActualValue = totalAssets,
             Difference = totalAssets - equityAndLiabilities,
-            Message = diff < 0.01m
+            Message = (diff < 0.01m
                 ? $"الميزانية متوازنة (دينار): الموجودات = الملكية + الالتزامات = {totalAssets:N0}"
-                : $"خلل في الميزانية (دينار): الموجودات {totalAssets:N0} ≠ الملكية+الالتزامات {equityAndLiabilities:N0} (فرق: {totalAssets - equityAndLiabilities:N0})"
+                : $"خلل في الميزانية (دينار): الموجودات {totalAssets:N0} ≠ الملكية+الالتزامات {equityAndLiabilities:N0} (فرق: {totalAssets - equityAndLiabilities:N0})")
+                + usdDisclosure
         };
     }
 }
