@@ -35,7 +35,7 @@ public class PartyQuickDetailService : IPartyQuickDetailService
                         (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment))
             .OrderByDescending(i => i.Date)
             .ThenByDescending(i => i.Id)
-            .Select(i => new { i.Id, i.Date, i.InvoiceNumber, i.InvoiceType, i.NetAmount })
+            .Select(i => new { i.Id, i.Date, i.InvoiceNumber, i.InvoiceType, i.NetAmount, i.Currency })
             .ToListAsync(cancellationToken);
 
         var last = invoices.FirstOrDefault();
@@ -55,7 +55,9 @@ public class PartyQuickDetailService : IPartyQuickDetailService
             FileNumber = customer.FileNumber,
             Notes = customer.Notes,
             Balance = statement.Balance,
-            TotalDealAmount = invoices.Sum(i => i.NetAmount),
+            BalanceUsd = statement.BalanceUsd,
+            TotalDealAmount = invoices.Where(i => i.Currency == AccountingCurrency.IQD).Sum(i => i.NetAmount),
+            TotalDealAmountUsd = invoices.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.NetAmount),
             DealCount = invoices.Count,
             LastDealDate = last?.Date,
             LastDealDescription = last is null
@@ -95,7 +97,7 @@ public class PartyQuickDetailService : IPartyQuickDetailService
                         (i.InvoiceType == InvoiceType.Purchase || i.InvoiceType == InvoiceType.PurchaseReturn))
             .OrderByDescending(i => i.Date)
             .ThenByDescending(i => i.Id)
-            .Select(i => new { i.Id, i.Date, i.InvoiceNumber, i.InvoiceType, i.NetAmount })
+            .Select(i => new { i.Id, i.Date, i.InvoiceNumber, i.InvoiceType, i.NetAmount, i.Currency })
             .ToListAsync(cancellationToken);
 
         var last = invoices.FirstOrDefault(i => i.InvoiceType == InvoiceType.Purchase)
@@ -104,6 +106,7 @@ public class PartyQuickDetailService : IPartyQuickDetailService
             context,
             invoiceIds: invoices.Where(i => i.InvoiceType == InvoiceType.Purchase).Select(i => i.Id).ToList(),
             cancellationToken);
+        var purchases = invoices.Where(i => i.InvoiceType == InvoiceType.Purchase).ToList();
 
         return new PartyQuickDetailResult
         {
@@ -115,10 +118,10 @@ public class PartyQuickDetailService : IPartyQuickDetailService
             Address = supplier.Address,
             Notes = supplier.Notes,
             Balance = statement.Balance,
-            TotalDealAmount = invoices
-                .Where(i => i.InvoiceType == InvoiceType.Purchase)
-                .Sum(i => i.NetAmount),
-            DealCount = invoices.Count(i => i.InvoiceType == InvoiceType.Purchase),
+            BalanceUsd = statement.BalanceUsd,
+            TotalDealAmount = purchases.Where(i => i.Currency == AccountingCurrency.IQD).Sum(i => i.NetAmount),
+            TotalDealAmountUsd = purchases.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.NetAmount),
+            DealCount = purchases.Count,
             LastDealDate = last?.Date,
             LastDealDescription = last is null
                 ? null

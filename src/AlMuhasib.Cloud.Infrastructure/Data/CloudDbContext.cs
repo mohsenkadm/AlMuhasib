@@ -192,23 +192,55 @@ public class CloudDbContext : DbContext
             e.HasIndex(r => new { r.TenantId, r.SyncId });
         });
 
+        modelBuilder.Entity<CloudCashBox>(e =>
+        {
+            e.Property(c => c.Currency)
+                .HasConversion<string>()
+                .HasMaxLength(10)
+                .HasDefaultValue(AlMuhasib.Core.Enums.AccountingCurrency.IQD);
+        });
+
+        modelBuilder.Entity<CloudBankAccount>(e =>
+        {
+            e.Property(b => b.Currency)
+                .HasConversion<string>()
+                .HasMaxLength(10)
+                .HasDefaultValue(AlMuhasib.Core.Enums.AccountingCurrency.IQD);
+        });
+
         modelBuilder.Entity<CloudInvoice>(e =>
         {
+            e.Property(i => i.Currency)
+                .HasConversion<string>()
+                .HasMaxLength(10)
+                .HasDefaultValue(AlMuhasib.Core.Enums.AccountingCurrency.IQD);
             e.Property(i => i.FxRate).HasPrecision(18, 4);
         });
 
         modelBuilder.Entity<CloudVoucher>(e =>
         {
+            e.Property(v => v.Currency)
+                .HasConversion<string>()
+                .HasMaxLength(10)
+                .HasDefaultValue(AlMuhasib.Core.Enums.AccountingCurrency.IQD);
             e.Property(v => v.FxRate).HasPrecision(18, 4);
         });
 
         modelBuilder.Entity<CloudExpense>(e =>
         {
+            e.Property(x => x.Currency)
+                .HasConversion<string>()
+                .HasMaxLength(10)
+                .HasDefaultValue(AlMuhasib.Core.Enums.AccountingCurrency.IQD);
             e.Property(x => x.FxRate).HasPrecision(18, 4);
         });
 
         modelBuilder.Entity<CloudTransfer>(e =>
         {
+            e.Property(t => t.Currency)
+                .HasConversion<string>()
+                .HasMaxLength(10)
+                .HasDefaultValue(AlMuhasib.Core.Enums.AccountingCurrency.IQD);
             e.Property(t => t.FxRate).HasPrecision(18, 4);
         });
 

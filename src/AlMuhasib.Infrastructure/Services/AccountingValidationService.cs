@@ -50,20 +50,38 @@ public class AccountingValidationService : IAccountingValidationService
         if (cashBox is null)
             return new ValidationResult { Category = "\u0627\u0644\u0642\u0627\u0635\u0629", IsValid = false, Message = $"\u0627\u0644\u0642\u0627\u0635\u0629 #{cashBoxId} \u063a\u064a\u0631 \u0645\u0648\u062c\u0648\u062f\u0629" };
 
+        // فواتير نقدية بنفس عملة القاصة فقط
         var salesIncome = await context.Invoices
             .Where(i => i.CashBoxId == cashBoxId &&
+                        i.Currency == cashBox.Currency &&
                         (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
                         i.PaymentMethod == PaymentMethod.Cash)
             .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
 
         var purchaseOutflow = await context.Invoices
             .Where(i => i.CashBoxId == cashBoxId &&
+                        i.Currency == cashBox.Currency &&
                         i.InvoiceType == InvoiceType.Purchase &&
+                        i.PaymentMethod == PaymentMethod.Cash)
+            .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+
+        var saleReturnOutflow = await context.Invoices
+            .Where(i => i.CashBoxId == cashBoxId &&
+                        i.Currency == cashBox.Currency &&
+                        i.InvoiceType == InvoiceType.SaleReturn &&
+                        i.PaymentMethod == PaymentMethod.Cash)
+            .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+
+        var purchaseReturnIncome = await context.Invoices
+            .Where(i => i.CashBoxId == cashBoxId &&
+                        i.Currency == cashBox.Currency &&
+                        i.InvoiceType == InvoiceType.PurchaseReturn &&
                         i.PaymentMethod == PaymentMethod.Cash)
             .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
 
         var receipts = await context.Vouchers
             .Where(v => v.CashBoxId == cashBoxId &&
+                        v.Currency == cashBox.Currency &&
                         (v.VoucherType == VoucherType.Receipt ||
                          v.VoucherType == VoucherType.DebtReceipt ||
                          v.VoucherType == VoucherType.InvestorDeposit))
@@ -71,20 +89,57 @@ public class AccountingValidationService : IAccountingValidationService
 
         var payments = await context.Vouchers
             .Where(v => v.CashBoxId == cashBoxId &&
+                        v.Currency == cashBox.Currency &&
                         (v.VoucherType == VoucherType.Payment ||
                          v.VoucherType == VoucherType.InvestorWithdrawal))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
 
         var bankReceipts = await context.Vouchers
             .Where(v => v.CashBoxId == cashBoxId &&
+                        v.Currency == cashBox.Currency &&
                         v.VoucherType == VoucherType.BankReceipt)
             .SumAsync(v => (decimal?)(v.Amount - v.BankFees)) ?? 0;
 
+        // أقساط سُددت مباشرة بدون سند (تجنب الازدواج مع سندات InstallmentId)
+        var voucherInstallmentIds = await context.Vouchers
+            .Where(v => v.CashBoxId == cashBoxId && v.InstallmentId.HasValue)
+            .Select(v => v.InstallmentId!.Value)
+            .Distinct()
+            .ToListAsync();
+
         var installmentPayments = await context.Installments
-            .Where(inst => inst.CashBoxId == cashBoxId && inst.PaidAmount > 0)
+            .Where(inst => inst.CashBoxId == cashBoxId &&
+                           inst.PaidAmount > 0 &&
+                           !voucherInstallmentIds.Contains(inst.Id))
             .SumAsync(inst => (decimal?)inst.PaidAmount) ?? 0;
 
-        var expectedBalance = salesIncome - purchaseOutflow + receipts - payments + bankReceipts + installmentPayments;
+        var expenses = await context.Expenses
+            .Where(e => e.CashBoxId == cashBoxId && e.Currency == cashBox.Currency)
+            .SumAsync(e => (decimal?)e.Amount) ?? 0;
+
+        var transfersIn = await context.Transfers
+            .Where(t => t.ToType == TransferAccountType.CashBox &&
+                        t.ToId == cashBoxId &&
+                        t.Currency == cashBox.Currency)
+            .SumAsync(t => (decimal?)t.Amount) ?? 0;
+
+        var transfersOut = await context.Transfers
+            .Where(t => t.FromType == TransferAccountType.CashBox &&
+                        t.FromId == cashBoxId &&
+                        t.Currency == cashBox.Currency)
+            .SumAsync(t => (decimal?)t.Amount) ?? 0;
+
+        var expectedBalance = salesIncome
+                              - purchaseOutflow
+                              - saleReturnOutflow
+                              + purchaseReturnIncome
+                              + receipts
+                              - payments
+                              + bankReceipts
+                              + installmentPayments
+                              - expenses
+                              + transfersIn
+                              - transfersOut;
         var diff = Math.Abs(expectedBalance - cashBox.Balance);
 
         return new ValidationResult
@@ -140,24 +195,55 @@ public class AccountingValidationService : IAccountingValidationService
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
 
-        var expectedBalance = CustomerBalanceHelper.ComputeOutstandingBalance(
+        var expectedIqd = CustomerBalanceHelper.ComputeOutstandingBalance(
             creditRemaining, installmentRemaining, unappliedDebt, receipts);
 
-        // التحقق: مجموع متبقي الآجل + الأقساط يجب أن يطابق المعادلة بعد طرح السندات غير المطبّقة/القبض
-        var actualFromInvoices = creditRemaining + installmentRemaining;
-        var diff = Math.Abs(expectedBalance - (actualFromInvoices - unappliedDebt - receipts));
+        var creditRemainingUsd = await context.Invoices
+            .Where(i => i.CustomerId == customerId &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.USD)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var installmentRemainingUsd = planIds.Count == 0
+            ? 0m
+            : await context.Installments
+                .Where(i => planIds.Contains(i.InstallmentPlanId) &&
+                            i.Status != InstallmentStatus.Paid &&
+                            i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.USD)
+                .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var unappliedDebtUsd = await context.Vouchers
+            .Where(v => v.CustomerId == customerId &&
+                        v.VoucherType == VoucherType.DebtReceipt &&
+                        v.Currency == AccountingCurrency.USD &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var receiptsUsd = await context.Vouchers
+            .Where(v => v.CustomerId == customerId &&
+                        v.VoucherType == VoucherType.Receipt &&
+                        v.Currency == AccountingCurrency.USD &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var expectedUsd = CustomerBalanceHelper.ComputeOutstandingBalance(
+            creditRemainingUsd, installmentRemainingUsd, unappliedDebtUsd, receiptsUsd);
+
+        var actualFromInvoicesIqd = creditRemaining + installmentRemaining;
+        var diffIqd = Math.Abs(expectedIqd - (actualFromInvoicesIqd - unappliedDebt - receipts));
+        var actualFromInvoicesUsd = creditRemainingUsd + installmentRemainingUsd;
+        var diffUsd = Math.Abs(expectedUsd - (actualFromInvoicesUsd - unappliedDebtUsd - receiptsUsd));
+        var isValid = diffIqd < 0.01m && diffUsd < 0.01m;
 
         return new ValidationResult
         {
             Category = "\u0627\u0644\u0639\u0645\u064a\u0644",
             EntityName = customer.Name,
-            IsValid = diff < 0.01m,
-            ExpectedValue = expectedBalance,
-            ActualValue = expectedBalance,
-            Difference = diff,
-            Message = diff < 0.01m
-                ? $"\u0631\u0635\u064a\u062f \u0627\u0644\u0639\u0645\u064a\u0644 '{customer.Name}' \u0645\u062a\u0637\u0627\u0628\u0642: {expectedBalance:N2}"
-                : $"\u0641\u0631\u0642 \u0641\u064a \u0631\u0635\u064a\u062f \u0627\u0644\u0639\u0645\u064a\u0644 '{customer.Name}': \u0627\u0644\u0645\u062a\u0648\u0642\u0639 {expectedBalance:N2}"
+            IsValid = isValid,
+            ExpectedValue = expectedIqd,
+            ActualValue = expectedIqd,
+            Difference = diffIqd + diffUsd,
+            Message = isValid
+                ? $"رصيد العميل '{customer.Name}' متطابق: {expectedIqd:N2} د.ع" +
+                  (expectedUsd != 0 ? $" | $ {expectedUsd:N2}" : string.Empty)
+                : $"فرق في رصيد العميل '{customer.Name}': د.ع متوقع {expectedIqd:N2} (فرق {diffIqd:N2})" +
+                  (diffUsd >= 0.01m ? $" | $ متوقع {expectedUsd:N2} (فرق {diffUsd:N2})" : string.Empty)
         };
     }
 

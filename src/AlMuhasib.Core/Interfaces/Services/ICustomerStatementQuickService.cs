@@ -29,4 +29,5 @@ public class CustomerQuickStatementLine
     public decimal Debit { get; set; }
     public decimal Credit { get; set; }
     public decimal RunningBalance { get; set; }
+    public string CurrencyLabel { get; set; } = "د.ع";
 }

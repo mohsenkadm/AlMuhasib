@@ -12,6 +12,7 @@ public partial class SalesInvoiceViewModel
 {
     private IExchangeRateService? _exchangeRateService;
     private List<CashBox> _allCashBoxesForCurrency = [];
+    private bool _suppressFxRateRefresh;
 
     [ObservableProperty] private bool _showMultiCurrency;
     [ObservableProperty] private bool _showFxRateInput;
@@ -52,7 +53,8 @@ public partial class SalesInvoiceViewModel
         SelectedCurrency = value.Currency;
         CurrencyAmountSuffix = AccountingCurrencyHelper.GetLabel(SelectedCurrency);
         ShowFxRateInput = ShowMultiCurrency && SelectedCurrency == AccountingCurrency.USD;
-        _ = RefreshFxRateForSelectedCurrencyAsync();
+        if (!_suppressFxRateRefresh)
+            _ = RefreshFxRateForSelectedCurrencyAsync();
         ApplyCashBoxCurrencyFilter();
     }
 
@@ -89,14 +91,22 @@ public partial class SalesInvoiceViewModel
 
     private void ApplyCurrencyFromDocument(AccountingCurrency currency, decimal fxRate)
     {
-        SelectedCurrency = currency;
-        SelectedCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == currency);
-        FxRate = currency == AccountingCurrency.IQD
-            ? 1m
-            : (fxRate > 0 ? fxRate : 0m);
-        CurrencyAmountSuffix = AccountingCurrencyHelper.GetLabel(currency);
-        ShowFxRateInput = ShowMultiCurrency && currency == AccountingCurrency.USD;
-        ApplyCashBoxCurrencyFilter();
+        _suppressFxRateRefresh = true;
+        try
+        {
+            SelectedCurrency = currency;
+            SelectedCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == currency);
+            FxRate = currency == AccountingCurrency.IQD
+                ? 1m
+                : (fxRate > 0 ? fxRate : 0m);
+            CurrencyAmountSuffix = AccountingCurrencyHelper.GetLabel(currency);
+            ShowFxRateInput = ShowMultiCurrency && currency == AccountingCurrency.USD;
+            ApplyCashBoxCurrencyFilter();
+        }
+        finally
+        {
+            _suppressFxRateRefresh = false;
+        }
     }
 
     private void RememberCashBoxesForCurrencyFilter(IEnumerable<CashBox> boxes)

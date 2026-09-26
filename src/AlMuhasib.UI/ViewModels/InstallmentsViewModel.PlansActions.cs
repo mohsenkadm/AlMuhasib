@@ -173,6 +173,7 @@ public partial class InstallmentsViewModel
             StartDate = plan.StartDate,
             InstallmentTypeLabel = InstallmentPrintHelpers.InstallmentTypeLabel(plan.InstallmentType),
             TotalAmount = plan.TotalAmount,
+            Currency = plan.Invoice?.Currency ?? AccountingCurrency.IQD,
             Schedule = InstallmentPrintHelpers.ToPrintRows(list)
         };
     }

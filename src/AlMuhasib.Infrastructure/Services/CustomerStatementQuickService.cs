@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -60,7 +61,8 @@ public class CustomerStatementQuickService : ICustomerStatementQuickService
                 Description = r.Description,
                 Debit = r.Debit,
                 Credit = r.Credit,
-                RunningBalance = r.RunningBalance
+                RunningBalance = r.RunningBalance,
+                CurrencyLabel = AccountingCurrencyHelper.GetLabel(r.Currency)
             }).ToList()
         };
     }
@@ -91,41 +93,51 @@ public class CustomerStatementQuickService : ICustomerStatementQuickService
     public void Print(int customerId)
     {
         var data = GetStatementAsync(customerId).GetAwaiter().GetResult();
-        var cols = new[] { "التاريخ", "البيان", "مدين", "دائن", "الرصيد" };
+        var cols = new[] { "التاريخ", "البيان", "العملة", "مدين", "دائن", "الرصيد" };
         var rows = data.Lines.Select(r => new object[]
         {
-            r.Date.ToString("yyyy/MM/dd"), r.Description, r.Debit, r.Credit, r.RunningBalance
+            r.Date.ToString("yyyy/MM/dd"), r.Description, r.CurrencyLabel, r.Debit, r.Credit, r.RunningBalance
         }).ToList();
-        _exportService.PrintTable($"كشف حساب {data.CustomerName}", cols, rows,
-        [
-            $"الرصيد: {data.Balance:N0} د.ع",
+        var summary = new List<string>
+        {
+            $"الرصيد د.ع: {data.Balance:N0}",
             $"مدين: {data.TotalDebit:N0} د.ع",
             $"دائن: {data.TotalCredit:N0} د.ع"
-        ]);
+        };
+        if (data.BalanceUsd != 0)
+            summary.Insert(1, $"الرصيد $: {data.BalanceUsd:N2}");
+        _exportService.PrintTable($"كشف حساب {data.CustomerName}", cols, rows, summary);
     }
 
-    public static StatementPrintModel BuildStatementModel(CustomerQuickStatementResult data) =>
-        new()
+    public static StatementPrintModel BuildStatementModel(CustomerQuickStatementResult data)
+    {
+        var summary = new List<string>
+        {
+            $"الرصيد د.ع: {data.Balance:N0}",
+            $"إجمالي المدين: {data.TotalDebit:N0} د.ع",
+            $"إجمالي الدائن: {data.TotalCredit:N0} د.ع"
+        };
+        if (data.BalanceUsd != 0)
+            summary.Insert(1, $"الرصيد $: {data.BalanceUsd:N2}");
+
+        return new StatementPrintModel
         {
             Title = $"كشف حساب — {data.CustomerName}",
             PartyName = data.CustomerName,
             PartyPhone = data.Phone,
             FromDate = DateTime.Today.AddYears(-2),
             ToDate = DateTime.Today,
-            Columns = ["التاريخ", "البيان", "مدين", "دائن", "الرصيد"],
+            Columns = ["التاريخ", "البيان", "العملة", "مدين", "دائن", "الرصيد"],
             Rows = data.Lines.Select(r => new object[]
             {
                 r.Date.ToString("yyyy/MM/dd"),
                 r.Description,
+                r.CurrencyLabel,
                 r.Debit,
                 r.Credit,
                 r.RunningBalance
             }).ToList(),
-            SummaryLines =
-            [
-                $"الرصيد: {data.Balance:N0} د.ع",
-                $"إجمالي المدين: {data.TotalDebit:N0} د.ع",
-                $"إجمالي الدائن: {data.TotalCredit:N0} د.ع"
-            ]
+            SummaryLines = summary
         };
+    }
 }

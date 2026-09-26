@@ -354,8 +354,9 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
                 CustomerId = customerId,
                 WarehouseId = warehouse.Id,
                 PaymentMethod = PaymentMethod.Credit,
-                Currency = AccountingCurrency.IQD,
-                FxRate = 1m,
+                Currency = request.Currency,
+                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
+                    request.Currency, request.FxRate, "رصيد افتتاحي عميل"),
                 TotalAmount = request.Amount,
                 DiscountAmount = 0,
                 NetAmount = request.Amount,
@@ -422,8 +423,9 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
                 SupplierId = supplierId,
                 WarehouseId = warehouse.Id,
                 PaymentMethod = PaymentMethod.Credit,
-                Currency = AccountingCurrency.IQD,
-                FxRate = 1m,
+                Currency = request.Currency,
+                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
+                    request.Currency, request.FxRate, "رصيد افتتاحي مورد"),
                 TotalAmount = request.Amount,
                 DiscountAmount = 0,
                 NetAmount = request.Amount,
@@ -472,6 +474,8 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
             throw new InvalidOperationException("المبلغ يجب أن يكون أكبر من صفر");
         if (request.PartyId is null && string.IsNullOrWhiteSpace(request.PartyName))
             throw new InvalidOperationException($"يجب اختيار {partyLabel} أو إدخال اسمه");
+        AccountingCurrencyRules.EnsureValidFxRate(request.Currency, request.FxRate, $"رصيد افتتاحي {partyLabel}");
+        request.Amount = AccountingCurrencyHelper.NormalizeAmount(request.Amount, request.Currency);
     }
 
     private static async Task<int> ResolveCustomerIdAsync(

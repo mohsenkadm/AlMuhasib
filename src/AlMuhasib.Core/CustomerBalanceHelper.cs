@@ -26,6 +26,16 @@ public static class CustomerBalanceHelper
             : $"{notes.Trim()} {DebtReceiptAppliedMarker}";
     }
 
+    public static string UnmarkDebtReceiptApplied(string? notes)
+    {
+        if (string.IsNullOrEmpty(notes) || !IsDebtReceiptApplied(notes))
+            return notes ?? string.Empty;
+
+        return notes
+            .Replace(DebtReceiptAppliedMarker, string.Empty, StringComparison.Ordinal)
+            .Trim();
+    }
+
     /// <summary>
     /// توزيع FIFO لمبلغ على فواتير آجلة بنفس العملة فقط.
     /// يُرجع التحديثات: (Id, NewPaid, NewRemaining, IsCreditPaid).
@@ -53,6 +63,37 @@ public static class CustomerBalanceHelper
             var newRemaining = Math.Max(0, inv.NetAmount - newPaid);
             updates.Add((inv.Id, newPaid, newRemaining, newRemaining <= 0));
             remainingToApply -= pay;
+        }
+
+        return updates;
+    }
+
+    /// <summary>
+    /// عكس توزيع FIFO: يخصم من أحدث الفواتير المسدّدة جزئياً/كلياً بنفس العملة أولاً (LIFO reverse).
+    /// </summary>
+    public static List<(int Id, decimal PaidAmount, decimal RemainingAmount, bool IsCreditPaid)> DeallocateFromCreditInvoices(
+        IEnumerable<(int Id, DateTime Date, decimal NetAmount, decimal PaidAmount, decimal RemainingAmount, AccountingCurrency Currency)> invoices,
+        decimal amount,
+        AccountingCurrency currency)
+    {
+        var updates = new List<(int Id, decimal PaidAmount, decimal RemainingAmount, bool IsCreditPaid)>();
+        if (amount <= 0)
+            return updates;
+
+        var remainingToReverse = amount;
+        foreach (var inv in invoices
+                     .Where(i => i.Currency == currency && i.PaidAmount > 0)
+                     .OrderByDescending(i => i.Date)
+                     .ThenByDescending(i => i.Id))
+        {
+            if (remainingToReverse <= 0)
+                break;
+
+            var reverse = Math.Min(remainingToReverse, inv.PaidAmount);
+            var newPaid = Math.Max(0, inv.PaidAmount - reverse);
+            var newRemaining = Math.Max(0, inv.NetAmount - newPaid);
+            updates.Add((inv.Id, newPaid, newRemaining, newRemaining <= 0));
+            remainingToReverse -= reverse;
         }
 
         return updates;

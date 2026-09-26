@@ -33,28 +33,40 @@ public class CustomerCreditService : ICustomerCreditService
         decimal? limit = isInstallment ? customer.MaxInstallmentDebt : customer.MaxCreditLimit;
 
         decimal currentDebtIqd;
-        if (isInstallment)
+        try
         {
-            var rows = await context.Installments.AsNoTracking()
-                .Where(i => i.InstallmentPlan!.CustomerId == customerId && i.RemainingAmount > 0)
-                .Select(i => new
-                {
-                    i.RemainingAmount,
-                    Currency = i.InstallmentPlan!.Invoice!.Currency,
-                    FxRate = i.InstallmentPlan.Invoice.FxRate
-                })
-                .ToListAsync();
-            currentDebtIqd = rows.Sum(r => DebtToIqd(r.RemainingAmount, r.Currency, r.FxRate));
+            if (isInstallment)
+            {
+                var rows = await context.Installments.AsNoTracking()
+                    .Where(i => i.InstallmentPlan!.CustomerId == customerId && i.RemainingAmount > 0)
+                    .Select(i => new
+                    {
+                        i.RemainingAmount,
+                        Currency = i.InstallmentPlan!.Invoice!.Currency,
+                        FxRate = i.InstallmentPlan.Invoice.FxRate
+                    })
+                    .ToListAsync();
+                currentDebtIqd = rows.Sum(r => DebtToIqd(r.RemainingAmount, r.Currency, r.FxRate));
+            }
+            else
+            {
+                var rows = await context.Invoices.AsNoTracking()
+                    .Where(i => i.CustomerId == customerId &&
+                                i.PaymentMethod == PaymentMethod.Credit &&
+                                i.RemainingAmount > 0)
+                    .Select(i => new { i.RemainingAmount, i.Currency, i.FxRate })
+                    .ToListAsync();
+                currentDebtIqd = rows.Sum(r => DebtToIqd(r.RemainingAmount, r.Currency, r.FxRate));
+            }
         }
-        else
+        catch (InvalidOperationException ex)
         {
-            var rows = await context.Invoices.AsNoTracking()
-                .Where(i => i.CustomerId == customerId &&
-                            i.PaymentMethod == PaymentMethod.Credit &&
-                            i.RemainingAmount > 0)
-                .Select(i => new { i.RemainingAmount, i.Currency, i.FxRate })
-                .ToListAsync();
-            currentDebtIqd = rows.Sum(r => DebtToIqd(r.RemainingAmount, r.Currency, r.FxRate));
+            return new CreditCheckResult
+            {
+                IsAllowed = false,
+                Message = $"لا يمكن احتساب الدين الحالي: {ex.Message}",
+                Limit = limit
+            };
         }
 
         decimal additionalIqd;
@@ -98,9 +110,8 @@ public class CustomerCreditService : ICustomerCreditService
     private static decimal DebtToIqd(decimal amount, AccountingCurrency currency, decimal fxRate)
     {
         if (amount <= 0) return 0;
-        if (currency == AccountingCurrency.IQD) return amount;
-        if (fxRate <= 0) return 0;
-        return AccountingCurrencyHelper.RoundIqd(amount * fxRate);
+        // لا نخفي دين الدولار بصمت عند FxRate غير صالح — يُحسب بصرامة أو يُرفض
+        return AccountingCurrencyRules.ToBaseIqdStrict(amount, currency, fxRate);
     }
 
     public async Task UpdateReliabilityScoreAsync(int customerId)

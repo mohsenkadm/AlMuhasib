@@ -2,6 +2,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
+using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
 
 namespace AlMuhasib.Shared.Services;
@@ -17,7 +19,7 @@ public static class InstallmentPrintDocumentBuilder
         AppendSectionHeader(doc, sectionTitle ?? "كشف الأقساط التفصيلي");
         AppendPlanMeta(doc, model);
         AppendScheduleTable(doc, model.Schedule);
-        AppendPlanStatistics(doc, model.Schedule, model.TotalAmount);
+        AppendPlanStatistics(doc, model.Schedule, model.TotalAmount, model.Currency);
         return doc;
     }
 
@@ -36,7 +38,8 @@ public static class InstallmentPrintDocumentBuilder
             });
         }
 
-        decimal grandTotal = 0, grandPaid = 0, grandRemaining = 0;
+        decimal grandTotalIqd = 0, grandPaidIqd = 0, grandRemainingIqd = 0;
+        decimal grandTotalUsd = 0, grandPaidUsd = 0, grandRemainingUsd = 0;
         var grandPaidCount = 0;
 
         for (var i = 0; i < plans.Count; i++)
@@ -54,15 +57,30 @@ public static class InstallmentPrintDocumentBuilder
             });
             AppendPlanMeta(doc, plan, compact: true);
             AppendScheduleTable(doc, plan.Schedule);
-            AppendPlanStatistics(doc, plan.Schedule, plan.TotalAmount);
+            AppendPlanStatistics(doc, plan.Schedule, plan.TotalAmount, plan.Currency);
 
-            grandTotal += plan.TotalAmount;
-            grandPaid += plan.Schedule.Sum(s => s.PaidAmount);
-            grandRemaining += plan.Schedule.Sum(s => s.RemainingAmount);
+            var paid = plan.Schedule.Sum(s => s.PaidAmount);
+            var remaining = plan.Schedule.Sum(s => s.RemainingAmount);
+            if (plan.Currency == AccountingCurrency.USD)
+            {
+                grandTotalUsd += plan.TotalAmount;
+                grandPaidUsd += paid;
+                grandRemainingUsd += remaining;
+            }
+            else
+            {
+                grandTotalIqd += plan.TotalAmount;
+                grandPaidIqd += paid;
+                grandRemainingIqd += remaining;
+            }
+
             grandPaidCount += plan.Schedule.Count(s => s.StatusText is "مسدد" or "مسدد جزئياً" && s.PaidAmount > 0);
         }
 
-        AppendGrandStatistics(doc, plans.Count, grandTotal, grandPaid, grandRemaining, grandPaidCount);
+        AppendGrandStatistics(doc, plans.Count,
+            grandTotalIqd, grandPaidIqd, grandRemainingIqd,
+            grandTotalUsd, grandPaidUsd, grandRemainingUsd,
+            grandPaidCount);
         return doc;
     }
 
@@ -217,18 +235,24 @@ public static class InstallmentPrintDocumentBuilder
         doc.Blocks.Add(table);
     }
 
-    private static void AppendPlanStatistics(FlowDocument doc, IReadOnlyList<InstallmentPrintRow> schedule, decimal totalAmount)
+    private static void AppendPlanStatistics(
+        FlowDocument doc,
+        IReadOnlyList<InstallmentPrintRow> schedule,
+        decimal totalAmount,
+        AccountingCurrency currency = AccountingCurrency.IQD)
     {
         var paid = schedule.Sum(s => s.PaidAmount);
         var remaining = schedule.Sum(s => s.RemainingAmount);
         var paidCount = schedule.Count(s => s.StatusText is "مسدد" or "مسدد جزئياً" && s.PaidAmount > 0);
         var unpaidCount = schedule.Count(s => s.RemainingAmount > 0);
         var overdueCount = schedule.Count(s => s.StatusText == "متأخر");
+        var label = AccountingCurrencyHelper.GetLabel(currency);
+        var fmt = currency == AccountingCurrency.USD ? "N2" : "N0";
 
         AppendStatisticsCards(doc,
             ("إجمالي الأقساط", schedule.Count.ToString("N0")),
-            ("المسدد", $"{paid:N0} د.ع"),
-            ("المتبقي", $"{remaining:N0} د.ع"),
+            ("المسدد", $"{paid.ToString(fmt)} {label}"),
+            ("المتبقي", $"{remaining.ToString(fmt)} {label}"),
             ("مسددة", paidCount.ToString("N0")),
             ("غير مسددة", unpaidCount.ToString("N0")),
             ("متأخرة", overdueCount.ToString("N0")));
@@ -244,7 +268,16 @@ public static class InstallmentPrintDocumentBuilder
         });
     }
 
-    private static void AppendGrandStatistics(FlowDocument doc, int planCount, decimal total, decimal paid, decimal remaining, int paidInstallments)
+    private static void AppendGrandStatistics(
+        FlowDocument doc,
+        int planCount,
+        decimal totalIqd,
+        decimal paidIqd,
+        decimal remainingIqd,
+        decimal totalUsd,
+        decimal paidUsd,
+        decimal remainingUsd,
+        int paidInstallments)
     {
         doc.Blocks.Add(new Paragraph(new Run("الملخص الكلي"))
         {
@@ -255,13 +288,22 @@ public static class InstallmentPrintDocumentBuilder
             Foreground = new SolidColorBrush(Color.FromRgb(0x1A, 0x23, 0x7E))
         });
 
-        AppendStatisticsCards(doc,
+        var cards = new List<(string Label, string Value)>
+        {
             ("عدد الفواتير", planCount.ToString("N0")),
-            ("إجمالي المبالغ", $"{total:N0} د.ع"),
-            ("إجمالي المسدد", $"{paid:N0} د.ع"),
-            ("إجمالي المتبقي", $"{remaining:N0} د.ع"),
-            ("نسبة التحصيل", total > 0 ? $"{paid * 100m / total:N1}%" : "0%"),
-            ("أقساط مسددة", paidInstallments.ToString("N0")));
+            ("إجمالي د.ع", $"{totalIqd:N0}"),
+            ("مسدد د.ع", $"{paidIqd:N0}"),
+            ("متبقي د.ع", $"{remainingIqd:N0}"),
+            ("أقساط مسددة", paidInstallments.ToString("N0"))
+        };
+        if (totalUsd != 0 || paidUsd != 0 || remainingUsd != 0)
+        {
+            cards.Add(("إجمالي $", $"{totalUsd:N2}"));
+            cards.Add(("مسدد $", $"{paidUsd:N2}"));
+            cards.Add(("متبقي $", $"{remainingUsd:N2}"));
+        }
+
+        AppendStatisticsCards(doc, cards.ToArray());
     }
 
     private static void AppendStatisticsCards(FlowDocument doc, params (string Label, string Value)[] cards)

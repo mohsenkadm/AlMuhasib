@@ -38,7 +38,8 @@ public sealed class MobileInstallmentNotificationsController : ControllerBase
         var today = DateTime.UtcNow.Date;
         var overdue = await _db.Installments.AsNoTracking()
             .ForTenant(tenantId)
-            .Include(i => i.InstallmentPlan).ThenInclude(p => p.Customer)
+            .Include(i => i.InstallmentPlan!).ThenInclude(p => p!.Customer)
+            .Include(i => i.InstallmentPlan!).ThenInclude(p => p!.Invoice)
             .Where(i =>
                 i.Status != InstallmentStatus.Paid &&
                 i.RemainingAmount > 0 &&
@@ -48,11 +49,25 @@ public sealed class MobileInstallmentNotificationsController : ControllerBase
         if (overdue.Count == 0)
             return Ok(new { sent = false, count = 0, message = "لا توجد أقساط متأخرة" });
 
-        var total = overdue.Sum(i => i.RemainingAmount);
+        var totalIqd = overdue
+            .Where(i => i.InstallmentPlan?.Invoice?.Currency != AccountingCurrency.USD)
+            .Sum(i => i.RemainingAmount);
+        var totalUsd = overdue
+            .Where(i => i.InstallmentPlan?.Invoice?.Currency == AccountingCurrency.USD)
+            .Sum(i => i.RemainingAmount);
         var title = "أقساط متأخرة";
-        var message = $"لديك {overdue.Count} قسطاً متأخراً بإجمالي {total:N0}";
+        var message = totalUsd > 0
+            ? $"لديك {overdue.Count} قسطاً متأخراً بإجمالي {totalIqd:N0} د.ع و {totalUsd:N2} $"
+            : $"لديك {overdue.Count} قسطاً متأخراً بإجمالي {totalIqd:N0} د.ع";
         await _notifications.SendToTenantAsync(tenantId, title, message, ct);
 
-        return Ok(new { sent = true, count = overdue.Count, totalRemaining = total, message });
+        return Ok(new
+        {
+            sent = true,
+            count = overdue.Count,
+            totalRemaining = totalIqd,
+            totalRemainingUsd = totalUsd,
+            message
+        });
     }
 }
