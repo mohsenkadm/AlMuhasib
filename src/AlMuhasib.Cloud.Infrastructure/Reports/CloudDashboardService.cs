@@ -68,7 +68,9 @@ public sealed class CloudDashboardService : ICloudDashboardService
         data.NetProfit = totalSales - totalPurchases - openingStockValue - totalExpenses - distributedProfits + profitOpening;
 
         data.OverdueInstallmentsCount = await _db.Installments.ForTenant(tenantId)
-            .CountAsync(i => i.Status != InstallmentStatus.Paid && i.DueDate < today, ct);
+            .CountAsync(i => i.Status != InstallmentStatus.Paid
+                             && i.DueDate < today
+                             && i.InstallmentPlan.Invoice.Currency == AccountingCurrency.IQD, ct);
 
         data.InvestorBalance = await _db.Investors.ForTenant(tenantId).SumAsync(i => (decimal?)i.TotalDeposit, ct) ?? 0;
         data.InvestorOpeningTotal = await _db.Investors.ForTenant(tenantId).SumAsync(i => (decimal?)i.OpeningBalance, ct) ?? 0;
@@ -160,6 +162,7 @@ public sealed class CloudDashboardService : ICloudDashboardService
             .ToList();
 
         var recentInvoices = await _db.Invoices.ForTenant(tenantId)
+            .Where(i => i.Currency == AccountingCurrency.IQD)
             .OrderByDescending(i => i.Date)
             .ThenByDescending(i => i.Id)
             .Take(5)
@@ -185,6 +188,7 @@ public sealed class CloudDashboardService : ICloudDashboardService
             .ToListAsync(ct);
 
         var recentVouchers = await _db.Vouchers.ForTenant(tenantId)
+            .Where(v => v.Currency == AccountingCurrency.IQD)
             .OrderByDescending(v => v.Date)
             .ThenByDescending(v => v.Id)
             .Take(5)
@@ -213,7 +217,9 @@ public sealed class CloudDashboardService : ICloudDashboardService
             .ToList();
 
         var upcomingRaw = await _db.Installments.ForTenant(tenantId)
-            .Where(i => i.Status != InstallmentStatus.Paid && i.DueDate >= today)
+            .Where(i => i.Status != InstallmentStatus.Paid
+                        && i.DueDate >= today
+                        && i.InstallmentPlan.Invoice.Currency == AccountingCurrency.IQD)
             .OrderBy(i => i.DueDate)
             .Take(6)
             .Select(i => new

@@ -277,7 +277,8 @@ public partial class ReportService
         await using var context = await _contextFactory.CreateDbContextAsync();
         var query = context.Installments
             .Include(i => i.InstallmentPlan).ThenInclude(p => p.Customer)
-            .AsQueryable();
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p.Invoice)
+            .Where(i => i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD);
 
         if (from.HasValue) query = query.Where(i => i.DueDate >= from.Value);
         if (to.HasValue) query = query.Where(i => i.DueDate < EndOfDay(to));
@@ -1050,7 +1051,10 @@ public partial class ReportService
         var ids = cashBoxes.Select(c => c.Id).ToHashSet();
         var nameMap = cashBoxes.ToDictionary(c => c.Id, c => c.Name);
 
-        var transfers = await context.Transfers.ToListAsync();
+        var boxCurrency = cashBoxes.Select(c => c.Currency).Distinct().ToList();
+        var transfers = await context.Transfers
+            .Where(t => boxCurrency.Contains(t.Currency))
+            .ToListAsync();
         foreach (var t in transfers)
         {
             if (from.HasValue && t.Date < from.Value) continue;
@@ -1083,9 +1087,13 @@ public partial class ReportService
             }
         }
 
-        // Installment collections with cash box
+        // Installment collections with cash box (عملة القاصة / دينار عند التجميع)
+        var selectedCurrency = cashBoxes.FirstOrDefault()?.Currency ?? AccountingCurrency.IQD;
         var instQ = context.Installments.Include(i => i.CashBox)
-            .Where(i => i.PaidAmount > 0 && i.PaymentDate != null && i.CashBoxId != null);
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Invoice)
+            .Where(i => i.PaidAmount > 0 && i.PaymentDate != null && i.CashBoxId != null
+                        && i.InstallmentPlan!.Invoice!.Currency == selectedCurrency
+                        && ids.Contains(i.CashBoxId.Value));
         if (cashBoxId.HasValue) instQ = instQ.Where(i => i.CashBoxId == cashBoxId.Value);
         if (from.HasValue) instQ = instQ.Where(i => i.PaymentDate >= from.Value);
         if (to.HasValue) instQ = instQ.Where(i => i.PaymentDate < EndOfDay(to));
@@ -1177,7 +1185,7 @@ public partial class ReportService
     public async Task<TransfersReportResult> GetTransfersReportAsync(DateTime? from, DateTime? to)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var query = context.Transfers.AsQueryable();
+        var query = context.Transfers.Where(t => t.Currency == AccountingCurrency.IQD);
         if (from.HasValue) query = query.Where(t => t.Date >= from.Value);
         if (to.HasValue) query = query.Where(t => t.Date < EndOfDay(to));
 
@@ -1192,6 +1200,7 @@ public partial class ReportService
                 FromAccount = await ResolveTransferAccountNameAsync(context, t.FromType, t.FromId),
                 ToAccount = await ResolveTransferAccountNameAsync(context, t.ToType, t.ToId),
                 Amount = t.Amount,
+                Currency = t.Currency,
                 Notes = t.Notes ?? "—",
                 CreatedBy = t.CreatedBy ?? "—"
             });
@@ -1366,7 +1375,8 @@ public partial class ReportService
             .Include(ii => ii.Product)
             .Where(ii => ii.ProductId != null
                          && ii.Invoice != null
-                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn)
+                         && ii.Invoice.Currency == AccountingCurrency.IQD);
         if (from.HasValue) soldQ = soldQ.Where(ii => ii.Invoice!.Date >= from.Value);
         if (to.HasValue) soldQ = soldQ.Where(ii => ii.Invoice!.Date < EndOfDay(to));
         if (warehouseId.HasValue) soldQ = soldQ.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
@@ -1746,7 +1756,7 @@ public partial class ReportService
         if (endExclusive.HasValue) allActivityQ = allActivityQ.Where(i => i.Date < endExclusive.Value);
 
         var activityDates = await allActivityQ
-            .Select(i => new { i.Date, i.NetAmount, i.InvoiceType })
+            .Select(i => new { i.Date, i.NetAmount, i.InvoiceType, i.Currency })
             .ToListAsync();
 
         var salesByYear = salesInvoices
@@ -1773,7 +1783,8 @@ public partial class ReportService
                 hourGroups.TryGetValue(h, out var list);
                 list ??= [];
                 var salesAmount = list
-                    .Where(x => x.InvoiceType is InvoiceType.Sale or InvoiceType.Installment or InvoiceType.SaleReturn)
+                    .Where(x => x.Currency == AccountingCurrency.IQD
+                                && (x.InvoiceType is InvoiceType.Sale or InvoiceType.Installment or InvoiceType.SaleReturn))
                     .Sum(x => InvoiceFilters.SignedNetAmount(x.InvoiceType, x.NetAmount));
                 return new WorkSummaryHourRow
                 {
@@ -2174,13 +2185,13 @@ public partial class ReportService
             .ToListAsync();
 
         var cashBoxesDetail = cash.Rows
-            .Where(r => r.AccountType == "قاصة")
+            .Where(r => r.AccountType == "قاصة" && r.Currency == AccountingCurrency.IQD)
             .Select(r => new NameAmountPoint { Name = r.Name, Amount = r.Balance })
             .OrderByDescending(x => x.Amount)
             .Take(detailLimit)
             .ToList();
         var banksDetail = cash.Rows
-            .Where(r => r.AccountType == "مصرف")
+            .Where(r => r.AccountType == "مصرف" && r.Currency == AccountingCurrency.IQD)
             .Select(r => new NameAmountPoint { Name = r.Name, Amount = r.Balance })
             .OrderByDescending(x => x.Amount)
             .Take(detailLimit)

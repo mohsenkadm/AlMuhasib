@@ -135,6 +135,9 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty]
     private decimal _totalCashBalance;
 
+    [ObservableProperty]
+    private decimal _totalCashBalanceUsd;
+
     // ── Charts ─────────────────────────────────────────────
     [ObservableProperty]
     private ISeries[] _salesSeries = [];
@@ -157,6 +160,9 @@ public partial class DashboardViewModel : ViewModelBase
 
     [ObservableProperty]
     private decimal _bankBalance;
+
+    [ObservableProperty]
+    private decimal _bankBalanceUsd;
 
     [ObservableProperty]
     private decimal _totalInventoryValue;
@@ -575,7 +581,11 @@ public partial class DashboardViewModel : ViewModelBase
                 TotalCashBalance = data.CashBalanceIqd != 0 || data.CashBalanceUsd != 0
                     ? data.CashBalanceIqd
                     : data.CashBoxes.Where(c => c.Currency == AccountingCurrency.IQD).Sum(c => c.Balance);
-                BankBalance = data.BankBalance;
+                TotalCashBalanceUsd = data.CashBalanceUsd;
+                BankBalance = data.BankBalanceIqd != 0 || data.BankBalanceUsd != 0
+                    ? data.BankBalanceIqd
+                    : data.BankBalance;
+                BankBalanceUsd = data.BankBalanceUsd;
                 TotalInventoryValue = data.TotalInventoryValue;
 
                 SmartAlerts.Clear();

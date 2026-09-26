@@ -42,7 +42,7 @@
             <StackPanel Margin="24,24,24,8">
                 <TextBlock Text="ملخص أرصدة نقدية" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
 
-                <UniformGrid Columns="5" Margin="0,0,0,20">
+                <UniformGrid Columns="6" Margin="0,0,0,20">
                     <controls:AnimatedStatCard
                         Title="إجمالي السيولة د.ع"
                         TextValue="{Binding TotalLiquid}"
@@ -65,6 +65,13 @@
                         IconForeground="#1565C0"
                         ValueForeground="#1565C0"/>
                     <controls:AnimatedStatCard
+                        Title="القاصات $"
+                        TextValue="{Binding CashBoxesTotalUsd}"
+                        Icon="Cash"
+                        IconBackground="{DynamicResource DashboardKpiTealLightBrush}"
+                        IconForeground="#00838F"
+                        ValueForeground="#00838F"/>
+                    <controls:AnimatedStatCard
                         Title="المصارف د.ع"
                         TextValue="{Binding BanksTotal}"
                         Icon="Bank"
@@ -72,9 +79,9 @@
                         IconForeground="#EF6C00"
                         ValueForeground="#EF6C00"/>
                     <controls:AnimatedStatCard
-                        Title="عدد الحسابات"
-                        TextValue="{Binding AccountCount}"
-                        Icon="Counter"
+                        Title="المصارف $"
+                        TextValue="{Binding BanksTotalUsd}"
+                        Icon="Bank"
                         IconBackground="{DynamicResource PrimaryHueLightBrush}"
                         IconForeground="#6A1B9A"
                         ValueForeground="#6A1B9A"/>

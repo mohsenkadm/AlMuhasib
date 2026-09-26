@@ -1320,7 +1320,7 @@
                     <controls:DashboardKpiCard Grid.Column="0"
                                                HorizontalAlignment="Stretch"
                                                VerticalAlignment="Stretch"
-                                               Title="إجمالي القاصات"
+                                               Title="إجمالي القاصات (د.ع)"
                                                Value="{Binding TotalCashBalance, Converter={StaticResource CurrencyFormat}}"
                                                Icon="SafeSquareOutline"
                                                AccentBrush="{DynamicResource DashboardKpiTealBrush}"
@@ -1328,7 +1328,13 @@
                                                ValueBrush="{DynamicResource DashboardKpiTealBrush}"
                                                ChartValues="{Binding CashBalanceChartValues}"
                                                TrendPercent="{Binding CashBalanceTrendPercent}">
-                        <ItemsControl ItemsSource="{Binding CashBoxes}" Margin="0,8,0,0">
+                        <StackPanel Margin="0,8,0,0">
+                            <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
+                                       Margin="0,0,0,4">
+                                <Run Text="USD: "/>
+                                <Run Text="{Binding TotalCashBalanceUsd, StringFormat=N2}"/>
+                            </TextBlock>
+                        <ItemsControl ItemsSource="{Binding CashBoxes}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Padding="0,8" BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,0,1">
@@ -1337,8 +1343,13 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="{Binding Name}"
-                                                       FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            <TextBlock Grid.Column="0"
+                                                       FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}">
+                                                <Run Text="{Binding Name}"/>
+                                                <Run Text=" ("/>
+                                                <Run Text="{Binding CurrencyLabel}"/>
+                                                <Run Text=")"/>
+                                            </TextBlock>
                                             <TextBlock Grid.Column="1"
                                                        Text="{Binding Balance, StringFormat=N0}"
                                                        FontSize="12" FontWeight="SemiBold"
@@ -1348,20 +1359,26 @@
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
+                        </StackPanel>
                     </controls:DashboardKpiCard>
 
                     <!-- Bank Balance -->
                     <controls:DashboardKpiCard Grid.Column="2"
                                                HorizontalAlignment="Stretch"
                                                VerticalAlignment="Stretch"
-                                               Title="رصيد المصرف"
+                                               Title="رصيد المصرف (د.ع)"
                                                Value="{Binding BankBalance, Converter={StaticResource CurrencyFormat}}"
                                                Icon="Bank"
                                                AccentBrush="{DynamicResource DashboardKpiBlueBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiBlueLightBrush}"
                                                ValueBrush="{DynamicResource DashboardKpiBlueBrush}"
                                                ChartValues="{Binding BankBalanceChartValues}"
-                                               TrendPercent="{Binding BankBalanceTrendPercent}" />
+                                               TrendPercent="{Binding BankBalanceTrendPercent}">
+                        <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,8,0,0">
+                            <Run Text="USD: "/>
+                            <Run Text="{Binding BankBalanceUsd, StringFormat=N2}"/>
+                        </TextBlock>
+                    </controls:DashboardKpiCard>
 
                     <!-- Total Inventory -->
                     <controls:DashboardKpiCard Grid.Column="4"

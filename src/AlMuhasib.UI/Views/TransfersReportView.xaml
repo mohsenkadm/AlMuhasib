@@ -131,6 +131,8 @@
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ToAccount"/>
                                 <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
+                                <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="80"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrencyLabel"/>
                                 <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="*"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Notes"/>
                                 <DataGridTextColumn Header="بواسطة" Binding="{Binding CreatedBy}" Width="130"

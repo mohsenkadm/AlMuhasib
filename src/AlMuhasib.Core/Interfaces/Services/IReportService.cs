@@ -1470,6 +1470,8 @@ public class TransferReportRow
     public string FromAccount { get; set; } = string.Empty;
     public string ToAccount { get; set; } = string.Empty;
     public decimal Amount { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "USD" : "د.ع";
     public string Notes { get; set; } = string.Empty;
     public string CreatedBy { get; set; } = string.Empty;
 }

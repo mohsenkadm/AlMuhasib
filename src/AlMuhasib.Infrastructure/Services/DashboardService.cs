@@ -87,7 +87,9 @@ public class DashboardService : IDashboardService
         try
         {
             data.OverdueInstallmentsCount = await context.Installments
-                .CountAsync(i => i.Status != InstallmentStatus.Paid && i.DueDate < today);
+                .CountAsync(i => i.Status != InstallmentStatus.Paid
+                                 && i.DueDate < today
+                                 && i.InstallmentPlan.Invoice.Currency == AccountingCurrency.IQD);
         }
         catch (Exception ex)
         {
@@ -240,6 +242,7 @@ public class DashboardService : IDashboardService
         try
         {
             var recentInvoices = await context.Invoices
+                .Where(i => i.Currency == AccountingCurrency.IQD)
                 .OrderByDescending(i => i.Date)
                 .ThenByDescending(i => i.Id)
                 .Take(5)
@@ -265,6 +268,7 @@ public class DashboardService : IDashboardService
                 .ToListAsync();
 
             var recentVouchers = await context.Vouchers
+                .Where(v => v.Currency == AccountingCurrency.IQD)
                 .OrderByDescending(v => v.Date)
                 .ThenByDescending(v => v.Id)
                 .Take(5)
@@ -299,7 +303,9 @@ public class DashboardService : IDashboardService
         try
         {
             var upcomingRaw = await context.Installments
-                .Where(i => i.Status != InstallmentStatus.Paid && i.DueDate >= today)
+                .Where(i => i.Status != InstallmentStatus.Paid
+                            && i.DueDate >= today
+                            && i.InstallmentPlan.Invoice.Currency == AccountingCurrency.IQD)
                 .OrderBy(i => i.DueDate)
                 .Take(6)
                 .Select(i => new
@@ -510,9 +516,11 @@ public class DashboardService : IDashboardService
         var profitPrev = salesPrev - purchasesPrev - expensesPrev;
         data.NetProfitTrendPercent = TrendPercent(profitCurr, profitPrev);
 
-        // Overdue installment counts by due date (snapshot of currently unpaid)
+        // Overdue installment counts by due date (snapshot of currently unpaid) — دينار فقط
         var overdueRaw = await context.Installments
-            .Where(i => i.Status != InstallmentStatus.Paid && i.DueDate < tomorrow && i.DueDate >= from)
+            .Where(i => i.Status != InstallmentStatus.Paid
+                        && i.DueDate < tomorrow && i.DueDate >= from
+                        && i.InstallmentPlan.Invoice.Currency == AccountingCurrency.IQD)
             .Select(i => new { i.DueDate, i.RemainingAmount })
             .ToListAsync();
         var overdueByDay = overdueRaw
@@ -520,7 +528,9 @@ public class DashboardService : IDashboardService
             .ToDictionary(g => g.Key, g => (decimal)g.Count());
         data.OverdueInstallmentsLast14Days = FillDays(from, days, overdueByDay);
         var overduePrevCount = await context.Installments
-            .CountAsync(i => i.Status != InstallmentStatus.Paid && i.DueDate >= prevFrom && i.DueDate < from);
+            .CountAsync(i => i.Status != InstallmentStatus.Paid
+                             && i.DueDate >= prevFrom && i.DueDate < from
+                             && i.InstallmentPlan.Invoice.Currency == AccountingCurrency.IQD);
         data.OverdueInstallmentsTrendPercent = TrendPercent(
             data.OverdueInstallmentsLast14Days.Sum(p => p.Amount), overduePrevCount);
 
@@ -555,9 +565,11 @@ public class DashboardService : IDashboardService
             : 0);
         data.InvestorBalanceTrendPercent = TrendPercent(flowSum, invPrevFlow);
 
-        // Unpaid installment remaining by due date in window
+        // Unpaid installment remaining by due date in window (دينار فقط)
         var unpaidRaw = await context.Installments
-            .Where(i => i.Status != InstallmentStatus.Paid && i.DueDate >= from && i.DueDate < tomorrow)
+            .Where(i => i.Status != InstallmentStatus.Paid
+                        && i.DueDate >= from && i.DueDate < tomorrow
+                        && i.InstallmentPlan.Invoice.Currency == AccountingCurrency.IQD)
             .Select(i => new { i.DueDate, i.RemainingAmount })
             .ToListAsync();
         var unpaidByDay = unpaidRaw
@@ -565,7 +577,9 @@ public class DashboardService : IDashboardService
             .ToDictionary(g => g.Key, g => g.Sum(i => i.RemainingAmount));
         data.UnpaidInstallmentsLast14Days = FillDays(from, days, unpaidByDay);
         var unpaidPrev = await context.Installments
-            .Where(i => i.Status != InstallmentStatus.Paid && i.DueDate >= prevFrom && i.DueDate < from)
+            .Where(i => i.Status != InstallmentStatus.Paid
+                        && i.DueDate >= prevFrom && i.DueDate < from
+                        && i.InstallmentPlan.Invoice.Currency == AccountingCurrency.IQD)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
         data.UnpaidInstallmentsTrendPercent = TrendPercent(
             data.UnpaidInstallmentsLast14Days.Sum(p => p.Amount), unpaidPrev);
@@ -574,6 +588,7 @@ public class DashboardService : IDashboardService
         var custCreditRaw = await context.Invoices
             .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
                         i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.IQD &&
                         i.Date >= from && i.Date < tomorrow)
             .Select(i => new { i.Date, i.RemainingAmount })
             .ToListAsync();
@@ -584,6 +599,7 @@ public class DashboardService : IDashboardService
         var custPrev = await context.Invoices
             .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
                         i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.IQD &&
                         i.Date >= prevFrom && i.Date < from)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
         data.CustomerCreditTrendPercent = TrendPercent(
@@ -593,6 +609,7 @@ public class DashboardService : IDashboardService
         var suppCreditRaw = await context.Invoices
             .Where(i => i.InvoiceType == InvoiceType.Purchase &&
                         i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.IQD &&
                         i.Date >= from && i.Date < tomorrow)
             .Select(i => new { i.Date, i.RemainingAmount })
             .ToListAsync();
@@ -603,14 +620,17 @@ public class DashboardService : IDashboardService
         var suppPrev = await context.Invoices
             .Where(i => i.InvoiceType == InvoiceType.Purchase &&
                         i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.IQD &&
                         i.Date >= prevFrom && i.Date < from)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
         data.SupplierCreditTrendPercent = TrendPercent(
             data.SupplierCreditLast14Days.Sum(p => p.Amount), suppPrev);
 
-        // Cash flow from vouchers linked to cash boxes (receipt +, payment -)
+        // Cash flow from vouchers linked to cash boxes (receipt +, payment -) — دينار فقط
         var cashVouchers = await context.Vouchers
-            .Where(v => v.BankAccountId == null && v.Date >= from && v.Date < tomorrow)
+            .Where(v => v.BankAccountId == null
+                        && v.Currency == AccountingCurrency.IQD
+                        && v.Date >= from && v.Date < tomorrow)
             .Select(v => new { v.Date, v.VoucherType, v.Amount })
             .ToListAsync();
         var cashByDay = cashVouchers
@@ -622,7 +642,9 @@ public class DashboardService : IDashboardService
                     : 0));
         data.CashFlowLast14Days = FillDays(from, days, cashByDay);
         var cashPrevRaw = await context.Vouchers
-            .Where(v => v.BankAccountId == null && v.Date >= prevFrom && v.Date < from)
+            .Where(v => v.BankAccountId == null
+                        && v.Currency == AccountingCurrency.IQD
+                        && v.Date >= prevFrom && v.Date < from)
             .Select(v => new { v.VoucherType, v.Amount })
             .ToListAsync();
         var cashPrev = cashPrevRaw.Sum(v => v.VoucherType == VoucherType.Receipt ? v.Amount
@@ -630,9 +652,11 @@ public class DashboardService : IDashboardService
             : 0);
         data.CashBalanceTrendPercent = TrendPercent(data.CashFlowLast14Days.Sum(p => p.Amount), cashPrev);
 
-        // Bank flow
+        // Bank flow — دينار فقط
         var bankVouchers = await context.Vouchers
-            .Where(v => v.BankAccountId != null && v.Date >= from && v.Date < tomorrow)
+            .Where(v => v.BankAccountId != null
+                        && v.Currency == AccountingCurrency.IQD
+                        && v.Date >= from && v.Date < tomorrow)
             .Select(v => new { v.Date, v.VoucherType, v.Amount })
             .ToListAsync();
         var bankByDay = bankVouchers
@@ -644,7 +668,9 @@ public class DashboardService : IDashboardService
                     : 0));
         data.BankFlowLast14Days = FillDays(from, days, bankByDay);
         var bankPrevRaw = await context.Vouchers
-            .Where(v => v.BankAccountId != null && v.Date >= prevFrom && v.Date < from)
+            .Where(v => v.BankAccountId != null
+                        && v.Currency == AccountingCurrency.IQD
+                        && v.Date >= prevFrom && v.Date < from)
             .Select(v => new { v.VoucherType, v.Amount })
             .ToListAsync();
         var bankPrev = bankPrevRaw.Sum(v => v.VoucherType == VoucherType.Receipt ? v.Amount

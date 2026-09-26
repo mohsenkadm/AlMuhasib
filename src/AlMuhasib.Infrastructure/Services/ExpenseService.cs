@@ -187,7 +187,8 @@ public class ExpenseService : IExpenseService
         DateTime? fromDate = null, DateTime? toDate = null, string? searchTerm = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var query = context.Expenses.Include(e => e.ExpenseType).Include(e => e.CashBox).AsQueryable();
+        var query = context.Expenses.Include(e => e.ExpenseType).Include(e => e.CashBox)
+            .Where(e => e.Currency == AccountingCurrency.IQD);
         if (expenseTypeId.HasValue) query = query.Where(e => e.ExpenseTypeId == expenseTypeId.Value);
         if (cashBoxId.HasValue) query = query.Where(e => e.CashBoxId == cashBoxId.Value);
         if (fromDate.HasValue) query = query.Where(e => e.Date >= fromDate.Value);

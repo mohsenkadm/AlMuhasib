@@ -1382,8 +1382,20 @@ public partial class ReportService : IReportService
         await using var context = await _contextFactory.CreateDbContextAsync();
         var rows = new List<CashFlowRow>();
 
+        // عند اختيار قاصة: نلتزم بعملتها؛ بدون اختيار: دينار فقط (لا خلط عملات)
+        var reportCurrency = AccountingCurrency.IQD;
+        if (cashBoxId.HasValue)
+        {
+            reportCurrency = await context.CashBoxes.AsNoTracking()
+                .Where(c => c.Id == cashBoxId.Value)
+                .Select(c => c.Currency)
+                .FirstOrDefaultAsync();
+        }
+
         var salesQ = context.Invoices.Include(i => i.CashBox)
-            .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) && i.PaymentMethod == PaymentMethod.Cash);
+            .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment)
+                        && i.PaymentMethod == PaymentMethod.Cash
+                        && i.Currency == reportCurrency);
         if (cashBoxId.HasValue) salesQ = salesQ.Where(i => i.CashBoxId == cashBoxId.Value);
         if (from.HasValue) salesQ = salesQ.Where(i => i.Date >= from.Value);
         if (to.HasValue) salesQ = salesQ.Where(i => i.Date < EndOfDay(to));
@@ -1391,7 +1403,9 @@ public partial class ReportService : IReportService
             rows.Add(new CashFlowRow { Date = inv.Date, Type = "\u0645\u0628\u064a\u0639\u0627\u062a", Description = $"\u0641\u0627\u062a\u0648\u0631\u0629 {inv.InvoiceNumber}", Incoming = inv.NetAmount, AccountName = inv.CashBox?.Name ?? "\u2014" });
 
         var saleReturnQ = context.Invoices.Include(i => i.CashBox)
-            .Where(i => i.InvoiceType == InvoiceType.SaleReturn && i.PaymentMethod == PaymentMethod.Cash);
+            .Where(i => i.InvoiceType == InvoiceType.SaleReturn
+                        && i.PaymentMethod == PaymentMethod.Cash
+                        && i.Currency == reportCurrency);
         if (cashBoxId.HasValue) saleReturnQ = saleReturnQ.Where(i => i.CashBoxId == cashBoxId.Value);
         if (from.HasValue) saleReturnQ = saleReturnQ.Where(i => i.Date >= from.Value);
         if (to.HasValue) saleReturnQ = saleReturnQ.Where(i => i.Date < EndOfDay(to));
@@ -1406,7 +1420,9 @@ public partial class ReportService : IReportService
             });
 
         var purchQ = context.Invoices.Include(i => i.CashBox)
-            .Where(i => i.InvoiceType == InvoiceType.Purchase && i.PaymentMethod == PaymentMethod.Cash);
+            .Where(i => i.InvoiceType == InvoiceType.Purchase
+                        && i.PaymentMethod == PaymentMethod.Cash
+                        && i.Currency == reportCurrency);
         if (cashBoxId.HasValue) purchQ = purchQ.Where(i => i.CashBoxId == cashBoxId.Value);
         if (from.HasValue) purchQ = purchQ.Where(i => i.Date >= from.Value);
         if (to.HasValue) purchQ = purchQ.Where(i => i.Date < EndOfDay(to));
@@ -1414,7 +1430,9 @@ public partial class ReportService : IReportService
             rows.Add(new CashFlowRow { Date = inv.Date, Type = "\u0645\u0634\u062a\u0631\u064a\u0627\u062a", Description = $"\u0641\u0627\u062a\u0648\u0631\u0629 {inv.InvoiceNumber}", Outgoing = inv.NetAmount, AccountName = inv.CashBox?.Name ?? "\u2014" });
 
         var purchaseReturnQ = context.Invoices.Include(i => i.CashBox)
-            .Where(i => i.InvoiceType == InvoiceType.PurchaseReturn && i.PaymentMethod == PaymentMethod.Cash);
+            .Where(i => i.InvoiceType == InvoiceType.PurchaseReturn
+                        && i.PaymentMethod == PaymentMethod.Cash
+                        && i.Currency == reportCurrency);
         if (cashBoxId.HasValue) purchaseReturnQ = purchaseReturnQ.Where(i => i.CashBoxId == cashBoxId.Value);
         if (from.HasValue) purchaseReturnQ = purchaseReturnQ.Where(i => i.Date >= from.Value);
         if (to.HasValue) purchaseReturnQ = purchaseReturnQ.Where(i => i.Date < EndOfDay(to));
@@ -1428,7 +1446,8 @@ public partial class ReportService : IReportService
                 AccountName = inv.CashBox?.Name ?? "\u2014"
             });
 
-        var vouchQ = context.Vouchers.Include(v => v.CashBox).AsQueryable();
+        var vouchQ = context.Vouchers.Include(v => v.CashBox)
+            .Where(v => v.Currency == reportCurrency);
         if (cashBoxId.HasValue) vouchQ = vouchQ.Where(v => v.CashBoxId == cashBoxId.Value);
         if (from.HasValue) vouchQ = vouchQ.Where(v => v.Date >= from.Value);
         if (to.HasValue) vouchQ = vouchQ.Where(v => v.Date < EndOfDay(to));
@@ -1446,7 +1465,7 @@ public partial class ReportService : IReportService
             });
         }
 
-        var expQ = context.Expenses.Include(e => e.CashBox).Where(e => e.Currency == AccountingCurrency.IQD);
+        var expQ = context.Expenses.Include(e => e.CashBox).Where(e => e.Currency == reportCurrency);
         if (cashBoxId.HasValue) expQ = expQ.Where(e => e.CashBoxId == cashBoxId.Value);
         if (from.HasValue) expQ = expQ.Where(e => e.Date >= from.Value);
         if (to.HasValue) expQ = expQ.Where(e => e.Date < EndOfDay(to));
@@ -1646,7 +1665,8 @@ public partial class ReportService : IReportService
             .Where(ii => ii.ProductId != null
                          && ii.Product != null
                          && ii.Invoice != null
-                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn)
+                         && ii.Invoice.Currency == AccountingCurrency.IQD);
 
         if (from.HasValue) query = query.Where(ii => ii.Invoice!.Date >= from.Value);
         if (to.HasValue) query = query.Where(ii => ii.Invoice!.Date < EndOfDay(to));
@@ -1697,7 +1717,8 @@ public partial class ReportService : IReportService
             .Where(ii => ii.ProductId != null
                          && ii.Product != null
                          && ii.Invoice != null
-                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn)
+                         && ii.Invoice.Currency == AccountingCurrency.IQD);
 
         if (from.HasValue) query = query.Where(ii => ii.Invoice!.Date >= from.Value);
         if (to.HasValue) query = query.Where(ii => ii.Invoice!.Date < EndOfDay(to));
@@ -1761,7 +1782,8 @@ public partial class ReportService : IReportService
             .Where(ii => ii.ProductId != null
                          && ii.Product != null
                          && ii.Invoice != null
-                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn)
+                         && ii.Invoice.Currency == AccountingCurrency.IQD);
 
         if (from.HasValue) query = query.Where(ii => ii.Invoice!.Date >= from.Value);
         if (to.HasValue) query = query.Where(ii => ii.Invoice!.Date < EndOfDay(to));
