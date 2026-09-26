@@ -30,6 +30,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
 
     private Invoice? _savedInvoice;
     private List<InvoiceItem> _savedItems = [];
+    private int? _relatedInvoiceId;
 
     // ── Header ─────────────────────────────────────────────
     [ObservableProperty]
@@ -361,6 +362,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         var source = await _invoiceService.GetByIdWithDetailsAsync(invoiceId);
         var refNumber = source?.InvoiceNumber ?? invoiceId.ToString();
         await CopyFromInvoiceAsync(invoiceId);
+        _relatedInvoiceId = invoiceId;
         EnterReturnMode(refNumber);
         InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.PurchaseReturn);
         IsCashPayment = true;
@@ -754,6 +756,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                 Date = InvoiceDate,
                 PaidAmount = IsCreditPayment ? Math.Clamp(CreditPaidAmount, 0m, GrandTotal) : 0m,
                 TransportFeeAmount = ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m,
+                RelatedInvoiceId = IsReturnMode ? _relatedInvoiceId : null,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
             };
 
@@ -1034,6 +1037,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         ClearEditingInvoiceId();
         _savedInvoice = null;
         _savedItems = [];
+        _relatedInvoiceId = null;
         ErrorMessage = string.Empty;
         Notes = string.Empty;
         TransportFeeAmount = 0m;

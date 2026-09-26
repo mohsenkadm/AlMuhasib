@@ -112,6 +112,12 @@ public class InvoiceService : IInvoiceService
                 invoice.IsCreditPaid = true;
             }
 
+            // المرتجع لا يفتح ذمة جديدة: يُطبَّق على فواتير الآجل الأصلية (أو يبقى كرصيد دائن للمرتجع الآجل).
+            if (InvoiceReturnCreditHelper.IsCreditReturnType(invoice.InvoiceType))
+            {
+                // يُكمَل التطبيق بعد حفظ المعرّف — هنا نؤجّل تصفير المتبقي حتى بعد التوزيع
+            }
+
             if (!preserveProvidedNumber || string.IsNullOrWhiteSpace(invoice.InvoiceNumber))
             {
                 // Always assign server-side for new invoices to avoid stale UI numbers
@@ -129,6 +135,12 @@ public class InvoiceService : IInvoiceService
 
             await context.Invoices.AddAsync(invoice);
             await context.SaveChangesAsync();
+
+            if (InvoiceReturnCreditHelper.IsCreditReturnType(invoice.InvoiceType))
+            {
+                await ApplyReturnCreditImpactAsync(context, invoice, username);
+                await context.SaveChangesAsync();
+            }
 
             foreach (var item in itemsList)
             {
@@ -610,6 +622,9 @@ public class InvoiceService : IInvoiceService
             foreach (var voucher in linkedVouchers)
                 voucher.MarkSoftDeleted(username);
 
+            if (InvoiceReturnCreditHelper.IsCreditReturnType(invoice.InvoiceType))
+                await ReverseReturnCreditImpactAsync(context, invoice, username);
+
             foreach (var item in invoice.Items.Where(i => i.ProductId.HasValue))
             {
                 var warehouseId = item.WarehouseId ?? invoice.WarehouseId;
@@ -793,6 +808,12 @@ public class InvoiceService : IInvoiceService
             foreach (var voucher in linkedVouchers)
                 voucher.RestoreFromSoftDelete(username);
 
+            if (InvoiceReturnCreditHelper.IsCreditReturnType(invoice.InvoiceType) &&
+                !InvoiceReturnCreditHelper.IsReturnApplied(invoice.Notes))
+            {
+                await ApplyReturnCreditImpactAsync(context, invoice, username);
+            }
+
             await context.SaveChangesAsync();
 
             if (_currentUserService.UserId.HasValue)
@@ -902,6 +923,190 @@ public class InvoiceService : IInvoiceService
             await transaction.RollbackAsync();
             throw;
         }
+    }
+
+    /// <summary>
+    /// يطبّق مبلغ المرتجع على فواتير الآجل الأصلية (المرتبطة ثم FIFO)، ويترك المتبقي كرصيد دائن على المرتجع الآجل.
+    /// </summary>
+    private static async Task ApplyReturnCreditImpactAsync(
+        AppDbContext context,
+        Invoice returnInvoice,
+        string username)
+    {
+        if (InvoiceReturnCreditHelper.IsReturnApplied(returnInvoice.Notes))
+            return;
+
+        var originalType = InvoiceReturnCreditHelper.GetOriginalInvoiceType(returnInvoice.InvoiceType);
+        if (originalType is null)
+            return;
+
+        var amountToApply = Math.Abs(returnInvoice.NetAmount);
+        if (amountToApply <= 0)
+        {
+            returnInvoice.RemainingAmount = 0;
+            returnInvoice.IsCreditPaid = true;
+            if (returnInvoice.PaymentMethod != PaymentMethod.Credit)
+                returnInvoice.PaidAmount = returnInvoice.NetAmount;
+            return;
+        }
+
+        IQueryable<Invoice> openQuery = context.Invoices
+            .Where(i => i.InvoiceType == originalType &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.RemainingAmount > 0);
+
+        if (returnInvoice.InvoiceType == InvoiceType.PurchaseReturn)
+        {
+            if (!returnInvoice.SupplierId.HasValue)
+                throw new InvalidOperationException("مرتجع المشتريات يتطلب مورداً");
+            openQuery = openQuery.Where(i => i.SupplierId == returnInvoice.SupplierId);
+        }
+        else
+        {
+            if (!returnInvoice.CustomerId.HasValue)
+                throw new InvalidOperationException("مرتجع المبيعات يتطلب عميلاً");
+            openQuery = openQuery.Where(i => i.CustomerId == returnInvoice.CustomerId);
+        }
+
+        var openInvoices = await openQuery
+            .OrderBy(i => i.Date)
+            .ThenBy(i => i.Id)
+            .Select(i => new { i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount })
+            .ToListAsync();
+
+        var updates = InvoiceReturnCreditHelper.AllocateReturnToCreditInvoices(
+            openInvoices.Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount)),
+            amountToApply,
+            returnInvoice.RelatedInvoiceId);
+
+        var appliedTotal = 0m;
+        var allocationMarks = new List<(int InvoiceId, decimal Amount)>();
+        if (updates.Count > 0)
+        {
+            var ids = updates.Select(u => u.Id).ToList();
+            var entities = await context.Invoices.Where(i => ids.Contains(i.Id)).ToListAsync();
+            foreach (var u in updates)
+            {
+                var entity = entities.FirstOrDefault(e => e.Id == u.Id);
+                if (entity is null)
+                    continue;
+                entity.PaidAmount = u.PaidAmount;
+                entity.RemainingAmount = u.RemainingAmount;
+                entity.IsCreditPaid = u.IsCreditPaid;
+                entity.UpdatedBy = username;
+                entity.UpdatedAt = DateTime.UtcNow;
+                appliedTotal += u.Applied;
+                allocationMarks.Add((u.Id, u.Applied));
+            }
+        }
+
+        var leftover = Math.Max(0, amountToApply - appliedTotal);
+
+        if (returnInvoice.PaymentMethod == PaymentMethod.Cash)
+        {
+            // المرتجع النقدي: لا ذمة على وثيقة المرتجع؛ ما لم يُطبَّق على آجل يبقى فقط أثر الصندوق.
+            returnInvoice.PaidAmount = returnInvoice.NetAmount;
+            returnInvoice.RemainingAmount = 0;
+            returnInvoice.IsCreditPaid = true;
+        }
+        else
+        {
+            // مرتجع آجل: المتبقي بعد تخفيض الفواتير الأصلية = رصيد دائن (يُخصم من ذمم الطرف).
+            returnInvoice.PaidAmount = returnInvoice.NetAmount - leftover;
+            returnInvoice.RemainingAmount = leftover;
+            returnInvoice.IsCreditPaid = leftover <= 0;
+        }
+
+        returnInvoice.Notes = InvoiceReturnCreditHelper.MarkApplied(returnInvoice.Notes, allocationMarks);
+        returnInvoice.UpdatedBy = username;
+        returnInvoice.UpdatedAt = DateTime.UtcNow;
+    }
+
+    private static async Task ReverseReturnCreditImpactAsync(
+        AppDbContext context,
+        Invoice returnInvoice,
+        string username)
+    {
+        var allocations = InvoiceReturnCreditHelper.ParseAllocations(returnInvoice.Notes);
+        if (allocations.Count > 0)
+        {
+            var ids = allocations.Select(a => a.InvoiceId).Distinct().ToList();
+            var entities = await context.Invoices.Where(i => ids.Contains(i.Id)).ToListAsync();
+            foreach (var (invoiceId, amount) in allocations)
+            {
+                var entity = entities.FirstOrDefault(e => e.Id == invoiceId);
+                if (entity is null || amount <= 0)
+                    continue;
+
+                entity.PaidAmount = Math.Max(0, entity.PaidAmount - amount);
+                entity.RemainingAmount = Math.Max(0, entity.NetAmount - entity.PaidAmount);
+                entity.IsCreditPaid = entity.RemainingAmount <= 0;
+                entity.UpdatedBy = username;
+                entity.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        // إزالة علامات التطبيق من الملاحظات
+        if (!string.IsNullOrEmpty(returnInvoice.Notes))
+        {
+            var notes = returnInvoice.Notes;
+            notes = StripMarker(notes, InvoiceReturnCreditHelper.AppliedMarkerPrefix);
+            notes = StripMarker(notes, InvoiceReturnCreditHelper.AdvanceMarkerPrefix);
+            returnInvoice.Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim();
+        }
+
+        returnInvoice.UpdatedBy = username;
+        returnInvoice.UpdatedAt = DateTime.UtcNow;
+    }
+
+    private static string StripMarker(string notes, string prefix)
+    {
+        var start = notes.IndexOf(prefix, StringComparison.Ordinal);
+        if (start < 0)
+            return notes;
+        var end = notes.IndexOf(']', start);
+        if (end < 0)
+            return notes;
+        var before = notes[..start].TrimEnd();
+        var after = end + 1 < notes.Length ? notes[(end + 1)..].TrimStart() : string.Empty;
+        return $"{before} {after}".Trim();
+    }
+
+    /// <summary>إصلاح مرتجعات قديمة لم تُطبَّق على فواتير الآجل.</summary>
+    public async Task<int> RepairUnappliedReturnCreditsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var returns = await context.Invoices
+            .Where(i => (i.InvoiceType == InvoiceType.SaleReturn || i.InvoiceType == InvoiceType.PurchaseReturn) &&
+                        (i.Notes == null || !i.Notes.Contains(InvoiceReturnCreditHelper.AppliedMarkerPrefix)))
+            .OrderBy(i => i.Date)
+            .ThenBy(i => i.Id)
+            .ToListAsync(cancellationToken);
+
+        if (returns.Count == 0)
+            return 0;
+
+        var username = _currentUserService.Username;
+        var repaired = 0;
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            foreach (var ret in returns)
+            {
+                await ApplyReturnCreditImpactAsync(context, ret, username);
+                repaired++;
+            }
+
+            await context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
+
+        return repaired;
     }
 
     private static async Task AddCreditDownPaymentVoucherAsync(

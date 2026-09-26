@@ -199,6 +199,8 @@ public partial class PurchaseInvoiceViewModel
     {
         IsReturnMode = true;
         PageTitle = "مرتجع مشتريات";
+        if (string.IsNullOrWhiteSpace(reference))
+            _relatedInvoiceId = null;
         if (!string.IsNullOrWhiteSpace(reference) && string.IsNullOrWhiteSpace(Notes))
             Notes = $"مرتجع مشتريات — مرجع {reference}";
     }

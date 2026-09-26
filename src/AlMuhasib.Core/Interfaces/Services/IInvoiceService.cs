@@ -54,4 +54,9 @@ public interface IInvoiceService
     /// Pays a credit invoice (partial or full). Updates CashBox balance.
     /// </summary>
     Task PayCreditInvoiceAsync(int invoiceId, decimal amount, int cashBoxId);
+
+    /// <summary>
+    /// يطبّق مرتجعات قديمة على فواتير الآجل إن لم تُطبَّق بعد. يُرجع عدد المرتجعات التي عولجت.
+    /// </summary>
+    Task<int> RepairUnappliedReturnCreditsAsync(CancellationToken cancellationToken = default);
 }

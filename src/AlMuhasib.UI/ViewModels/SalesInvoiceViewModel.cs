@@ -578,6 +578,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
         IsReturnMode = true;
         PageTitle = "مرتجع مبيعات";
+        if (string.IsNullOrWhiteSpace(reference))
+            _relatedInvoiceId = null;
         SelectedPaymentMethod = PaymentMethod.Cash;
         if (!string.IsNullOrWhiteSpace(reference) && string.IsNullOrWhiteSpace(Notes))
             Notes = $"مرتجع مبيعات — مرجع {reference}";

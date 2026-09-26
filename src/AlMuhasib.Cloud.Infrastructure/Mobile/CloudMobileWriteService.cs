@@ -1242,7 +1242,107 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         if (invoice.InvoiceType == InvoiceType.Purchase)
             await ApplyPurchasePriceUpdatesAsync(tenantId, invoice, username, ct);
 
+        if (invoice.InvoiceType is InvoiceType.SaleReturn or InvoiceType.PurchaseReturn)
+            await ApplyReturnCreditImpactCloudAsync(tenantId, invoice, username, ct);
+
         await _db.SaveChangesAsync(ct);
+    }
+
+    private async Task ApplyReturnCreditImpactCloudAsync(
+        int tenantId,
+        CloudInvoice returnInvoice,
+        string username,
+        CancellationToken ct)
+    {
+        if (InvoiceReturnCreditHelper.IsReturnApplied(returnInvoice.Notes))
+            return;
+
+        var originalType = InvoiceReturnCreditHelper.GetOriginalInvoiceType(returnInvoice.InvoiceType);
+        if (originalType is null)
+            return;
+
+        var amountToApply = Math.Abs(returnInvoice.NetAmount);
+        if (amountToApply <= 0)
+        {
+            returnInvoice.RemainingAmount = 0;
+            returnInvoice.IsCreditPaid = true;
+            if (returnInvoice.PaymentMethod != PaymentMethod.Credit)
+                returnInvoice.PaidAmount = returnInvoice.NetAmount;
+            returnInvoice.Notes = InvoiceReturnCreditHelper.MarkApplied(returnInvoice.Notes, []);
+            return;
+        }
+
+        var openQuery = _db.Invoices.Where(i =>
+            i.TenantId == tenantId &&
+            i.InvoiceType == originalType &&
+            i.PaymentMethod == PaymentMethod.Credit &&
+            i.RemainingAmount > 0 &&
+            !i.IsDeleted);
+
+        if (returnInvoice.InvoiceType == InvoiceType.PurchaseReturn)
+        {
+            if (!returnInvoice.SupplierId.HasValue)
+                return;
+            openQuery = openQuery.Where(i => i.SupplierId == returnInvoice.SupplierId);
+        }
+        else
+        {
+            if (!returnInvoice.CustomerId.HasValue)
+                return;
+            openQuery = openQuery.Where(i => i.CustomerId == returnInvoice.CustomerId);
+        }
+
+        var openInvoices = await openQuery
+            .OrderBy(i => i.Date)
+            .ThenBy(i => i.Id)
+            .Select(i => new { i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount })
+            .ToListAsync(ct);
+
+        var updates = InvoiceReturnCreditHelper.AllocateReturnToCreditInvoices(
+            openInvoices.Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount)),
+            amountToApply,
+            returnInvoice.RelatedInvoiceId);
+
+        var appliedTotal = 0m;
+        var allocationMarks = new List<(int InvoiceId, decimal Amount)>();
+        if (updates.Count > 0)
+        {
+            var ids = updates.Select(u => u.Id).ToList();
+            var entities = await _db.Invoices
+                .Where(i => i.TenantId == tenantId && ids.Contains(i.Id))
+                .ToListAsync(ct);
+            foreach (var u in updates)
+            {
+                var entity = entities.FirstOrDefault(e => e.Id == u.Id);
+                if (entity is null)
+                    continue;
+                entity.PaidAmount = u.PaidAmount;
+                entity.RemainingAmount = u.RemainingAmount;
+                entity.IsCreditPaid = u.IsCreditPaid;
+                entity.UpdatedBy = username;
+                entity.UpdatedAt = DateTime.UtcNow;
+                appliedTotal += u.Applied;
+                allocationMarks.Add((u.Id, u.Applied));
+            }
+        }
+
+        var leftover = Math.Max(0, amountToApply - appliedTotal);
+        if (returnInvoice.PaymentMethod == PaymentMethod.Cash)
+        {
+            returnInvoice.PaidAmount = returnInvoice.NetAmount;
+            returnInvoice.RemainingAmount = 0;
+            returnInvoice.IsCreditPaid = true;
+        }
+        else
+        {
+            returnInvoice.PaidAmount = returnInvoice.NetAmount - leftover;
+            returnInvoice.RemainingAmount = leftover;
+            returnInvoice.IsCreditPaid = leftover <= 0;
+        }
+
+        returnInvoice.Notes = InvoiceReturnCreditHelper.MarkApplied(returnInvoice.Notes, allocationMarks);
+        returnInvoice.UpdatedBy = username;
+        returnInvoice.UpdatedAt = DateTime.UtcNow;
     }
 
     private async Task ApplyPurchasePriceUpdatesAsync(int tenantId, CloudInvoice invoice, string username, CancellationToken ct)

@@ -667,8 +667,9 @@ public partial class ReportService : IReportService
 
         var invQ = context.Invoices.AsNoTracking()
             .Where(i => i.CustomerId == customerId &&
-                        (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
-                        (i.PaymentMethod == PaymentMethod.Credit || i.PaymentMethod == PaymentMethod.Installment));
+                        ((i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
+                         (i.PaymentMethod == PaymentMethod.Credit || i.PaymentMethod == PaymentMethod.Installment)
+                         || (i.InvoiceType == InvoiceType.SaleReturn && i.PaymentMethod == PaymentMethod.Credit)));
         if (from.HasValue) invQ = invQ.Where(i => i.Date >= from.Value);
         if (to.HasValue) invQ = invQ.Where(i => i.Date < EndOfDay(to));
         var invoices = await invQ.OrderBy(i => i.Date).ToListAsync();
@@ -703,7 +704,14 @@ public partial class ReportService : IReportService
 
         // رصيد مستحق حالي (كل الفترة) — مصدر الحقيقة للمطابقة مع الموبايل/التقارير
         var allCreditRemaining = await context.Invoices.AsNoTracking()
-            .Where(i => i.CustomerId == customerId && i.PaymentMethod == PaymentMethod.Credit)
+            .Where(i => i.CustomerId == customerId &&
+                        (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
+                        i.PaymentMethod == PaymentMethod.Credit)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var allReturnCreditNotes = await context.Invoices.AsNoTracking()
+            .Where(i => i.CustomerId == customerId &&
+                        i.InvoiceType == InvoiceType.SaleReturn &&
+                        i.PaymentMethod == PaymentMethod.Credit)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
         var allReceipts = await context.Vouchers.AsNoTracking()
             .Where(v => v.CustomerId == customerId &&
@@ -716,7 +724,7 @@ public partial class ReportService : IReportService
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
         var currentBalance = CustomerBalanceHelper.ComputeOutstandingBalance(
-            allCreditRemaining, unpaidInstallmentRemaining, allUnappliedDebt, allReceipts);
+            allCreditRemaining, unpaidInstallmentRemaining, allUnappliedDebt, allReceipts + allReturnCreditNotes);
 
         var (ledgerRows, _) = CustomerBalanceHelper.BuildCustomerStatementLedger(
             invoices.Select(i => new CustomerBalanceInvoiceRow
@@ -853,6 +861,23 @@ public partial class ReportService : IReportService
                     Debit = inv.PaidAmount
                 });
             }
+        }
+
+        var returnQ = context.Invoices
+            .Where(i => i.SupplierId == supplierId &&
+                        i.InvoiceType == InvoiceType.PurchaseReturn &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.RemainingAmount > 0);
+        if (from.HasValue) returnQ = returnQ.Where(i => i.Date >= from.Value);
+        if (to.HasValue) returnQ = returnQ.Where(i => i.Date < EndOfDay(to));
+        foreach (var inv in await returnQ.OrderBy(i => i.Date).ToListAsync())
+        {
+            rows.Add(new SupplierStatementRow
+            {
+                Date = inv.Date,
+                Description = $"رصيد دائن مرتجع مشتريات {inv.InvoiceNumber}",
+                Debit = inv.RemainingAmount
+            });
         }
 
         // سندات الصرف غير المطبّقة فقط — المطبّقة تظهر عبر PaidAmount لتجنب الازدواج
@@ -1455,10 +1480,16 @@ public partial class ReportService : IReportService
         decimal accumulatedProfits = profitOpening + salesProfit - totalExpenses;
         decimal equityTotal = capital + adjustments + accumulatedProfits;
 
-        // LIABILITIES — ذمم الموردين = متبقي المشتريات الآجلة − سندات صرف غير مطبّقة
+        // LIABILITIES — ذمم الموردين = متبقي المشتريات الآجلة − سندات صرف غير مطبّقة − أرصدة مرتجع آجل
         decimal supplierCreditRemaining = await context.Invoices
             .Where(i => i.SupplierId != null &&
                         i.InvoiceType == InvoiceType.Purchase &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Date <= endOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        decimal supplierReturnCredits = await context.Invoices
+            .Where(i => i.SupplierId != null &&
+                        i.InvoiceType == InvoiceType.PurchaseReturn &&
                         i.PaymentMethod == PaymentMethod.Credit &&
                         i.Date <= endOfDay)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
@@ -1470,7 +1501,7 @@ public partial class ReportService : IReportService
                         (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
         decimal supplierPayables = SupplierBalanceHelper.ComputeOutstandingPayables(
-            supplierCreditRemaining, unappliedSupplierPayments);
+            supplierCreditRemaining, unappliedSupplierPayments + supplierReturnCredits);
 
         decimal investorDeposits = await context.InvestorTransactions
             .Where(t => t.Type == InvestorTransactionType.Deposit && t.Date <= endOfDay)
@@ -1498,6 +1529,12 @@ public partial class ReportService : IReportService
                         i.PaymentMethod == PaymentMethod.Credit &&
                         i.Date <= endOfDay)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        decimal saleReturnCredits = await context.Invoices
+            .Where(i => i.CustomerId != null &&
+                        i.InvoiceType == InvoiceType.SaleReturn &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Date <= endOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
         decimal unappliedDebt = await context.Vouchers
             .Where(v => v.CustomerId != null &&
                         v.VoucherType == VoucherType.DebtReceipt &&
@@ -1515,7 +1552,7 @@ public partial class ReportService : IReportService
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
         decimal customerDebts = CustomerBalanceHelper.ComputeOutstandingBalance(
-            creditRemaining, 0, unappliedDebt, unappliedReceipts);
+            creditRemaining, 0, unappliedDebt, unappliedReceipts + saleReturnCredits);
 
         var stocks = await context.WarehouseStocks
             .Include(ws => ws.Product)

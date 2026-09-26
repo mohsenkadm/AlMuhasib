@@ -24,7 +24,17 @@ public sealed class CarDatabaseMigrationService : IDatabaseMigrationService
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var pending = (await db.Database.GetPendingMigrationsAsync(cancellationToken)).ToList();
 
-        await db.Database.MigrateAsync(cancellationToken);
+        try
+        {
+            await db.Database.MigrateAsync(cancellationToken);
+        }
+        catch (InvalidOperationException ex) when (
+            ex.Message.Contains("PendingModelChangesWarning", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("pending changes", StringComparison.OrdinalIgnoreCase))
+        {
+            // النموذج قد يختلف عن الـ snapshot في بيئات قديمة — نكمل بالإصلاح اليدوي.
+            System.Diagnostics.Debug.WriteLine($"[CarMigrate] PendingModelChanges ignored: {ex.Message}");
+        }
 
         await CarSchemaRepair.ApplyAsync(db, cancellationToken);
         if (!await CarSchemaRepair.IsSchemaReadyAsync(db, cancellationToken))

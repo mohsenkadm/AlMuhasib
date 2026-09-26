@@ -105,6 +105,24 @@ public static class CustomerBalanceHelper
             }
         }
 
+        foreach (var inv in invoiceList
+                     .Where(i => i.InvoiceType == InvoiceType.SaleReturn &&
+                                 i.PaymentMethod == PaymentMethod.Credit &&
+                                 i.RemainingAmount > 0)
+                     .OrderBy(i => i.Date)
+                     .ThenBy(i => i.Id))
+        {
+            // رصيد دائن متبقي على مرتجع آجل (بعد تغطية فواتير المبيعات الآجلة)
+            rows.Add(new CustomerBalanceLedgerRow
+            {
+                Date = inv.Date,
+                Description = $"رصيد دائن مرتجع مبيعات {inv.InvoiceNumber}",
+                Credit = inv.RemainingAmount,
+                SourceKind = "Invoice",
+                DocumentId = inv.Id
+            });
+        }
+
         foreach (var v in voucherList
                      .Where(v => v.VoucherType == VoucherType.Receipt && !IsDebtReceiptApplied(v.Notes))
                      .OrderBy(v => v.Date)
@@ -156,7 +174,13 @@ public static class CustomerBalanceHelper
         }
 
         var creditRemaining = invoiceList
-            .Where(i => i.PaymentMethod == PaymentMethod.Credit)
+            .Where(i => i.PaymentMethod == PaymentMethod.Credit &&
+                        (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment))
+            .Sum(i => Math.Max(0, i.RemainingAmount));
+
+        var returnCreditNotes = invoiceList
+            .Where(i => i.InvoiceType == InvoiceType.SaleReturn &&
+                        i.PaymentMethod == PaymentMethod.Credit)
             .Sum(i => Math.Max(0, i.RemainingAmount));
 
         var unappliedDebtReceipts = voucherList
@@ -168,7 +192,10 @@ public static class CustomerBalanceHelper
             .Sum(v => v.Amount);
 
         var balance = ComputeOutstandingBalance(
-            creditRemaining, unpaidInstallmentRemaining, unappliedDebtReceipts, receiptAdvances);
+            creditRemaining,
+            unpaidInstallmentRemaining,
+            unappliedDebtReceipts,
+            receiptAdvances + returnCreditNotes);
 
         if (rows.Count > 0 && Math.Abs(rows[^1].RunningBalance - balance) >= 0.01m)
             rows[^1].RunningBalance = balance;

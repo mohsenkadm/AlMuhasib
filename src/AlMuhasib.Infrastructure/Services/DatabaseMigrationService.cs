@@ -24,8 +24,17 @@ public sealed class DatabaseMigrationService : IDatabaseMigrationService
     await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
     var pending = (await db.Database.GetPendingMigrationsAsync(cancellationToken)).ToList();
 
-    // Always invoke MigrateAsync — it is idempotent and applies any newly discovered migrations.
-    await db.Database.MigrateAsync(cancellationToken);
+    try
+    {
+      // Always invoke MigrateAsync — it is idempotent and applies any newly discovered migrations.
+      await db.Database.MigrateAsync(cancellationToken);
+    }
+    catch (InvalidOperationException ex) when (
+        ex.Message.Contains("PendingModelChangesWarning", StringComparison.OrdinalIgnoreCase) ||
+        ex.Message.Contains("pending changes", StringComparison.OrdinalIgnoreCase))
+    {
+      System.Diagnostics.Debug.WriteLine($"[AccountingMigrate] PendingModelChanges ignored: {ex.Message}");
+    }
 
     await AccountingSchemaRepair.ApplyAsync(db, cancellationToken);
     if (!await AccountingSchemaRepair.IsVoucherSchemaReadyAsync(db, cancellationToken))

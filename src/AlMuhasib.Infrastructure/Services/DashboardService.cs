@@ -12,15 +12,34 @@ public class DashboardService : IDashboardService
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IInvoiceService _invoiceService;
+    private static int _returnCreditRepairOnce;
 
-    public DashboardService(IDbContextFactory<AppDbContext> contextFactory, ICurrentUserService currentUserService)
+    public DashboardService(
+        IDbContextFactory<AppDbContext> contextFactory,
+        ICurrentUserService currentUserService,
+        IInvoiceService invoiceService)
     {
         _contextFactory = contextFactory;
         _currentUserService = currentUserService;
+        _invoiceService = invoiceService;
     }
 
     public async Task<DashboardData> GetDashboardDataAsync()
     {
+        if (Interlocked.Exchange(ref _returnCreditRepairOnce, 1) == 0)
+        {
+            try
+            {
+                await _invoiceService.RepairUnappliedReturnCreditsAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Dashboard return-credit repair error: {ex.Message}");
+                Interlocked.Exchange(ref _returnCreditRepairOnce, 0);
+            }
+        }
+
         await using var context = await _contextFactory.CreateDbContextAsync();
 
         var today = DateTime.Today;
@@ -131,6 +150,11 @@ public class DashboardService : IDashboardService
                 .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
                             i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
                 .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+            var returnCreditNotes = await context.Invoices
+                .Where(i => i.InvoiceType == InvoiceType.SaleReturn &&
+                            i.PaymentMethod == PaymentMethod.Credit &&
+                            i.RemainingAmount > 0)
+                .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
             var unappliedDebt = await context.Vouchers
                 .Where(v => v.VoucherType == VoucherType.DebtReceipt &&
                             (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
@@ -143,8 +167,8 @@ public class DashboardService : IDashboardService
                 .SumAsync(v => (decimal?)v.Amount) ?? 0;
             data.CustomerCreditInvoiceRemaining = creditRemaining;
             data.CustomerCreditUnappliedDebt = unappliedDebt;
-            data.CustomerCreditUnappliedReceipts = unappliedReceipts;
-            data.CustomerCreditBalance = Math.Max(0, creditRemaining - unappliedDebt - unappliedReceipts);
+            data.CustomerCreditUnappliedReceipts = unappliedReceipts + returnCreditNotes;
+            data.CustomerCreditBalance = Math.Max(0, creditRemaining - unappliedDebt - unappliedReceipts - returnCreditNotes);
         }
         catch (Exception ex)
         {
@@ -158,6 +182,11 @@ public class DashboardService : IDashboardService
                 .Where(i => i.InvoiceType == InvoiceType.Purchase &&
                             i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid)
                 .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+            var returnCreditNotes = await context.Invoices
+                .Where(i => i.InvoiceType == InvoiceType.PurchaseReturn &&
+                            i.PaymentMethod == PaymentMethod.Credit &&
+                            i.RemainingAmount > 0)
+                .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
             var unappliedPayments = await context.Vouchers
                 .Where(v => v.VoucherType == VoucherType.Payment &&
                             v.SupplierId != null &&
@@ -165,8 +194,8 @@ public class DashboardService : IDashboardService
                             (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
                 .SumAsync(v => (decimal?)v.Amount) ?? 0;
             data.SupplierCreditInvoiceRemaining = supplierRemaining;
-            data.SupplierCreditUnappliedPayments = unappliedPayments;
-            data.SupplierCreditBalance = Math.Max(0, supplierRemaining - unappliedPayments);
+            data.SupplierCreditUnappliedPayments = unappliedPayments + returnCreditNotes;
+            data.SupplierCreditBalance = Math.Max(0, supplierRemaining - unappliedPayments - returnCreditNotes);
         }
         catch (Exception ex)
         {

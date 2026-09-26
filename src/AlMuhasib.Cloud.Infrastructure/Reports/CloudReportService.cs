@@ -1336,10 +1336,16 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
         decimal accumulatedProfits = profitOpening + salesProfit - totalExpenses;
         decimal equityTotal = capital + adjustments + accumulatedProfits;
 
-        // LIABILITIES — ذمم الموردين = متبقي المشتريات الآجلة − سندات صرف غير مطبّقة
+        // LIABILITIES — ذمم الموردين = متبقي المشتريات الآجلة − سندات صرف غير مطبّقة − مرتجع آجل
         decimal supplierCreditRemaining = await context.Invoices
             .Where(i => i.SupplierId != null &&
                         i.InvoiceType == InvoiceType.Purchase &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Date <= endOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        decimal supplierReturnCredits = await context.Invoices
+            .Where(i => i.SupplierId != null &&
+                        i.InvoiceType == InvoiceType.PurchaseReturn &&
                         i.PaymentMethod == PaymentMethod.Credit &&
                         i.Date <= endOfDay)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
@@ -1351,7 +1357,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
                         (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
         decimal supplierPayables = SupplierBalanceHelper.ComputeOutstandingPayables(
-            supplierCreditRemaining, unappliedSupplierPayments);
+            supplierCreditRemaining, unappliedSupplierPayments + supplierReturnCredits);
 
         decimal investorDeposits = await context.InvestorTransactions
             .Where(t => t.Type == InvestorTransactionType.Deposit && t.Date <= endOfDay)
@@ -1379,6 +1385,12 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
                         i.PaymentMethod == PaymentMethod.Credit &&
                         i.Date <= endOfDay)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        decimal saleReturnCredits = await context.Invoices
+            .Where(i => i.CustomerId != null &&
+                        i.InvoiceType == InvoiceType.SaleReturn &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Date <= endOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
         decimal unappliedDebt = await context.Vouchers
             .Where(v => v.CustomerId != null &&
                         v.VoucherType == VoucherType.DebtReceipt &&
@@ -1396,7 +1408,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
         decimal customerDebts = CustomerBalanceHelper.ComputeOutstandingBalance(
-            creditRemaining, 0, unappliedDebt, unappliedReceipts);
+            creditRemaining, 0, unappliedDebt, unappliedReceipts + saleReturnCredits);
 
         var stocks = await context.WarehouseStocks
             .Include(ws => ws.Product)

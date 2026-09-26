@@ -1543,9 +1543,15 @@ public partial class ReportService
         var cash = await context.CashBoxes.SumAsync(c => (decimal?)c.Balance) ?? 0;
         var banks = await context.BankAccounts.SumAsync(b => (decimal?)b.Balance) ?? 0;
 
-        // AR = متبقي الآجل − سندات قبض/دين غير مطبّقة
+        // AR = متبقي الآجل − سندات قبض/دين غير مطبّقة − أرصدة مرتجع مبيعات آجل
         var creditRemaining = await context.Invoices
-            .Where(i => i.InvoiceType == InvoiceType.Sale && i.PaymentMethod == PaymentMethod.Credit && i.Date <= endOfDay)
+            .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
+                        i.PaymentMethod == PaymentMethod.Credit && i.Date <= endOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var saleReturnCredits = await context.Invoices
+            .Where(i => i.InvoiceType == InvoiceType.SaleReturn &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Date <= endOfDay)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
         var unappliedDebt = await context.Vouchers
             .Where(v => v.CustomerId != null &&
@@ -1564,7 +1570,7 @@ public partial class ReportService
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
         var creditAr = CustomerBalanceHelper.ComputeOutstandingBalance(
-            creditRemaining, 0, unappliedDebt, unappliedReceipts);
+            creditRemaining, 0, unappliedDebt, unappliedReceipts + saleReturnCredits);
         var installmentAr = await context.Installments
             .Where(i => i.RemainingAmount > 0)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
@@ -1582,9 +1588,14 @@ public partial class ReportService
             inventory += Math.Round(s.Quantity * avg, 0);
         }
 
-        // AP = متبقي المشتريات الآجلة − سندات صرف غير مطبّقة
+        // AP = متبقي المشتريات الآجلة − سندات صرف غير مطبّقة − أرصدة مرتجع مشتريات آجل
         var supplierCreditRemaining = await context.Invoices
             .Where(i => i.InvoiceType == InvoiceType.Purchase
+                        && i.PaymentMethod == PaymentMethod.Credit
+                        && i.Date <= endOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var supplierReturnCredits = await context.Invoices
+            .Where(i => i.InvoiceType == InvoiceType.PurchaseReturn
                         && i.PaymentMethod == PaymentMethod.Credit
                         && i.Date <= endOfDay)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
@@ -1596,7 +1607,7 @@ public partial class ReportService
                         && (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
         var payables = SupplierBalanceHelper.ComputeOutstandingPayables(
-            supplierCreditRemaining, unappliedSupplierPayments);
+            supplierCreditRemaining, unappliedSupplierPayments + supplierReturnCredits);
 
         var invDep = await context.InvestorTransactions
             .Where(t => t.Type == InvestorTransactionType.Deposit && t.Date <= endOfDay)
@@ -1870,11 +1881,17 @@ public partial class ReportService
         var transfersCount = await transferQ.CountAsync();
         var transfersAmount = await transferQ.SumAsync(t => (decimal?)t.Amount) ?? 0;
 
-        // رصيد الآجل للعملاء = متبقي فواتير الآجل − سندات قبض/دين غير مطبّقة (نفس لوحة التحكم)
+        // رصيد الآجل للعملاء = متبقي فواتير الآجل − سندات قبض/دين غير مطبّقة − مرتجع آجل
         var customerCreditRemaining = await context.Invoices.AsNoTracking()
             .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment)
                         && i.PaymentMethod == PaymentMethod.Credit
                         && !i.IsCreditPaid
+                        && i.Date <= asOfEndOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+
+        var saleReturnCredits = await context.Invoices.AsNoTracking()
+            .Where(i => i.InvoiceType == InvoiceType.SaleReturn
+                        && i.PaymentMethod == PaymentMethod.Credit
                         && i.Date <= asOfEndOfDay)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
 
@@ -1892,13 +1909,19 @@ public partial class ReportService
                         && (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
 
-        var customerReceivables = Math.Max(0, customerCreditRemaining - unappliedDebt - unappliedReceipts);
+        var customerReceivables = Math.Max(0, customerCreditRemaining - unappliedDebt - unappliedReceipts - saleReturnCredits);
 
-        // رصيد الآجل للموردين = متبقي مشتريات الآجل − سندات صرف غير مطبّقة
+        // رصيد الآجل للموردين = متبقي مشتريات الآجل − سندات صرف غير مطبّقة − مرتجع آجل
         var supplierCreditRemaining = await context.Invoices.AsNoTracking()
             .Where(i => i.InvoiceType == InvoiceType.Purchase
                         && i.PaymentMethod == PaymentMethod.Credit
                         && !i.IsCreditPaid
+                        && i.Date <= asOfEndOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+
+        var supplierReturnCredits = await context.Invoices.AsNoTracking()
+            .Where(i => i.InvoiceType == InvoiceType.PurchaseReturn
+                        && i.PaymentMethod == PaymentMethod.Credit
                         && i.Date <= asOfEndOfDay)
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
 
@@ -1911,7 +1934,7 @@ public partial class ReportService
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
 
         var supplierPayables = SupplierBalanceHelper.ComputeOutstandingPayables(
-            supplierCreditRemaining, unappliedSupplierPayments);
+            supplierCreditRemaining, unappliedSupplierPayments + supplierReturnCredits);
 
         var installmentReceivables = await context.Installments.AsNoTracking()
             .Where(i => i.RemainingAmount > 0)
@@ -1949,6 +1972,16 @@ public partial class ReportService
             .Select(g => new { CustomerId = g.Key, Amount = g.Sum(x => x.Amount) })
             .ToListAsync();
 
+        var returnCreditByCustomer = await context.Invoices.AsNoTracking()
+            .Where(i => i.InvoiceType == InvoiceType.SaleReturn
+                        && i.PaymentMethod == PaymentMethod.Credit
+                        && i.Date <= asOfEndOfDay
+                        && i.CustomerId != null
+                        && i.RemainingAmount > 0)
+            .GroupBy(i => i.CustomerId!.Value)
+            .Select(g => new { CustomerId = g.Key, Amount = g.Sum(x => x.RemainingAmount) })
+            .ToListAsync();
+
         var installmentByCustomer = await (
             from inst in context.Installments.AsNoTracking()
             join plan in context.InstallmentPlans.AsNoTracking() on inst.InstallmentPlanId equals plan.Id
@@ -1964,6 +1997,8 @@ public partial class ReportService
         foreach (var row in unappliedDebtByCustomer)
             customerBalanceMap[row.CustomerId] = customerBalanceMap.GetValueOrDefault(row.CustomerId) - row.Amount;
         foreach (var row in unappliedReceiptByCustomer)
+            customerBalanceMap[row.CustomerId] = customerBalanceMap.GetValueOrDefault(row.CustomerId) - row.Amount;
+        foreach (var row in returnCreditByCustomer)
             customerBalanceMap[row.CustomerId] = customerBalanceMap.GetValueOrDefault(row.CustomerId) - row.Amount;
 
         foreach (var key in customerBalanceMap.Keys.ToList())
@@ -1994,9 +2029,21 @@ public partial class ReportService
             .Select(g => new { SupplierId = g.Key, Amount = g.Sum(x => x.Amount) })
             .ToListAsync();
 
+        var returnCreditBySupplier = await context.Invoices.AsNoTracking()
+            .Where(i => i.InvoiceType == InvoiceType.PurchaseReturn
+                        && i.PaymentMethod == PaymentMethod.Credit
+                        && i.Date <= asOfEndOfDay
+                        && i.SupplierId != null
+                        && i.RemainingAmount > 0)
+            .GroupBy(i => i.SupplierId!.Value)
+            .Select(g => new { SupplierId = g.Key, Amount = g.Sum(x => x.RemainingAmount) })
+            .ToListAsync();
+
         foreach (var row in creditBySupplier)
             supplierBalanceMap[row.SupplierId] = row.Amount;
         foreach (var row in unappliedPayBySupplier)
+            supplierBalanceMap[row.SupplierId] = supplierBalanceMap.GetValueOrDefault(row.SupplierId) - row.Amount;
+        foreach (var row in returnCreditBySupplier)
             supplierBalanceMap[row.SupplierId] = supplierBalanceMap.GetValueOrDefault(row.SupplierId) - row.Amount;
         foreach (var key in supplierBalanceMap.Keys.ToList())
             supplierBalanceMap[key] = Math.Max(0, supplierBalanceMap[key]);

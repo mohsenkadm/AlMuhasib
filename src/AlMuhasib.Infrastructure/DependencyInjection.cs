@@ -68,9 +68,13 @@ public static class DependencyInjection
     private static void RegisterAccountingInfrastructure(IServiceCollection services, string connectionString, bool isBranchClient)
     {
         services.AddDbContextFactory<AppDbContext>(options =>
+        {
             options.UseSqlServer(
                 connectionString,
-                b => b.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName)));
+                b => b.MigrationsAssembly(typeof(AppDbContext).Assembly.FullName));
+            options.ConfigureWarnings(w =>
+                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        });
 
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -133,9 +137,15 @@ public static class DependencyInjection
     private static void RegisterCarInfrastructure(IServiceCollection services, string connectionString, bool isBranchClient)
     {
         services.AddDbContextFactory<CarDbContext>(options =>
+        {
             options.UseSqlServer(
                 connectionString,
-                b => b.MigrationsAssembly(typeof(CarDbContext).Assembly.FullName)));
+                b => b.MigrationsAssembly(typeof(CarDbContext).Assembly.FullName));
+            // لا نوقف تشغيل النظام إذا اختلف النموذج قليلاً عن الـ snapshot —
+            // CarSchemaRepair يصلح الأعمدة الناقصة بعد Migrate.
+            options.ConfigureWarnings(w =>
+                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        });
 
         services.AddScoped<IUnitOfWork, CarUnitOfWork>();
         services.AddScoped<IAuthService, CarAuthService>();
