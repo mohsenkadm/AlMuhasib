@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
@@ -258,6 +259,7 @@ public partial class PosQuickSaleViewModel
             Subtotal = items.Sum(i => i.TotalPrice),
             GrandTotal = inv.NetAmount,
             PharmacyUsageReceipt = false,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(inv.Currency),
             Items = items.Select((it, idx) => new InvoicePrintItem
             {
                 Number = idx + 1,
@@ -317,6 +319,7 @@ public partial class PosQuickSaleViewModel
             Subtotal = items.Sum(i => i.TotalPrice),
             GrandTotal = inv.NetAmount,
             PharmacyUsageReceipt = true,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(inv.Currency),
             Items = items.Select((it, idx) => new InvoicePrintItem
             {
                 Number = idx + 1,
@@ -360,6 +363,7 @@ public partial class PosQuickSaleViewModel
             Subtotal = totalSnapshot,
             GrandTotal = saved.NetAmount > 0 ? saved.NetAmount : totalSnapshot,
             PharmacyUsageReceipt = pharmacyUsage && ShowPharmacy,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(saved.Currency),
             Items = cartSnapshot.Select((l, idx) => new InvoicePrintItem
             {
                 Number = idx + 1,

@@ -477,6 +477,8 @@ public class SupplierStatementRow
     public decimal Debit { get; set; }
     public decimal Credit { get; set; }
     public decimal RunningBalance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
 }
 
 public class InvestorStatementResult
@@ -508,6 +510,7 @@ public class ExpensesReportResult
     public decimal TodayExpenses { get; set; }
     public decimal MonthExpenses { get; set; }
     public string TopExpenseType { get; set; } = string.Empty;
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public List<ExpenseReportRow> Rows { get; set; } = [];
     public List<NameAmountPoint> ByTypeChart { get; set; } = [];
     public List<DailyAmountPoint> DailyChart { get; set; } = [];
@@ -647,6 +650,11 @@ public class BalanceSheetResult
     public List<BalanceSheetCashBoxRow> CashBoxes { get; set; } = [];
     public decimal BanksTotal { get; set; }
     public List<BalanceSheetBankRow> Banks { get; set; } = [];
+    /// <summary>إفصاح سيولة دولار — لا يُدمج في مجاميع الميزانية بالدينار.</summary>
+    public decimal CashBoxesTotalUsd { get; set; }
+    public decimal BanksTotalUsd { get; set; }
+    public decimal CustomerDebtsUsd { get; set; }
+    public decimal SupplierPayablesUsd { get; set; }
     public decimal CustomerDebts { get; set; }
     public decimal InventoryValue { get; set; }
     public decimal InstallmentReceivables { get; set; }
@@ -1352,6 +1360,7 @@ public class CustomerCollectionRow
 public class OverdueCustomersReportResult
 {
     public decimal TotalOverdue { get; set; }
+    public decimal TotalOverdueUsd { get; set; }
     public int CustomerCount { get; set; }
     public int ItemCount { get; set; }
     public decimal AverageDaysOverdue { get; set; }

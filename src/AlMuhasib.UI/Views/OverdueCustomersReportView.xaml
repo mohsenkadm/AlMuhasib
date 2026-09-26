@@ -44,12 +44,20 @@
 
                 <UniformGrid Columns="4" Margin="0,0,0,20">
                     <controls:AnimatedStatCard
-                        Title="إجمالي المتأخر"
+                        Title="إجمالي المتأخر (د.ع)"
                         TextValue="{Binding TotalOverdue}"
                         Icon="AlertCircle"
                         IconBackground="{DynamicResource DashboardKpiRedLightBrush}"
                         IconForeground="#C62828"
                         ValueForeground="#C62828"/>
+                    <controls:AnimatedStatCard
+                        Title="إجمالي المتأخر ($)"
+                        TextValue="{Binding TotalOverdueUsd}"
+                        Icon="CurrencyUsd"
+                        IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
+                        IconForeground="#2E7D32"
+                        ValueForeground="#2E7D32"
+                        Visibility="{Binding ShowTotalOverdueUsd, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     <controls:AnimatedStatCard
                         Title="عدد العملاء"
                         TextValue="{Binding CustomerCount}"

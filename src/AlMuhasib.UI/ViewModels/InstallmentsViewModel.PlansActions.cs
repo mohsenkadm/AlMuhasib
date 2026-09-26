@@ -1,5 +1,6 @@
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Shared.Services;
 using AlMuhasib.UI.Controls;
@@ -139,6 +140,7 @@ public partial class InstallmentsViewModel
             CompanyFeeAmount = plan.CompanyFeeAmount > 0 ? plan.CompanyFeeAmount : null,
             NumberOfInstallments = plan.NumberOfInstallments,
             InstallmentAmount = plan.InstallmentAmount,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(invoice.Currency),
             Items = invoice.Items.Select((item, i) => new InvoicePrintItem
             {
                 Number = i + 1,

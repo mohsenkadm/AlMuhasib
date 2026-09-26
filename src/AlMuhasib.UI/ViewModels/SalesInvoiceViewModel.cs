@@ -1583,6 +1583,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             ShowLineDiscount = ShowProductDiscount,
             PharmacyUsageReceipt = ShowPharmacyUsage,
             ShowCarShowroomFields = ShowCarShowroomContractPrint,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(_savedInvoice.Currency),
             Items = _savedItems.Select((item, i) =>
             {
                 var usage = ShowPharmacyUsage
@@ -1647,6 +1648,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             WarehouseName = source.WarehouseName,
             PaymentMethod = source.PaymentMethod,
             Notes = source.Notes,
+            CurrencyLabel = source.CurrencyLabel,
             HideAmounts = true,
             Items = source.Items.Select(i => new InvoicePrintItem
             {

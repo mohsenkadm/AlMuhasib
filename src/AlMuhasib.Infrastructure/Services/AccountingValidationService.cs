@@ -168,28 +168,47 @@ public class AccountingValidationService : IAccountingValidationService
         if (supplier is null)
             return new ValidationResult { Category = "\u0627\u0644\u0645\u0648\u0631\u062f", IsValid = false, Message = $"\u0627\u0644\u0645\u0648\u0631\u062f #{supplierId} \u063a\u064a\u0631 \u0645\u0648\u062c\u0648\u062f" };
 
-        var creditPurchases = await context.Invoices
+        var creditRemainingIqd = await context.Invoices
             .Where(i => i.SupplierId == supplierId &&
                         i.InvoiceType == InvoiceType.Purchase &&
-                        i.PaymentMethod == PaymentMethod.Credit)
-            .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
-
-        var paymentsMade = await context.Vouchers
-            .Where(v => v.VoucherType == VoucherType.Payment &&
-                        v.Notes != null && v.Notes.Contains($"\u0645\u0648\u0631\u062f#{supplierId}"))
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.IQD)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var unappliedIqd = await context.Vouchers
+            .Where(v => v.SupplierId == supplierId &&
+                        v.VoucherType == VoucherType.Payment &&
+                        v.Currency == AccountingCurrency.IQD &&
+                        !v.InvoiceId.HasValue &&
+                        (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var expectedIqd = SupplierBalanceHelper.ComputeOutstandingPayables(creditRemainingIqd, unappliedIqd);
 
-        var expectedBalance = creditPurchases - paymentsMade;
+        var creditRemainingUsd = await context.Invoices
+            .Where(i => i.SupplierId == supplierId &&
+                        i.InvoiceType == InvoiceType.Purchase &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.USD)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var unappliedUsd = await context.Vouchers
+            .Where(v => v.SupplierId == supplierId &&
+                        v.VoucherType == VoucherType.Payment &&
+                        v.Currency == AccountingCurrency.USD &&
+                        !v.InvoiceId.HasValue &&
+                        (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var expectedUsd = SupplierBalanceHelper.ComputeOutstandingPayables(creditRemainingUsd, unappliedUsd);
 
         return new ValidationResult
         {
             Category = "\u0627\u0644\u0645\u0648\u0631\u062f",
             EntityName = supplier.Name,
             IsValid = true,
-            ExpectedValue = expectedBalance,
-            ActualValue = expectedBalance,
+            ExpectedValue = expectedIqd,
+            ActualValue = expectedIqd,
             Difference = 0,
-            Message = $"\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u0648\u0631\u062f '{supplier.Name}': \u0645\u0633\u062a\u062d\u0642\u0627\u062a {expectedBalance:N2}"
+            Message = expectedUsd != 0
+                ? $"رصيد المورد '{supplier.Name}': مستحقات {expectedIqd:N0} د.ع | {expectedUsd:N2} $"
+                : $"رصيد المورد '{supplier.Name}': مستحقات {expectedIqd:N0} د.ع"
         };
     }
 
@@ -275,93 +294,133 @@ public class AccountingValidationService : IAccountingValidationService
     public async Task<ValidationResult> ValidateBalanceSheetAsync(DateTime date)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
+        var endOfDay = date.Date.AddDays(1).AddTicks(-1);
 
-        var cashBoxes = await context.CashBoxes.SumAsync(c => (decimal?)c.Balance) ?? 0;
-        var banks = await context.BankAccounts.SumAsync(b => (decimal?)b.Balance) ?? 0;
+        // ميزانية التحقق بالدينار فقط — لا خلط مع الدولار (سياسة المحاسبة العراقية)
+        var cashBoxes = await context.CashBoxes
+            .Where(c => c.Currency == AccountingCurrency.IQD)
+            .SumAsync(c => (decimal?)c.Balance) ?? 0;
+        var banks = await context.BankAccounts
+            .Where(b => b.Currency == AccountingCurrency.IQD)
+            .SumAsync(b => (decimal?)b.Balance) ?? 0;
 
-        var customerDebts = await context.Invoices
-            .Where(i => (i.InvoiceType == InvoiceType.Sale) &&
-                        i.PaymentMethod == PaymentMethod.Credit)
-            .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
-        var debtPayments = await context.Vouchers
-            .Where(v => v.VoucherType == VoucherType.DebtReceipt)
+        var creditRemaining = await context.Invoices
+            .Where(i => i.CustomerId != null &&
+                        (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.IQD &&
+                        i.Date <= endOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var unappliedDebt = await context.Vouchers
+            .Where(v => v.CustomerId != null &&
+                        v.VoucherType == VoucherType.DebtReceipt &&
+                        v.Currency == AccountingCurrency.IQD &&
+                        v.Date <= endOfDay &&
+                        !v.InvoiceId.HasValue &&
+                        !v.InstallmentId.HasValue &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
-        customerDebts -= debtPayments;
+        var unappliedReceipts = await context.Vouchers
+            .Where(v => v.CustomerId != null &&
+                        v.VoucherType == VoucherType.Receipt &&
+                        v.Currency == AccountingCurrency.IQD &&
+                        v.Date <= endOfDay &&
+                        !v.InvoiceId.HasValue &&
+                        !v.InstallmentId.HasValue &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+
+        var installmentReceivables = await context.Installments
+            .Where(i => i.RemainingAmount > 0 &&
+                        i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+
+        var customerDebts = CustomerBalanceHelper.ComputeOutstandingBalance(
+            creditRemaining, 0, unappliedDebt, unappliedReceipts);
 
         var inventory = 0m;
         var invStocks = await context.WarehouseStocks
             .Where(ws => ws.Quantity > 0)
             .ToListAsync();
+        var productIds = invStocks.Select(s => s.ProductId).Distinct().ToList();
+        var purchasesByProduct = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
         foreach (var s in invStocks)
         {
-            var purchaseItems = await context.InvoiceItems
-                .Include(ii => ii.Invoice)
-                .Where(ii => ii.ProductId == s.ProductId &&
-                             ii.Invoice!.InvoiceType == InvoiceType.Purchase)
-                .ToListAsync();
+            var purchaseItems = purchasesByProduct.GetValueOrDefault(s.ProductId) ?? [];
             var avgCost = ProductCostHelper.ComputeAverageUnitCost(purchaseItems, s.OpeningQuantity, s.UnitCost);
             if (avgCost > 0)
                 inventory += Math.Round(s.Quantity * avgCost, 0);
         }
 
-        var installmentReceivables = await context.Installments
-            .Where(i => i.Status != InstallmentStatus.Paid)
-            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
-
         var totalAssets = cashBoxes + banks + customerDebts + inventory + installmentReceivables;
 
         var capital = await context.CapitalEntries
-            .Where(c => c.Date <= date &&
+            .Where(c => c.Date <= endOfDay &&
                         (c.Type == CapitalEntryType.Initial || c.Type == CapitalEntryType.Adjustment))
             .SumAsync(c => (decimal?)c.Amount) ?? 0;
 
         var totalSales = await InvoiceSignedSums.SumSignedNetAsync(
             InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
-                .Where(i => i.Date <= date));
+                .Where(i => i.Date <= endOfDay));
         var totalPurchases = await InvoiceSignedSums.SumSignedNetAsync(
             InvoiceFilters.ForPurchasesTotals(context.Invoices)
-                .Where(i => i.Date <= date));
+                .Where(i => i.Date <= endOfDay));
         var totalExpenses = await context.Expenses
-            .Where(e => e.Date <= date)
+            .Where(e => e.Currency == AccountingCurrency.IQD && e.Date <= endOfDay)
             .SumAsync(e => (decimal?)e.Amount) ?? 0;
         var bankFees = await context.Vouchers
-            .Where(v => v.VoucherType == VoucherType.BankReceipt && v.Date <= date)
+            .Where(v => v.VoucherType == VoucherType.BankReceipt &&
+                        v.Currency == AccountingCurrency.IQD &&
+                        v.Date <= endOfDay)
             .SumAsync(v => (decimal?)v.BankFees) ?? 0;
         var distributed = await context.ProfitDistributions
+            .Where(pd => pd.Date <= endOfDay)
             .SumAsync(pd => (decimal?)pd.DistributedAmount) ?? 0;
-        var profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context, date);
+        var profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context, endOfDay);
         var accumulatedProfits = totalSales - totalPurchases - totalExpenses - bankFees - distributed + profitOpening;
 
         var totalEquity = capital + accumulatedProfits;
 
-        var supplierPayables = await context.Invoices
-            .Where(i => i.InvoiceType == InvoiceType.Purchase && i.PaymentMethod == PaymentMethod.Credit)
-            .SumAsync(i => (decimal?)i.NetAmount) ?? 0;
+        var supplierCreditRemaining = await context.Invoices
+            .Where(i => i.InvoiceType == InvoiceType.Purchase &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.IQD &&
+                        i.Date <= endOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var unappliedSupplierPayments = await context.Vouchers
+            .Where(v => v.SupplierId != null &&
+                        v.VoucherType == VoucherType.Payment &&
+                        v.Currency == AccountingCurrency.IQD &&
+                        v.Date <= endOfDay &&
+                        !v.InvoiceId.HasValue &&
+                        (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var supplierPayables = SupplierBalanceHelper.ComputeOutstandingPayables(
+            supplierCreditRemaining, unappliedSupplierPayments);
 
         var investorDeposits = await context.InvestorTransactions
-            .Where(t => t.Type == InvestorTransactionType.Deposit)
+            .Where(t => t.Type == InvestorTransactionType.Deposit && t.Date <= endOfDay)
             .SumAsync(t => (decimal?)t.Amount) ?? 0;
         var investorWithdrawals = await context.InvestorTransactions
-            .Where(t => t.Type == InvestorTransactionType.Withdrawal)
+            .Where(t => t.Type == InvestorTransactionType.Withdrawal && t.Date <= endOfDay)
             .SumAsync(t => (decimal?)t.Amount) ?? 0;
-        investorDeposits -= investorWithdrawals;
+        investorDeposits = Math.Max(0, investorDeposits - investorWithdrawals);
 
         var totalLiabilities = supplierPayables + investorDeposits;
-
         var equityAndLiabilities = totalEquity + totalLiabilities;
         var diff = Math.Abs(totalAssets - equityAndLiabilities);
 
         return new ValidationResult
         {
-            Category = "\u0627\u0644\u0645\u064a\u0632\u0627\u0646\u064a\u0629 \u0627\u0644\u0639\u0645\u0648\u0645\u064a\u0629",
-            EntityName = $"\u0628\u062a\u0627\u0631\u064a\u062e {date:yyyy/MM/dd}",
+            Category = "الميزانية العمومية",
+            EntityName = $"بتاريخ {date:yyyy/MM/dd}",
             IsValid = diff < 0.01m,
             ExpectedValue = equityAndLiabilities,
             ActualValue = totalAssets,
             Difference = totalAssets - equityAndLiabilities,
             Message = diff < 0.01m
-                ? $"\u0627\u0644\u0645\u064a\u0632\u0627\u0646\u064a\u0629 \u0645\u062a\u0648\u0627\u0632\u0646\u0629: \u0627\u0644\u0645\u0648\u062c\u0648\u062f\u0627\u062a = \u0627\u0644\u0645\u0644\u0643\u064a\u0629 + \u0627\u0644\u0627\u0644\u062a\u0632\u0627\u0645\u0627\u062a = {totalAssets:N2}"
-                : $"\u062e\u0644\u0644 \u0641\u064a \u0627\u0644\u0645\u064a\u0632\u0627\u0646\u064a\u0629: \u0627\u0644\u0645\u0648\u062c\u0648\u062f\u0627\u062a {totalAssets:N2} \u2260 \u0627\u0644\u0645\u0644\u0643\u064a\u0629+\u0627\u0644\u0627\u0644\u062a\u0632\u0627\u0645\u0627\u062a {equityAndLiabilities:N2} (\u0641\u0631\u0642: {totalAssets - equityAndLiabilities:N2})"
+                ? $"الميزانية متوازنة (دينار): الموجودات = الملكية + الالتزامات = {totalAssets:N0}"
+                : $"خلل في الميزانية (دينار): الموجودات {totalAssets:N0} ≠ الملكية+الالتزامات {equityAndLiabilities:N0} (فرق: {totalAssets - equityAndLiabilities:N0})"
         };
     }
 }

@@ -472,7 +472,8 @@ public class InstallmentService : IInstallmentService
         string? searchTerm,
         IReadOnlyCollection<InstallmentStatus>? statuses)
     {
-        var query = context.Installments.AsNoTracking().AsQueryable();
+        var query = context.Installments.AsNoTracking()
+            .Where(i => i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD);
 
         if (statuses is { Count: > 0 })
         {

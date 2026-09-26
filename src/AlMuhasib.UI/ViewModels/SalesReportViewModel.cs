@@ -3,6 +3,7 @@ using System.Windows;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -247,6 +248,7 @@ public partial class SalesReportViewModel : ReportViewModelBase
             RemainingAmount = remainingAmount,
             GrandTotal = invoice.NetAmount,
             CompanyFeeAmount = row.CompanyFeeAmount > 0 ? row.CompanyFeeAmount : null,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(invoice.Currency),
             Items = invoice.Items.Select((item, i) => new InvoicePrintItem
             {
                 Number = i + 1,

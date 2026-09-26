@@ -661,11 +661,32 @@ public sealed partial class CloudReportService
                         && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.USD
                         && (!customerId.HasValue || i.InstallmentPlan.CustomerId == customerId.Value))
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0m;
+        var unappliedDebtUsd = await context.Vouchers.AsNoTracking()
+            .Where(v => v.CustomerId != null
+                        && v.VoucherType == VoucherType.DebtReceipt
+                        && v.Currency == AccountingCurrency.USD
+                        && v.Date < asOfEnd
+                        && !v.InvoiceId.HasValue
+                        && !v.InstallmentId.HasValue
+                        && (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker))
+                        && (!customerId.HasValue || v.CustomerId == customerId.Value))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0m;
+        var unappliedReceiptsUsd = await context.Vouchers.AsNoTracking()
+            .Where(v => v.CustomerId != null
+                        && v.VoucherType == VoucherType.Receipt
+                        && v.Currency == AccountingCurrency.USD
+                        && v.Date < asOfEnd
+                        && !v.InvoiceId.HasValue
+                        && !v.InstallmentId.HasValue
+                        && (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker))
+                        && (!customerId.HasValue || v.CustomerId == customerId.Value))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0m;
 
         return new ReceivablesAgingReportResult
         {
             TotalOutstanding = rows.Sum(r => r.RemainingAmount),
-            TotalOutstandingUsd = totalOutstandingUsdCredit + totalOutstandingUsdInst,
+            TotalOutstandingUsd = CustomerBalanceHelper.ComputeOutstandingBalance(
+                totalOutstandingUsdCredit, totalOutstandingUsdInst, unappliedDebtUsd, unappliedReceiptsUsd),
             RowCount = rows.Count,
             CustomerCount = rows.Select(r => r.CustomerName).Distinct().Count(),
             Buckets = BuildAgingBuckets(rows.Select(r => (r.AgingBucket, r.RemainingAmount))),
@@ -732,7 +753,7 @@ public sealed partial class CloudReportService
 
         rows = rows.OrderByDescending(r => r.DaysOverdue).ThenBy(r => r.DueDate).ToList();
 
-        var totalOutstandingUsd = await context.Invoices.AsNoTracking()
+        var totalOutstandingUsdCredit = await context.Invoices.AsNoTracking()
             .Where(i => i.InvoiceType == InvoiceType.Purchase
                         && i.PaymentMethod == PaymentMethod.Credit
                         && i.Currency == AccountingCurrency.USD
@@ -740,11 +761,21 @@ public sealed partial class CloudReportService
                         && i.Date < asOfEnd
                         && (!supplierId.HasValue || i.SupplierId == supplierId.Value))
             .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0m;
+        var unappliedUsd = await context.Vouchers.AsNoTracking()
+            .Where(v => v.SupplierId != null
+                        && v.VoucherType == VoucherType.Payment
+                        && v.Currency == AccountingCurrency.USD
+                        && v.Date < asOfEnd
+                        && !v.InvoiceId.HasValue
+                        && (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker))
+                        && (!supplierId.HasValue || v.SupplierId == supplierId.Value))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0m;
 
         return new PayablesAgingReportResult
         {
             TotalOutstanding = rows.Sum(r => r.RemainingAmount),
-            TotalOutstandingUsd = totalOutstandingUsd,
+            TotalOutstandingUsd = SupplierBalanceHelper.ComputeOutstandingPayables(
+                totalOutstandingUsdCredit, unappliedUsd),
             RowCount = rows.Count,
             SupplierCount = rows.Select(r => r.SupplierName).Distinct().Count(),
             Buckets = BuildAgingBuckets(rows.Select(r => (r.AgingBucket, r.RemainingAmount))),
@@ -851,9 +882,31 @@ public sealed partial class CloudReportService
             if (byName.TryGetValue(row.CustomerName, out var id))
                 row.CustomerId = id;
 
+        // متأخرات الدولار منفصلة — فقط البنود المتأخرة فعلياً (لا كل الرصيد المستحق)
+        var asOf = asOfDate.Date;
+        var asOfEnd = asOf.AddDays(1);
+        var dueOnOrBefore = asOf.AddDays(-minDays);
+        var overdueUsdCredit = await context.Invoices.AsNoTracking()
+            .Where(i => i.InvoiceType == InvoiceType.Sale
+                        && i.PaymentMethod == PaymentMethod.Credit
+                        && i.Currency == AccountingCurrency.USD
+                        && i.RemainingAmount > 0
+                        && i.Date < asOfEnd
+                        && (!customerId.HasValue || i.CustomerId == customerId.Value)
+                        && (i.CreditDueDate ?? i.Date) <= dueOnOrBefore)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0m;
+        var overdueUsdInst = await context.Installments.AsNoTracking()
+            .Where(i => i.Status != InstallmentStatus.Paid
+                        && i.RemainingAmount > 0
+                        && i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.USD
+                        && i.DueDate <= dueOnOrBefore
+                        && (!customerId.HasValue || i.InstallmentPlan.CustomerId == customerId.Value))
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0m;
+
         return new OverdueCustomersReportResult
         {
             TotalOverdue = rows.Sum(r => r.OverdueAmount),
+            TotalOverdueUsd = overdueUsdCredit + overdueUsdInst,
             CustomerCount = rows.Select(r => r.CustomerName).Distinct().Count(),
             ItemCount = rows.Count,
             AverageDaysOverdue = rows.Count > 0 ? Math.Round((decimal)rows.Average(r => r.DaysOverdue), 0) : 0,

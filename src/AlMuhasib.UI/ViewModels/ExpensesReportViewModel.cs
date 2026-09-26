@@ -56,9 +56,9 @@ public partial class ExpensesReportViewModel : ReportViewModelBase
             IsBusy = true;
             var result = await _reportService.GetExpensesReportAsync(DateFrom, DateTo, _selectedExpenseTypeId, _selectedCashBoxId);
 
-            TotalExpenses = FormatCurrency(result.TotalExpenses);
-            TodayExpenses = FormatCurrency(result.TodayExpenses);
-            MonthExpenses = FormatCurrency(result.MonthExpenses);
+            TotalExpenses = FormatCurrency(result.TotalExpenses, result.Currency);
+            TodayExpenses = FormatCurrency(result.TodayExpenses, result.Currency);
+            MonthExpenses = FormatCurrency(result.MonthExpenses, result.Currency);
             TopExpenseType = result.TopExpenseType;
 
             if (result.ByTypeChart.Count > 0)

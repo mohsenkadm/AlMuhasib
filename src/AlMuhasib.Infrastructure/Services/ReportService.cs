@@ -863,68 +863,77 @@ public partial class ReportService : IReportService
         await EnsureSupplierPaymentsAppliedAsync(context, supplierId);
 
         var rows = new List<SupplierStatementRow>();
-
-        var invQ = context.Invoices
-            .Where(i => i.SupplierId == supplierId &&
-                        i.InvoiceType == InvoiceType.Purchase &&
-                        i.PaymentMethod == PaymentMethod.Credit &&
-                        i.Currency == AccountingCurrency.IQD);
-        if (from.HasValue) invQ = invQ.Where(i => i.Date >= from.Value);
-        if (to.HasValue) invQ = invQ.Where(i => i.Date < EndOfDay(to));
-        foreach (var inv in await invQ.OrderBy(i => i.Date).ToListAsync())
+        foreach (var currency in new[] { AccountingCurrency.IQD, AccountingCurrency.USD })
         {
-            rows.Add(new SupplierStatementRow
+            var currencyRows = new List<SupplierStatementRow>();
+            var invQ = context.Invoices
+                .Where(i => i.SupplierId == supplierId &&
+                            i.InvoiceType == InvoiceType.Purchase &&
+                            i.PaymentMethod == PaymentMethod.Credit &&
+                            i.Currency == currency);
+            if (from.HasValue) invQ = invQ.Where(i => i.Date >= from.Value);
+            if (to.HasValue) invQ = invQ.Where(i => i.Date < EndOfDay(to));
+            foreach (var inv in await invQ.OrderBy(i => i.Date).ToListAsync())
             {
-                Date = inv.Date,
-                Description = $"فاتورة مشتريات {inv.InvoiceNumber}",
-                Credit = inv.NetAmount
-            });
-            if (inv.PaidAmount > 0)
-            {
-                rows.Add(new SupplierStatementRow
+                currencyRows.Add(new SupplierStatementRow
                 {
                     Date = inv.Date,
-                    Description = $"تسديد فاتورة مشتريات آجلة {inv.InvoiceNumber}",
-                    Debit = inv.PaidAmount
+                    Description = $"فاتورة مشتريات {inv.InvoiceNumber}",
+                    Credit = inv.NetAmount,
+                    Currency = currency
+                });
+                if (inv.PaidAmount > 0)
+                {
+                    currencyRows.Add(new SupplierStatementRow
+                    {
+                        Date = inv.Date,
+                        Description = $"تسديد فاتورة مشتريات آجلة {inv.InvoiceNumber}",
+                        Debit = inv.PaidAmount,
+                        Currency = currency
+                    });
+                }
+            }
+
+            var vQ = context.Vouchers.Where(v => v.SupplierId == supplierId &&
+                                                v.VoucherType == VoucherType.Payment &&
+                                                v.Currency == currency &&
+                                                (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)));
+            if (from.HasValue) vQ = vQ.Where(v => v.Date >= from.Value);
+            if (to.HasValue) vQ = vQ.Where(v => v.Date < EndOfDay(to));
+            foreach (var v in await vQ.OrderBy(v => v.Date).ToListAsync())
+            {
+                currencyRows.Add(new SupplierStatementRow
+                {
+                    Date = v.Date,
+                    Description = $"سند صرف {v.VoucherNumber}",
+                    Debit = v.Amount,
+                    Currency = currency
                 });
             }
+
+            currencyRows = currencyRows.OrderBy(r => r.Date).ToList();
+            decimal bal = 0;
+            foreach (var r in currencyRows)
+            {
+                bal += r.Credit - r.Debit;
+                r.RunningBalance = bal;
+            }
+            rows.AddRange(currencyRows);
         }
 
-        // سندات الصرف غير المطبّقة فقط — المطبّقة تظهر عبر PaidAmount لتجنب الازدواج
-        var vQ = context.Vouchers.Where(v => v.SupplierId == supplierId &&
-                                            v.VoucherType == VoucherType.Payment &&
-                                            v.Currency == AccountingCurrency.IQD &&
-                                            (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)));
-        if (from.HasValue) vQ = vQ.Where(v => v.Date >= from.Value);
-        if (to.HasValue) vQ = vQ.Where(v => v.Date < EndOfDay(to));
-        foreach (var v in await vQ.OrderBy(v => v.Date).ToListAsync())
-            rows.Add(new SupplierStatementRow { Date = v.Date, Description = $"سند صرف {v.VoucherNumber}", Debit = v.Amount });
+        rows = rows.OrderBy(r => r.Date).ThenBy(r => r.Currency).ToList();
+        var iqdRows = rows.Where(r => r.Currency == AccountingCurrency.IQD).ToList();
+        var usdRows = rows.Where(r => r.Currency == AccountingCurrency.USD).ToList();
 
-        rows = rows.OrderBy(r => r.Date).ToList();
-        decimal balance = 0;
-        foreach (var r in rows) { balance += r.Credit - r.Debit; r.RunningBalance = balance; }
-
-        var usdCredit = await context.Invoices.AsNoTracking()
-            .Where(i => i.SupplierId == supplierId &&
-                        i.InvoiceType == InvoiceType.Purchase &&
-                        i.PaymentMethod == PaymentMethod.Credit &&
-                        i.Currency == AccountingCurrency.USD)
-            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
-        var usdPayments = await context.Vouchers.AsNoTracking()
-            .Where(v => v.SupplierId == supplierId &&
-                        v.VoucherType == VoucherType.Payment &&
-                        v.Currency == AccountingCurrency.USD &&
-                        (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)))
-            .SumAsync(v => (decimal?)v.Amount) ?? 0;
-
-        var invoiceCount = rows.Count(r => r.Credit > 0);
         return new SupplierStatementResult
         {
             SupplierName = supplier.Name,
-            TotalDebit = rows.Sum(r => r.Debit), TotalCredit = rows.Sum(r => r.Credit),
-            Balance = balance,
-            BalanceUsd = SupplierBalanceHelper.ComputeOutstandingPayables(usdCredit, usdPayments),
-            InvoiceCount = invoiceCount, Rows = rows
+            TotalDebit = iqdRows.Sum(r => r.Debit),
+            TotalCredit = iqdRows.Sum(r => r.Credit),
+            Balance = iqdRows.LastOrDefault()?.RunningBalance ?? 0,
+            BalanceUsd = usdRows.LastOrDefault()?.RunningBalance ?? 0,
+            InvoiceCount = rows.Count(r => r.Credit > 0),
+            Rows = rows
         };
     }
 
@@ -1062,7 +1071,17 @@ public partial class ReportService : IReportService
     public async Task<ExpensesReportResult> GetExpensesReportAsync(DateTime? from, DateTime? to, int? expenseTypeId, int? cashBoxId)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var query = context.Expenses.Include(e => e.ExpenseType).Include(e => e.CashBox).Where(e => e.Currency == AccountingCurrency.IQD);
+        var reportCurrency = AccountingCurrency.IQD;
+        if (cashBoxId.HasValue)
+        {
+            reportCurrency = await context.CashBoxes.AsNoTracking()
+                .Where(c => c.Id == cashBoxId.Value)
+                .Select(c => c.Currency)
+                .FirstOrDefaultAsync();
+        }
+
+        var query = context.Expenses.Include(e => e.ExpenseType).Include(e => e.CashBox)
+            .Where(e => e.Currency == reportCurrency);
         if (from.HasValue) query = query.Where(e => e.Date >= from.Value);
         if (to.HasValue) query = query.Where(e => e.Date < EndOfDay(to));
         if (expenseTypeId.HasValue) query = query.Where(e => e.ExpenseTypeId == expenseTypeId.Value);
@@ -1079,6 +1098,7 @@ public partial class ReportService : IReportService
             MonthExpenses = expenses.Where(e => e.Date >= monthStart).Sum(e => e.Amount),
             TopExpenseType = expenses.GroupBy(e => e.ExpenseType?.Name ?? "\u0623\u062e\u0631\u0649")
                 .OrderByDescending(g => g.Sum(e => e.Amount)).FirstOrDefault()?.Key ?? "\u2014",
+            Currency = reportCurrency,
             Rows = expenses.Select(e => new ExpenseReportRow
             {
                 Date = e.Date, ExpenseTypeName = e.ExpenseType?.Name ?? "\u2014",
@@ -1627,6 +1647,58 @@ public partial class ReportService : IReportService
 
         decimal difference = equityAndLiabilitiesTotal - assetsTotal;
 
+        // إفصاح سيولة وذمم بالدولار — منفصل عن مجاميع الميزانية بالدينار
+        var cashBoxesTotalUsd = cashBoxes.Where(c => c.Currency == AccountingCurrency.USD).Sum(c => c.Balance);
+        var banksTotalUsd = banks.Where(b => b.Currency == AccountingCurrency.USD).Sum(b => b.Balance);
+        var creditRemainingUsd = await context.Invoices
+            .Where(i => i.CustomerId != null &&
+                        (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.USD &&
+                        i.Date <= endOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var installmentUsd = await context.Installments
+            .Where(i => i.RemainingAmount > 0 &&
+                        i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.USD)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var unappliedDebtUsd = await context.Vouchers
+            .Where(v => v.CustomerId != null &&
+                        v.VoucherType == VoucherType.DebtReceipt &&
+                        v.Currency == AccountingCurrency.USD &&
+                        v.Date <= endOfDay &&
+                        !v.InvoiceId.HasValue &&
+                        !v.InstallmentId.HasValue &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var unappliedReceiptsUsd = await context.Vouchers
+            .Where(v => v.CustomerId != null &&
+                        v.VoucherType == VoucherType.Receipt &&
+                        v.Currency == AccountingCurrency.USD &&
+                        v.Date <= endOfDay &&
+                        !v.InvoiceId.HasValue &&
+                        !v.InstallmentId.HasValue &&
+                        (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var customerDebtsUsd = CustomerBalanceHelper.ComputeOutstandingBalance(
+            creditRemainingUsd, installmentUsd, unappliedDebtUsd, unappliedReceiptsUsd);
+        var supplierCreditUsd = await context.Invoices
+            .Where(i => i.SupplierId != null &&
+                        i.InvoiceType == InvoiceType.Purchase &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.USD &&
+                        i.Date <= endOfDay)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var unappliedSupplierUsd = await context.Vouchers
+            .Where(v => v.SupplierId != null &&
+                        v.VoucherType == VoucherType.Payment &&
+                        v.Currency == AccountingCurrency.USD &&
+                        v.Date <= endOfDay &&
+                        !v.InvoiceId.HasValue &&
+                        (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)))
+            .SumAsync(v => (decimal?)v.Amount) ?? 0;
+        var supplierPayablesUsd = SupplierBalanceHelper.ComputeOutstandingPayables(
+            supplierCreditUsd, unappliedSupplierUsd);
+
         return new BalanceSheetResult
         {
             Capital = capital,
@@ -1646,6 +1718,10 @@ public partial class ReportService : IReportService
             CashBoxes = cashBoxRows,
             BanksTotal = banksTotal,
             Banks = bankRows,
+            CashBoxesTotalUsd = cashBoxesTotalUsd,
+            BanksTotalUsd = banksTotalUsd,
+            CustomerDebtsUsd = customerDebtsUsd,
+            SupplierPayablesUsd = supplierPayablesUsd,
             CustomerDebts = customerDebts,
             InventoryValue = inventoryValue,
             InstallmentReceivables = installmentReceivables,

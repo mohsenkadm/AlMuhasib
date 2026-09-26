@@ -983,6 +983,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             PaidAmount = paidAmount,
             RemainingAmount = remainingAmount,
             ShowCarShowroomFields = _featureFlags?.CarShowroom == true,
+            CurrencyLabel = AccountingCurrencyHelper.GetLabel(_savedInvoice.Currency),
             Items = _savedItems.Select((item, i) =>
             {
                 var warehouseName = item.WarehouseId is int wid
