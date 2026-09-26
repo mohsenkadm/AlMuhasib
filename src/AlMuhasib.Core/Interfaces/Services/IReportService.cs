@@ -179,12 +179,15 @@ public enum ExpiryBatchStatus
 public class SalesReportResult
 {
     public decimal TotalSales { get; set; }
+    /// <summary>صافي المبيعات بالدولار — منفصل عن TotalSales بالدينار.</summary>
+    public decimal TotalSalesUsd { get; set; }
     public decimal CashSales { get; set; }
     public decimal CreditSales { get; set; }
     public decimal InstallmentSales { get; set; }
     public int InvoiceCount { get; set; }
     public decimal AverageInvoice { get; set; }
     public decimal TodaySales { get; set; }
+    public decimal TodaySalesUsd { get; set; }
     public decimal TotalCompanyFees { get; set; }
     public List<SalesReportRow> Rows { get; set; } = [];
     public List<DailyAmountPoint> DailyChart { get; set; } = [];
@@ -211,6 +214,8 @@ public class SalesReportRow
     public decimal PaidAmount { get; set; }
     public decimal RemainingAmount { get; set; }
     public bool IsCreditPaid { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
     public bool IsCredit => PaymentMethod == "آجل" && !IsReturn;
 }
 
@@ -227,9 +232,12 @@ public class DailyAmountPoint
 public class PurchasesReportResult
 {
     public decimal TotalPurchases { get; set; }
+    /// <summary>صافي المشتريات بالدولار — منفصل عن TotalPurchases بالدينار.</summary>
+    public decimal TotalPurchasesUsd { get; set; }
     public int InvoiceCount { get; set; }
     public decimal AverageInvoice { get; set; }
     public decimal TodayPurchases { get; set; }
+    public decimal TodayPurchasesUsd { get; set; }
     public List<PurchasesReportRow> Rows { get; set; } = [];
     public List<DailyAmountPoint> DailyChart { get; set; } = [];
     public List<NameAmountPoint> BySupplierChart { get; set; } = [];
@@ -252,6 +260,8 @@ public class PurchasesReportRow
     public decimal PaidAmount { get; set; }
     public decimal RemainingAmount { get; set; }
     public bool IsCreditPaid { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
     public bool IsCredit => PaymentMethod == "آجل" && !IsReturn;
 }
 
@@ -268,9 +278,13 @@ public class NameAmountPoint
 public class ProfitReportResult
 {
     public decimal TotalSales { get; set; }
+    /// <summary>مبيعات الدولار للفترة — إفصاح فقط؛ صافي الربح يبقى بالدينار.</summary>
+    public decimal TotalSalesUsd { get; set; }
     public decimal TotalPurchases { get; set; }
     public decimal GrossProfit { get; set; }
     public decimal TotalExpenses { get; set; }
+    /// <summary>مصروفات الدولار للفترة — إفصاح فقط.</summary>
+    public decimal TotalExpensesUsd { get; set; }
     public decimal TotalBankFees { get; set; }
     public decimal DistributedProfits { get; set; }
     public decimal ProfitOpeningBalance { get; set; }
@@ -437,6 +451,8 @@ public class CustomerStatementResult
     public string? CustomerFileNumber { get; set; }
     public decimal TotalDebit { get; set; }
     public decimal TotalCredit { get; set; }
+    public decimal TotalDebitUsd { get; set; }
+    public decimal TotalCreditUsd { get; set; }
     public decimal Balance { get; set; }
     /// <summary>رصيد مستحق بالدولار (منفصل عن Balance بالدينار).</summary>
     public decimal BalanceUsd { get; set; }
@@ -787,6 +803,8 @@ public class CustomerNetProfitRow
 public class InstallmentAgingReportResult
 {
     public decimal TotalOutstanding { get; set; }
+    /// <summary>متبقي أقساط الدولار — منفصل عن TotalOutstanding بالدينار.</summary>
+    public decimal TotalOutstandingUsd { get; set; }
     public int InstallmentCount { get; set; }
     public int CustomerCount { get; set; }
     public List<InstallmentAgingBucketSummary> Buckets { get; set; } = [];
@@ -798,6 +816,7 @@ public class InstallmentAgingBucketSummary
     public string BucketName { get; set; } = string.Empty;
     public int Count { get; set; }
     public decimal Amount { get; set; }
+    public decimal AmountUsd { get; set; }
 }
 
 public class InstallmentAgingRow
@@ -813,6 +832,8 @@ public class InstallmentAgingRow
     public decimal RemainingAmount { get; set; }
     public int DaysOverdue { get; set; }
     public string AgingBucket { get; set; } = string.Empty;
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
 }
 
 // ══════════════════════════════════════════════════════════════

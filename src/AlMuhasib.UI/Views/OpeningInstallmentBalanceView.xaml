@@ -90,6 +90,7 @@
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
 
                                         <!-- Customer -->
@@ -141,7 +142,22 @@
                                                     materialDesign:HintAssist.IsFloating="True"
                                                     Style="{StaticResource FilledDatePicker}" FontSize="14"/>
 
-                                        <TextBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
+                                        <ComboBox Grid.Row="2" Grid.Column="0" Margin="0,0,12,12"
+                                                  ItemsSource="{Binding CurrencyOptions}"
+                                                  SelectedItem="{Binding SelectedCurrencyOption}"
+                                                  DisplayMemberPath="DisplayName"
+                                                  materialDesign:HintAssist.Hint="العملة"
+                                                  materialDesign:HintAssist.IsFloating="True"
+                                                  Style="{StaticResource FilledComboBox}" FontSize="14"/>
+
+                                        <TextBox Grid.Row="2" Grid.Column="1" Margin="0,0,12,12"
+                                                 Text="{Binding FxRate, UpdateSourceTrigger=PropertyChanged}"
+                                                 materialDesign:HintAssist.Hint="سعر الصرف (دولار→دينار)"
+                                                 materialDesign:HintAssist.IsFloating="True"
+                                                 Style="{StaticResource NumericTextBox}" FontSize="14"
+                                                 Visibility="{Binding ShowFxRateInput, Converter={StaticResource BoolToVis}}"/>
+
+                                        <TextBox Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3"
                                                  Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
                                                  materialDesign:HintAssist.Hint="ملاحظات"
                                                  materialDesign:HintAssist.IsFloating="True"
@@ -173,7 +189,10 @@
                                 <Border Grid.Column="2" Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="10" Padding="14" Margin="8,0,0,0">
                                     <StackPanel>
                                         <TextBlock Text="إجمالي العقد" FontSize="12" Foreground="#1565C0"/>
-                                        <TextBlock Text="{Binding TotalAmount, StringFormat={}{0:N0} د.ع}" FontSize="18" FontWeight="Bold" Foreground="#0D47A1"/>
+                                        <TextBlock FontSize="18" FontWeight="Bold" Foreground="#0D47A1">
+                                            <Run Text="{Binding TotalAmount, StringFormat={}{0:N0}}"/>
+                                            <Run Text="{Binding AmountCurrencyLabel}"/>
+                                        </TextBlock>
                                     </StackPanel>
                                 </Border>
                             </Grid>

@@ -47,4 +47,37 @@ public class InvoiceFiltersSignedNetTests
         Assert.False(InvoiceFilters.IsReturnType(InvoiceType.Sale));
         Assert.False(InvoiceFilters.IsReturnType(InvoiceType.Purchase));
     }
+
+    [Fact]
+    public void ForProfitAndSalesTotals_DefaultsToIqd_AndSeparatesUsd()
+    {
+        var invoices = new List<Invoice>
+        {
+            new() { Id = 1, InvoiceType = InvoiceType.Sale, Currency = AccountingCurrency.IQD, NetAmount = 100 },
+            new() { Id = 2, InvoiceType = InvoiceType.Sale, Currency = AccountingCurrency.USD, NetAmount = 10 },
+            new() { Id = 3, InvoiceType = InvoiceType.SaleReturn, Currency = AccountingCurrency.IQD, NetAmount = 20 },
+        }.AsQueryable();
+        var plans = new List<InstallmentPlan>().AsQueryable();
+
+        var iqd = InvoiceFilters.ForProfitAndSalesTotals(invoices, plans).ToList();
+        var usd = InvoiceFilters.ForProfitAndSalesTotals(invoices, plans, AccountingCurrency.USD).ToList();
+
+        Assert.Equal(2, iqd.Count);
+        Assert.All(iqd, i => Assert.Equal(AccountingCurrency.IQD, i.Currency));
+        Assert.Single(usd);
+        Assert.Equal(AccountingCurrency.USD, usd[0].Currency);
+    }
+
+    [Fact]
+    public void ForPurchasesTotals_SeparatesByCurrency()
+    {
+        var invoices = new List<Invoice>
+        {
+            new() { Id = 1, InvoiceType = InvoiceType.Purchase, Currency = AccountingCurrency.IQD, NetAmount = 50 },
+            new() { Id = 2, InvoiceType = InvoiceType.Purchase, Currency = AccountingCurrency.USD, NetAmount = 5 },
+        }.AsQueryable();
+
+        Assert.Single(InvoiceFilters.ForPurchasesTotals(invoices).ToList());
+        Assert.Single(InvoiceFilters.ForPurchasesTotals(invoices, AccountingCurrency.USD).ToList());
+    }
 }

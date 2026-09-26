@@ -23,9 +23,13 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
     private readonly IFeatureFlagService _featureFlags;
 
     [ObservableProperty] private string _totalPurchases = "0";
+    [ObservableProperty] private string _totalPurchasesUsd = "0";
+    [ObservableProperty] private bool _showTotalPurchasesUsd;
     [ObservableProperty] private string _invoiceCount = "0";
     [ObservableProperty] private string _averageInvoice = "0";
     [ObservableProperty] private string _todayPurchases = "0";
+    [ObservableProperty] private string _todayPurchasesUsd = "0";
+    [ObservableProperty] private bool _showTodayPurchasesUsd;
 
     [ObservableProperty] private int? _selectedSupplierId;
     [ObservableProperty] private int? _selectedWarehouseId;
@@ -98,9 +102,17 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
             var result = await _reportService.GetPurchasesReportAsync(DateFrom, DateTo, _selectedSupplierId, _selectedWarehouseId, _selectedPaymentMethodItem?.Value);
 
             TotalPurchases = FormatCurrency(result.TotalPurchases);
+            ShowTotalPurchasesUsd = result.TotalPurchasesUsd != 0;
+            TotalPurchasesUsd = ShowTotalPurchasesUsd
+                ? FormatCurrency(result.TotalPurchasesUsd, AccountingCurrency.USD)
+                : "0";
             InvoiceCount = result.InvoiceCount.ToString("N0");
             AverageInvoice = FormatCurrency(result.AverageInvoice);
             TodayPurchases = FormatCurrency(result.TodayPurchases);
+            ShowTodayPurchasesUsd = result.TodayPurchasesUsd != 0;
+            TodayPurchasesUsd = ShowTodayPurchasesUsd
+                ? FormatCurrency(result.TodayPurchasesUsd, AccountingCurrency.USD)
+                : "0";
 
             if (result.DailyChart.Count > 0)
             {

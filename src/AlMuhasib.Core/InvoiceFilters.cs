@@ -28,22 +28,28 @@ public static class InvoiceFilters
     public static decimal SignedSaleLineAmount(InvoiceType type, decimal amount) =>
         type == InvoiceType.SaleReturn ? -Math.Abs(amount) : amount;
 
-    /// <summary>إجماليات الربح/المبيعات بالعملة الأساسية (دينار) فقط — لا خلط مع الدولار.</summary>
+    /// <summary>
+    /// إجماليات الربح/المبيعات لعملة واحدة — لا تُخلط مع عملة أخرى.
+    /// الافتراضي دينار (توافق المستثمرين/لوحة التحكم). مرّر USD لإفصاح منفصل.
+    /// </summary>
     public static IQueryable<Invoice> ForProfitAndSalesTotals(
         IQueryable<Invoice> invoices,
-        IQueryable<InstallmentPlan> plans)
+        IQueryable<InstallmentPlan> plans,
+        AccountingCurrency currency = AccountingCurrency.IQD)
         => invoices.Where(i =>
-            i.Currency == AccountingCurrency.IQD &&
+            i.Currency == currency &&
             ((i.InvoiceType == InvoiceType.Sale
               && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
              || (i.InvoiceType == InvoiceType.Installment
                  && !plans.Any(p => p.InvoiceId == i.Id && p.InstallmentType == InstallmentType.OpeningBalance))
              || i.InvoiceType == InvoiceType.SaleReturn));
 
-    /// <summary>إجماليات المشتريات بالدينار فقط.</summary>
-    public static IQueryable<Invoice> ForPurchasesTotals(IQueryable<Invoice> invoices)
+    /// <summary>إجماليات المشتريات لعملة واحدة — الافتراضي دينار.</summary>
+    public static IQueryable<Invoice> ForPurchasesTotals(
+        IQueryable<Invoice> invoices,
+        AccountingCurrency currency = AccountingCurrency.IQD)
         => invoices.Where(i =>
-            i.Currency == AccountingCurrency.IQD &&
+            i.Currency == currency &&
             ((i.InvoiceType == InvoiceType.Purchase
               && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
              || i.InvoiceType == InvoiceType.PurchaseReturn));
