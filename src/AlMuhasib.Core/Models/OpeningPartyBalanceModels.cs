@@ -1,3 +1,5 @@
+using AlMuhasib.Core.Enums;
+
 namespace AlMuhasib.Core.Models;
 
 /// <summary>بادئة ملاحظات فواتير الرصيد الافتتاحي الآجل (عملاء/موردين).</summary>
@@ -39,6 +41,12 @@ public class OpeningPartyBalanceRequest
     public decimal Amount { get; set; }
     public DateTime Date { get; set; } = DateTime.Today;
     public string? Notes { get; set; }
+
+    /// <summary>عملة الرصيد الافتتاحي — افتراضي دينار للتوافق مع البيانات القديمة.</summary>
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+
+    /// <summary>سعر الصرف (دولار→دينار) عند Currency=USD.</summary>
+    public decimal FxRate { get; set; } = 1m;
 }
 
 public class OpeningPartyBalanceUpdateRequest

@@ -220,4 +220,37 @@ public class CustomerBalanceHelperTests
         Assert.Equal(once, twice);
         Assert.True(CustomerBalanceHelper.IsDebtReceiptApplied(twice));
     }
+
+    [Fact]
+    public void DeallocateFromCreditInvoices_ReversesLifoSameCurrencyOnly()
+    {
+        var invoices = new List<(int Id, DateTime Date, decimal NetAmount, decimal PaidAmount, decimal RemainingAmount, AccountingCurrency Currency)>
+        {
+            (1, new DateTime(2026, 1, 1), 1000, 1000, 0, AccountingCurrency.IQD),
+            (2, new DateTime(2026, 1, 2), 50, 50, 0, AccountingCurrency.USD),
+            (3, new DateTime(2026, 2, 1), 500, 200, 300, AccountingCurrency.IQD),
+        };
+
+        var updates = CustomerBalanceHelper.DeallocateFromCreditInvoices(invoices, 300, AccountingCurrency.IQD);
+
+        Assert.Equal(2, updates.Count);
+        Assert.Equal(3, updates[0].Id);
+        Assert.Equal(0, updates[0].PaidAmount);
+        Assert.Equal(500, updates[0].RemainingAmount);
+        Assert.False(updates[0].IsCreditPaid);
+        Assert.Equal(1, updates[1].Id);
+        Assert.Equal(900, updates[1].PaidAmount);
+        Assert.Equal(100, updates[1].RemainingAmount);
+        Assert.False(updates[1].IsCreditPaid);
+        Assert.DoesNotContain(updates, u => u.Id == 2);
+    }
+
+    [Fact]
+    public void UnmarkDebtReceiptApplied_RemovesMarker()
+    {
+        var marked = CustomerBalanceHelper.MarkDebtReceiptApplied("سند");
+        var unmarked = CustomerBalanceHelper.UnmarkDebtReceiptApplied(marked);
+        Assert.False(CustomerBalanceHelper.IsDebtReceiptApplied(unmarked));
+        Assert.Equal("سند", unmarked);
+    }
 }

@@ -165,14 +165,28 @@ public sealed class GoldShopReportsController : GoldShopApiControllerBase
             };
         }).OrderByDescending(r => r.DaysOpen).ToList();
 
+        static decimal SumBucket(IEnumerable<GoldAgingRowDto> source, int bucket, string currency) =>
+            source.Where(r => r.Bucket == bucket &&
+                              string.Equals(r.Invoice.PaymentCurrency, currency, StringComparison.OrdinalIgnoreCase))
+                .Sum(r => r.Invoice.RemainingAmount);
+
         return Ok(new GoldAgingReportDto
         {
             Rows = rows,
-            Bucket0To30 = rows.Where(r => r.Bucket == 0).Sum(r => r.Invoice.RemainingAmount),
-            Bucket31To60 = rows.Where(r => r.Bucket == 1).Sum(r => r.Invoice.RemainingAmount),
-            Bucket61To90 = rows.Where(r => r.Bucket == 2).Sum(r => r.Invoice.RemainingAmount),
-            Bucket90Plus = rows.Where(r => r.Bucket == 3).Sum(r => r.Invoice.RemainingAmount),
-            TotalRemaining = rows.Sum(r => r.Invoice.RemainingAmount)
+            Bucket0To30 = SumBucket(rows, 0, "IQD"),
+            Bucket31To60 = SumBucket(rows, 1, "IQD"),
+            Bucket61To90 = SumBucket(rows, 2, "IQD"),
+            Bucket90Plus = SumBucket(rows, 3, "IQD"),
+            TotalRemaining = rows
+                .Where(r => string.Equals(r.Invoice.PaymentCurrency, "IQD", StringComparison.OrdinalIgnoreCase))
+                .Sum(r => r.Invoice.RemainingAmount),
+            Bucket0To30Usd = SumBucket(rows, 0, "USD"),
+            Bucket31To60Usd = SumBucket(rows, 1, "USD"),
+            Bucket61To90Usd = SumBucket(rows, 2, "USD"),
+            Bucket90PlusUsd = SumBucket(rows, 3, "USD"),
+            TotalRemainingUsd = rows
+                .Where(r => string.Equals(r.Invoice.PaymentCurrency, "USD", StringComparison.OrdinalIgnoreCase))
+                .Sum(r => r.Invoice.RemainingAmount)
         });
     }
 
@@ -534,6 +548,11 @@ public sealed class GoldAgingReportDto
     public decimal Bucket61To90 { get; set; }
     public decimal Bucket90Plus { get; set; }
     public decimal TotalRemaining { get; set; }
+    public decimal Bucket0To30Usd { get; set; }
+    public decimal Bucket31To60Usd { get; set; }
+    public decimal Bucket61To90Usd { get; set; }
+    public decimal Bucket90PlusUsd { get; set; }
+    public decimal TotalRemainingUsd { get; set; }
 }
 
 public sealed class GoldPagedReportDto<T>

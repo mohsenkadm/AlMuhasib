@@ -423,7 +423,34 @@ internal static class SyncMapper
         d.Quantity = i.Quantity;
         return d;
     }
-    private static InvoiceSyncDto MapInvoice(Invoice i, Dictionary<int, Guid> cust, Dictionary<int, Guid> sup, Dictionary<int, Guid> wh, Dictionary<int, Guid> cb) { var d = new InvoiceSyncDto(); CopyBase(i, d); d.InvoiceNumber = i.InvoiceNumber; d.InvoiceType = i.InvoiceType; d.CustomerSyncId = i.CustomerId.HasValue ? cust.GetValueOrDefault(i.CustomerId.Value) : null; d.SupplierSyncId = i.SupplierId.HasValue ? sup.GetValueOrDefault(i.SupplierId.Value) : null; d.WarehouseSyncId = wh[i.WarehouseId]; d.PaymentMethod = i.PaymentMethod; d.TotalAmount = i.TotalAmount; d.DiscountAmount = i.DiscountAmount; d.NetAmount = i.NetAmount; d.CompanyFeePercentage = i.CompanyFeePercentage; d.CompanyFeeAmount = i.CompanyFeeAmount; d.RoundingAmount = i.RoundingAmount; d.RoundingType = i.RoundingType; d.CashBoxSyncId = i.CashBoxId.HasValue ? cb.GetValueOrDefault(i.CashBoxId.Value) : null; d.Date = i.Date; d.CreditDueDate = i.CreditDueDate; d.Notes = i.Notes; d.PaidAmount = i.PaidAmount; d.RemainingAmount = i.RemainingAmount; d.IsCreditPaid = i.IsCreditPaid; return d; }
+    private static InvoiceSyncDto MapInvoice(Invoice i, Dictionary<int, Guid> cust, Dictionary<int, Guid> sup, Dictionary<int, Guid> wh, Dictionary<int, Guid> cb)
+    {
+        var d = new InvoiceSyncDto();
+        CopyBase(i, d);
+        d.InvoiceNumber = i.InvoiceNumber;
+        d.InvoiceType = i.InvoiceType;
+        d.CustomerSyncId = i.CustomerId.HasValue ? cust.GetValueOrDefault(i.CustomerId.Value) : null;
+        d.SupplierSyncId = i.SupplierId.HasValue ? sup.GetValueOrDefault(i.SupplierId.Value) : null;
+        d.WarehouseSyncId = wh[i.WarehouseId];
+        d.PaymentMethod = i.PaymentMethod;
+        d.Currency = i.Currency;
+        d.FxRate = i.FxRate;
+        d.TotalAmount = i.TotalAmount;
+        d.DiscountAmount = i.DiscountAmount;
+        d.NetAmount = i.NetAmount;
+        d.CompanyFeePercentage = i.CompanyFeePercentage;
+        d.CompanyFeeAmount = i.CompanyFeeAmount;
+        d.RoundingAmount = i.RoundingAmount;
+        d.RoundingType = i.RoundingType;
+        d.CashBoxSyncId = i.CashBoxId.HasValue ? cb.GetValueOrDefault(i.CashBoxId.Value) : null;
+        d.Date = i.Date;
+        d.CreditDueDate = i.CreditDueDate;
+        d.Notes = i.Notes;
+        d.PaidAmount = i.PaidAmount;
+        d.RemainingAmount = i.RemainingAmount;
+        d.IsCreditPaid = i.IsCreditPaid;
+        return d;
+    }
     private static InvoiceItemSyncDto MapInvoiceItem(InvoiceItem i, Dictionary<int, Guid> inv, Dictionary<int, Guid> pr, Dictionary<int, Guid> pricingTypes, Dictionary<int, Guid> wh)
     {
         var d = new InvoiceItemSyncDto();
@@ -487,15 +514,50 @@ internal static class SyncMapper
         d.Date = v.Date; d.Notes = v.Notes;
         return d;
     }
-    private static ExpenseSyncDto MapExpense(Expense e, Dictionary<int, Guid> et, Dictionary<int, Guid> cb) { var d = new ExpenseSyncDto(); CopyBase(e, d); d.ExpenseTypeSyncId = et[e.ExpenseTypeId]; d.CashBoxSyncId = cb[e.CashBoxId]; d.Amount = e.Amount; d.Date = e.Date; d.Notes = e.Notes; return d; }
-    private static TransferSyncDto MapTransfer(Transfer t, Dictionary<int, Guid> cb, Dictionary<int, Guid> bank) { var d = new TransferSyncDto(); CopyBase(t, d); d.FromType = t.FromType; d.ToType = t.ToType; d.FromSyncId = t.FromType == Core.Enums.TransferAccountType.CashBox ? cb[t.FromId] : bank[t.FromId]; d.ToSyncId = t.ToType == Core.Enums.TransferAccountType.CashBox ? cb[t.ToId] : bank[t.ToId]; d.Amount = t.Amount; d.Date = t.Date; d.Notes = t.Notes; return d; }
+    private static ExpenseSyncDto MapExpense(Expense e, Dictionary<int, Guid> et, Dictionary<int, Guid> cb)
+    {
+        var d = new ExpenseSyncDto();
+        CopyBase(e, d);
+        d.ExpenseTypeSyncId = et[e.ExpenseTypeId];
+        d.CashBoxSyncId = cb[e.CashBoxId];
+        d.Currency = e.Currency;
+        d.FxRate = e.FxRate;
+        d.Amount = e.Amount;
+        d.Date = e.Date;
+        d.Notes = e.Notes;
+        return d;
+    }
+    private static TransferSyncDto MapTransfer(Transfer t, Dictionary<int, Guid> cb, Dictionary<int, Guid> bank)
+    {
+        var d = new TransferSyncDto();
+        CopyBase(t, d);
+        d.FromType = t.FromType;
+        d.ToType = t.ToType;
+        d.FromSyncId = t.FromType == Core.Enums.TransferAccountType.CashBox ? cb[t.FromId] : bank[t.FromId];
+        d.ToSyncId = t.ToType == Core.Enums.TransferAccountType.CashBox ? cb[t.ToId] : bank[t.ToId];
+        d.Currency = t.Currency;
+        d.FxRate = t.FxRate;
+        d.Amount = t.Amount;
+        d.Date = t.Date;
+        d.Notes = t.Notes;
+        return d;
+    }
     private static TransferSyncDto? MapTransferSafe(Transfer t, Dictionary<int, Guid> cb, Dictionary<int, Guid> bank)
     {
         var fromMap = t.FromType == Core.Enums.TransferAccountType.CashBox ? cb : bank;
         var toMap = t.ToType == Core.Enums.TransferAccountType.CashBox ? cb : bank;
         if (!fromMap.TryGetValue(t.FromId, out var fromSyncId) || !toMap.TryGetValue(t.ToId, out var toSyncId)) return null;
-        var d = new TransferSyncDto(); CopyBase(t, d); d.FromType = t.FromType; d.ToType = t.ToType;
-        d.FromSyncId = fromSyncId; d.ToSyncId = toSyncId; d.Amount = t.Amount; d.Date = t.Date; d.Notes = t.Notes;
+        var d = new TransferSyncDto();
+        CopyBase(t, d);
+        d.FromType = t.FromType;
+        d.ToType = t.ToType;
+        d.FromSyncId = fromSyncId;
+        d.ToSyncId = toSyncId;
+        d.Currency = t.Currency;
+        d.FxRate = t.FxRate;
+        d.Amount = t.Amount;
+        d.Date = t.Date;
+        d.Notes = t.Notes;
         return d;
     }
     private static InvestorTransactionSyncDto MapInvestorTransaction(InvestorTransaction t, Dictionary<int, Guid> inv) { var d = new InvestorTransactionSyncDto(); CopyBase(t, d); d.InvestorSyncId = inv[t.InvestorId]; d.Type = t.Type; d.Amount = t.Amount; d.Date = t.Date; d.Notes = t.Notes; return d; }

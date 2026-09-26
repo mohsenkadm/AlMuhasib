@@ -221,7 +221,10 @@ public class InvestorService : IInvestorService
             InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans));
         var totalPurchases = await InvoiceSignedSums.SumSignedNetAsync(
             InvoiceFilters.ForPurchasesTotals(context.Invoices));
-        var totalExpenses = await context.Expenses.SumAsync(e => (decimal?)e.Amount ?? 0);
+        // أرباح التوزيع بالدينار فقط — لا تُخلط مصروفات الدولار مع ربح الدينار
+        var totalExpenses = await context.Expenses
+            .Where(e => e.Currency == AccountingCurrency.IQD)
+            .SumAsync(e => (decimal?)e.Amount ?? 0);
         var alreadyDistributed = await context.ProfitDistributions.SumAsync(pd => (decimal?)pd.DistributedAmount ?? 0);
         var profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context);
         return totalSales - totalPurchases - totalExpenses - alreadyDistributed + profitOpening;

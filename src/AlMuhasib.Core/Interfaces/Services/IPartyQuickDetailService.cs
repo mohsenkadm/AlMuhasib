@@ -17,9 +17,14 @@ public class PartyQuickDetailResult
     public string? FileNumber { get; set; }
     public string? Notes { get; set; }
 
-    /// <summary>المبلغ المطلوب / الرصيد المستحق.</summary>
+    /// <summary>المبلغ المطلوب / الرصيد المستحق بالدينار.</summary>
     public decimal Balance { get; set; }
+    /// <summary>الرصيد المستحق بالدولار (إن وُجد).</summary>
+    public decimal BalanceUsd { get; set; }
+    /// <summary>إجمالي التعاملات بالدينار فقط — لا يُخلط مع الدولار.</summary>
     public decimal TotalDealAmount { get; set; }
+    /// <summary>إجمالي التعاملات بالدولار.</summary>
+    public decimal TotalDealAmountUsd { get; set; }
     public int DealCount { get; set; }
 
     public DateTime? LastDealDate { get; set; }
