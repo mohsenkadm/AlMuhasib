@@ -84,7 +84,8 @@ public static class ChartThemeConfig
         TooltipBackgroundPaint = new SolidColorPaint(TooltipBg);
         TooltipTextPaint = new SolidColorPaint(SKColor.Parse(_isDark ? "#FFFFFF" : "#212121"))
         {
-            SKTypeface = ArabicTypeface
+            SKTypeface = ArabicTypeface ?? SKTypeface.Default,
+            FontFamily = (ArabicTypeface ?? SKTypeface.Default).FamilyName ?? "Segoe UI"
         };
         LegendTextPaint = CreateLabelPaint();
     }
@@ -124,14 +125,19 @@ public static class ChartThemeConfig
     /// <summary>Reload typeface after <see cref="AppFontBootstrap.Apply"/> so charts use Cairo.</summary>
     public static void RefreshArabicTypeface()
     {
-        ArabicTypeface = ResolveArabicTypeface();
+        ArabicTypeface = ResolveArabicTypeface() ?? SKTypeface.Default;
         EnsurePaints();
     }
 
-    public static SolidColorPaint CreateLabelPaint(SKColor? color = null) => new(color ?? LabelColor)
+    public static SolidColorPaint CreateLabelPaint(SKColor? color = null)
     {
-        SKTypeface = ArabicTypeface
-    };
+        var typeface = ArabicTypeface ?? SKTypeface.Default;
+        return new SolidColorPaint(color ?? LabelColor)
+        {
+            SKTypeface = typeface,
+            FontFamily = string.IsNullOrWhiteSpace(typeface.FamilyName) ? "Segoe UI" : typeface.FamilyName
+        };
+    }
 
     public static string FormatAmount(double value, string? suffix = "د.ع") =>
         suffix is null ? value.ToString("N0") : $"{value:N0} {suffix}";
@@ -144,7 +150,8 @@ public static class ChartThemeConfig
         {
             settings
                 .AddSkiaSharp()
-                .AddDefaultMappers();
+                .AddDefaultMappers()
+                .HasGlobalSKTypeface(ArabicTypeface ?? SKTypeface.Default);
         });
     }
 
@@ -244,8 +251,11 @@ public static class ChartThemeConfig
     public static Axis CreateSparklineAxis(bool isY = false) => new()
     {
         IsVisible = false,
-        LabelsPaint = null,
+        Labels = [],
+        TextSize = 1,
+        LabelsPaint = CreateLabelPaint(),
         SeparatorsPaint = null,
+        ShowSeparatorLines = false,
         Padding = new LiveChartsCore.Drawing.Padding(isY ? 2 : 0, isY ? 4 : 2, isY ? 2 : 0, isY ? 2 : 0)
     };
 

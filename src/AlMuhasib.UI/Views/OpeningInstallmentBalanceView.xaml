@@ -191,7 +191,7 @@
                                         <TextBlock Text="إجمالي العقد" FontSize="12" Foreground="#1565C0"/>
                                         <TextBlock FontSize="18" FontWeight="Bold" Foreground="#0D47A1">
                                             <Run Text="{Binding TotalAmount, StringFormat={}{0:N0}}"/>
-                                            <Run Text="{Binding AmountCurrencyLabel}"/>
+                                            <Run Text="{Binding AmountCurrencyLabel, Mode=OneWay}"/>
                                         </TextBlock>
                                     </StackPanel>
                                 </Border>

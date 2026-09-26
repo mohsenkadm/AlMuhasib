@@ -651,7 +651,7 @@
                                             <TextBlock FontSize="12" Foreground="#B3E5FC" Margin="0,2,0,0"
                                                        Visibility="{Binding ShowTodaySalesUsd, Converter={StaticResource BoolToVis}}">
                                                 <Run Text="$ "/>
-                                                <Run Text="{Binding TodaySalesUsd, StringFormat=N2}"/>
+                                                <Run Text="{Binding TodaySalesUsd, StringFormat=N2, Mode=OneWay}"/>
                                             </TextBlock>
                                         </StackPanel>
                                     </Border>
@@ -1337,7 +1337,7 @@
                             <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
                                        Margin="0,0,0,4">
                                 <Run Text="USD: "/>
-                                <Run Text="{Binding TotalCashBalanceUsd, StringFormat=N2}"/>
+                                <Run Text="{Binding TotalCashBalanceUsd, StringFormat=N2, Mode=OneWay}"/>
                             </TextBlock>
                         <ItemsControl ItemsSource="{Binding CashBoxes}">
                             <ItemsControl.ItemTemplate>
@@ -1349,12 +1349,8 @@
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
                                             <TextBlock Grid.Column="0"
-                                                       FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}">
-                                                <Run Text="{Binding Name}"/>
-                                                <Run Text=" ("/>
-                                                <Run Text="{Binding CurrencyLabel}"/>
-                                                <Run Text=")"/>
-                                            </TextBlock>
+                                                       FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"
+                                                       Text="{Binding DisplayName, Mode=OneWay}"/>
                                             <TextBlock Grid.Column="1"
                                                        Text="{Binding Balance, StringFormat=N0}"
                                                        FontSize="12" FontWeight="SemiBold"
@@ -1381,7 +1377,7 @@
                                                TrendPercent="{Binding BankBalanceTrendPercent}">
                         <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,8,0,0">
                             <Run Text="USD: "/>
-                            <Run Text="{Binding BankBalanceUsd, StringFormat=N2}"/>
+                            <Run Text="{Binding BankBalanceUsd, StringFormat=N2, Mode=OneWay}"/>
                         </TextBlock>
                     </controls:DashboardKpiCard>
 

@@ -27,18 +27,7 @@ public class DashboardService : IDashboardService
 
     public async Task<DashboardData> GetDashboardDataAsync()
     {
-        if (Interlocked.Exchange(ref _returnCreditRepairOnce, 1) == 0)
-        {
-            try
-            {
-                await _invoiceService.RepairUnappliedReturnCreditsAsync();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Dashboard return-credit repair error: {ex.Message}");
-                Interlocked.Exchange(ref _returnCreditRepairOnce, 0);
-            }
-        }
+        var shouldRepairReturns = Interlocked.Exchange(ref _returnCreditRepairOnce, 1) == 0;
 
         await using var context = await _contextFactory.CreateDbContextAsync();
 
@@ -375,7 +364,13 @@ public class DashboardService : IDashboardService
         try
         {
             data.CashBoxes = await context.CashBoxes
-                .Select(c => new CashBoxSummary { Name = c.Name, Balance = c.Balance, Currency = c.Currency })
+                .Select(c => new CashBoxSummary
+                {
+                    Name = c.Name,
+                    Balance = c.Balance,
+                    Currency = c.Currency,
+                    CurrencyLabel = c.Currency == AccountingCurrency.USD ? "USD" : "د.ع"
+                })
                 .ToListAsync();
             data.CashBalanceIqd = data.CashBoxes
                 .Where(c => c.Currency == AccountingCurrency.IQD)
@@ -451,6 +446,26 @@ public class DashboardService : IDashboardService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Dashboard KPI trends error: {ex.Message}");
+        }
+
+        // Repair return credits in the background after a short delay so menu/flyout
+        // clicks are not blocked by a long SQLite write lock right after login.
+        if (shouldRepairReturns)
+        {
+            var invoiceService = _invoiceService;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(8));
+                    await invoiceService.RepairUnappliedReturnCreditsAsync();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Dashboard return-credit repair error: {ex.Message}");
+                    Interlocked.Exchange(ref _returnCreditRepairOnce, 0);
+                }
+            });
         }
 
         return data;

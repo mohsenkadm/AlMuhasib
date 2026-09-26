@@ -263,19 +263,28 @@ public partial class DashboardKpiCard : UserControl
 
     private void RebuildSparkline()
     {
-        var values = ExtractDecimals(ChartValues);
-        if (values.Count == 0)
+        try
         {
+            var values = ExtractDecimals(ChartValues);
+            if (values.Count == 0)
+            {
+                MiniChartSeries = [];
+                ShowMiniChart = false;
+                return;
+            }
+
+            var accent = ChartThemeConfig.BrushToSkColor(AccentBrush, SKColor.Parse("#1565C0"));
+            MiniChartSeries = [ChartThemeConfig.Sparkline(values.ToArray(), accent)];
+            MiniChartXAxes = [ChartThemeConfig.CreateSparklineAxis()];
+            MiniChartYAxes = [ChartThemeConfig.CreateSparklineAxis(isY: true)];
+            ShowMiniChart = true;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Sparkline rebuild skipped: {ex.Message}");
             MiniChartSeries = [];
             ShowMiniChart = false;
-            return;
         }
-
-        var accent = ChartThemeConfig.BrushToSkColor(AccentBrush, SKColor.Parse("#1565C0"));
-        MiniChartSeries = [ChartThemeConfig.Sparkline(values.ToArray(), accent)];
-        MiniChartXAxes = [ChartThemeConfig.CreateSparklineAxis()];
-        MiniChartYAxes = [ChartThemeConfig.CreateSparklineAxis(isY: true)];
-        ShowMiniChart = true;
     }
 
     private static List<decimal> ExtractDecimals(IEnumerable? source)

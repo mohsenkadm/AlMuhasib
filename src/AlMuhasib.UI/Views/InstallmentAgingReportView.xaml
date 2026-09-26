@@ -119,7 +119,7 @@
                         <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
                                             <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
-                        <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="55"
+                        <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel, Mode=OneWay}" Width="55"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrencyLabel"/>
                         <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="110"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Phone"/>

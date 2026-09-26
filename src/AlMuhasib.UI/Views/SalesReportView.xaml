@@ -143,7 +143,7 @@
                                                     <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                 <DataGridTextColumn Header="الدفع" Binding="{Binding PaymentMethod}" Width="60"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaymentMethod"/>
-                                <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="55"
+                                <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel, Mode=OneWay}" Width="55"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrencyLabel"/>
                                 <DataGridTextColumn Header="الصافي" Binding="{Binding NetAmount, StringFormat=N0}" Width="90"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="NetAmount">

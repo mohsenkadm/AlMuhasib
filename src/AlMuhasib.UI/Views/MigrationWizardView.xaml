@@ -28,7 +28,7 @@
                     <TextBlock Text="{Binding ProgressText}" FontSize="11" Margin="0,4,0,8"
                                Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <ProgressBar Value="{Binding ProgressPercent}" Maximum="100" Height="6"
-                                 md:ProgressBarAssist.Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                 Foreground="{DynamicResource PrimaryHueMidBrush}"/>
                 </StackPanel>
 
                 <ScrollViewer VerticalScrollBarVisibility="Auto">

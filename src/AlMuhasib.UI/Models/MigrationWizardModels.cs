@@ -24,9 +24,9 @@ public partial class MigrationStepInfo : ObservableObject
     public MigrationStepKind Kind { get; init; }
     public string Title { get; set; } = string.Empty;
     public string ShortTitle { get; init; } = string.Empty;
-    public string Description { get; init; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
     public PackIconKind Icon { get; init; }
-    public bool IsOptional { get; init; } = true;
+    public bool IsOptional { get; set; } = true;
 
     [ObservableProperty] private bool _isActive;
     [ObservableProperty] private bool _isCompleted;

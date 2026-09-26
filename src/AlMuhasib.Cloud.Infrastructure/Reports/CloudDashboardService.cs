@@ -253,7 +253,13 @@ public sealed class CloudDashboardService : ICloudDashboardService
             .ToList();
 
         data.CashBoxes = await _db.CashBoxes.ForTenant(tenantId)
-            .Select(c => new CashBoxSummary { Name = c.Name, Balance = c.Balance, Currency = c.Currency })
+            .Select(c => new CashBoxSummary
+            {
+                Name = c.Name,
+                Balance = c.Balance,
+                Currency = c.Currency,
+                CurrencyLabel = c.Currency == AccountingCurrency.USD ? "USD" : "د.ع"
+            })
             .ToListAsync(ct);
         data.CashBalanceIqd = data.CashBoxes
             .Where(c => c.Currency == AccountingCurrency.IQD)

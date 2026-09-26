@@ -134,7 +134,7 @@
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Name"/>
                                 <DataGridTextColumn Header="رقم الحساب" Binding="{Binding AccountNumber}" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="AccountNumber"/>
-                                <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="80"
+                                <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel, Mode=OneWay}" Width="80"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrencyLabel"/>
                                 <DataGridTextColumn Header="الرصيد" Binding="{Binding Balance, StringFormat=N0}" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Balance"/>

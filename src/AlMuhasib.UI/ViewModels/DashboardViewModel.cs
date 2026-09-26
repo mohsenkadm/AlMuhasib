@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
+using System.Windows.Threading;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
@@ -528,43 +529,18 @@ public partial class DashboardViewModel : ViewModelBase
 
         try
         {
-            var data = await Task.Run(() => _dashboardService.GetDashboardDataAsync());
-            var alertSummary = await _smartAlertService.GetSummaryAsync();
+            var data = await Task.Run(() => _dashboardService.GetDashboardDataAsync()).ConfigureAwait(true);
+            var alertSummary = await _smartAlertService.GetSummaryAsync().ConfigureAwait(true);
 
-            // Must update UI-bound properties on the dispatcher thread
-            Application.Current.Dispatcher.Invoke(() =>
+            var dispatcher = Application.Current?.Dispatcher
+                ?? throw new InvalidOperationException("Application dispatcher is unavailable.");
+
+            // Always marshal to the WPF UI thread. After Task.Run / service awaits the
+            // sync context can be lost; Dispatcher.Yield from a worker thread throws
+            // InvalidOperationException (WindowsBase) and freezes menus during layout.
+            await dispatcher.InvokeAsync(() => ApplyDashboardScalars(data));
+            await dispatcher.InvokeAsync(() =>
             {
-                // Summary
-                TodaySales = data.TodaySales;
-                TodaySalesUsd = data.TodaySalesUsd;
-                TodayPurchases = data.TodayPurchases;
-                TodayPurchasesUsd = data.TodayPurchasesUsd;
-                OnPropertyChanged(nameof(ShowTodaySalesUsd));
-                OnPropertyChanged(nameof(ShowTodayPurchasesUsd));
-                NetProfit = data.NetProfit;
-                NetProfitSales = data.NetProfitSales;
-                NetProfitPurchases = data.NetProfitPurchases;
-                NetProfitOpeningStock = data.NetProfitOpeningStock;
-                NetProfitExpenses = data.NetProfitExpenses;
-                NetProfitDistributions = data.NetProfitDistributions;
-                NetProfitOpening = data.NetProfitOpening;
-                OnPropertyChanged(nameof(NetProfitPurchasesWithOpeningStock));
-                OnPropertyChanged(nameof(ShowOpeningStockPurchasesHint));
-                OnPropertyChanged(nameof(OpeningStockPurchasesHint));
-                OverdueInstallmentsCount = data.OverdueInstallmentsCount;
-                InvestorBalance = data.InvestorBalance;
-                InvestorOpeningTotal = data.InvestorOpeningTotal;
-                InvestorDepositsTotal = data.InvestorDepositsTotal;
-                InvestorWithdrawalsTotal = data.InvestorWithdrawalsTotal;
-                UnpaidInstallmentsBalance = data.UnpaidInstallmentsBalance;
-                CustomerCreditBalance = data.CustomerCreditBalance;
-                CustomerCreditInvoiceRemaining = data.CustomerCreditInvoiceRemaining;
-                CustomerCreditUnappliedDebt = data.CustomerCreditUnappliedDebt;
-                CustomerCreditUnappliedReceipts = data.CustomerCreditUnappliedReceipts;
-                SupplierCreditBalance = data.SupplierCreditBalance;
-                SupplierCreditInvoiceRemaining = data.SupplierCreditInvoiceRemaining;
-                SupplierCreditUnappliedPayments = data.SupplierCreditUnappliedPayments;
-
                 _cachedSalesPoints = data.SalesLast30Days;
                 _cachedExpenseShares = data.ExpenseDistribution;
                 _cachedPurchasesPoints = data.PurchasesLast14Days;
@@ -577,63 +553,106 @@ public partial class DashboardViewModel : ViewModelBase
                 _cachedCashFlowPoints = data.CashFlowLast14Days;
                 _cachedBankFlowPoints = data.BankFlowLast14Days;
                 _cachedInventoryPoints = data.InventoryValueLast14Days;
-
                 BuildSalesChart(_cachedSalesPoints);
-                BuildExpenseChart(_cachedExpenseShares);
-                ApplyKpiSparklines(data);
+            }, DispatcherPriority.Background);
+            await dispatcher.InvokeAsync(() => BuildExpenseChart(_cachedExpenseShares ?? []), DispatcherPriority.Background);
+            await dispatcher.InvokeAsync(() => ApplyKpiSparklines(data), DispatcherPriority.Background);
+            await dispatcher.InvokeAsync(() => ApplyDashboardTables(data, alertSummary), DispatcherPriority.Background);
 
-                // Tables
-                RecentTransactions.Clear();
-                foreach (var t in data.RecentTransactions) RecentTransactions.Add(t);
-
-                UpcomingInstallments.Clear();
-                foreach (var i in data.UpcomingInstallments) UpcomingInstallments.Add(i);
-
-                // Bottom
-                CashBoxes.Clear();
-                foreach (var c in data.CashBoxes) CashBoxes.Add(c);
-                TotalCashBalance = data.CashBalanceIqd != 0 || data.CashBalanceUsd != 0
-                    ? data.CashBalanceIqd
-                    : data.CashBoxes.Where(c => c.Currency == AccountingCurrency.IQD).Sum(c => c.Balance);
-                TotalCashBalanceUsd = data.CashBalanceUsd;
-                BankBalance = data.BankBalanceIqd != 0 || data.BankBalanceUsd != 0
-                    ? data.BankBalanceIqd
-                    : data.BankBalance;
-                BankBalanceUsd = data.BankBalanceUsd;
-                TotalInventoryValue = data.TotalInventoryValue;
-
-                SmartAlerts.Clear();
-                foreach (var a in alertSummary.Alerts)
-                    SmartAlerts.Add(a);
-
-                DailyTasks.Clear();
-                foreach (var t in alertSummary.DailyTasks)
-                    DailyTasks.Add(t);
-                DailyTaskCount = alertSummary.TotalTaskCount;
-                SmartAlertCount = alertSummary.Alerts.Count;
-
-                IsLoaded = true;
-                _initialized = true;
-            });
+            IsLoaded = true;
+            _initialized = true;
         }
         catch (Exception ex)
         {
             var innerMsg = ex.InnerException?.Message ?? ex.Message;
             System.Diagnostics.Debug.WriteLine($"Dashboard error: {ex}");
 
-            Application.Current.Dispatcher.Invoke(() =>
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher is not null)
             {
-                SnackbarQueue.Enqueue($"⚠ خطأ في تحميل لوحة التحكم: {innerMsg}");
-                BeautifulMessageDialog.ShowError(
-                    $"خطأ في تحميل لوحة التحكم:\n\n{innerMsg}\n\n{ex.StackTrace}");
+                await dispatcher.InvokeAsync(() =>
+                {
+                    SnackbarQueue.Enqueue($"⚠ خطأ في تحميل لوحة التحكم: {innerMsg}");
+                    BeautifulMessageDialog.ShowError(
+                        $"خطأ في تحميل لوحة التحكم:\n\n{innerMsg}");
+                    IsLoaded = true;
+                    _initialized = true;
+                });
+            }
+            else
+            {
                 IsLoaded = true;
                 _initialized = true;
-            });
+            }
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private void ApplyDashboardScalars(DashboardData data)
+    {
+        TodaySales = data.TodaySales;
+        TodaySalesUsd = data.TodaySalesUsd;
+        TodayPurchases = data.TodayPurchases;
+        TodayPurchasesUsd = data.TodayPurchasesUsd;
+        OnPropertyChanged(nameof(ShowTodaySalesUsd));
+        OnPropertyChanged(nameof(ShowTodayPurchasesUsd));
+        NetProfit = data.NetProfit;
+        NetProfitSales = data.NetProfitSales;
+        NetProfitPurchases = data.NetProfitPurchases;
+        NetProfitOpeningStock = data.NetProfitOpeningStock;
+        NetProfitExpenses = data.NetProfitExpenses;
+        NetProfitDistributions = data.NetProfitDistributions;
+        NetProfitOpening = data.NetProfitOpening;
+        OnPropertyChanged(nameof(NetProfitPurchasesWithOpeningStock));
+        OnPropertyChanged(nameof(ShowOpeningStockPurchasesHint));
+        OnPropertyChanged(nameof(OpeningStockPurchasesHint));
+        OverdueInstallmentsCount = data.OverdueInstallmentsCount;
+        InvestorBalance = data.InvestorBalance;
+        InvestorOpeningTotal = data.InvestorOpeningTotal;
+        InvestorDepositsTotal = data.InvestorDepositsTotal;
+        InvestorWithdrawalsTotal = data.InvestorWithdrawalsTotal;
+        UnpaidInstallmentsBalance = data.UnpaidInstallmentsBalance;
+        CustomerCreditBalance = data.CustomerCreditBalance;
+        CustomerCreditInvoiceRemaining = data.CustomerCreditInvoiceRemaining;
+        CustomerCreditUnappliedDebt = data.CustomerCreditUnappliedDebt;
+        CustomerCreditUnappliedReceipts = data.CustomerCreditUnappliedReceipts;
+        SupplierCreditBalance = data.SupplierCreditBalance;
+        SupplierCreditInvoiceRemaining = data.SupplierCreditInvoiceRemaining;
+        SupplierCreditUnappliedPayments = data.SupplierCreditUnappliedPayments;
+    }
+
+    private void ApplyDashboardTables(DashboardData data, SmartAlertSummary alertSummary)
+    {
+        RecentTransactions.Clear();
+        foreach (var t in data.RecentTransactions) RecentTransactions.Add(t);
+
+        UpcomingInstallments.Clear();
+        foreach (var i in data.UpcomingInstallments) UpcomingInstallments.Add(i);
+
+        CashBoxes.Clear();
+        foreach (var c in data.CashBoxes) CashBoxes.Add(c);
+        TotalCashBalance = data.CashBalanceIqd != 0 || data.CashBalanceUsd != 0
+            ? data.CashBalanceIqd
+            : data.CashBoxes.Where(c => c.Currency == AccountingCurrency.IQD).Sum(c => c.Balance);
+        TotalCashBalanceUsd = data.CashBalanceUsd;
+        BankBalance = data.BankBalanceIqd != 0 || data.BankBalanceUsd != 0
+            ? data.BankBalanceIqd
+            : data.BankBalance;
+        BankBalanceUsd = data.BankBalanceUsd;
+        TotalInventoryValue = data.TotalInventoryValue;
+
+        SmartAlerts.Clear();
+        foreach (var a in alertSummary.Alerts)
+            SmartAlerts.Add(a);
+
+        DailyTasks.Clear();
+        foreach (var t in alertSummary.DailyTasks)
+            DailyTasks.Add(t);
+        DailyTaskCount = alertSummary.TotalTaskCount;
+        SmartAlertCount = alertSummary.Alerts.Count;
     }
 
     private Task RefreshChartsOnlyAsync()

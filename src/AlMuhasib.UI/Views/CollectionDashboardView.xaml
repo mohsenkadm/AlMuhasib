@@ -116,7 +116,7 @@
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StatusLabel"/>
                             <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="100"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
-                            <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70"
+                            <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel, Mode=OneWay}" Width="70"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrencyLabel"/>
                             <DataGridTemplateColumn Header="دفع سريع" Width="100"
                                                     behaviors:DataGridColumnFilterBehavior.IsFilterable="False">

@@ -120,9 +120,25 @@ public partial class App : Application
             System.Windows.MessageBoxImage.Error);
     }
 
+    private static DateTime _lastUnhandledDialogUtc = DateTime.MinValue;
+    private static string? _lastUnhandledDialogMessage;
+
     private static void OnDispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         LogException("DispatcherUnhandledException", e.Exception);
+        e.Handled = true;
+
+        // Binding/layout storms (e.g. chart remeasure while opening a flyout) must not
+        // show a modal dialog on every frame — that freezes the UI.
+        var msg = e.Exception.Message ?? string.Empty;
+        var now = DateTime.UtcNow;
+        if (now - _lastUnhandledDialogUtc < TimeSpan.FromSeconds(3)
+            && string.Equals(_lastUnhandledDialogMessage, msg, StringComparison.Ordinal))
+            return;
+
+        _lastUnhandledDialogUtc = now;
+        _lastUnhandledDialogMessage = msg;
+
         try
         {
             BeautifulMessageDialog.ShowError(
@@ -132,7 +148,6 @@ public partial class App : Application
         {
             ShowFatalError("حدث خطأ غير متوقع", e.Exception);
         }
-        e.Handled = true;
     }
 
     private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
