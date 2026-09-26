@@ -2176,13 +2176,13 @@ public sealed partial class CloudReportService
             .ToListAsync();
 
         var cashBoxesDetail = cash.Rows
-            .Where(r => r.AccountType == "قاصة")
+            .Where(r => r.AccountType == "قاصة" && r.Currency == AccountingCurrency.IQD)
             .Select(r => new NameAmountPoint { Name = r.Name, Amount = r.Balance })
             .OrderByDescending(x => x.Amount)
             .Take(detailLimit)
             .ToList();
         var banksDetail = cash.Rows
-            .Where(r => r.AccountType == "مصرف")
+            .Where(r => r.AccountType == "مصرف" && r.Currency == AccountingCurrency.IQD)
             .Select(r => new NameAmountPoint { Name = r.Name, Amount = r.Balance })
             .OrderByDescending(x => x.Amount)
             .Take(detailLimit)
