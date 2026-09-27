@@ -246,13 +246,11 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         if (request.Amount <= 0)
             throw new InvalidOperationException("المبلغ يجب أن يكون أكبر من صفر");
 
-        AccountingCurrencyRules.EnsureValidFxRate(
-            request.Currency, request.FxRate, $"تعديل رصيد افتتاحي {partyLabel}");
-        var amount = AccountingCurrencyHelper.NormalizeAmount(request.Amount, request.Currency);
-        var fxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
-            request.Currency, request.FxRate, $"تعديل رصيد افتتاحي {partyLabel}");
-
         await using var context = await _contextFactory.CreateDbContextAsync();
+        var (currency, fxRate) = await MultiCurrencyFeatureGate.ApplyForWriteAsync(
+            context, request.Currency, request.FxRate, $"تعديل رصيد افتتاحي {partyLabel}");
+        var amount = AccountingCurrencyHelper.NormalizeAmount(request.Amount, currency);
+
         var invoice = await context.Invoices.FirstOrDefaultAsync(i => i.Id == request.InvoiceId)
             ?? throw new InvalidOperationException("الرصيد الافتتاحي غير موجود");
 
@@ -273,7 +271,7 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         invoice.RemainingAmount = amount;
         invoice.PaidAmount = 0;
         invoice.IsCreditPaid = false;
-        invoice.Currency = request.Currency;
+        invoice.Currency = currency;
         invoice.FxRate = fxRate;
         invoice.Notes = OpeningCreditBalanceMarkers.BuildNotes(request.Notes);
         invoice.UpdatedBy = username;
@@ -358,6 +356,8 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
             var warehouse = await context.Warehouses.OrderBy(w => w.Id).FirstOrDefaultAsync()
                 ?? throw new InvalidOperationException("يجب إنشاء مخزن واحد على الأقل قبل إدخال الأرصدة الافتتاحية");
 
+            var (currency, fxRate) = await MultiCurrencyFeatureGate.ApplyForWriteAsync(
+                context, request.Currency, request.FxRate, "رصيد افتتاحي عميل");
             var invoiceNumber = await InvoiceNumberHelper.GenerateNextAsync(context, InvoiceType.Sale);
             var invoice = new Invoice
             {
@@ -366,9 +366,8 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
                 CustomerId = customerId,
                 WarehouseId = warehouse.Id,
                 PaymentMethod = PaymentMethod.Credit,
-                Currency = request.Currency,
-                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
-                    request.Currency, request.FxRate, "رصيد افتتاحي عميل"),
+                Currency = currency,
+                FxRate = fxRate,
                 TotalAmount = request.Amount,
                 DiscountAmount = 0,
                 NetAmount = request.Amount,
@@ -427,6 +426,8 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
             var warehouse = await context.Warehouses.OrderBy(w => w.Id).FirstOrDefaultAsync()
                 ?? throw new InvalidOperationException("يجب إنشاء مخزن واحد على الأقل قبل إدخال الأرصدة الافتتاحية");
 
+            var (currency, fxRate) = await MultiCurrencyFeatureGate.ApplyForWriteAsync(
+                context, request.Currency, request.FxRate, "رصيد افتتاحي مورد");
             var invoiceNumber = await InvoiceNumberHelper.GenerateNextAsync(context, InvoiceType.Purchase);
             var invoice = new Invoice
             {
@@ -435,9 +436,8 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
                 SupplierId = supplierId,
                 WarehouseId = warehouse.Id,
                 PaymentMethod = PaymentMethod.Credit,
-                Currency = request.Currency,
-                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
-                    request.Currency, request.FxRate, "رصيد افتتاحي مورد"),
+                Currency = currency,
+                FxRate = fxRate,
                 TotalAmount = request.Amount,
                 DiscountAmount = 0,
                 NetAmount = request.Amount,

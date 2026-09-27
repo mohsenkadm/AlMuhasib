@@ -260,7 +260,12 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
     {
         ValidateInvoiceRequest(request);
 
-        // تطابق عملة الفاتورة مع القاصة عند وجودها
+        var (invoiceCurrency, invoiceFxRate) = await CloudMultiCurrencyFeatureGate.ApplyForWriteAsync(
+            _db, tenantId, request.Currency, request.FxRate, "فاتورة موبايل", ct);
+        request.Currency = invoiceCurrency;
+        request.FxRate = invoiceFxRate;
+
+        // تطابق عملة الفاتورة مع القاصة عند وجودها (بعد فرض مفتاح الميزة)
         if (request.CashBoxSyncId is { } cashBoxSyncId && cashBoxSyncId != Guid.Empty)
         {
             var cashBoxCurrency = await _db.CashBoxes.AsNoTracking()
@@ -270,10 +275,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             if (cashBoxCurrency is null)
                 throw new ArgumentException("القاصة غير موجودة");
             AccountingCurrencyRules.EnsureSameCurrency(
-                request.Currency, cashBoxCurrency.Value, "الفاتورة", "القاصة");
+                invoiceCurrency, cashBoxCurrency.Value, "الفاتورة", "القاصة");
         }
-
-        AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "فاتورة موبايل");
 
         var invoiceSyncId = request.SyncId ?? Guid.NewGuid();
 
@@ -339,8 +342,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             SupplierSyncId = request.SupplierSyncId,
             WarehouseSyncId = request.WarehouseSyncId,
             PaymentMethod = request.PaymentMethod,
-            Currency = request.Currency,
-            FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "فاتورة موبايل"),
+            Currency = invoiceCurrency,
+            FxRate = invoiceFxRate,
             TotalAmount = subtotal,
             DiscountAmount = request.DiscountAmount,
             NetAmount = netAmount,
@@ -481,6 +484,16 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 balance = existing.Balance;
                 currency = existing.Currency;
             }
+            else
+            {
+                (currency, _) = await CloudMultiCurrencyFeatureGate.ApplyForWriteAsync(
+                    _db, tenantId, currency, 1m, "قاصة موبايل", ct);
+            }
+        }
+        else
+        {
+            (currency, _) = await CloudMultiCurrencyFeatureGate.ApplyForWriteAsync(
+                _db, tenantId, currency, 1m, "قاصة موبايل", ct);
         }
 
         var dto = new CashBoxSyncDto
@@ -516,6 +529,16 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 balance = existing.Balance;
                 currency = existing.Currency;
             }
+            else
+            {
+                (currency, _) = await CloudMultiCurrencyFeatureGate.ApplyForWriteAsync(
+                    _db, tenantId, currency, 1m, "حساب بنكي موبايل", ct);
+            }
+        }
+        else
+        {
+            (currency, _) = await CloudMultiCurrencyFeatureGate.ApplyForWriteAsync(
+                _db, tenantId, currency, 1m, "حساب بنكي موبايل", ct);
         }
 
         var dto = new BankAccountSyncDto
@@ -567,7 +590,10 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 throw new ArgumentException("يجب تحديد العميل");
         }
 
-        AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "سند موبايل");
+        var (voucherCurrency, voucherFxRate) = await CloudMultiCurrencyFeatureGate.ApplyForWriteAsync(
+            _db, tenantId, request.Currency, request.FxRate, "سند موبايل", ct);
+        request.Currency = voucherCurrency;
+        request.FxRate = voucherFxRate;
 
         var cashBoxCurrency = await _db.CashBoxes.AsNoTracking()
             .Where(c => c.TenantId == tenantId && c.SyncId == request.CashBoxSyncId && !c.IsDeleted)
@@ -575,7 +601,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             .FirstOrDefaultAsync(ct)
             ?? throw new ArgumentException("القاصة غير موجودة");
         AccountingCurrencyRules.EnsureSameCurrency(
-            request.Currency, cashBoxCurrency, "السند", "القاصة");
+            voucherCurrency, cashBoxCurrency, "السند", "القاصة");
 
         if (request.VoucherType == VoucherType.BankReceipt && request.BankAccountSyncId is { } bankSyncId)
         {
@@ -585,7 +611,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 .FirstOrDefaultAsync(ct)
                 ?? throw new ArgumentException("المصرف غير موجود");
             AccountingCurrencyRules.EnsureSameCurrency(
-                request.Currency, bankCurrency, "السند", "المصرف");
+                voucherCurrency, bankCurrency, "السند", "المصرف");
         }
 
         var syncId = request.SyncId ?? Guid.NewGuid();
@@ -595,8 +621,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             SyncId = syncId,
             VoucherNumber = string.Empty,
             VoucherType = request.VoucherType,
-            Currency = request.Currency,
-            FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "سند موبايل"),
+            Currency = voucherCurrency,
+            FxRate = voucherFxRate,
             Amount = request.Amount,
             BankFees = request.BankFees,
             CustomerSyncId = request.CustomerSyncId,
@@ -648,7 +674,10 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         if (request.CashBoxSyncId == Guid.Empty)
             throw new ArgumentException("الصندوق مطلوب");
 
-        AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "مصروف موبايل");
+        var (expenseCurrency, expenseFxRate) = await CloudMultiCurrencyFeatureGate.ApplyForWriteAsync(
+            _db, tenantId, request.Currency, request.FxRate, "مصروف موبايل", ct);
+        request.Currency = expenseCurrency;
+        request.FxRate = expenseFxRate;
 
         var cashBoxPreview = await _db.CashBoxes.AsNoTracking()
             .Where(c => c.TenantId == tenantId && c.SyncId == request.CashBoxSyncId && !c.IsDeleted)
@@ -656,7 +685,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             .FirstOrDefaultAsync(ct)
             ?? throw new ArgumentException("القاصة غير موجودة");
         AccountingCurrencyRules.EnsureSameCurrency(
-            request.Currency, cashBoxPreview.Currency, "المصروف", "القاصة");
+            expenseCurrency, cashBoxPreview.Currency, "المصروف", "القاصة");
         if (cashBoxPreview.Balance < request.Amount)
             throw new ArgumentException($"رصيد الصندوق ({cashBoxPreview.Balance:N0}) غير كافٍ");
 
@@ -666,8 +695,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         {
             SyncId = syncId,
             ExpenseTypeSyncId = request.ExpenseTypeSyncId,
-            Currency = request.Currency,
-            FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "مصروف موبايل"),
+            Currency = expenseCurrency,
+            FxRate = expenseFxRate,
             Amount = request.Amount,
             Date = request.Date == default ? DateTime.UtcNow : request.Date,
             CashBoxSyncId = request.CashBoxSyncId,
@@ -722,14 +751,17 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         if (request.FromType == request.ToType && request.FromSyncId == request.ToSyncId)
             throw new ArgumentException("لا يمكن التحويل لنفس الحساب");
 
-        AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "تحويل موبايل");
+        var (transferCurrency, transferFxRate) = await CloudMultiCurrencyFeatureGate.ApplyForWriteAsync(
+            _db, tenantId, request.Currency, request.FxRate, "تحويل موبايل", ct);
+        request.Currency = transferCurrency;
+        request.FxRate = transferFxRate;
 
         var fromCurrency = await ResolveTransferAccountCurrencyAsync(
             tenantId, request.FromType, request.FromSyncId, ct);
         var toCurrency = await ResolveTransferAccountCurrencyAsync(
             tenantId, request.ToType, request.ToSyncId, ct);
         AccountingCurrencyRules.EnsureSameCurrency(fromCurrency, toCurrency, "حساب المصدر", "حساب الهدف");
-        AccountingCurrencyRules.EnsureSameCurrency(request.Currency, fromCurrency, "التحويل", "حساب المصدر");
+        AccountingCurrencyRules.EnsureSameCurrency(transferCurrency, fromCurrency, "التحويل", "حساب المصدر");
 
         var syncId = request.SyncId ?? Guid.NewGuid();
         var now = DateTime.UtcNow;
@@ -740,8 +772,8 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             FromSyncId = request.FromSyncId,
             ToType = request.ToType,
             ToSyncId = request.ToSyncId,
-            Currency = request.Currency,
-            FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(request.Currency, request.FxRate, "تحويل موبايل"),
+            Currency = transferCurrency,
+            FxRate = transferFxRate,
             Amount = request.Amount,
             Date = request.Date == default ? DateTime.UtcNow : request.Date,
             Notes = request.Notes,

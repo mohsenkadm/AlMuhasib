@@ -69,7 +69,7 @@ public static class CloudProductCostHelper
 
     /// <summary>
     /// بنود المشتريات لمتوسط التكلفة بالدينار.
-    /// مشتريات USD تُحوَّل عبر FxRate اللقطة داخل COGS فقط.
+    /// مشتريات USD تُحوَّل عبر FxRate اللقطة على الفاتورة داخل COGS فقط.
     /// </summary>
     public static async Task<IReadOnlyDictionary<int, List<CloudInvoiceItem>>> GetPurchaseItemsByProductAsync(
         CloudDbContext context,

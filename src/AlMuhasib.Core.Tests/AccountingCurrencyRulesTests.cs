@@ -41,4 +41,36 @@ public class AccountingCurrencyRulesTests
         Assert.Throws<InvalidOperationException>(() =>
             AccountingCurrencyRules.ToBaseIqdStrict(10m, AccountingCurrency.USD, 0m));
     }
+
+    [Fact]
+    public void ApplyFeatureGate_WhenOff_RejectsUsd()
+    {
+        Assert.Throws<InvalidOperationException>(() =>
+            AccountingCurrencyRules.ApplyFeatureGate(false, AccountingCurrency.USD, 1500m, "API"));
+    }
+
+    [Fact]
+    public void ApplyFeatureGate_WhenOff_ForcesIqdFxRateOne()
+    {
+        var (currency, fx) = AccountingCurrencyRules.ApplyFeatureGate(
+            false, AccountingCurrency.IQD, 999m, "اختبار");
+        Assert.Equal(AccountingCurrency.IQD, currency);
+        Assert.Equal(1m, fx);
+    }
+
+    [Fact]
+    public void ApplyFeatureGate_WhenOn_AllowsUsdWithValidRate()
+    {
+        var (currency, fx) = AccountingCurrencyRules.ApplyFeatureGate(
+            true, AccountingCurrency.USD, 1310m, "اختبار");
+        Assert.Equal(AccountingCurrency.USD, currency);
+        Assert.Equal(1310m, fx);
+    }
+
+    [Fact]
+    public void ApplyFeatureGate_WhenOn_RejectsUsdWithoutRate()
+    {
+        Assert.Throws<InvalidOperationException>(() =>
+            AccountingCurrencyRules.ApplyFeatureGate(true, AccountingCurrency.USD, 0m, "اختبار"));
+    }
 }

@@ -52,8 +52,8 @@ public class InvoiceService : IInvoiceService
             invoice.CreatedBy = username;
             invoice.CreatedAt = DateTime.UtcNow;
 
-            invoice.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
-                invoice.Currency, invoice.FxRate, "فاتورة");
+            (invoice.Currency, invoice.FxRate) = await MultiCurrencyFeatureGate.ApplyForWriteAsync(
+                context, invoice.Currency, invoice.FxRate, "فاتورة");
 
             // Branch-scoped FK integrity (query filter already scopes sets to write branch).
             if (!await context.Warehouses.AnyAsync(w => w.Id == invoice.WarehouseId))

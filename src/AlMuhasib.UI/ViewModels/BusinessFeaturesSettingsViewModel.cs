@@ -129,7 +129,14 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             var settings = await _businessSettingsService.GetOrCreateAsync();
             ProductPricingEnabled = settings.ProductPricingEnabled || ProductPricingEnabled;
             UpdateProductPriceOnPurchase = settings.UpdateProductPriceOnPurchase || UpdateProductPriceOnPurchase;
-            MultiCurrency = settings.MultiCurrencyEnabled || MultiCurrency;
+            // BusinessSettings مصدر الحقيقة لتعدد العملات — لا OR مع التفضيلات المحلية
+            // حتى لا تبقى الميزة "عالقة" ON بعد إطفائها في قاعدة البيانات.
+            MultiCurrency = settings.MultiCurrencyEnabled;
+            if (_preferences.Current.FeatureFlags.MultiCurrency != MultiCurrency)
+            {
+                _preferences.Update(p => p.FeatureFlags.MultiCurrency = MultiCurrency);
+                _featureFlags.NotifyFlagsChanged();
+            }
             PeriodLockEnabled = settings.PeriodLockEnabled;
             LockedThroughDate = settings.LockedThroughDate;
             NotifyFeaturesCount();

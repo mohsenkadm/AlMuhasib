@@ -847,7 +847,7 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         var totals = await _installmentService.GetInstallmentTotalsAsync(
             InstallmentStatus.Paid, searchTerm: search, updateOverdueStatuses: false);
         var paidNote = totals.CountUsd > 0
-            ? $"إجمالي المسدد (د.ع: {totals.Count:N0}) — إفصاح $: {totals.PaidAmountUsd:N2}"
+            ? $"إجمالي الأقساط المسددة (د.ع: {totals.Count:N0}) — إفصاح $: {totals.PaidAmountUsd:N2}"
             : $"إجمالي الأقساط المسددة ({totals.Count:N0})";
         PaidFooter.SetFromTotals(totals.Count, totals.TotalAmount, totals.PaidAmount, totals.RemainingAmount, paidNote);
     }

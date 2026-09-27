@@ -493,7 +493,7 @@ public class InstallmentService : IInstallmentService
         IReadOnlyCollection<InstallmentStatus>? statuses,
         AccountingCurrency? currency)
     {
-        // لا نخفي أقساط الدولار — الفلتر الاختياري صارم عند تمرير عملة
+        // لا نخفي أقساط الدولار — المجاميع تفصل IQD/USD؛ الفلتر الاختياري صارم عند تمرير عملة
         var query = context.Installments.AsNoTracking().AsQueryable();
 
         if (currency.HasValue)
@@ -590,6 +590,8 @@ public class InstallmentService : IInstallmentService
                 ? notePrefix
                 : $"{notePrefix} | {request.Notes.Trim()}";
 
+            var (currency, fxRate) = await MultiCurrencyFeatureGate.ApplyForWriteAsync(
+                context, request.Currency, request.FxRate, "رصيد افتتاحي أقساط");
             var invoice = new Invoice
             {
                 InvoiceNumber = invoiceNumber,
@@ -597,9 +599,8 @@ public class InstallmentService : IInstallmentService
                 CustomerId = customerId,
                 WarehouseId = warehouse.Id,
                 PaymentMethod = PaymentMethod.Installment,
-                Currency = request.Currency,
-                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
-                    request.Currency, request.FxRate, "رصيد افتتاحي أقساط"),
+                Currency = currency,
+                FxRate = fxRate,
                 TotalAmount = request.TotalAmount,
                 DiscountAmount = 0,
                 NetAmount = request.TotalAmount,

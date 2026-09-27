@@ -95,8 +95,10 @@ public class ExpenseService : IExpenseService
             var resolvedCurrency = currency ?? cashBox.Currency;
             AccountingCurrencyRules.EnsureSameCurrency(
                 resolvedCurrency, cashBox.Currency, "المصروف", "القاصة");
-            var resolvedFx = AccountingCurrencyRules.RequireFxRateOrThrow(
-                resolvedCurrency, fxRate, "مصروف");
+            (resolvedCurrency, var resolvedFx) = await MultiCurrencyFeatureGate.ApplyForWriteAsync(
+                context, resolvedCurrency, fxRate, "مصروف");
+            AccountingCurrencyRules.EnsureSameCurrency(
+                resolvedCurrency, cashBox.Currency, "المصروف", "القاصة");
             if (cashBox.Balance < amount)
                 throw new InvalidOperationException($"رصيد القاصة غير كافٍ. الرصيد الحالي: {cashBox.Balance:N0}");
 

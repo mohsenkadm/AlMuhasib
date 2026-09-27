@@ -148,7 +148,8 @@
                                                   DisplayMemberPath="DisplayName"
                                                   materialDesign:HintAssist.Hint="العملة"
                                                   materialDesign:HintAssist.IsFloating="True"
-                                                  Style="{StaticResource FilledComboBox}" FontSize="14"/>
+                                                  Style="{StaticResource FilledComboBox}" FontSize="14"
+                                                  Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolToVis}}"/>
 
                                         <TextBox Grid.Row="2" Grid.Column="1" Margin="0,0,12,12"
                                                  Text="{Binding FxRate, UpdateSourceTrigger=PropertyChanged}"

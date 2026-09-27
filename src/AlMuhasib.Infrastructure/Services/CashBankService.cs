@@ -38,6 +38,8 @@ public class CashBankService : ICashBankService
     public async Task<CashBox> AddCashBoxAsync(string name, decimal initialBalance = 0, AccountingCurrency currency = AccountingCurrency.IQD)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
+        (currency, _) = await MultiCurrencyFeatureGate.ApplyForWriteAsync(
+            context, currency, 1m, "قاصة جديدة");
         var username = _currentUserService.Username;
         var cashBox = new CashBox
         {
@@ -154,6 +156,8 @@ public class CashBankService : ICashBankService
     public async Task<BankAccount> AddBankAccountAsync(string name, string? accountNumber, decimal initialBalance = 0, AccountingCurrency currency = AccountingCurrency.IQD)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
+        (currency, _) = await MultiCurrencyFeatureGate.ApplyForWriteAsync(
+            context, currency, 1m, "حساب بنكي جديد");
         var username = _currentUserService.Username;
         var bank = new BankAccount
         {
@@ -432,13 +436,15 @@ public class CashBankService : ICashBankService
                 }
             }
 
+            (fromCurrency, transferFx) = await MultiCurrencyFeatureGate.ApplyForWriteAsync(
+                context, fromCurrency, transferFx, "تحويل");
+
             var transfer = new Transfer
             {
                 FromType = fromType, FromId = fromId,
                 ToType = toType, ToId = toId,
                 Currency = fromCurrency,
-                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
-                    fromCurrency, transferFx, "تحويل"),
+                FxRate = transferFx,
                 Amount = amount, Date = DateTime.Now,
                 Notes = notes, CreatedBy = username, CreatedAt = DateTime.UtcNow
             };
@@ -608,8 +614,8 @@ public class CashBankService : ICashBankService
             voucher.CreatedBy = username;
             voucher.CreatedAt = DateTime.UtcNow;
 
-            voucher.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
-                voucher.Currency, voucher.FxRate, "سند");
+            (voucher.Currency, voucher.FxRate) = await MultiCurrencyFeatureGate.ApplyForWriteAsync(
+                context, voucher.Currency, voucher.FxRate, "سند");
 
             var cashBoxForCurrency = await context.CashBoxes.AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Id == voucher.CashBoxId)

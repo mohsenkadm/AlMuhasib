@@ -23,6 +23,7 @@ public partial class OpeningCustomerBalanceViewModel : ViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IOpeningCustomerBalanceExcelService _excelService;
     private readonly IExportService _exportService;
+    private readonly IFeatureFlagService _featureFlags;
     private System.Timers.Timer? _debounceTimer;
     private int? _editingInvoiceId;
 
@@ -60,6 +61,7 @@ public partial class OpeningCustomerBalanceViewModel : ViewModelBase
     [ObservableProperty] private CurrencyOption? _selectedCurrencyOption;
     [ObservableProperty] private decimal _fxRate = 1m;
     [ObservableProperty] private bool _showFxRateInput;
+    [ObservableProperty] private bool _showMultiCurrency;
 
     public ObservableCollection<CurrencyOption> CurrencyOptions { get; } = new(CurrencyOption.All);
 
@@ -96,8 +98,10 @@ public partial class OpeningCustomerBalanceViewModel : ViewModelBase
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IOpeningCustomerBalanceExcelService excelService,
-        IExportService exportService)
+        IExportService exportService,
+        IFeatureFlagService featureFlags)
     {
+        _featureFlags = featureFlags;
         _balanceService = balanceService;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
@@ -109,6 +113,7 @@ public partial class OpeningCustomerBalanceViewModel : ViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, "OpeningCustomerBalances");
+        ShowMultiCurrency = _featureFlags.MultiCurrency;
         OnPropertyChanged(nameof(CanSaveBalance));
         await LoadCustomersAsync();
         await LoadItemsAsync();
@@ -415,7 +420,9 @@ public partial class OpeningCustomerBalanceViewModel : ViewModelBase
         try
         {
             IsBusy = true;
-            var currency = SelectedCurrencyOption?.Currency ?? AccountingCurrency.IQD;
+            var currency = ShowMultiCurrency
+                ? (SelectedCurrencyOption?.Currency ?? AccountingCurrency.IQD)
+                : AccountingCurrency.IQD;
             var request = new OpeningPartyBalanceRequest
             {
                 PartyId = SelectedCustomer?.Id,
@@ -462,7 +469,7 @@ public partial class OpeningCustomerBalanceViewModel : ViewModelBase
 
     partial void OnSelectedCurrencyOptionChanged(CurrencyOption? value)
     {
-        ShowFxRateInput = value?.Currency == AccountingCurrency.USD;
+        ShowFxRateInput = ShowMultiCurrency && value?.Currency == AccountingCurrency.USD;
         if (value?.Currency == AccountingCurrency.IQD)
             FxRate = 1m;
     }

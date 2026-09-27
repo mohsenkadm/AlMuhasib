@@ -215,6 +215,7 @@ public partial class MainWindowViewModel : ObservableObject
         _themeService.ApplyFromPreferences();
         ApplyMenuVisibilityFromPreferences();
         LoadWorkspaceProfile();
+        _ = SyncMultiCurrencyFlagFromBusinessSettingsAsync();
         RefreshTrialBanner();
         UpdateDateTime();
         StartClock();
