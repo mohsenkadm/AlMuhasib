@@ -123,16 +123,16 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
 
     public async Task<MobileWriteResponse> DeletePricingTypeAsync(int tenantId, Guid syncId, string username, CancellationToken ct = default)
     {
-        var existing = await _db.PricingTypes.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.TenantId == tenantId && t.SyncId == syncId && !t.IsDeleted, ct);
+        var existing = await FindInWriteBranchAsync(_db.PricingTypes, tenantId, syncId, ct);
         if (existing is null)
             return new MobileWriteResponse { SyncId = syncId, Message = "نوع التسعير غير موجود" };
 
         if (existing.IsDefault)
             throw new ArgumentException("لا يمكن حذف نوع التسعير الافتراضي");
 
+        var writeBranchId = RequireWriteBranchId();
         var inUse = await _db.ProductPrices.IgnoreQueryFilters()
-            .AnyAsync(p => p.TenantId == tenantId && p.PricingTypeId == existing.Id && !p.IsDeleted, ct);
+            .AnyAsync(p => p.TenantId == tenantId && p.BranchId == writeBranchId && p.PricingTypeId == existing.Id && !p.IsDeleted, ct);
         if (inUse)
             throw new ArgumentException("نوع التسعير مستخدم في أسعار منتجات");
 
@@ -177,15 +177,15 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
 
     public async Task<MobileWriteResponse> DeleteProductPriceAsync(int tenantId, Guid syncId, string username, CancellationToken ct = default)
     {
-        var existing = await _db.ProductPrices.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(p => p.TenantId == tenantId && p.SyncId == syncId && !p.IsDeleted, ct);
+        var existing = await FindInWriteBranchAsync(_db.ProductPrices, tenantId, syncId, ct);
         if (existing is null)
             return new MobileWriteResponse { SyncId = syncId, Message = "سعر المنتج غير موجود" };
 
+        var writeBranchId = RequireWriteBranchId();
         var product = await _db.Products.IgnoreQueryFilters()
-            .FirstAsync(p => p.Id == existing.ProductId, ct);
+            .FirstAsync(p => p.Id == existing.ProductId && p.BranchId == writeBranchId, ct);
         var pricingType = await _db.PricingTypes.IgnoreQueryFilters()
-            .FirstAsync(t => t.Id == existing.PricingTypeId, ct);
+            .FirstAsync(t => t.Id == existing.PricingTypeId && t.BranchId == writeBranchId, ct);
 
         var now = DateTime.UtcNow;
         var dto = new ProductPriceSyncDto
@@ -210,8 +210,9 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
     public async Task<BusinessSettingsDto> UpdateBusinessSettingsAsync(
         int tenantId, UpdateBusinessSettingsRequest request, string username, CancellationToken ct = default)
     {
+        var writeBranchId = RequireWriteBranchId();
         var existing = await _db.BusinessSettings.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(s => s.TenantId == tenantId && !s.IsDeleted, ct);
+            .FirstOrDefaultAsync(s => s.TenantId == tenantId && s.BranchId == writeBranchId && !s.IsDeleted, ct);
 
         var syncId = existing?.SyncId ?? ProductPricingSyncIds.BusinessSettings;
         var now = DateTime.UtcNow;
@@ -277,10 +278,11 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         var invoiceSyncId = request.SyncId ?? Guid.NewGuid();
 
         // Idempotent retry: already fully saved with this SyncId.
+        var writeBranchIdForInvoice = RequireWriteBranchId();
         var existingInvoice = await _db.Invoices
             .IgnoreQueryFilters()
             .AsNoTracking()
-            .FirstOrDefaultAsync(i => i.TenantId == tenantId && i.SyncId == invoiceSyncId, ct);
+            .FirstOrDefaultAsync(i => i.TenantId == tenantId && i.BranchId == writeBranchIdForInvoice && i.SyncId == invoiceSyncId, ct);
         if (existingInvoice is not null &&
             !existingInvoice.IsDeleted &&
             !string.IsNullOrWhiteSpace(existingInvoice.InvoiceNumber))
@@ -871,9 +873,13 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 .FirstOrDefaultAsync(p => p.TenantId == tenantId && p.SyncId == item.ProductSyncId && !p.IsDeleted, ct)
                 ?? throw new ArgumentException("المنتج غير موجود");
 
+            var stockBranchId = RequireWriteBranchId();
+            if (warehouse.BranchId != stockBranchId || product.BranchId != stockBranchId)
+                throw new ArgumentException("المستودع أو المنتج لا ينتمي للفرع الحالي");
             var existing = await _db.WarehouseStocks.IgnoreQueryFilters()
                 .FirstOrDefaultAsync(s =>
                     s.TenantId == tenantId &&
+                    s.BranchId == stockBranchId &&
                     s.WarehouseId == warehouse.Id &&
                     s.ProductId == product.Id &&
                     !s.IsDeleted, ct);
@@ -895,9 +901,12 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             });
         }
 
+        var branchSyncId = await ResolveWriteBranchSyncIdAsync(tenantId, ct);
+        var stockBundle = new SyncDataBundle { WarehouseStocks = stockDtos };
+        StampBranchSyncId(stockBundle, branchSyncId);
         var pushResponse = await _syncEngine.PushAsync(tenantId, new SyncPushRequest
         {
-            Data = new SyncDataBundle { WarehouseStocks = stockDtos }
+            Data = stockBundle
         }, ct);
 
         return new MobileWriteResponse
@@ -1548,13 +1557,14 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
 
     private async Task EnsureDefaultPricingTypeAsync(int tenantId, string username, CancellationToken ct)
     {
+        var branchId = RequireWriteBranchId();
         var hasDefault = await _db.PricingTypes.IgnoreQueryFilters()
-            .AnyAsync(t => t.TenantId == tenantId && !t.IsDeleted && t.IsDefault, ct);
+            .AnyAsync(t => t.TenantId == tenantId && t.BranchId == branchId && !t.IsDeleted && t.IsDefault, ct);
         if (hasDefault)
             return;
 
         var existing = await _db.PricingTypes.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.TenantId == tenantId && !t.IsDeleted &&
+            .FirstOrDefaultAsync(t => t.TenantId == tenantId && t.BranchId == branchId && !t.IsDeleted &&
                 (t.SyncId == ProductPricingSyncIds.DefaultPricingType || t.Name == "سعر مفرد"), ct);
         if (existing is not null)
         {
@@ -1596,6 +1606,21 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             Message = response.Conflicts.Count == 0 ? "تم الحفظ بنجاح" : "تعذر الحفظ",
             Conflicts = response.Conflicts
         };
+    }
+
+
+    private int RequireWriteBranchId() => _tenantContext.RequireWriteBranchId();
+
+    private async Task<T?> FindInWriteBranchAsync<T>(
+        DbSet<T> set, int tenantId, Guid syncId, CancellationToken ct, bool includeDeleted = false)
+        where T : CloudBaseEntity
+    {
+        var branchId = RequireWriteBranchId();
+        var q = set.IgnoreQueryFilters().Where(e =>
+            e.TenantId == tenantId && e.SyncId == syncId && e.BranchId == branchId);
+        if (!includeDeleted)
+            q = q.Where(e => !e.IsDeleted);
+        return await q.FirstOrDefaultAsync(ct);
     }
 
     private async Task<Guid> ResolveWriteBranchSyncIdAsync(int tenantId, CancellationToken ct)
@@ -1714,9 +1739,11 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         int tenantId, Guid invoiceSyncId, string username, CancellationToken ct)
     {
         var now = DateTime.UtcNow;
+        var writeBranchId = RequireWriteBranchId();
         var invoice = await _db.Invoices
             .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(i => i.TenantId == tenantId && i.SyncId == invoiceSyncId, ct);
+            .FirstOrDefaultAsync(i =>
+                i.TenantId == tenantId && i.BranchId == writeBranchId && i.SyncId == invoiceSyncId, ct);
         if (invoice is null)
             return;
 
@@ -1732,7 +1759,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
 
         var items = await _db.InvoiceItems
             .IgnoreQueryFilters()
-            .Where(i => i.TenantId == tenantId && i.InvoiceId == invoice.Id)
+            .Where(i => i.TenantId == tenantId && i.BranchId == writeBranchId && i.InvoiceId == invoice.Id)
             .ToListAsync(ct);
         foreach (var item in items)
         {
@@ -1745,7 +1772,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
 
         var plans = await _db.InstallmentPlans
             .IgnoreQueryFilters()
-            .Where(p => p.TenantId == tenantId && p.InvoiceId == invoice.Id)
+            .Where(p => p.TenantId == tenantId && p.BranchId == writeBranchId && p.InvoiceId == invoice.Id)
             .ToListAsync(ct);
         foreach (var plan in plans)
         {
@@ -1757,7 +1784,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
 
             var installments = await _db.Installments
                 .IgnoreQueryFilters()
-                .Where(i => i.TenantId == tenantId && i.InstallmentPlanId == plan.Id)
+                .Where(i => i.TenantId == tenantId && i.BranchId == writeBranchId && i.InstallmentPlanId == plan.Id)
                 .ToListAsync(ct);
             foreach (var inst in installments)
             {

@@ -10,21 +10,27 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
     private readonly Func<AppDbContext?> _getActiveContext;
+    private readonly IBranchContext? _branchContext;
 
-    public Repository(IDbContextFactory<AppDbContext> contextFactory, Func<AppDbContext?> getActiveContext)
+    public Repository(
+        IDbContextFactory<AppDbContext> contextFactory,
+        Func<AppDbContext?> getActiveContext,
+        IBranchContext? branchContext = null)
     {
         _contextFactory = contextFactory;
         _getActiveContext = getActiveContext;
+        _branchContext = branchContext;
     }
 
     public async Task<T?> GetByIdAsync(int id)
     {
+        // Never use FindAsync — it bypasses soft-delete and BranchId query filters (IDOR).
         var active = _getActiveContext();
         if (active is not null)
-            return await active.Set<T>().FindAsync(id);
+            return await active.Set<T>().FirstOrDefaultAsync(e => e.Id == id);
 
         await using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.Set<T>().FindAsync(id);
+        return await context.Set<T>().FirstOrDefaultAsync(e => e.Id == id);
     }
 
     public async Task<IEnumerable<T>> GetAllAsync()
@@ -174,19 +180,38 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
     {
         var active = _getActiveContext();
         if (active is not null)
-        {
-            return await active.Set<T>()
-                .IgnoreQueryFilters()
-                .Where(e => e.IsDeleted)
-                .Where(predicate)
-                .OrderByDescending(e => e.DeletedAt)
-                .FirstOrDefaultAsync();
-        }
+            return await FindSoftDeletedCoreAsync(active, predicate);
 
         await using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.Set<T>()
+        return await FindSoftDeletedCoreAsync(context, predicate);
+    }
+
+    private async Task<T?> FindSoftDeletedCoreAsync(AppDbContext context, Expression<Func<T, bool>> predicate)
+    {
+        IQueryable<T> query = context.Set<T>()
             .IgnoreQueryFilters()
-            .Where(e => e.IsDeleted)
+            .Where(e => e.IsDeleted);
+
+        // Soft-delete revive must stay inside the current write branch.
+        if (typeof(IBranchEntity).IsAssignableFrom(typeof(T)))
+        {
+            if (_branchContext?.HasWriteBranchContext == true)
+            {
+                var branchId = _branchContext.CurrentBranchId!.Value;
+                query = query.Where(e => EF.Property<int>(e, nameof(IBranchEntity.BranchId)) == branchId);
+            }
+            else if (_branchContext?.AllowedBranchIds.Count > 0)
+            {
+                var allowed = _branchContext.AllowedBranchIds.ToList();
+                query = query.Where(e => allowed.Contains(EF.Property<int>(e, nameof(IBranchEntity.BranchId))));
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        return await query
             .Where(predicate)
             .OrderByDescending(e => e.DeletedAt)
             .FirstOrDefaultAsync();

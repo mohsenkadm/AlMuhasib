@@ -123,8 +123,29 @@ public sealed class BranchService : IBranchService
             .ThenBy(b => b.Name)
             .ToListAsync(ct);
 
-        // Fail-closed: no UserBranches → empty list (never escalate to Main).
-        // Migration / EnsureUserLinkedToMainAsync must create explicit assignments.
+        if (branches.Count > 0)
+            return branches;
+
+        // Single-branch heal only (legacy gap). Multi-branch with empty assignments stays empty.
+        var sole = await db.Branches.AsNoTracking()
+            .Where(b => b.IsActive && !b.IsDeleted)
+            .OrderByDescending(b => b.IsMain)
+            .ThenBy(b => b.Id)
+            .Take(2)
+            .ToListAsync(ct);
+        if (sole.Count != 1)
+            return branches;
+
+        var only = sole[0];
+        db.UserBranches.Add(new UserBranch
+        {
+            UserId = userId,
+            BranchId = only.Id,
+            IsDefault = true,
+            CreatedAt = DateTime.UtcNow
+        });
+        await db.SaveChangesAsync(ct);
+        branches.Add(only);
         return branches;
     }
 

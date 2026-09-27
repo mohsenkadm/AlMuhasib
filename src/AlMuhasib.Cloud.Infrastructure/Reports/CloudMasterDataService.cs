@@ -411,19 +411,30 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
             _ => Task.FromResult<Guid?>(null)
         };
 
+    private int? TryWriteBranchId() =>
+        _tenantContext is { IsAllBranchesMode: false, BranchId: > 0 }
+            ? _tenantContext.BranchId
+            : null;
+
     private async Task EnsureDefaultPricingDataAsync(CancellationToken ct)
     {
         await EnsureBusinessSettingsAsync(ct);
 
         var tenantId = RequireTenantId();
+        var branchId = TryWriteBranchId();
+        // AllBranches / unbound: do not mutate another branch's pricing defaults.
+        if (branchId is not > 0)
+            return;
 
         var hasDefault = await _db.PricingTypes.IgnoreQueryFilters()
-            .AnyAsync(t => t.TenantId == tenantId && !t.IsDeleted && t.IsDefault, ct);
+            .AnyAsync(t => t.TenantId == tenantId && t.BranchId == branchId && !t.IsDeleted && t.IsDefault, ct);
         if (hasDefault)
             return;
 
         var bySync = await _db.PricingTypes.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.TenantId == tenantId && !t.IsDeleted && t.SyncId == ProductPricingSyncIds.DefaultPricingType, ct);
+            .FirstOrDefaultAsync(t =>
+                t.TenantId == tenantId && t.BranchId == branchId && !t.IsDeleted
+                && t.SyncId == ProductPricingSyncIds.DefaultPricingType, ct);
         if (bySync is not null)
         {
             bySync.IsDefault = true;
@@ -433,7 +444,8 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         }
 
         var byName = await _db.PricingTypes.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.TenantId == tenantId && !t.IsDeleted && t.Name == "سعر مفرد", ct);
+            .FirstOrDefaultAsync(t =>
+                t.TenantId == tenantId && t.BranchId == branchId && !t.IsDeleted && t.Name == "سعر مفرد", ct);
         if (byName is not null)
         {
             byName.IsDefault = true;
@@ -445,6 +457,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         _db.PricingTypes.Add(new CloudPricingType
         {
             TenantId = tenantId,
+            BranchId = branchId.Value,
             SyncId = ProductPricingSyncIds.DefaultPricingType,
             Name = "سعر مفرد",
             IsDefault = true,
@@ -458,9 +471,22 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
     private async Task<CloudBusinessSettings> EnsureBusinessSettingsAsync(CancellationToken ct)
     {
         var tenantId = RequireTenantId();
+        var branchId = TryWriteBranchId();
+        if (branchId is not > 0)
+        {
+            // Read path under AllBranches: return first allowed-branch settings via filtered query.
+            var scoped = await _db.BusinessSettings.AsNoTracking()
+                .ForTenant(tenantId)
+                .OrderBy(s => s.Id)
+                .FirstOrDefaultAsync(ct);
+            if (scoped is not null)
+                return scoped;
+            throw new InvalidOperationException("Branch context is required to create business settings.");
+        }
+
         var existing = await _db.BusinessSettings
             .IgnoreQueryFilters()
-            .Where(s => !s.IsDeleted && s.TenantId == tenantId)
+            .Where(s => !s.IsDeleted && s.TenantId == tenantId && s.BranchId == branchId)
             .OrderBy(s => s.Id)
             .FirstOrDefaultAsync(ct);
         if (existing is not null)
@@ -469,6 +495,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         var settings = new CloudBusinessSettings
         {
             TenantId = tenantId,
+            BranchId = branchId.Value,
             SyncId = ProductPricingSyncIds.BusinessSettings,
             ProductPricingEnabled = false,
             UpdateProductPriceOnPurchase = false,

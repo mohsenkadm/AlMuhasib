@@ -311,8 +311,42 @@ public sealed class AuthController : ControllerBase
             .ThenBy(b => b.Name)
             .ToListAsync(ct);
 
-        // Fail-closed: no TenantAccountBranches → no branch list (never escalate to all branches).
-        // Migration EnsureMainBranchAndAssignmentAsync must create explicit Main assignment.
-        return assigned;
+        if (assigned.Count > 0)
+            return assigned;
+
+        // Single-branch heal only: if tenant has exactly one active branch and account has
+        // no assignments (legacy gap), auto-assign that branch once. Never escalate to all.
+        var sole = await _db.Branches.AsNoTracking()
+            .Where(b => b.TenantId == tenantId && b.IsActive && !b.IsDeleted)
+            .OrderByDescending(b => b.IsMain)
+            .ThenBy(b => b.Id)
+            .Take(2)
+            .ToListAsync(ct);
+        if (sole.Count != 1)
+            return assigned;
+
+        var only = sole[0];
+        _db.TenantAccountBranches.Add(new TenantAccountBranch
+        {
+            TenantId = tenantId,
+            TenantAccountId = accountId,
+            BranchId = only.Id,
+            IsDefault = true,
+            CreatedAt = DateTime.UtcNow
+        });
+        await _db.SaveChangesAsync(ct);
+
+        return
+        [
+            new BranchInfoDto
+            {
+                BranchId = only.Id,
+                SyncId = only.SyncId,
+                Name = only.Name,
+                Code = only.Code,
+                IsMain = only.IsMain,
+                IsDefault = true
+            }
+        ];
     }
 }
