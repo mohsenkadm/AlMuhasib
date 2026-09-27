@@ -719,7 +719,7 @@ public partial class ReportService : IReportService
     public async Task<CustomerStatementResult> GetCustomerStatementAsync(int customerId, DateTime? from = null, DateTime? to = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var customer = await context.Customers.FindAsync(customerId);
+        var customer = await context.Customers.FirstOrDefaultAsync(c => c.Id == customerId);
         if (customer is null) return new CustomerStatementResult { CustomerName = "\u2014" };
 
         // إصلاح سندات قبض الدين القديمة التي لم تُطبَّق على الفواتير الآجلة
@@ -922,7 +922,7 @@ public partial class ReportService : IReportService
     public async Task<SupplierStatementResult> GetSupplierStatementAsync(int supplierId, DateTime? from = null, DateTime? to = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var supplier = await context.Suppliers.FindAsync(supplierId);
+        var supplier = await context.Suppliers.FirstOrDefaultAsync(s => s.Id == supplierId);
         if (supplier is null) return new SupplierStatementResult { SupplierName = "\u2014" };
 
         await EnsureSupplierPaymentsAppliedAsync(context, supplierId);
@@ -1085,7 +1085,7 @@ public partial class ReportService : IReportService
     public async Task<InvestorStatementResult> GetInvestorStatementAsync(int investorId, DateTime? from = null, DateTime? to = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var investor = await context.Investors.FindAsync(investorId);
+        var investor = await context.Investors.FirstOrDefaultAsync(i => i.Id == investorId);
         if (investor is null) return new InvestorStatementResult { InvestorName = "\u2014" };
 
         var rows = new List<InvestorStatementRow>();
@@ -1586,7 +1586,7 @@ public partial class ReportService : IReportService
         var totalIn = rows.Sum(r => r.Incoming);
         var totalOut = rows.Sum(r => r.Outgoing);
         var currentBal = cashBoxId.HasValue
-            ? (await context.CashBoxes.FindAsync(cashBoxId.Value))?.Balance ?? 0
+            ? (await context.CashBoxes.FirstOrDefaultAsync(c => c.Id == cashBoxId.Value))?.Balance ?? 0
             : await context.CashBoxes
                 .Where(c => c.Currency == AccountingCurrency.IQD)
                 .SumAsync(c => (decimal?)c.Balance) ?? 0;

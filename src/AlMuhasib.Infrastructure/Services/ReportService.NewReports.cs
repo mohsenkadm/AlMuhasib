@@ -63,8 +63,8 @@ public partial class ReportService
     private async Task<string> ResolveTransferAccountNameAsync(AppDbContext context, TransferAccountType type, int id)
     {
         if (type == TransferAccountType.CashBox)
-            return (await context.CashBoxes.FindAsync(id))?.Name ?? $"قاصة #{id}";
-        return (await context.BankAccounts.FindAsync(id))?.Name ?? $"مصرف #{id}";
+            return (await context.CashBoxes.FirstOrDefaultAsync(c => c.Id == id))?.Name ?? $"قاصة #{id}";
+        return (await context.BankAccounts.FirstOrDefaultAsync(b => b.Id == id))?.Name ?? $"مصرف #{id}";
     }
 
     // ── Supervisory ──────────────────────────────────────────────
