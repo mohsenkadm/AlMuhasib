@@ -198,6 +198,9 @@ public partial class App : Application
         var currentUserService = new CurrentUserService();
         services.AddSingleton<CurrentUserService>(currentUserService);
         services.AddSingleton<ICurrentUserService>(currentUserService);
+        var branchContext = new AlMuhasib.Infrastructure.Services.BranchContext();
+        services.AddSingleton(branchContext);
+        services.AddSingleton<AlMuhasib.Core.Interfaces.IBranchContext>(branchContext);
         services.AddSingleton<INavigationService, NavigationService>();
         services.AddSingleton<IInvestorRefreshService, InvestorRefreshService>();
         services.AddSingleton<IUserPreferencesService, UserPreferencesService>();
@@ -964,6 +967,7 @@ public partial class App : Application
     private async void OnLogoutRequested()
     {
         _isLoggingOut = true;
+        _serviceProvider.GetRequiredService<AlMuhasib.Core.Interfaces.IBranchContext>().Clear();
 
         // Mark exit confirmed so close dialog doesn't appear during logout
         var mainVm = _serviceProvider.GetRequiredService<MainWindowViewModel>();

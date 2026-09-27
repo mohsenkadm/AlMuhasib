@@ -36,12 +36,22 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<decimal>("Balance")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("IQD");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
@@ -76,10 +86,63 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
                     b.ToTable("BankAccounts");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudBranch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsMain")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Code")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.HasIndex("TenantId", "SyncId")
+                        .IsUnique();
+
+                    b.ToTable("Branches", (string)null);
                 });
 
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudBusinessSettings", b =>
@@ -89,6 +152,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -108,6 +174,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<DateTime?>("LockedThroughDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("MultiCurrencyEnabled")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("PeriodLockEnabled")
                         .HasColumnType("bit");
@@ -138,6 +207,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -154,6 +225,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -200,6 +274,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -217,6 +293,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<int>("ContractId")
                         .HasColumnType("int");
@@ -275,6 +354,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("ContractId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -302,6 +383,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<string>("BuyerAddress")
                         .IsRequired()
@@ -452,6 +536,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "ContractNumber");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -470,6 +556,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -528,6 +617,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("TransactionId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -544,6 +635,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("AmountPaid")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<string>("BuyerName")
                         .IsRequired()
@@ -664,6 +758,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -681,12 +777,22 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<decimal>("Balance")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("IQD");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
@@ -720,6 +826,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
@@ -735,6 +843,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -774,6 +885,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
@@ -791,6 +904,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<string>("Address")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -849,6 +965,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -862,6 +980,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -916,10 +1037,81 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
                     b.ToTable("CustomerAttachments");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudExchangeRate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("RateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("UsdToIqd")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RateDate");
+
+                    b.HasIndex("TenantId", "BranchId");
+
+                    b.HasIndex("TenantId", "SyncId")
+                        .IsUnique();
+
+                    b.ToTable("ExchangeRates");
                 });
 
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudExpense", b =>
@@ -933,6 +1125,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<int>("CashBoxId")
                         .HasColumnType("int");
 
@@ -942,6 +1137,13 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("IQD");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
@@ -954,6 +1156,10 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<int>("ExpenseTypeId")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("FxRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -985,6 +1191,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("ExpenseTypeId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -998,6 +1206,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1039,6 +1250,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -1056,6 +1269,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<decimal>("Balance")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1107,6 +1323,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -1125,6 +1343,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1191,6 +1412,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "Name");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -1210,6 +1433,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<int>("CashBoxId")
                         .HasColumnType("int");
@@ -1273,6 +1499,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("WarehouseId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "ExpenseDate");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -1288,6 +1516,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1333,6 +1564,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "Name");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -1348,6 +1581,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1397,6 +1633,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "RateDate");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -1412,6 +1650,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("CashBoxId")
                         .HasColumnType("int");
@@ -1548,6 +1789,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("WarehouseId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "InvoiceNumber");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -1563,6 +1806,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1652,6 +1898,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("InvoiceId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -1670,6 +1918,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Category")
                         .IsRequired()
@@ -1748,6 +1999,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("TenantId", "Barcode");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -1761,6 +2014,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1816,6 +2072,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "KaratValue");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -1831,6 +2089,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1890,6 +2151,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -1905,6 +2168,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1968,6 +2234,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "IsRead");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -1987,6 +2255,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("CashBoxId")
                         .HasColumnType("int");
@@ -2047,6 +2318,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("InvoiceId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -2063,6 +2336,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<bool>("AllowManualWeightEdit")
                         .HasColumnType("bit");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2134,6 +2410,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -2151,6 +2429,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<decimal>("AverageCostPerGram")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2200,6 +2481,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("WarehouseId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -2220,6 +2503,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2283,6 +2569,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "Name");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -2305,6 +2593,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("CashBoxId")
                         .HasColumnType("int");
@@ -2373,6 +2664,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -2388,6 +2681,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2441,6 +2737,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "Name");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -2456,6 +2754,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2518,6 +2819,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("ToWarehouseId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -2533,6 +2836,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2590,6 +2896,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -2606,6 +2914,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2667,6 +2978,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("HotelCashBoxId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -2680,6 +2993,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2725,6 +3041,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -2738,6 +3056,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2782,6 +3103,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -2795,6 +3118,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2852,6 +3178,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -2869,6 +3197,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<string>("AssignedTo")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime2");
@@ -2924,6 +3255,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("RoomId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -2940,6 +3273,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("BasePrice")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2993,6 +3329,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("RoomTypeId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -3006,6 +3344,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -3061,6 +3402,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("RatePlanId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -3083,6 +3426,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("AmountPaid")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CheckInDate")
                         .HasColumnType("datetime2");
@@ -3163,6 +3509,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("RoomId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -3179,6 +3527,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("ChargeDate")
                         .HasColumnType("datetime2");
@@ -3232,6 +3583,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("ReservationId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -3248,6 +3601,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -3306,6 +3662,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("ReservationId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -3319,6 +3677,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -3377,6 +3738,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("RoomTypeId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -3393,6 +3756,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("BasePrice")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<int>("Capacity")
                         .HasColumnType("int");
@@ -3444,6 +3810,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -3461,6 +3829,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<string>("Address")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<string>("CancellationPolicy")
                         .IsRequired()
@@ -3527,6 +3898,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -3543,6 +3916,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -3613,6 +3989,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("ReservationId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -3629,6 +4007,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("CashBoxId")
                         .HasColumnType("int");
@@ -3691,6 +4072,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("InstallmentPlanId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -3704,6 +4087,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("CompanyFeeAmount")
                         .HasColumnType("decimal(18,2)");
@@ -3775,6 +4161,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("InvoiceId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -3788,6 +4176,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -3841,6 +4232,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -3857,6 +4250,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("CloudInvestorId")
                         .HasColumnType("int");
@@ -3911,6 +4307,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("CloudInvestorId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -3924,6 +4322,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("CashBoxId")
                         .HasColumnType("int");
@@ -3944,6 +4345,13 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<DateTime?>("CreditDueDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("IQD");
+
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
@@ -3958,6 +4366,10 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("FxRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<string>("InvoiceNumber")
                         .IsRequired()
@@ -4035,6 +4447,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("WarehouseId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -4048,6 +4462,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4122,6 +4539,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("ProductId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -4135,6 +4554,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4183,6 +4605,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "Name");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -4202,6 +4626,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<string>("Address")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<string>("CompanyIdIssuer")
                         .IsRequired()
@@ -4297,6 +4724,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -4314,12 +4743,15 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<string>("Barcode")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("CategoryId")
+                    b.Property<int>("BranchId")
                         .HasColumnType("int");
 
                     b.Property<string>("CarModel")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
 
                     b.Property<string>("ChassisNumber")
                         .HasMaxLength(100)
@@ -4413,6 +4845,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -4426,6 +4860,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4485,6 +4922,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -4498,6 +4937,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4553,6 +4995,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("ProductId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -4570,6 +5014,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4616,6 +5063,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -4632,6 +5081,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4680,6 +5132,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("InvestorId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -4698,6 +5152,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4746,6 +5203,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SortOrder");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -4765,6 +5224,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<decimal>("AmountPaid")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<string>("BuyerAddress")
                         .IsRequired()
@@ -4925,6 +5387,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "ContractNumber");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -4945,6 +5409,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<int>("ContractId")
                         .HasColumnType("int");
@@ -4995,6 +5462,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("ContractId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -5012,6 +5481,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<int>("ContractId")
                         .HasColumnType("int");
@@ -5070,6 +5542,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("ContractId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -5087,6 +5561,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -5147,6 +5624,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("RelatedContractId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "ExpenseDate");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -5162,6 +5641,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -5212,6 +5694,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "Name");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -5232,6 +5716,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -5292,6 +5779,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "Name");
 
                     b.HasIndex("TenantId", "SyncId")
@@ -5310,6 +5799,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("AverageCost")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -5365,6 +5857,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -5378,6 +5872,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -5426,6 +5923,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("IngredientId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -5439,6 +5938,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<string>("ColorHex")
                         .IsRequired()
@@ -5490,6 +5992,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -5506,6 +6010,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<string>("Barcode")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<int>("CategoryId")
                         .HasColumnType("int");
@@ -5573,6 +6080,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("RecipeId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -5586,6 +6095,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("CogsAmount")
                         .HasColumnType("decimal(18,2)");
@@ -5673,6 +6185,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -5686,6 +6200,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("CogsAmount")
                         .HasColumnType("decimal(18,2)");
@@ -5757,6 +6274,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("OrderId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -5773,6 +6292,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -5828,6 +6350,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("OrderId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -5841,6 +6365,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -5886,6 +6413,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -5899,6 +6428,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -5955,6 +6487,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("RecipeId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -5968,6 +6502,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -6027,6 +6564,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -6040,6 +6579,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<int>("Capacity")
                         .HasColumnType("int");
@@ -6097,6 +6639,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -6113,6 +6657,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<string>("Address")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -6160,6 +6707,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -6177,12 +6726,22 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("IQD");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
@@ -6198,6 +6757,10 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<int>("FromType")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("FxRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -6231,6 +6794,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -6254,6 +6819,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<decimal>("BankFees")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<int>("CashBoxId")
                         .HasColumnType("int");
 
@@ -6263,6 +6831,13 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<string>("CreatedBy")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("IQD");
 
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
@@ -6275,6 +6850,10 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.Property<string>("DeletedBy")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("FxRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<int?>("InstallmentId")
                         .HasColumnType("int");
@@ -6306,11 +6885,11 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
-                    b.Property<Guid>("SyncId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<int?>("SupplierId")
                         .HasColumnType("int");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("TenantId")
                         .HasColumnType("int");
@@ -6344,6 +6923,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("SupplierId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -6357,6 +6938,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -6401,6 +6985,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -6414,6 +7000,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -6473,6 +7062,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("WarehouseId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -6486,6 +7077,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -6545,6 +7139,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
                     b.HasIndex("ToWarehouseId");
 
+                    b.HasIndex("TenantId", "BranchId");
+
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
 
@@ -6558,6 +7154,9 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -6608,6 +7207,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.HasIndex("ProductId");
 
                     b.HasIndex("WarehouseTransferId");
+
+                    b.HasIndex("TenantId", "BranchId");
 
                     b.HasIndex("TenantId", "SyncId")
                         .IsUnique();
@@ -6787,6 +7388,52 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("TenantAccounts");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.TenantAccountBranch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("TenantAccountId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("TenantAccountId", "BranchId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "BranchId");
+
+                    b.ToTable("TenantAccountBranches", (string)null);
+                });
+
+            modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudBranch", b =>
+                {
+                    b.HasOne("AlMuhasib.Cloud.Core.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudCarContractPayment", b =>
@@ -7445,6 +8092,30 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.TenantAccountBranch", b =>
+                {
+                    b.HasOne("AlMuhasib.Cloud.Core.Entities.CloudBranch", "Branch")
+                        .WithMany("AccountBranches")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AlMuhasib.Cloud.Core.Entities.TenantAccount", "TenantAccount")
+                        .WithMany()
+                        .HasForeignKey("TenantAccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("TenantAccount");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudBranch", b =>
+                {
+                    b.Navigation("AccountBranches");
                 });
 
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudCarSaleContract", b =>

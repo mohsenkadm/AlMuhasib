@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>موظف — سلفه تُدار عبر سندات الدفع/القبض</summary>
-public class Employee : BaseEntity
+public class Employee : BranchScopedEntity
 {
     public string Name { get; set; } = string.Empty;
     public string? Phone { get; set; }

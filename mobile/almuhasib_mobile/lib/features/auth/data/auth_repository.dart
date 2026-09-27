@@ -21,7 +21,8 @@ class AuthRepository {
   final PreferencesService _preferences;
   final NotificationService _notificationService;
 
-  Future<void> login(String username, String password) async {
+  /// Returns login response so UI can route to branch picker when needed.
+  Future<TenantLoginResponse> login(String username, String password) async {
     _apiClient.updateBaseUrl();
     final response = await _apiClient.post(
       '/api/auth/login',
@@ -49,10 +50,49 @@ class AuthRepository {
     if (response.tenantName != null && response.tenantName!.isNotEmpty) {
       await _preferences.setTenantName(response.tenantName!);
     }
+    await _preferences.setAllowedBranches(response.allowedBranches);
+
+    if (!response.requiresBranchSelection &&
+        response.allowedBranches.length == 1) {
+      await _preferences.setCurrentBranch(response.allowedBranches.first);
+    } else if (response.currentBranchId != null) {
+      final match = response.allowedBranches
+          .where((b) => b.branchId == response.currentBranchId)
+          .firstOrNull;
+      if (match != null) await _preferences.setCurrentBranch(match);
+    }
 
     await _notificationService.initialize();
     await _notificationService.registerDeviceWithApi();
     await getLicenseStatus();
+    return response;
+  }
+
+  Future<SelectBranchResponse> selectBranch(int branchId) async {
+    final response = await _apiClient.post(
+      '/api/auth/select-branch',
+      data: {'branchId': branchId, 'allBranches': false},
+      parser: (data) =>
+          SelectBranchResponse.fromJson(data as Map<String, dynamic>),
+    );
+
+    final existingRefresh = await _secureStorage.getRefreshToken();
+    await _secureStorage.saveTokens(
+      accessToken: response.accessToken,
+      refreshToken: existingRefresh ?? '',
+      expiresAt: response.accessTokenExpiresAt.toIso8601String(),
+    );
+
+    if (response.branch != null) {
+      await _preferences.setCurrentBranch(response.branch!);
+    } else {
+      final match = _preferences.allowedBranches
+          .where((b) => b.branchId == branchId)
+          .firstOrNull;
+      if (match != null) await _preferences.setCurrentBranch(match);
+    }
+
+    return response;
   }
 
   Future<LicenseStatusResponse> getLicenseStatus() {

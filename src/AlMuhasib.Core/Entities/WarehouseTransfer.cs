@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>نقل بين مخازن</summary>
-public class WarehouseTransfer : BaseEntity
+public class WarehouseTransfer : BranchScopedEntity
 {
     public string TransferNumber { get; set; } = string.Empty;
     public int FromWarehouseId { get; set; }
@@ -14,7 +14,7 @@ public class WarehouseTransfer : BaseEntity
     public ICollection<WarehouseTransferItem> Items { get; set; } = [];
 }
 
-public class WarehouseTransferItem : BaseEntity
+public class WarehouseTransferItem : BranchScopedEntity
 {
     public int WarehouseTransferId { get; set; }
     public int ProductId { get; set; }

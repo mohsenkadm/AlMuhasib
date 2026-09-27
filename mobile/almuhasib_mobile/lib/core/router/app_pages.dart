@@ -8,6 +8,7 @@ import '../bindings/car_trade_bindings.dart';
 import '../bindings/gold_shop_bindings.dart';
 import '../bindings/hotel_bindings.dart';
 import '../bindings/real_estate_bindings.dart';
+import '../../features/auth/presentation/branch_select_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/car/car_shell.dart';
 import '../../features/car/contracts/car_contract_detail_screen.dart';
@@ -99,6 +100,13 @@ abstract final class AppPages {
       name: AppRoutes.login,
       page: () => const LoginScreen(),
       binding: AuthBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: fadeSlideTransition,
+      transitionDuration: defaultTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.branchSelect,
+      page: () => const BranchSelectScreen(),
       middlewares: [AuthMiddleware()],
       transition: fadeSlideTransition,
       transitionDuration: defaultTransitionDuration,

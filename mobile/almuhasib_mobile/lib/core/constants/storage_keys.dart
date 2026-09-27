@@ -10,6 +10,11 @@ abstract final class StorageKeys {
   static const tenantId = 'tenant_id';
   static const applicationSystemType = 'application_system_type';
   static const tenantName = 'tenant_name';
+  static const branchId = 'branch_id';
+  static const branchName = 'branch_name';
+  static const branchCode = 'branch_code';
+  static const allowedBranchesJson = 'allowed_branches_json';
   static const notificationInbox = 'notification_inbox';
   static const reportFavorites = 'report_favorites';
+  static const pendingMobileWrites = 'pending_mobile_writes';
 }

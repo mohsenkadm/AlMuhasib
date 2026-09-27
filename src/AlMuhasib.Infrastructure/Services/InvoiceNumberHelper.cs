@@ -20,23 +20,36 @@ public static class InvoiceNumberHelper
 
     public static async Task<string> GenerateNextAsync(AppDbContext context, InvoiceType type, int? year = null)
     {
+        var branchId = context.CurrentBranchIdForFilter;
+        if (branchId <= 0)
+            throw new InvalidOperationException("Branch context is required to generate invoice numbers.");
+        return await GenerateNextAsync(context, type, branchId, year);
+    }
+
+    public static async Task<string> GenerateNextAsync(
+        AppDbContext context, InvoiceType type, int branchId, int? year = null)
+    {
+        if (branchId <= 0)
+            throw new InvalidOperationException("Branch id is required to generate invoice numbers.");
+
         var prefix = GetPrefix(type);
         var invoiceYear = year ?? DateTime.Now.Year;
-        var maxSequence = await GetMaxSequenceAsync(context, type, prefix, invoiceYear);
+        var maxSequence = await GetMaxSequenceAsync(context, type, prefix, invoiceYear, branchId);
         return $"{prefix}-{invoiceYear}-{(maxSequence + 1):D5}";
     }
 
     internal static async Task<int> GetMaxSequenceAsync(
-        AppDbContext context, InvoiceType type, string prefix, int year)
+        AppDbContext context, InvoiceType type, string prefix, int year, int branchId)
     {
         var numberPrefix = $"{prefix}-{year}-";
 
         var invoiceNumbers = await context.Invoices
             .IgnoreQueryFilters()
-            .Where(i => i.InvoiceType == type && i.InvoiceNumber.StartsWith(numberPrefix))
+            .Where(i => i.BranchId == branchId
+                        && i.InvoiceType == type
+                        && i.InvoiceNumber.StartsWith(numberPrefix))
             .Select(i => i.InvoiceNumber)
             .ToListAsync();
-
         var max = 0;
         foreach (var invoiceNumber in invoiceNumbers)
         {

@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>هدف مبيعات شهري/فترة لمندوب</summary>
-public class SalesRepTarget : BaseEntity
+public class SalesRepTarget : BranchScopedEntity
 {
     public int SalesRepresentativeId { get; set; }
 

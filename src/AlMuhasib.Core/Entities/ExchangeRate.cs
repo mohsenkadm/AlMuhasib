@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>سعر الصرف اليومي (دولار → دينار) للنظام المحاسبي.</summary>
-public class ExchangeRate : BaseEntity
+public class ExchangeRate : BranchScopedEntity
 {
     public DateTime RateDate { get; set; } = DateTime.Today;
 

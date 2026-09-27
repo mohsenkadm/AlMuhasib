@@ -3,7 +3,7 @@ using AlMuhasib.Core.Enums;
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>إعدادات الحقول المخصصة لكل واجهة (منتجات، عملاء، …).</summary>
-public class EntityCustomFieldSettings : BaseEntity
+public class EntityCustomFieldSettings : BranchScopedEntity
 {
     public CustomFieldEntityKind EntityKind { get; set; }
 

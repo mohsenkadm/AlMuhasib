@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/application_system_type.dart';
 import '../config/env_config.dart';
 import '../config/system_profile.dart';
 import '../constants/storage_keys.dart';
+import '../../shared/models/auth_models.dart';
 
 class PreferencesService {
   PreferencesService(this._prefs);
@@ -96,11 +99,63 @@ class PreferencesService {
   Future<void> setReportFavorites(List<String> ids) =>
       _prefs.setStringList(StorageKeys.reportFavorites, ids);
 
+  int? get branchId => _prefs.getInt(StorageKeys.branchId);
+
+  Future<void> setBranchId(int id) => _prefs.setInt(StorageKeys.branchId, id);
+
+  String? get branchName => _prefs.getString(StorageKeys.branchName);
+
+  Future<void> setBranchName(String name) =>
+      _prefs.setString(StorageKeys.branchName, name);
+
+  String? get branchCode => _prefs.getString(StorageKeys.branchCode);
+
+  Future<void> setBranchCode(String code) =>
+      _prefs.setString(StorageKeys.branchCode, code);
+
+  List<BranchInfo> get allowedBranches {
+    final raw = _prefs.getString(StorageKeys.allowedBranchesJson);
+    if (raw == null || raw.isEmpty) return const [];
+    final list = jsonDecode(raw) as List<dynamic>;
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(BranchInfo.fromJson)
+        .toList();
+  }
+
+  Future<void> setAllowedBranches(List<BranchInfo> branches) async {
+    final encoded = jsonEncode(branches
+        .map((b) => {
+              'branchId': b.branchId,
+              'syncId': b.syncId,
+              'name': b.name,
+              'code': b.code,
+              'isMain': b.isMain,
+              'isDefault': b.isDefault,
+            })
+        .toList());
+    await _prefs.setString(StorageKeys.allowedBranchesJson, encoded);
+  }
+
+  Future<void> setCurrentBranch(BranchInfo branch) async {
+    await setBranchId(branch.branchId);
+    await setBranchName(branch.name);
+    await setBranchCode(branch.code);
+  }
+
+  Future<void> clearBranch() async {
+    await _prefs.remove(StorageKeys.branchId);
+    await _prefs.remove(StorageKeys.branchName);
+    await _prefs.remove(StorageKeys.branchCode);
+  }
+
   Future<void> clearSession() async {
     await _prefs.remove(StorageKeys.companyName);
     await _prefs.remove(StorageKeys.username);
     await _prefs.remove(StorageKeys.tenantId);
     await _prefs.remove(StorageKeys.applicationSystemType);
     await _prefs.remove(StorageKeys.tenantName);
+    await clearBranch();
+    await _prefs.remove(StorageKeys.allowedBranchesJson);
   }
 }

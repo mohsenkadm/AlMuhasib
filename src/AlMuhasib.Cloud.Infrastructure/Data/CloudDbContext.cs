@@ -12,6 +12,7 @@ public class CloudDbContext : DbContext
     /// Cross-tenant admin/sync paths must use IgnoreQueryFilters() with an explicit TenantId.
     /// </summary>
     public const int UnsetTenantId = -1;
+    public const int UnsetBranchId = -1;
 
     private readonly ITenantContext? _tenantContext;
 
@@ -27,8 +28,29 @@ public class CloudDbContext : DbContext
     /// </summary>
     public int CurrentTenantId => _tenantContext?.TenantId ?? UnsetTenantId;
 
+    /// <summary>فرع الفلتر العام. Unset عند المزامنة / كل الفروع / عدم الربط.</summary>
+    public int CurrentBranchIdForFilter
+    {
+        get
+        {
+            if (BypassBranchFilter)
+                return UnsetBranchId;
+            if (_tenantContext?.IsAllBranchesMode == true)
+                return UnsetBranchId;
+            return _tenantContext?.BranchId ?? UnsetBranchId;
+        }
+    }
+
+    public bool SuppressBranchIdMatch =>
+        BypassBranchFilter || _tenantContext?.IsAllBranchesMode == true;
+
+    /// <summary>تعطيل فلتر الفرع (مسارات Sync الإدارية).</summary>
+    public bool BypassBranchFilter { get; set; }
+
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<TenantAccount> TenantAccounts => Set<TenantAccount>();
+    public DbSet<CloudBranch> Branches => Set<CloudBranch>();
+    public DbSet<TenantAccountBranch> TenantAccountBranches => Set<TenantAccountBranch>();
     public DbSet<DeveloperUser> DeveloperUsers => Set<DeveloperUser>();
     public DbSet<DeviceSubscription> DeviceSubscriptions => Set<DeviceSubscription>();
     public DbSet<SyncChangeLog> SyncChangeLogs => Set<SyncChangeLog>();
@@ -131,6 +153,27 @@ public class CloudDbContext : DbContext
             .HasOne(a => a.Tenant)
             .WithMany(t => t.Accounts)
             .HasForeignKey(a => a.TenantId);
+
+        modelBuilder.Entity<CloudBranch>(e =>
+        {
+            e.ToTable("Branches");
+            e.Property(x => x.Name).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Code).HasMaxLength(50).IsRequired();
+            e.HasIndex(x => new { x.TenantId, x.Code }).IsUnique().HasFilter("[IsDeleted] = 0");
+            e.HasIndex(x => new { x.TenantId, x.SyncId }).IsUnique();
+            e.HasOne(x => x.Tenant).WithMany().HasForeignKey(x => x.TenantId);
+        });
+
+        modelBuilder.Entity<TenantAccountBranch>(e =>
+        {
+            e.ToTable("TenantAccountBranches");
+            e.HasIndex(x => new { x.TenantAccountId, x.BranchId }).IsUnique();
+            e.HasIndex(x => new { x.TenantId, x.BranchId });
+            e.HasOne(x => x.TenantAccount).WithMany().HasForeignKey(x => x.TenantAccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Branch).WithMany(b => b.AccountBranches).HasForeignKey(x => x.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
 
         modelBuilder.Entity<DeviceSubscription>()
             .HasIndex(d => new { d.TenantId, d.PlayerId })
@@ -615,6 +658,7 @@ public class CloudDbContext : DbContext
 
             var builder = modelBuilder.Entity(entityType.ClrType);
             builder.HasIndex(nameof(CloudBaseEntity.TenantId), nameof(CloudBaseEntity.SyncId)).IsUnique();
+            builder.HasIndex(nameof(CloudBaseEntity.TenantId), nameof(CloudBaseEntity.BranchId));
             builder.Property(nameof(CloudBaseEntity.RowVersion)).IsRowVersion();
 
             var parameter = Expression.Parameter(entityType.ClrType, "e");
@@ -628,6 +672,18 @@ public class CloudDbContext : DbContext
                 nameof(CurrentTenantId));
             var tenantMatch = Expression.Equal(entityTenantId, currentTenantId);
             body = Expression.AndAlso(body, tenantMatch);
+
+            // Branch isolation (fail-closed unless suppressed for sync / all-branches reports).
+            var entityBranchId = Expression.Property(parameter, nameof(CloudBaseEntity.BranchId));
+            var currentBranchId = Expression.Property(
+                Expression.Constant(this),
+                nameof(CurrentBranchIdForFilter));
+            var suppressBranch = Expression.Property(
+                Expression.Constant(this),
+                nameof(SuppressBranchIdMatch));
+            var branchMatch = Expression.Equal(entityBranchId, currentBranchId);
+            var branchClause = Expression.OrElse(suppressBranch, branchMatch);
+            body = Expression.AndAlso(body, branchClause);
 
             builder.HasQueryFilter(Expression.Lambda(body, parameter));
         }
@@ -646,7 +702,7 @@ public class CloudDbContext : DbContext
     }
 
     /// <summary>
-    /// When a tenant is bound, stamp missing TenantId on inserts and block cross-tenant mutations.
+    /// When a tenant is bound, stamp missing TenantId/BranchId on inserts and block cross-scope mutations.
     /// When unbound (admin/design-time), leave entities unchanged.
     /// </summary>
     private void ApplyTenantWriteGuards()
@@ -654,6 +710,10 @@ public class CloudDbContext : DbContext
         var tenantId = _tenantContext?.TenantId;
         if (!tenantId.HasValue || tenantId.Value <= 0)
             return;
+
+        var writeBranchId = _tenantContext is { IsAllBranchesMode: false, BranchId: > 0 }
+            ? _tenantContext.BranchId
+            : null;
 
         foreach (var entry in ChangeTracker.Entries<CloudBaseEntity>())
         {
@@ -663,11 +723,32 @@ public class CloudDbContext : DbContext
                     entry.Entity.TenantId = tenantId.Value;
                 else if (entry.Entity.TenantId != tenantId.Value)
                     throw new InvalidOperationException("Cross-tenant write denied.");
+
+                if (!BypassBranchFilter)
+                {
+                    if (entry.Entity.BranchId <= 0)
+                    {
+                        if (writeBranchId is not > 0)
+                            throw new InvalidOperationException("Branch context is required for writes.");
+                        entry.Entity.BranchId = writeBranchId.Value;
+                    }
+                    else if (writeBranchId is > 0 && entry.Entity.BranchId != writeBranchId.Value)
+                    {
+                        throw new UnauthorizedAccessException("Cross-branch write denied.");
+                    }
+                }
             }
             else if (entry.State is EntityState.Modified or EntityState.Deleted)
             {
                 if (entry.Entity.TenantId != tenantId.Value)
                     throw new InvalidOperationException("Cross-tenant write denied.");
+
+                if (!BypassBranchFilter
+                    && writeBranchId is > 0
+                    && entry.Entity.BranchId != writeBranchId.Value)
+                {
+                    throw new UnauthorizedAccessException("Cross-branch mutation denied.");
+                }
             }
         }
     }

@@ -3,6 +3,10 @@ namespace AlMuhasib.Sync.Dtos;
 public abstract class SyncDtoBase
 {
     public Guid SyncId { get; set; }
+
+    /// <summary>معرّف مزامنة الفرع — مطلوب لكل بيانات الأعمال بعد Multi-Branch.</summary>
+    public Guid BranchSyncId { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public string CreatedBy { get; set; } = string.Empty;
     public DateTime? UpdatedAt { get; set; }

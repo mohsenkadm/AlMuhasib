@@ -34,6 +34,7 @@ public sealed class CarUnitOfWork : IUnitOfWork
     public IRepository<Product> Products => new UnsupportedCarRepository<Product>();
     public IRepository<Customer> Customers => new UnsupportedCarRepository<Customer>();
     public IRepository<Driver> Drivers => new UnsupportedCarRepository<Driver>();
+    public IRepository<Employee> Employees => new UnsupportedCarRepository<Employee>();
     public IRepository<SalesRepresentative> SalesRepresentatives => new UnsupportedCarRepository<SalesRepresentative>();
     public IRepository<SalesRepCommissionRule> SalesRepCommissionRules => new UnsupportedCarRepository<SalesRepCommissionRule>();
     public IRepository<SalesRepCommissionEntry> SalesRepCommissionEntries => new UnsupportedCarRepository<SalesRepCommissionEntry>();

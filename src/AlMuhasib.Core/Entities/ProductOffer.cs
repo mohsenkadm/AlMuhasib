@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>عرض منتجات: اشترِ كمية من منتج واحصل على منتج آخر مجاناً.</summary>
-public class ProductOffer : BaseEntity
+public class ProductOffer : BranchScopedEntity
 {
     public string Name { get; set; } = string.Empty;
     public bool IsActive { get; set; } = true;

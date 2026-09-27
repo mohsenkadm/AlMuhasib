@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>إعدادات قواعد نظام الولاء (سجل واحد لكل قاعدة بيانات).</summary>
-public class LoyaltySettings : BaseEntity
+public class LoyaltySettings : BranchScopedEntity
 {
     /// <summary>مبلغ صافي الفاتورة المطلوب لنقطة واحدة (مثال: 1000 د.ع).</summary>
     public decimal PointsPerAmount { get; set; } = 1000m;

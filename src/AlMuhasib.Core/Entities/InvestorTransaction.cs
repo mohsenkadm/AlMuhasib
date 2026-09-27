@@ -3,7 +3,7 @@ using AlMuhasib.Core.Enums;
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>حركات المستثمر</summary>
-public class InvestorTransaction : BaseEntity
+public class InvestorTransaction : BranchScopedEntity
 {
     public int InvestorId { get; set; }
     public InvestorTransactionType Type { get; set; }

@@ -34,6 +34,7 @@ public sealed class HotelUnitOfWork : IUnitOfWork
     public IRepository<Product> Products => new UnsupportedHotelRepository<Product>();
     public IRepository<Customer> Customers => new UnsupportedHotelRepository<Customer>();
     public IRepository<Driver> Drivers => new UnsupportedHotelRepository<Driver>();
+    public IRepository<Employee> Employees => new UnsupportedHotelRepository<Employee>();
     public IRepository<SalesRepresentative> SalesRepresentatives => new UnsupportedHotelRepository<SalesRepresentative>();
     public IRepository<SalesRepCommissionRule> SalesRepCommissionRules => new UnsupportedHotelRepository<SalesRepCommissionRule>();
     public IRepository<SalesRepCommissionEntry> SalesRepCommissionEntries => new UnsupportedHotelRepository<SalesRepCommissionEntry>();

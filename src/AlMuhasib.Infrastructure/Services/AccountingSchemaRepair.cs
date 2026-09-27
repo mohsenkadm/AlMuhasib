@@ -66,6 +66,32 @@ public static class AccountingSchemaRepair
             IF COL_LENGTH(N'dbo.Invoices', N'RelatedInvoiceId') IS NULL
                 ALTER TABLE [dbo].[Invoices] ADD [RelatedInvoiceId] int NULL;
             """, cancellationToken);
+
+        // Multi-Branch safety net (idempotent): ensure Main branch + user links exist after migrate.
+        await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.Branches', N'U') IS NOT NULL
+               AND NOT EXISTS (SELECT 1 FROM [dbo].[Branches] WHERE [Code] = N'MAIN' AND [IsDeleted] = 0)
+            BEGIN
+                INSERT INTO [dbo].[Branches]
+                    ([Name], [Code], [IsActive], [IsMain], [SyncId], [CreatedAt], [CreatedBy], [IsDeleted])
+                VALUES (N'الفرع الرئيسي', N'MAIN', 1, 1, NEWID(), SYSUTCDATETIME(), N'System', 0);
+            END
+            """, cancellationToken);
+
+        await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.UserBranches', N'U') IS NOT NULL
+               AND OBJECT_ID(N'dbo.Branches', N'U') IS NOT NULL
+            BEGIN
+                INSERT INTO [dbo].[UserBranches] ([UserId], [BranchId], [IsDefault], [CreatedAt])
+                SELECT u.[Id], b.[Id], 1, SYSUTCDATETIME()
+                FROM [dbo].[Users] u
+                CROSS JOIN (SELECT TOP 1 [Id] FROM [dbo].[Branches] WHERE [IsMain] = 1 AND [IsDeleted] = 0) b
+                WHERE u.[IsDeleted] = 0
+                  AND NOT EXISTS (
+                      SELECT 1 FROM [dbo].[UserBranches] ub
+                      WHERE ub.[UserId] = u.[Id] AND ub.[BranchId] = b.[Id]);
+            END
+            """, cancellationToken);
     }
 
     public static async Task<bool> IsVoucherSchemaReadyAsync(

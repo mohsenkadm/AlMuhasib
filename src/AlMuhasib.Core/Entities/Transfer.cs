@@ -3,7 +3,7 @@ using AlMuhasib.Core.Enums;
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>التحويلات</summary>
-public class Transfer : BaseEntity
+public class Transfer : BranchScopedEntity
 {
     public TransferAccountType FromType { get; set; }
     public int FromId { get; set; }

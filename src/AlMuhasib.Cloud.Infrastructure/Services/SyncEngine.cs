@@ -13,6 +13,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Services;
 public sealed partial class SyncEngine : ISyncEngine
 {
     private readonly CloudDbContext _db;
+    private readonly Dictionary<Guid, int> _branchSyncCache = new();
+    private int _mainBranchId;
 
     public SyncEngine(CloudDbContext db)
     {
@@ -21,6 +23,9 @@ public sealed partial class SyncEngine : ISyncEngine
 
     public async Task<SyncPushResponse> PushAsync(int tenantId, SyncPushRequest request, CancellationToken ct = default)
     {
+        // Sync is tenant-scoped and maps Branch via SyncId; bypass EF branch filter for the operation.
+        _db.BypassBranchFilter = true;
+
         var tenantType = await _db.Tenants.AsNoTracking()
             .Where(t => t.Id == tenantId)
             .Select(t => t.ApplicationSystemType)
@@ -36,6 +41,7 @@ public sealed partial class SyncEngine : ISyncEngine
         if (tenantType == (int)ApplicationSystemType.GoldShop)
             return await PushGoldShopAsync(tenantId, request, ct);
 
+        await EnsureBranchCacheAsync(tenantId, ct);
         var resolver = new SyncIdResolver(_db, tenantId);
         var response = new SyncPushResponse { ServerTime = DateTime.UtcNow };
         var accepted = 0;
@@ -255,6 +261,9 @@ public sealed partial class SyncEngine : ISyncEngine
 
     public async Task<SyncPullResponse> PullAsync(int tenantId, SyncPullRequest request, CancellationToken ct = default)
     {
+        _db.BypassBranchFilter = true;
+        await EnsureBranchCacheAsync(tenantId, ct);
+
         var tenantType = await _db.Tenants.AsNoTracking()
             .Where(t => t.Id == tenantId)
             .Select(t => t.ApplicationSystemType)
@@ -361,6 +370,53 @@ public sealed partial class SyncEngine : ISyncEngine
         entity.DeletedBy = dto.DeletedBy;
     }
 
+    private async Task EnsureBranchCacheAsync(int tenantId, CancellationToken ct)
+    {
+        _branchSyncCache.Clear();
+        var branches = await _db.Branches.IgnoreQueryFilters().AsNoTracking()
+            .Where(b => b.TenantId == tenantId && !b.IsDeleted)
+            .Select(b => new { b.Id, b.SyncId, b.IsMain })
+            .ToListAsync(ct);
+
+        if (branches.Count == 0)
+        {
+            var main = new CloudBranch
+            {
+                TenantId = tenantId,
+                Name = "الفرع الرئيسي",
+                Code = CloudBranch.MainBranchCode,
+                IsActive = true,
+                IsMain = true,
+                SyncId = Guid.NewGuid(),
+                CreatedAt = DateTime.UtcNow
+            };
+            _db.Branches.Add(main);
+            await _db.SaveChangesAsync(ct);
+            _mainBranchId = main.Id;
+            _branchSyncCache[main.SyncId] = main.Id;
+            return;
+        }
+
+        foreach (var b in branches)
+            _branchSyncCache[b.SyncId] = b.Id;
+        _mainBranchId = branches.FirstOrDefault(b => b.IsMain)?.Id ?? branches[0].Id;
+    }
+
+    private int ResolveBranchId(Guid branchSyncId) =>
+        branchSyncId != Guid.Empty && _branchSyncCache.TryGetValue(branchSyncId, out var id)
+            ? id
+            : _mainBranchId;
+
+    private Guid ResolveBranchSyncId(int branchId)
+    {
+        foreach (var kv in _branchSyncCache)
+        {
+            if (kv.Value == branchId)
+                return kv.Key;
+        }
+        return _branchSyncCache.FirstOrDefault(kv => kv.Value == _mainBranchId).Key;
+    }
+
     private static string GetEntityTypeName(CloudBaseEntity entity) =>
         entity.GetType().Name.Replace("Cloud", "", StringComparison.Ordinal);
 
@@ -373,6 +429,7 @@ public sealed partial class SyncEngine : ISyncEngine
         }
 
         ApplyAudit(entity, dto);
+        entity.BranchId = ResolveBranchId(dto.BranchSyncId);
         return true;
     }
 
@@ -974,7 +1031,7 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return products.Select(p => new ProductSyncDto
         {
-            SyncId = p.SyncId, CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy, UpdatedAt = p.UpdatedAt, UpdatedBy = p.UpdatedBy,
+            SyncId = p.SyncId, BranchSyncId = ResolveBranchSyncId(p.BranchId), CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy, UpdatedAt = p.UpdatedAt, UpdatedBy = p.UpdatedBy,
             IsDeleted = p.IsDeleted, DeletedAt = p.DeletedAt, DeletedBy = p.DeletedBy, RowVersion = p.RowVersion,
             Name = p.Name, Description = p.Description, Barcode = p.Barcode, ScientificName = p.ScientificName,
             UsageInstructions = p.UsageInstructions,
@@ -994,7 +1051,7 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return items.Select(p => new ProductPriceSyncDto
         {
-            SyncId = p.SyncId, CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy, UpdatedAt = p.UpdatedAt, UpdatedBy = p.UpdatedBy,
+            SyncId = p.SyncId, BranchSyncId = ResolveBranchSyncId(p.BranchId), CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy, UpdatedAt = p.UpdatedAt, UpdatedBy = p.UpdatedBy,
             IsDeleted = p.IsDeleted, DeletedAt = p.DeletedAt, DeletedBy = p.DeletedBy, RowVersion = p.RowVersion,
             ProductSyncId = products.GetValueOrDefault(p.ProductId),
             PricingTypeSyncId = types.GetValueOrDefault(p.PricingTypeId),
@@ -1011,7 +1068,7 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return items.Select(s => new WarehouseStockSyncDto
         {
-            SyncId = s.SyncId, CreatedAt = s.CreatedAt, CreatedBy = s.CreatedBy, UpdatedAt = s.UpdatedAt, UpdatedBy = s.UpdatedBy,
+            SyncId = s.SyncId, BranchSyncId = ResolveBranchSyncId(s.BranchId), CreatedAt = s.CreatedAt, CreatedBy = s.CreatedBy, UpdatedAt = s.UpdatedAt, UpdatedBy = s.UpdatedBy,
             IsDeleted = s.IsDeleted, DeletedAt = s.DeletedAt, DeletedBy = s.DeletedBy, RowVersion = s.RowVersion,
             WarehouseSyncId = wh.GetValueOrDefault(s.WarehouseId), ProductSyncId = pr.GetValueOrDefault(s.ProductId),
             Quantity = s.Quantity, OpeningQuantity = s.OpeningQuantity, UnitCost = s.UnitCost, MinQuantity = s.MinQuantity
@@ -1025,7 +1082,7 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return transfers.Select(t => new WarehouseTransferSyncDto
         {
-            SyncId = t.SyncId, CreatedAt = t.CreatedAt, CreatedBy = t.CreatedBy, UpdatedAt = t.UpdatedAt, UpdatedBy = t.UpdatedBy,
+            SyncId = t.SyncId, BranchSyncId = ResolveBranchSyncId(t.BranchId), CreatedAt = t.CreatedAt, CreatedBy = t.CreatedBy, UpdatedAt = t.UpdatedAt, UpdatedBy = t.UpdatedBy,
             IsDeleted = t.IsDeleted, DeletedAt = t.DeletedAt, DeletedBy = t.DeletedBy, RowVersion = t.RowVersion,
             TransferNumber = t.TransferNumber,
             FromWarehouseSyncId = warehouses.GetValueOrDefault(t.FromWarehouseId),
@@ -1043,7 +1100,7 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return items.Select(i => new WarehouseTransferItemSyncDto
         {
-            SyncId = i.SyncId, CreatedAt = i.CreatedAt, CreatedBy = i.CreatedBy, UpdatedAt = i.UpdatedAt, UpdatedBy = i.UpdatedBy,
+            SyncId = i.SyncId, BranchSyncId = ResolveBranchSyncId(i.BranchId), CreatedAt = i.CreatedAt, CreatedBy = i.CreatedBy, UpdatedAt = i.UpdatedAt, UpdatedBy = i.UpdatedBy,
             IsDeleted = i.IsDeleted, DeletedAt = i.DeletedAt, DeletedBy = i.DeletedBy, RowVersion = i.RowVersion,
             WarehouseTransferSyncId = transfers.GetValueOrDefault(i.WarehouseTransferId),
             ProductSyncId = products.GetValueOrDefault(i.ProductId),
@@ -1061,7 +1118,7 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return invoices.Select(i => new InvoiceSyncDto
         {
-            SyncId = i.SyncId, CreatedAt = i.CreatedAt, CreatedBy = i.CreatedBy, UpdatedAt = i.UpdatedAt, UpdatedBy = i.UpdatedBy,
+            SyncId = i.SyncId, BranchSyncId = ResolveBranchSyncId(i.BranchId), CreatedAt = i.CreatedAt, CreatedBy = i.CreatedBy, UpdatedAt = i.UpdatedAt, UpdatedBy = i.UpdatedBy,
             IsDeleted = i.IsDeleted, DeletedAt = i.DeletedAt, DeletedBy = i.DeletedBy, RowVersion = i.RowVersion,
             InvoiceNumber = i.InvoiceNumber, InvoiceType = i.InvoiceType,
             CustomerSyncId = i.CustomerId.HasValue ? customers.GetValueOrDefault(i.CustomerId.Value) : null,
@@ -1085,7 +1142,7 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return items.Select(i => new InvoiceItemSyncDto
         {
-            SyncId = i.SyncId, CreatedAt = i.CreatedAt, CreatedBy = i.CreatedBy, UpdatedAt = i.UpdatedAt, UpdatedBy = i.UpdatedBy,
+            SyncId = i.SyncId, BranchSyncId = ResolveBranchSyncId(i.BranchId), CreatedAt = i.CreatedAt, CreatedBy = i.CreatedBy, UpdatedAt = i.UpdatedAt, UpdatedBy = i.UpdatedBy,
             IsDeleted = i.IsDeleted, DeletedAt = i.DeletedAt, DeletedBy = i.DeletedBy, RowVersion = i.RowVersion,
             InvoiceSyncId = invoices.GetValueOrDefault(i.InvoiceId),
             ProductSyncId = i.ProductId.HasValue ? products.GetValueOrDefault(i.ProductId.Value) : null,
@@ -1104,7 +1161,7 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return plans.Select(p => new InstallmentPlanSyncDto
         {
-            SyncId = p.SyncId, CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy, UpdatedAt = p.UpdatedAt, UpdatedBy = p.UpdatedBy,
+            SyncId = p.SyncId, BranchSyncId = ResolveBranchSyncId(p.BranchId), CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy, UpdatedAt = p.UpdatedAt, UpdatedBy = p.UpdatedBy,
             IsDeleted = p.IsDeleted, DeletedAt = p.DeletedAt, DeletedBy = p.DeletedBy, RowVersion = p.RowVersion,
             InvoiceSyncId = invoices.GetValueOrDefault(p.InvoiceId), CustomerSyncId = customers.GetValueOrDefault(p.CustomerId),
             FileNumber = p.FileNumber, TotalAmount = p.TotalAmount, NumberOfInstallments = p.NumberOfInstallments,
@@ -1121,7 +1178,7 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return items.Select(i => new InstallmentSyncDto
         {
-            SyncId = i.SyncId, CreatedAt = i.CreatedAt, CreatedBy = i.CreatedBy, UpdatedAt = i.UpdatedAt, UpdatedBy = i.UpdatedBy,
+            SyncId = i.SyncId, BranchSyncId = ResolveBranchSyncId(i.BranchId), CreatedAt = i.CreatedAt, CreatedBy = i.CreatedBy, UpdatedAt = i.UpdatedAt, UpdatedBy = i.UpdatedBy,
             IsDeleted = i.IsDeleted, DeletedAt = i.DeletedAt, DeletedBy = i.DeletedBy, RowVersion = i.RowVersion,
             InstallmentPlanSyncId = plans.GetValueOrDefault(i.InstallmentPlanId),
             DueDate = i.DueDate, Amount = i.Amount, PaidAmount = i.PaidAmount, RemainingAmount = i.RemainingAmount,
@@ -1143,7 +1200,7 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return vouchers.Select(v => new VoucherSyncDto
         {
-            SyncId = v.SyncId, CreatedAt = v.CreatedAt, CreatedBy = v.CreatedBy, UpdatedAt = v.UpdatedAt, UpdatedBy = v.UpdatedBy,
+            SyncId = v.SyncId, BranchSyncId = ResolveBranchSyncId(v.BranchId), CreatedAt = v.CreatedAt, CreatedBy = v.CreatedBy, UpdatedAt = v.UpdatedAt, UpdatedBy = v.UpdatedBy,
             IsDeleted = v.IsDeleted, DeletedAt = v.DeletedAt, DeletedBy = v.DeletedBy, RowVersion = v.RowVersion,
             VoucherNumber = v.VoucherNumber, VoucherType = v.VoucherType, Currency = v.Currency, FxRate = v.FxRate, Amount = v.Amount, BankFees = v.BankFees,
             CustomerSyncId = v.CustomerId.HasValue ? customers.GetValueOrDefault(v.CustomerId.Value) : null,
@@ -1168,7 +1225,7 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return expenses.Select(e => new ExpenseSyncDto
         {
-            SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+            SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
             IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
             ExpenseTypeSyncId = types.GetValueOrDefault(e.ExpenseTypeId),
             CashBoxSyncId = cashBoxes.GetValueOrDefault(e.CashBoxId),
@@ -1191,7 +1248,7 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return transfers.Select(t => new TransferSyncDto
         {
-            SyncId = t.SyncId, CreatedAt = t.CreatedAt, CreatedBy = t.CreatedBy, UpdatedAt = t.UpdatedAt, UpdatedBy = t.UpdatedBy,
+            SyncId = t.SyncId, BranchSyncId = ResolveBranchSyncId(t.BranchId), CreatedAt = t.CreatedAt, CreatedBy = t.CreatedBy, UpdatedAt = t.UpdatedAt, UpdatedBy = t.UpdatedBy,
             IsDeleted = t.IsDeleted, DeletedAt = t.DeletedAt, DeletedBy = t.DeletedBy, RowVersion = t.RowVersion,
             FromType = t.FromType, FromSyncId = ResolveId(t.FromType, t.FromId),
             ToType = t.ToType, ToSyncId = ResolveId(t.ToType, t.ToId),
@@ -1206,7 +1263,7 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return txs.Select(t => new InvestorTransactionSyncDto
         {
-            SyncId = t.SyncId, CreatedAt = t.CreatedAt, CreatedBy = t.CreatedBy, UpdatedAt = t.UpdatedAt, UpdatedBy = t.UpdatedBy,
+            SyncId = t.SyncId, BranchSyncId = ResolveBranchSyncId(t.BranchId), CreatedAt = t.CreatedAt, CreatedBy = t.CreatedBy, UpdatedAt = t.UpdatedAt, UpdatedBy = t.UpdatedBy,
             IsDeleted = t.IsDeleted, DeletedAt = t.DeletedAt, DeletedBy = t.DeletedBy, RowVersion = t.RowVersion,
             InvestorSyncId = investors.GetValueOrDefault(t.InvestorId),
             Type = t.Type, Amount = t.Amount, Date = t.Date, Notes = t.Notes
@@ -1221,7 +1278,7 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return details.Select(d => new ProfitDistributionDetailSyncDto
         {
-            SyncId = d.SyncId, CreatedAt = d.CreatedAt, CreatedBy = d.CreatedBy, UpdatedAt = d.UpdatedAt, UpdatedBy = d.UpdatedBy,
+            SyncId = d.SyncId, BranchSyncId = ResolveBranchSyncId(d.BranchId), CreatedAt = d.CreatedAt, CreatedBy = d.CreatedBy, UpdatedAt = d.UpdatedAt, UpdatedBy = d.UpdatedBy,
             IsDeleted = d.IsDeleted, DeletedAt = d.DeletedAt, DeletedBy = d.DeletedBy, RowVersion = d.RowVersion,
             ProfitDistributionSyncId = dists.GetValueOrDefault(d.ProfitDistributionId),
             InvestorSyncId = investors.GetValueOrDefault(d.InvestorId),
@@ -1236,29 +1293,29 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
         return attachments.Select(a => new CustomerAttachmentSyncDto
         {
-            SyncId = a.SyncId, CreatedAt = a.CreatedAt, CreatedBy = a.CreatedBy, UpdatedAt = a.UpdatedAt, UpdatedBy = a.UpdatedBy,
+            SyncId = a.SyncId, BranchSyncId = ResolveBranchSyncId(a.BranchId), CreatedAt = a.CreatedAt, CreatedBy = a.CreatedBy, UpdatedAt = a.UpdatedAt, UpdatedBy = a.UpdatedBy,
             IsDeleted = a.IsDeleted, DeletedAt = a.DeletedAt, DeletedBy = a.DeletedBy, RowVersion = a.RowVersion,
             CustomerSyncId = customers.GetValueOrDefault(a.CustomerId),
             FileName = a.FileName, FilePath = a.FilePath, Description = a.Description, FileData = a.FileData
         }).ToList();
     }
 
-    private static CategorySyncDto MapCategory(CloudCategory e, Dictionary<int, Guid> _) => new()
+    private CategorySyncDto MapCategory(CloudCategory e, Dictionary<int, Guid> _) => new()
     {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion, Name = e.Name
     };
 
-    private static PricingTypeSyncDto MapPricingType(CloudPricingType e, Dictionary<int, Guid> _) => new()
+    private PricingTypeSyncDto MapPricingType(CloudPricingType e, Dictionary<int, Guid> _) => new()
     {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         Name = e.Name, IsDefault = e.IsDefault, IsActive = e.IsActive
     };
 
-    private static BusinessSettingsSyncDto MapBusinessSettings(CloudBusinessSettings e, Dictionary<int, Guid> _) => new()
+    private BusinessSettingsSyncDto MapBusinessSettings(CloudBusinessSettings e, Dictionary<int, Guid> _) => new()
     {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         ProductPricingEnabled = e.ProductPricingEnabled,
         UpdateProductPriceOnPurchase = e.UpdateProductPriceOnPurchase,
@@ -1267,69 +1324,69 @@ public sealed partial class SyncEngine : ISyncEngine
         MultiCurrencyEnabled = e.MultiCurrencyEnabled
     };
 
-    private static ExchangeRateSyncDto MapExchangeRate(CloudExchangeRate e, Dictionary<int, Guid> _) => new()
+    private ExchangeRateSyncDto MapExchangeRate(CloudExchangeRate e, Dictionary<int, Guid> _) => new()
     {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         RateDate = e.RateDate,
         UsdToIqd = e.UsdToIqd,
         Notes = e.Notes
     };
 
-    private static WarehouseSyncDto MapWarehouse(CloudWarehouse e, Dictionary<int, Guid> _) => new()
+    private WarehouseSyncDto MapWarehouse(CloudWarehouse e, Dictionary<int, Guid> _) => new()
     {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         Name = e.Name, Location = e.Location
     };
 
-    private static CustomerSyncDto MapCustomer(CloudCustomer e, Dictionary<int, Guid> _) => new()
+    private CustomerSyncDto MapCustomer(CloudCustomer e, Dictionary<int, Guid> _) => new()
     {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         Name = e.Name, Phone = e.Phone, Address = e.Address, FileNumber = e.FileNumber, Notes = e.Notes,
         IdNumber = e.IdNumber, IdIssuer = e.IdIssuer
     };
 
-    private static SupplierSyncDto MapSupplier(CloudSupplier e, Dictionary<int, Guid> _) => new()
+    private SupplierSyncDto MapSupplier(CloudSupplier e, Dictionary<int, Guid> _) => new()
     {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         Name = e.Name, Phone = e.Phone, Address = e.Address, Notes = e.Notes
     };
 
-    private static CashBoxSyncDto MapCashBox(CloudCashBox e, Dictionary<int, Guid> _) => new()
+    private CashBoxSyncDto MapCashBox(CloudCashBox e, Dictionary<int, Guid> _) => new()
     {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         Name = e.Name, Balance = e.Balance,
         Currency = e.Currency
     };
 
-    private static BankAccountSyncDto MapBankAccount(CloudBankAccount e, Dictionary<int, Guid> _) => new()
+    private BankAccountSyncDto MapBankAccount(CloudBankAccount e, Dictionary<int, Guid> _) => new()
     {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         Name = e.Name, AccountNumber = e.AccountNumber, Balance = e.Balance,
         Currency = e.Currency
     };
 
-    private static InvestorSyncDto MapInvestor(CloudInvestor e, Dictionary<int, Guid> _) => new()
+    private InvestorSyncDto MapInvestor(CloudInvestor e, Dictionary<int, Guid> _) => new()
     {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         Name = e.Name, Phone = e.Phone, TotalDeposit = e.TotalDeposit, OpeningBalance = e.OpeningBalance, ProfitPercentage = e.ProfitPercentage
     };
 
-    private static ExpenseTypeSyncDto MapExpenseType(CloudExpenseType e, Dictionary<int, Guid> _) => new()
+    private ExpenseTypeSyncDto MapExpenseType(CloudExpenseType e, Dictionary<int, Guid> _) => new()
     {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion, Name = e.Name
     };
 
-    private static PrintBrandingSettingsSyncDto MapPrintBranding(CloudPrintBrandingSettings e, Dictionary<int, Guid> _) => new()
+    private PrintBrandingSettingsSyncDto MapPrintBranding(CloudPrintBrandingSettings e, Dictionary<int, Guid> _) => new()
     {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         CompanyName = e.CompanyName, Address = e.Address, PhonePrimary = e.PhonePrimary, PhoneSecondary = e.PhoneSecondary,
         Email = e.Email, Details = e.Details, CompanyIdNumber = e.CompanyIdNumber, CompanyIdIssuer = e.CompanyIdIssuer,
@@ -1339,16 +1396,16 @@ public sealed partial class SyncEngine : ISyncEngine
         FooterImageData = e.FooterImageData, FooterImageContentType = e.FooterImageContentType
     };
 
-    private static ProfitDistributionSyncDto MapProfitDistribution(CloudProfitDistribution e, Dictionary<int, Guid> _) => new()
+    private ProfitDistributionSyncDto MapProfitDistribution(CloudProfitDistribution e, Dictionary<int, Guid> _) => new()
     {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         Date = e.Date, TotalProfit = e.TotalProfit, DistributedAmount = e.DistributedAmount
     };
 
-    private static CapitalEntrySyncDto MapCapitalEntry(CloudCapitalEntry e, Dictionary<int, Guid> _) => new()
+    private CapitalEntrySyncDto MapCapitalEntry(CloudCapitalEntry e, Dictionary<int, Guid> _) => new()
     {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
+        SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         Amount = e.Amount, Date = e.Date, Type = e.Type, Notes = e.Notes
     };

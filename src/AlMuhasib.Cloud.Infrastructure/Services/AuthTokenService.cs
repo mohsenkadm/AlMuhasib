@@ -20,19 +20,35 @@ public sealed class AuthTokenService : IAuthTokenService
         _options = options.Value;
     }
 
-    public TenantLoginResponse CreateTenantTokens(TenantAccount account, Tenant tenant)
+    public TenantLoginResponse CreateTenantTokens(
+        TenantAccount account,
+        Tenant tenant,
+        int? branchId = null,
+        bool allBranches = false,
+        bool canViewAllBranches = false,
+        bool canManageAllBranches = false)
     {
         var expiresAt = DateTime.UtcNow.AddMinutes(_options.AccessTokenMinutes);
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
-            new Claim("tenant_id", tenant.Id.ToString()),
-            new Claim(ClaimTypes.Name, account.Username),
-            new Claim(ClaimTypes.Role, "Tenant"),
-            new Claim("system_type", tenant.ApplicationSystemType.ToString())
+            new(ClaimTypes.NameIdentifier, account.Id.ToString()),
+            new("tenant_id", tenant.Id.ToString()),
+            new(ClaimTypes.Name, account.Username),
+            new(ClaimTypes.Role, "Tenant"),
+            new("system_type", tenant.ApplicationSystemType.ToString())
         };
 
-        var token = CreateToken(claims, expiresAt);
+        if (allBranches)
+            claims.Add(new Claim("all_branches", "1"));
+        else if (branchId is > 0)
+            claims.Add(new Claim("branch_id", branchId.Value.ToString()));
+
+        if (canViewAllBranches)
+            claims.Add(new Claim("can_view_all_branches", "1"));
+        if (canManageAllBranches)
+            claims.Add(new Claim("can_manage_all_branches", "1"));
+
+        var token = CreateToken(claims.ToArray(), expiresAt);
         var refresh = GenerateRefreshToken();
 
         return new TenantLoginResponse
@@ -46,7 +62,10 @@ public sealed class AuthTokenService : IAuthTokenService
             ApplicationSystemType = tenant.ApplicationSystemType,
             IsMobileEnabled = tenant.IsMobileEnabled,
             LicenseExpiresAt = tenant.LicenseExpiresAt,
-            AccountExpiresAt = account.ExpiresAt
+            AccountExpiresAt = account.ExpiresAt,
+            CurrentBranchId = allBranches ? null : branchId,
+            CanViewAllBranches = canViewAllBranches,
+            CanManageAllBranches = canManageAllBranches
         };
     }
 

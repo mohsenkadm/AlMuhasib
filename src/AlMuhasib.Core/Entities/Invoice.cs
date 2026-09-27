@@ -3,7 +3,7 @@ using AlMuhasib.Core.Enums;
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>الفواتير</summary>
-public class Invoice : BaseEntity
+public class Invoice : BranchScopedEntity
 {
     public string InvoiceNumber { get; set; } = string.Empty;
     public InvoiceType InvoiceType { get; set; }

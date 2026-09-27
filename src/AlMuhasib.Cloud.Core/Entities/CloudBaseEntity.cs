@@ -4,6 +4,10 @@ public abstract class CloudBaseEntity
 {
     public int Id { get; set; }
     public int TenantId { get; set; }
+
+    /// <summary>فرع البيانات داخل المستأجر. مطلوب بعد ترحيل Multi-Branch.</summary>
+    public int BranchId { get; set; }
+
     public Guid SyncId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string CreatedBy { get; set; } = string.Empty;
@@ -18,4 +22,9 @@ public abstract class CloudBaseEntity
 public interface ITenantEntity
 {
     int TenantId { get; set; }
+}
+
+public interface ICloudBranchEntity
+{
+    int BranchId { get; set; }
 }

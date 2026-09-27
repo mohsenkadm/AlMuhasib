@@ -16,4 +16,5 @@ public class User : BaseEntity
     public ICollection<Permission> Permissions { get; set; } = [];
     public ICollection<UserTask> Tasks { get; set; } = [];
     public ICollection<UserNote> Notes { get; set; } = [];
+    public ICollection<UserBranch> UserBranches { get; set; } = [];
 }

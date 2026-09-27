@@ -3,7 +3,7 @@ using AlMuhasib.Core.Enums;
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>حساب نقاط ولاء مرتبط بزبون.</summary>
-public class CustomerLoyaltyAccount : BaseEntity
+public class CustomerLoyaltyAccount : BranchScopedEntity
 {
     public int CustomerId { get; set; }
     public int PointsBalance { get; set; }

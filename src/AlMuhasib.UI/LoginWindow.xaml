@@ -619,6 +619,33 @@
                                     </Button>
                                 </StackPanel>
                             </Grid>
+
+                            <!-- Step 3: Branch selection (multi-branch users only) -->
+                            <Grid Visibility="{Binding IsSelectingBranch, Converter={StaticResource BoolToVis}}">
+                                <StackPanel VerticalAlignment="Center" MaxWidth="420">
+                                    <TextBlock Text="اختر الفرع" FontSize="22" FontWeight="Bold"
+                                               Foreground="#1A237E" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                    <TextBlock Text="يجب اختيار فرع قبل الدخول إلى بيانات النظام"
+                                               FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
+                                               HorizontalAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,16"/>
+                                    <ListBox ItemsSource="{Binding AvailableBranches}"
+                                             SelectedItem="{Binding SelectedBranch}"
+                                             MaxHeight="280" Margin="0,0,0,16">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Margin="8,6">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15"/>
+                                                    <TextBlock FontSize="12" Foreground="{DynamicResource HintForegroundBrush}">
+                                                        <Run Text="الرمز: "/><Run Text="{Binding Code}"/>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                    <Button Command="{Binding ConfirmBranchCommand}"
+                                            Style="{StaticResource LoginPrimaryButton}" Content="متابعة"/>
+                                </StackPanel>
+                            </Grid>
                         </Grid>
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"

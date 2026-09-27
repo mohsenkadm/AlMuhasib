@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>وحدات/تعبئة المنتج (قطعة/كرتون/كيلو) مرتبطة بأنواع التعبئة.</summary>
-public class ProductUnit : BaseEntity
+public class ProductUnit : BranchScopedEntity
 {
     public int ProductId { get; set; }
     public int? PackagingTypeId { get; set; }

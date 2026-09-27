@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>مخزون قياس منتج في مخزن معيّن — يُفعّل مع ميزة محلات الألبسة فقط.</summary>
-public class ProductSizeStock : BaseEntity
+public class ProductSizeStock : BranchScopedEntity
 {
     public int ProductId { get; set; }
     public int ProductSizeId { get; set; }

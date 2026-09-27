@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>دفعة منتج مع تاريخ صلاحية.</summary>
-public class ProductBatch : BaseEntity
+public class ProductBatch : BranchScopedEntity
 {
     public int ProductId { get; set; }
     public int WarehouseId { get; set; }

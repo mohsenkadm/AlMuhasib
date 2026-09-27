@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../shared/models/auth_models.dart';
 import '../network/api_exception.dart';
+import '../storage/preferences_service.dart';
 import '../storage/secure_storage_service.dart';
 
 typedef BaseUrlResolver = String Function();
@@ -14,8 +15,10 @@ class ApiClient {
   ApiClient({
     required SecureStorageService secureStorage,
     required BaseUrlResolver baseUrlResolver,
+    PreferencesService? preferences,
   })  : _secureStorage = secureStorage,
-        _baseUrlResolver = baseUrlResolver {
+        _baseUrlResolver = baseUrlResolver,
+        _preferences = preferences {
     _dio = Dio(
       BaseOptions(
         connectTimeout: const Duration(seconds: 15),
@@ -50,6 +53,7 @@ class ApiClient {
   late final Dio _dio;
   final SecureStorageService _secureStorage;
   final BaseUrlResolver _baseUrlResolver;
+  final PreferencesService? _preferences;
   bool _isRefreshing = false;
 
   Dio get dio => _dio;
@@ -70,6 +74,10 @@ class ApiClient {
       final token = await _secureStorage.getAccessToken();
       if (token != null && token.isNotEmpty) {
         options.headers['Authorization'] = 'Bearer $token';
+      }
+      final branchId = _preferences?.branchId;
+      if (branchId != null && branchId > 0) {
+        options.headers['X-Branch-Id'] = branchId.toString();
       }
     }
     handler.next(options);

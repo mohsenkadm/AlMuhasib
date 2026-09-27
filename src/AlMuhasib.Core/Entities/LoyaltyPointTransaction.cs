@@ -3,7 +3,7 @@ using AlMuhasib.Core.Enums;
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>حركة نقاط ولاء (كسب / استبدال / تعديل / انتهاء).</summary>
-public class LoyaltyPointTransaction : BaseEntity
+public class LoyaltyPointTransaction : BranchScopedEntity
 {
     public int CustomerId { get; set; }
     public int? InvoiceId { get; set; }

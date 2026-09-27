@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>مخزون المخزن</summary>
-public class WarehouseStock : BaseEntity
+public class WarehouseStock : BranchScopedEntity
 {
     public int WarehouseId { get; set; }
     public int ProductId { get; set; }
