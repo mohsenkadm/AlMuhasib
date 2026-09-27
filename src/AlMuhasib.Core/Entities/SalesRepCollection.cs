@@ -9,6 +9,10 @@ public class SalesRepCollection : BranchScopedEntity
     public int CustomerId { get; set; }
 
     public decimal Amount { get; set; }
+
+    /// <summary>عملة التحصيل — من الفاتورة المرتبطة أو اختيار المستخدم.</summary>
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+
     public DateTime CollectionDate { get; set; } = DateTime.Today;
 
     /// <summary>رقم الوصل</summary>

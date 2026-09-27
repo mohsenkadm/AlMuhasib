@@ -207,7 +207,8 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
                 SyncId = c.SyncId,
                 Name = c.Name,
                 Extra = c.Phone,
-                FileNumber = c.FileNumber
+                FileNumber = c.FileNumber,
+                MaxCreditLimit = c.MaxCreditLimit
             })
             .ToListAsync(ct);
 
@@ -216,12 +217,11 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
 
         var customerIds = customers.Select(c => c.Id).ToList();
 
-        var creditByCustomer = await Scoped<CloudInvoice>()
+        var creditRows = await Scoped<CloudInvoice>()
             .Where(i => i.CustomerId != null && customerIds.Contains(i.CustomerId.Value) &&
-                        i.PaymentMethod == PaymentMethod.Credit &&
-                        i.Currency == AccountingCurrency.IQD)
-            .GroupBy(i => i.CustomerId!.Value)
-            .Select(g => new { CustomerId = g.Key, Remaining = g.Sum(i => i.RemainingAmount) })
+                        i.PaymentMethod == PaymentMethod.Credit)
+            .GroupBy(i => new { CustomerId = i.CustomerId!.Value, i.Currency })
+            .Select(g => new { g.Key.CustomerId, g.Key.Currency, Remaining = g.Sum(i => i.RemainingAmount) })
             .ToListAsync(ct);
 
         var planRows = await Scoped<CloudInstallmentPlan>()
@@ -229,47 +229,59 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
             .Select(p => new { p.Id, p.CustomerId })
             .ToListAsync(ct);
         var planIds = planRows.Select(p => p.Id).ToList();
-        var installmentByPlan = planIds.Count == 0
+        var installmentRows = planIds.Count == 0
             ? []
             : await Scoped<CloudInstallment>()
                 .Where(i => planIds.Contains(i.InstallmentPlanId) &&
-                            i.Status != InstallmentStatus.Paid &&
-                            i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
-                .GroupBy(i => i.InstallmentPlanId)
-                .Select(g => new { PlanId = g.Key, Remaining = g.Sum(i => i.RemainingAmount) })
+                            i.Status != InstallmentStatus.Paid)
+                .GroupBy(i => new { i.InstallmentPlanId, Currency = i.InstallmentPlan!.Invoice!.Currency })
+                .Select(g => new { PlanId = g.Key.InstallmentPlanId, g.Key.Currency, Remaining = g.Sum(i => i.RemainingAmount) })
                 .ToListAsync(ct);
 
-        var installmentByCustomer = planRows
-            .GroupBy(p => p.CustomerId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Sum(p => installmentByPlan.FirstOrDefault(x => x.PlanId == p.Id)?.Remaining ?? 0));
+        var installmentByCustomerCurrency = planRows
+            .SelectMany(p => installmentRows
+                .Where(x => x.PlanId == p.Id)
+                .Select(x => new { p.CustomerId, x.Currency, x.Remaining }))
+            .GroupBy(x => (x.CustomerId, x.Currency))
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Remaining));
 
         var unappliedDebt = await Scoped<CloudVoucher>()
             .Where(v => v.CustomerId != null && customerIds.Contains(v.CustomerId.Value) &&
                         v.VoucherType == VoucherType.DebtReceipt &&
-                        v.Currency == AccountingCurrency.IQD &&
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
-            .GroupBy(v => v.CustomerId!.Value)
-            .Select(g => new { CustomerId = g.Key, Amount = g.Sum(v => v.Amount) })
+            .GroupBy(v => new { CustomerId = v.CustomerId!.Value, v.Currency })
+            .Select(g => new { g.Key.CustomerId, g.Key.Currency, Amount = g.Sum(v => v.Amount) })
             .ToListAsync(ct);
 
         var receipts = await Scoped<CloudVoucher>()
             .Where(v => v.CustomerId != null && customerIds.Contains(v.CustomerId.Value) &&
                         v.VoucherType == VoucherType.Receipt &&
-                        v.Currency == AccountingCurrency.IQD &&
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
-            .GroupBy(v => v.CustomerId!.Value)
-            .Select(g => new { CustomerId = g.Key, Amount = g.Sum(v => v.Amount) })
+            .GroupBy(v => new { CustomerId = v.CustomerId!.Value, v.Currency })
+            .Select(g => new { g.Key.CustomerId, g.Key.Currency, Amount = g.Sum(v => v.Amount) })
             .ToListAsync(ct);
+
+        var creditByKey = creditRows.ToDictionary(x => (x.CustomerId, x.Currency), x => x.Remaining);
+        var debtByKey = unappliedDebt.ToDictionary(x => (x.CustomerId, x.Currency), x => x.Amount);
+        var receiptByKey = receipts.ToDictionary(x => (x.CustomerId, x.Currency), x => x.Amount);
+
+        decimal BalanceFor(int customerId, AccountingCurrency currency)
+        {
+            creditByKey.TryGetValue((customerId, currency), out var credit);
+            installmentByCustomerCurrency.TryGetValue((customerId, currency), out var inst);
+            debtByKey.TryGetValue((customerId, currency), out var debt);
+            receiptByKey.TryGetValue((customerId, currency), out var receipt);
+            return CustomerBalanceHelper.ComputeOutstandingBalance(credit, inst, debt, receipt);
+        }
 
         foreach (var customer in customers)
         {
-            var credit = creditByCustomer.FirstOrDefault(x => x.CustomerId == customer.Id)?.Remaining ?? 0;
-            installmentByCustomer.TryGetValue(customer.Id, out var inst);
-            var debt = unappliedDebt.FirstOrDefault(x => x.CustomerId == customer.Id)?.Amount ?? 0;
-            var receipt = receipts.FirstOrDefault(x => x.CustomerId == customer.Id)?.Amount ?? 0;
-            customer.Balance = CustomerBalanceHelper.ComputeOutstandingBalance(credit, inst, debt, receipt);
+            var balanceIqd = BalanceFor(customer.Id, AccountingCurrency.IQD);
+            var balanceUsd = BalanceFor(customer.Id, AccountingCurrency.USD);
+            customer.BalanceIqd = balanceIqd;
+            customer.BalanceUsd = balanceUsd;
+            // Backward compatible: Balance remains IQD.
+            customer.Balance = balanceIqd;
         }
 
         return customers;
@@ -411,19 +423,30 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
             _ => Task.FromResult<Guid?>(null)
         };
 
+    private int? TryWriteBranchId() =>
+        _tenantContext is { IsAllBranchesMode: false, BranchId: > 0 }
+            ? _tenantContext.BranchId
+            : null;
+
     private async Task EnsureDefaultPricingDataAsync(CancellationToken ct)
     {
         await EnsureBusinessSettingsAsync(ct);
 
         var tenantId = RequireTenantId();
+        var branchId = TryWriteBranchId();
+        // AllBranches / unbound: do not mutate another branch's pricing defaults.
+        if (branchId is not > 0)
+            return;
 
         var hasDefault = await _db.PricingTypes.IgnoreQueryFilters()
-            .AnyAsync(t => t.TenantId == tenantId && !t.IsDeleted && t.IsDefault, ct);
+            .AnyAsync(t => t.TenantId == tenantId && t.BranchId == branchId && !t.IsDeleted && t.IsDefault, ct);
         if (hasDefault)
             return;
 
         var bySync = await _db.PricingTypes.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.TenantId == tenantId && !t.IsDeleted && t.SyncId == ProductPricingSyncIds.DefaultPricingType, ct);
+            .FirstOrDefaultAsync(t =>
+                t.TenantId == tenantId && t.BranchId == branchId && !t.IsDeleted
+                && t.SyncId == ProductPricingSyncIds.DefaultPricingType, ct);
         if (bySync is not null)
         {
             bySync.IsDefault = true;
@@ -433,7 +456,8 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         }
 
         var byName = await _db.PricingTypes.IgnoreQueryFilters()
-            .FirstOrDefaultAsync(t => t.TenantId == tenantId && !t.IsDeleted && t.Name == "سعر مفرد", ct);
+            .FirstOrDefaultAsync(t =>
+                t.TenantId == tenantId && t.BranchId == branchId && !t.IsDeleted && t.Name == "سعر مفرد", ct);
         if (byName is not null)
         {
             byName.IsDefault = true;
@@ -445,6 +469,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         _db.PricingTypes.Add(new CloudPricingType
         {
             TenantId = tenantId,
+            BranchId = branchId.Value,
             SyncId = ProductPricingSyncIds.DefaultPricingType,
             Name = "سعر مفرد",
             IsDefault = true,
@@ -458,9 +483,22 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
     private async Task<CloudBusinessSettings> EnsureBusinessSettingsAsync(CancellationToken ct)
     {
         var tenantId = RequireTenantId();
+        var branchId = TryWriteBranchId();
+        if (branchId is not > 0)
+        {
+            // Read path under AllBranches: return first allowed-branch settings via filtered query.
+            var scoped = await _db.BusinessSettings.AsNoTracking()
+                .ForTenant(tenantId)
+                .OrderBy(s => s.Id)
+                .FirstOrDefaultAsync(ct);
+            if (scoped is not null)
+                return scoped;
+            throw new InvalidOperationException("Branch context is required to create business settings.");
+        }
+
         var existing = await _db.BusinessSettings
             .IgnoreQueryFilters()
-            .Where(s => !s.IsDeleted && s.TenantId == tenantId)
+            .Where(s => !s.IsDeleted && s.TenantId == tenantId && s.BranchId == branchId)
             .OrderBy(s => s.Id)
             .FirstOrDefaultAsync(ct);
         if (existing is not null)
@@ -469,6 +507,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         var settings = new CloudBusinessSettings
         {
             TenantId = tenantId,
+            BranchId = branchId.Value,
             SyncId = ProductPricingSyncIds.BusinessSettings,
             ProductPricingEnabled = false,
             UpdateProductPriceOnPurchase = false,

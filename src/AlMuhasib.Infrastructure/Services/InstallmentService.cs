@@ -408,13 +408,13 @@ public class InstallmentService : IInstallmentService
     public async Task<(IEnumerable<Installment> Items, int TotalCount)> GetPagedInstallmentsAsync(
         int page, int pageSize, InstallmentStatus? status = null, int? customerId = null, string? searchTerm = null,
         IReadOnlyCollection<InstallmentStatus>? statuses = null, bool updateOverdueStatuses = true,
-        bool includeCashBox = true)
+        bool includeCashBox = true, AccountingCurrency? currency = null)
     {
         if (updateOverdueStatuses)
             await UpdateOverdueStatusesAsync();
 
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var query = BuildInstallmentsQuery(context, status, customerId, searchTerm, statuses);
+        var query = BuildInstallmentsQuery(context, status, customerId, searchTerm, statuses, currency);
 
         var totalCount = await query.CountAsync();
         var safePageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 500);
@@ -459,7 +459,7 @@ public class InstallmentService : IInstallmentService
             await UpdateOverdueStatusesAsync();
 
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var query = BuildInstallmentsQuery(context, status, customerId, searchTerm, statuses);
+        var query = BuildInstallmentsQuery(context, status, customerId, searchTerm, statuses, currency: null);
 
         var rows = await query
             .Select(i => new
@@ -490,10 +490,14 @@ public class InstallmentService : IInstallmentService
         InstallmentStatus? status,
         int? customerId,
         string? searchTerm,
-        IReadOnlyCollection<InstallmentStatus>? statuses)
+        IReadOnlyCollection<InstallmentStatus>? statuses,
+        AccountingCurrency? currency)
     {
-        // لا نخفي أقساط الدولار — المجاميع تفصل IQD/USD دون خلط
+        // لا نخفي أقساط الدولار — المجاميع تفصل IQD/USD؛ الفلتر الاختياري صارم عند تمرير عملة
         var query = context.Installments.AsNoTracking().AsQueryable();
+
+        if (currency.HasValue)
+            query = query.Where(i => i.InstallmentPlan!.Invoice!.Currency == currency.Value);
 
         if (statuses is { Count: > 0 })
         {

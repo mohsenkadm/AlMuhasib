@@ -318,7 +318,7 @@ public class CashBankService : ICashBankService
         try
         {
             var username = _currentUserService.Username;
-            var bank = await context.BankAccounts.FindAsync(bankAccountId)
+            var bank = await context.BankAccounts.FirstOrDefaultAsync(b => b.Id == bankAccountId)
                 ?? throw new InvalidOperationException("المصرف غير موجود");
 
             if (delta < 0 && bank.Balance < Math.Abs(delta))
@@ -375,7 +375,7 @@ public class CashBankService : ICashBankService
 
             if (fromType == TransferAccountType.CashBox)
             {
-                var cashBox = await context.CashBoxes.FindAsync(fromId)
+                var cashBox = await context.CashBoxes.FirstOrDefaultAsync(c => c.Id == fromId)
                     ?? throw new InvalidOperationException("القاصة المصدر غير موجودة");
                 fromCurrency = cashBox.Currency;
                 if (cashBox.Balance < amount)
@@ -386,7 +386,7 @@ public class CashBankService : ICashBankService
             }
             else
             {
-                var bank = await context.BankAccounts.FindAsync(fromId)
+                var bank = await context.BankAccounts.FirstOrDefaultAsync(b => b.Id == fromId)
                     ?? throw new InvalidOperationException("المصرف المصدر غير موجود");
                 fromCurrency = bank.Currency;
                 if (bank.Balance < amount)
@@ -398,7 +398,7 @@ public class CashBankService : ICashBankService
 
             if (toType == TransferAccountType.CashBox)
             {
-                var cashBox = await context.CashBoxes.FindAsync(toId)
+                var cashBox = await context.CashBoxes.FirstOrDefaultAsync(c => c.Id == toId)
                     ?? throw new InvalidOperationException("القاصة الهدف غير موجودة");
                 toCurrency = cashBox.Currency;
                 cashBox.Balance += amount;
@@ -407,7 +407,7 @@ public class CashBankService : ICashBankService
             }
             else
             {
-                var bank = await context.BankAccounts.FindAsync(toId)
+                var bank = await context.BankAccounts.FirstOrDefaultAsync(b => b.Id == toId)
                     ?? throw new InvalidOperationException("المصرف الهدف غير موجود");
                 toCurrency = bank.Currency;
                 bank.Balance += amount;
@@ -523,7 +523,7 @@ public class CashBankService : ICashBankService
     {
         if (type == TransferAccountType.CashBox)
         {
-            var cashBox = await context.CashBoxes.FindAsync(id)
+            var cashBox = await context.CashBoxes.FirstOrDefaultAsync(c => c.Id == id)
                 ?? throw new InvalidOperationException("القاصة غير موجودة");
             if (signedAmount < 0 && cashBox.Balance < Math.Abs(signedAmount))
                 throw new InvalidOperationException($"رصيد القاصة ({cashBox.Balance:N0}) غير كافٍ لعكس التحويل");
@@ -533,7 +533,7 @@ public class CashBankService : ICashBankService
         }
         else
         {
-            var bank = await context.BankAccounts.FindAsync(id)
+            var bank = await context.BankAccounts.FirstOrDefaultAsync(b => b.Id == id)
                 ?? throw new InvalidOperationException("المصرف غير موجود");
             if (signedAmount < 0 && bank.Balance < Math.Abs(signedAmount))
                 throw new InvalidOperationException($"رصيد المصرف ({bank.Balance:N0}) غير كافٍ لعكس التحويل");
@@ -1004,7 +1004,7 @@ public class CashBankService : ICashBankService
     // ══════════════════════════════════════════════════════
     private static async Task AdjustCashBoxBalance(AppDbContext context, int cashBoxId, decimal amount, string username)
     {
-        var cashBox = await context.CashBoxes.FindAsync(cashBoxId)
+        var cashBox = await context.CashBoxes.FirstOrDefaultAsync(c => c.Id == cashBoxId)
             ?? throw new InvalidOperationException("القاصة غير موجودة");
         cashBox.Balance += amount;
         cashBox.UpdatedBy = username;
@@ -1013,7 +1013,7 @@ public class CashBankService : ICashBankService
 
     private static async Task ValidateAndDeductCashBox(AppDbContext context, int cashBoxId, decimal amount, string username)
     {
-        var cashBox = await context.CashBoxes.FindAsync(cashBoxId)
+        var cashBox = await context.CashBoxes.FirstOrDefaultAsync(c => c.Id == cashBoxId)
             ?? throw new InvalidOperationException("القاصة غير موجودة");
         if (cashBox.Balance < amount)
             throw new InvalidOperationException($"رصيد القاصة ({cashBox.Balance:N0}) غير كافٍ ({amount:N0})");
@@ -1024,7 +1024,7 @@ public class CashBankService : ICashBankService
 
     private static async Task ValidateAndDeductBank(AppDbContext context, int bankAccountId, decimal amount, string username)
     {
-        var bank = await context.BankAccounts.FindAsync(bankAccountId)
+        var bank = await context.BankAccounts.FirstOrDefaultAsync(b => b.Id == bankAccountId)
             ?? throw new InvalidOperationException("المصرف غير موجود");
         if (bank.Balance < amount)
             throw new InvalidOperationException($"رصيد المصرف ({bank.Balance:N0}) غير كافٍ ({amount:N0})");
@@ -1035,7 +1035,7 @@ public class CashBankService : ICashBankService
 
     private static async Task AdjustBankBalance(AppDbContext context, int bankAccountId, decimal amount, string username)
     {
-        var bank = await context.BankAccounts.FindAsync(bankAccountId)
+        var bank = await context.BankAccounts.FirstOrDefaultAsync(b => b.Id == bankAccountId)
             ?? throw new InvalidOperationException("المصرف غير موجود");
         bank.Balance += amount;
         bank.UpdatedBy = username;

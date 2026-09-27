@@ -103,13 +103,17 @@ public interface IReportService
     Task<CompanyFeeReportResult> GetCompanyFeeReportAsync(DateTime? from, DateTime? to, int? customerId);
     Task<InstallmentScheduleReportResult> GetInstallmentScheduleReportAsync(DateTime? from, DateTime? to, int? customerId, string? status);
     Task<SalesByPaymentMethodReportResult> GetSalesByPaymentMethodReportAsync(DateTime? from, DateTime? to, int? warehouseId);
-    Task<DailySalesReportResult> GetDailySalesReportAsync(DateTime? from, DateTime? to, int? warehouseId, PaymentMethod? method);
+    Task<DailySalesReportResult> GetDailySalesReportAsync(
+        DateTime? from, DateTime? to, int? warehouseId, PaymentMethod? method,
+        ReportCurrencyScope currencyScope = ReportCurrencyScope.Iqd);
     Task<SalesByWarehouseUserReportResult> GetSalesByWarehouseUserReportAsync(DateTime? from, DateTime? to, int? warehouseId);
     Task<GrossProfitMarginReportResult> GetGrossProfitMarginReportAsync(DateTime? from, DateTime? to);
     Task<OperatingProfitReportResult> GetOperatingProfitReportAsync(DateTime? from, DateTime? to);
     Task<ReceivablesAgingReportResult> GetReceivablesAgingReportAsync(DateTime asOfDate, int? customerId);
     Task<PayablesAgingReportResult> GetPayablesAgingReportAsync(DateTime asOfDate, int? supplierId);
-    Task<CustomerCollectionsReportResult> GetCustomerCollectionsReportAsync(DateTime? from, DateTime? to, int? customerId, int? cashBoxId);
+    Task<CustomerCollectionsReportResult> GetCustomerCollectionsReportAsync(
+        DateTime? from, DateTime? to, int? customerId, int? cashBoxId,
+        ReportCurrencyScope currencyScope = ReportCurrencyScope.Iqd);
     Task<OverdueCustomersReportResult> GetOverdueCustomersReportAsync(DateTime asOfDate, int? minDaysOverdue, int? customerId);
     Task<SupplierPaymentsReportResult> GetSupplierPaymentsReportAsync(DateTime? from, DateTime? to, int? supplierId);
     Task<BankAccountStatementReportResult> GetBankAccountStatementReportAsync(int? bankAccountId, DateTime? from, DateTime? to);
@@ -119,9 +123,13 @@ public interface IReportService
     Task<InventoryValuationReportResult> GetInventoryValuationReportAsync(int? warehouseId, bool includeZero = false);
     Task<WarehouseProductProfitReportResult> GetWarehouseProductProfitReportAsync(int? warehouseId, bool includeZero = false);
     Task<StockTakingReportResult> GetStockTakingReportAsync(int? warehouseId, bool includeZero = true);
-    Task<CogsReportResult> GetCogsReportAsync(DateTime? from, DateTime? to, int? warehouseId);
+    Task<CogsReportResult> GetCogsReportAsync(
+        DateTime? from, DateTime? to, int? warehouseId,
+        ReportCurrencyScope currencyScope = ReportCurrencyScope.Iqd);
     Task<FinancialPositionSummaryReportResult> GetFinancialPositionSummaryReportAsync(DateTime? asOfDate);
-    Task<ProfitAndLossReportResult> GetProfitAndLossReportAsync(DateTime? from, DateTime? to);
+    Task<ProfitAndLossReportResult> GetProfitAndLossReportAsync(
+        DateTime? from, DateTime? to,
+        ReportCurrencyScope currencyScope = ReportCurrencyScope.Iqd);
     Task<StatementOfFinancialPositionReportResult> GetStatementOfFinancialPositionReportAsync(DateTime date);
     Task<WorkSummaryReportResult> GetWorkSummaryAsync(DateTime? from, DateTime? to);
     Task<ExecutiveBusinessSummaryResult> GetExecutiveBusinessSummaryAsync(DateTime? from, DateTime? to);
@@ -674,8 +682,10 @@ public class BalanceSheetResult
     public decimal CustomerDebts { get; set; }
     public decimal InventoryValue { get; set; }
     public decimal InstallmentReceivables { get; set; }
-    /// <summary>سلف الموظفين المستحقة (أصل).</summary>
+    /// <summary>سلف الموظفين المستحقة بالدينار (أصل في الميزانية).</summary>
     public decimal EmployeeAdvances { get; set; }
+    /// <summary>إفصاح سلف موظفين بالدولار — لا يُدمج في مجاميع الميزانية بالدينار.</summary>
+    public decimal EmployeeAdvancesUsd { get; set; }
     public decimal AssetsTotal { get; set; }
 
     public decimal Difference { get; set; }
@@ -1217,6 +1227,9 @@ public class SalesByPaymentMethodRow
 public class DailySalesReportResult
 {
     public decimal TotalSales { get; set; }
+    /// <summary>إفصاح مبيعات دولار — لا يُجمع مع TotalSales.</summary>
+    public decimal TotalSalesUsd { get; set; }
+    public ReportCurrencyScope CurrencyScope { get; set; } = ReportCurrencyScope.Iqd;
     public int DayCount { get; set; }
     public int InvoiceCount { get; set; }
     public decimal AverageDaily { get; set; }
@@ -1227,6 +1240,8 @@ public class DailySalesReportResult
 public class DailySalesRow
 {
     public DateTime Date { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
     public int InvoiceCount { get; set; }
     public decimal CashSales { get; set; }
     public decimal CreditSales { get; set; }
@@ -1360,8 +1375,10 @@ public class PayablesAgingRow
 public class CustomerCollectionsReportResult
 {
     public decimal TotalCollected { get; set; }
+    public decimal TotalCollectedUsd { get; set; }
     public decimal VoucherCollections { get; set; }
     public decimal InstallmentCollections { get; set; }
+    public ReportCurrencyScope CurrencyScope { get; set; } = ReportCurrencyScope.Iqd;
     public int RowCount { get; set; }
     public List<CustomerCollectionRow> Rows { get; set; } = [];
     public List<DailyAmountPoint> DailyChart { get; set; } = [];
@@ -1376,6 +1393,8 @@ public class CustomerCollectionRow
     public string CustomerName { get; set; } = string.Empty;
     public string? CustomerFileNumber { get; set; }
     public decimal Amount { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
     public string AccountName { get; set; } = string.Empty;
     public string Notes { get; set; } = string.Empty;
 }
@@ -1593,7 +1612,10 @@ public class CogsReportResult
 {
     public decimal TotalCogs { get; set; }
     public decimal TotalRevenue { get; set; }
+    /// <summary>إيراد مبيعات دولار (إفصاح) — تكلفة المخزون تبقى بالدينار.</summary>
+    public decimal TotalRevenueUsd { get; set; }
     public decimal GrossProfit { get; set; }
+    public ReportCurrencyScope CurrencyScope { get; set; } = ReportCurrencyScope.Iqd;
     public int ProductCount { get; set; }
     public List<CogsReportRow> Rows { get; set; } = [];
     public List<NameAmountPoint> TopProductsChart { get; set; } = [];
@@ -1633,15 +1655,18 @@ public class FinancialPositionLineRow
 public class ProfitAndLossReportResult
 {
     public decimal TotalSales { get; set; }
+    public decimal TotalSalesUsd { get; set; }
     public decimal CostOfGoodsSold { get; set; }
     public decimal GrossProfit { get; set; }
     public decimal TotalExpenses { get; set; }
+    public decimal TotalExpensesUsd { get; set; }
     public decimal TotalBankFees { get; set; }
     public decimal OperatingProfit { get; set; }
     public decimal DistributedProfits { get; set; }
     public decimal NetProfit { get; set; }
     public decimal GrossMarginPercent { get; set; }
     public decimal NetMarginPercent { get; set; }
+    public ReportCurrencyScope CurrencyScope { get; set; } = ReportCurrencyScope.Iqd;
     public List<ProfitAndLossLineRow> Lines { get; set; } = [];
     public List<NameAmountPoint> CompositionChart { get; set; } = [];
     public List<DailyAmountPoint> MonthlyChart { get; set; } = [];

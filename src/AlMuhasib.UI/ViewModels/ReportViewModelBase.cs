@@ -5,6 +5,7 @@ using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Shared.Services;
+using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -12,6 +13,19 @@ using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 
 namespace AlMuhasib.UI.ViewModels;
+
+public sealed class ReportCurrencyScopeOption
+{
+    public ReportCurrencyScope Scope { get; init; }
+    public string DisplayName { get; init; } = string.Empty;
+
+    public static IReadOnlyList<ReportCurrencyScopeOption> All { get; } =
+    [
+        new() { Scope = ReportCurrencyScope.Iqd, DisplayName = "دينار" },
+        new() { Scope = ReportCurrencyScope.Usd, DisplayName = "دولار" },
+        new() { Scope = ReportCurrencyScope.All, DisplayName = "الكل (منفصل)" },
+    ];
+}
 
 public abstract partial class ReportViewModelBase : ViewModelBase
 {
@@ -27,6 +41,7 @@ public abstract partial class ReportViewModelBase : ViewModelBase
     [ObservableProperty] private int _totalRecords;
     [ObservableProperty] private int _pageSize = 25;
     [ObservableProperty] private string _paginationText = string.Empty;
+    [ObservableProperty] private ReportCurrencyScopeOption? _selectedCurrencyScopeOption;
 
     public ObservableCollection<PaymentMethodItem> PaymentMethods { get; } =
     [
@@ -36,6 +51,12 @@ public abstract partial class ReportViewModelBase : ViewModelBase
         new(PaymentMethod.Installment, "أقساط"),
     ];
 
+    public ObservableCollection<ReportCurrencyScopeOption> CurrencyScopeOptions { get; } = new(ReportCurrencyScopeOption.All);
+
+    /// <summary>نطاق عملة التقرير المحاسبي — افتراضي دينار للتوافق.</summary>
+    protected ReportCurrencyScope CurrencyScope =>
+        SelectedCurrencyScopeOption?.Scope ?? ReportCurrencyScope.Iqd;
+
     protected ReportViewModelBase(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService)
     {
@@ -43,6 +64,7 @@ public abstract partial class ReportViewModelBase : ViewModelBase
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        SelectedCurrencyScopeOption = CurrencyScopeOptions.FirstOrDefault(o => o.Scope == ReportCurrencyScope.Iqd);
     }
 
     protected void UpdatePagination<T>(IList<T> allItems, ObservableCollection<T> displayItems)

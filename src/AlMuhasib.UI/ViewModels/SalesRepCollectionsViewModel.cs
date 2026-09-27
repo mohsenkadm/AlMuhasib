@@ -2,9 +2,11 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -26,6 +28,8 @@ public sealed class SalesRepCollectionRow
     public string SalesRepresentativeName { get; init; } = string.Empty;
     public string CustomerName { get; init; } = string.Empty;
     public decimal Amount => Entity.Amount;
+    public AccountingCurrency Currency => Entity.Currency;
+    public string CurrencyLabel => AccountingCurrencyHelper.GetLabel(Entity.Currency);
     public DateTime CollectionDate => Entity.CollectionDate;
     public string? ReceiptNumber => Entity.ReceiptNumber;
     public string PaymentMethodLabel { get; init; } = string.Empty;
@@ -51,6 +55,7 @@ public partial class SalesRepCollectionsViewModel : ViewModelBase
         new() { Value = PaymentMethod.Credit, Label = "آجل" },
         new() { Value = PaymentMethod.Installment, Label = "أقساط" },
     ];
+    public ObservableCollection<CurrencyOption> CurrencyOptions { get; } = new(CurrencyOption.All);
 
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private int _currentPage = 1;
@@ -74,6 +79,7 @@ public partial class SalesRepCollectionsViewModel : ViewModelBase
     [ObservableProperty] private DateTime _editCollectionDate = DateTime.Today;
     [ObservableProperty] private string _editReceiptNumber = string.Empty;
     [ObservableProperty] private PaymentMethodOption? _editPaymentMethod;
+    [ObservableProperty] private CurrencyOption? _editCurrencyOption;
     [ObservableProperty] private string _editNotes = string.Empty;
     [ObservableProperty] private string _dialogError = string.Empty;
 
@@ -236,6 +242,7 @@ public partial class SalesRepCollectionsViewModel : ViewModelBase
         EditCollectionDate = DateTime.Today;
         EditReceiptNumber = string.Empty;
         EditPaymentMethod = PaymentMethods[0];
+        EditCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
         EditNotes = string.Empty;
         DialogError = string.Empty;
         IsDialogOpen = true;
@@ -251,10 +258,12 @@ public partial class SalesRepCollectionsViewModel : ViewModelBase
         DialogTitle = "تعديل تحصيل";
         EditSalesRep = Representatives.FirstOrDefault(r => r.Id == e.SalesRepresentativeId);
         EditCustomer = Customers.FirstOrDefault(c => c.Id == e.CustomerId);
-        EditAmount = e.Amount.ToString("0");
+        EditAmount = e.Amount.ToString("0.##");
         EditCollectionDate = e.CollectionDate;
         EditReceiptNumber = e.ReceiptNumber ?? string.Empty;
         EditPaymentMethod = PaymentMethods.FirstOrDefault(p => p.Value == e.PaymentMethod) ?? PaymentMethods[0];
+        EditCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == e.Currency)
+            ?? CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
         EditNotes = e.Notes ?? string.Empty;
         DialogError = string.Empty;
         IsDialogOpen = true;
@@ -302,9 +311,11 @@ public partial class SalesRepCollectionsViewModel : ViewModelBase
 
     private void ApplyFields(SalesRepCollection entity, decimal amount)
     {
+        var currency = EditCurrencyOption?.Currency ?? AccountingCurrency.IQD;
         entity.SalesRepresentativeId = EditSalesRep!.Id;
         entity.CustomerId = EditCustomer!.Id;
-        entity.Amount = amount;
+        entity.Amount = AccountingCurrencyHelper.NormalizeAmount(amount, currency);
+        entity.Currency = currency;
         entity.CollectionDate = EditCollectionDate.Date;
         entity.ReceiptNumber = string.IsNullOrWhiteSpace(EditReceiptNumber) ? null : EditReceiptNumber.Trim();
         entity.PaymentMethod = EditPaymentMethod?.Value ?? PaymentMethod.Cash;

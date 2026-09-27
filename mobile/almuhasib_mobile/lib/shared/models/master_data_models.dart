@@ -6,16 +6,30 @@ class LookupItem {
     this.extra,
     this.fileNumber,
     this.balance,
+    this.balanceIqd,
+    this.balanceUsd,
+    this.maxCreditLimit,
   });
 
   factory LookupItem.fromJson(Map<String, dynamic> json) {
+    final balance = json['balance'] == null ? null : _num(json['balance']);
+    final balanceIqd = json['balanceIqd'] == null
+        ? balance
+        : _num(json['balanceIqd']);
+    final balanceUsd =
+        json['balanceUsd'] == null ? null : _num(json['balanceUsd']);
     return LookupItem(
       id: json['id'] as int? ?? 0,
       syncId: json['syncId']?.toString() ?? '',
       name: json['name'] as String? ?? '',
       extra: json['extra'] as String?,
       fileNumber: json['fileNumber'] as String?,
-      balance: json['balance'] == null ? null : _num(json['balance']),
+      balance: balance ?? balanceIqd,
+      balanceIqd: balanceIqd,
+      balanceUsd: balanceUsd,
+      maxCreditLimit: json['maxCreditLimit'] == null
+          ? null
+          : _num(json['maxCreditLimit']),
     );
   }
 
@@ -24,7 +38,19 @@ class LookupItem {
   final String name;
   final String? extra;
   final String? fileNumber;
+  /// Legacy IQD balance (backward compatible with older API).
   final double? balance;
+  final double? balanceIqd;
+  final double? balanceUsd;
+  final double? maxCreditLimit;
+
+  double get effectiveBalanceIqd => balanceIqd ?? balance ?? 0;
+
+  double get effectiveBalanceUsd => balanceUsd ?? 0;
+
+  /// True when API provided dual-currency fields (even if USD is zero).
+  bool get hasDualBalanceFields =>
+      balanceIqd != null || balanceUsd != null;
 
   String get displayName {
     final number = fileNumber?.trim();

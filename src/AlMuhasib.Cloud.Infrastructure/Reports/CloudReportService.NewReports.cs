@@ -2,6 +2,7 @@ using AlMuhasib.Cloud.Core.Entities;
 using AlMuhasib.Cloud.Infrastructure.Data;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -63,8 +64,8 @@ public sealed partial class CloudReportService
     private async Task<string> ResolveTransferAccountNameAsync(CloudDbContext context, TransferAccountType type, int id)
     {
         if (type == TransferAccountType.CashBox)
-            return (await context.CashBoxes.FindAsync(id))?.Name ?? $"قاصة #{id}";
-        return (await context.BankAccounts.FindAsync(id))?.Name ?? $"مصرف #{id}";
+            return (await context.CashBoxes.FirstOrDefaultAsync(c => c.Id == id))?.Name ?? $"قاصة #{id}";
+        return (await context.BankAccounts.FirstOrDefaultAsync(b => b.Id == id))?.Name ?? $"مصرف #{id}";
     }
 
     // ── Supervisory ──────────────────────────────────────────────
@@ -358,7 +359,8 @@ public sealed partial class CloudReportService
     }
 
     public async Task<DailySalesReportResult> GetDailySalesReportAsync(
-        DateTime? from, DateTime? to, int? warehouseId, PaymentMethod? method)
+        DateTime? from, DateTime? to, int? warehouseId, PaymentMethod? method,
+        ReportCurrencyScope currencyScope = ReportCurrencyScope.Iqd)
     {
         var context = _db;
         IQueryable<CloudInvoice> query = CloudInvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
@@ -784,7 +786,8 @@ public sealed partial class CloudReportService
     }
 
     public async Task<CustomerCollectionsReportResult> GetCustomerCollectionsReportAsync(
-        DateTime? from, DateTime? to, int? customerId, int? cashBoxId)
+        DateTime? from, DateTime? to, int? customerId, int? cashBoxId,
+        ReportCurrencyScope currencyScope = ReportCurrencyScope.Iqd)
     {
         var context = _db;
         var rows = new List<CustomerCollectionRow>();
@@ -1455,7 +1458,9 @@ public sealed partial class CloudReportService
         };
     }
 
-    public async Task<CogsReportResult> GetCogsReportAsync(DateTime? from, DateTime? to, int? warehouseId)
+    public async Task<CogsReportResult> GetCogsReportAsync(
+        DateTime? from, DateTime? to, int? warehouseId,
+        ReportCurrencyScope currencyScope = ReportCurrencyScope.Iqd)
     {
         var context = _db;
         var soldQ = context.InvoiceItems
@@ -1463,8 +1468,10 @@ public sealed partial class CloudReportService
             .Include(ii => ii.Product)
             .Where(ii => ii.ProductId != null
                          && ii.Invoice != null
-                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn)
-                         && ii.Invoice.Currency == AccountingCurrency.IQD);
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale || ii.Invoice.InvoiceType == InvoiceType.Installment || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
+        var strict = ReportCurrencyScopeHelper.ToStrictFilter(currencyScope);
+        if (strict.HasValue)
+            soldQ = soldQ.Where(ii => ii.Invoice!.Currency == strict.Value);
         if (from.HasValue) soldQ = soldQ.Where(ii => ii.Invoice!.Date >= from.Value);
         if (to.HasValue) soldQ = soldQ.Where(ii => ii.Invoice!.Date < EndOfDay(to));
         if (warehouseId.HasValue) soldQ = soldQ.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
@@ -1563,7 +1570,9 @@ public sealed partial class CloudReportService
         };
     }
 
-    public async Task<ProfitAndLossReportResult> GetProfitAndLossReportAsync(DateTime? from, DateTime? to)
+    public async Task<ProfitAndLossReportResult> GetProfitAndLossReportAsync(
+        DateTime? from, DateTime? to,
+        ReportCurrencyScope currencyScope = ReportCurrencyScope.Iqd)
     {
         var context = _db;
         var salesQ = CloudInvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans);

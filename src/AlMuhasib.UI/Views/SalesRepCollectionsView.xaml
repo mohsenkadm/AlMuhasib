@@ -100,8 +100,10 @@
                         <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
                                             <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
-                        <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="100"
+                        <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N2}" Width="100"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
+                        <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrencyLabel"/>
                         <DataGridTextColumn Header="التاريخ" Binding="{Binding CollectionDate, StringFormat=yyyy/MM/dd}" Width="100"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CollectionDate"/>
                         <DataGridTextColumn Header="رقم الوصل" Binding="{Binding ReceiptNumber}" Width="110"
@@ -161,6 +163,9 @@
                                       md:HintAssist.Hint="العميل *" Margin="0,0,0,12"/>
                             <TextBox md:HintAssist.Hint="المبلغ *" Text="{Binding EditAmount, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                            <ComboBox ItemsSource="{Binding CurrencyOptions}" SelectedItem="{Binding EditCurrencyOption}"
+                                      DisplayMemberPath="DisplayName" Style="{StaticResource FilledComboBox}"
+                                      md:HintAssist.Hint="العملة" Margin="0,0,0,12"/>
                             <DatePicker SelectedDate="{Binding EditCollectionDate}" Style="{StaticResource FilledDatePicker}"
                                         md:HintAssist.Hint="تاريخ التحصيل" Margin="0,0,0,12"/>
                             <TextBox md:HintAssist.Hint="رقم الوصل" Text="{Binding EditReceiptNumber, UpdateSourceTrigger=PropertyChanged}"

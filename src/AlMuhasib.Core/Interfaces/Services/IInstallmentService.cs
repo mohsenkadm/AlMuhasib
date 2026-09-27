@@ -28,7 +28,8 @@ public interface IInstallmentService
     Task<(IEnumerable<Installment> Items, int TotalCount)> GetPagedInstallmentsAsync(
         int page, int pageSize, InstallmentStatus? status = null, int? customerId = null,
         string? searchTerm = null, IReadOnlyCollection<InstallmentStatus>? statuses = null,
-        bool updateOverdueStatuses = true, bool includeCashBox = true);
+        bool updateOverdueStatuses = true, bool includeCashBox = true,
+        AccountingCurrency? currency = null);
 
     /// <summary>
     /// مجاميع الأقساط: الحقول الأساسية بالدينار فقط (لا خلط)،

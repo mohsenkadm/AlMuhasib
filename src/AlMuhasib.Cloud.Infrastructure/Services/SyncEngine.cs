@@ -707,6 +707,7 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.Notes = dto.Notes;
         existing.IdNumber = dto.IdNumber;
         existing.IdIssuer = dto.IdIssuer;
+        existing.MaxCreditLimit = dto.MaxCreditLimit;
         return 1;
     }
 
@@ -1474,7 +1475,7 @@ public sealed partial class SyncEngine : ISyncEngine
         SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
         IsDeleted = e.IsDeleted, DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion,
         Name = e.Name, Phone = e.Phone, Address = e.Address, FileNumber = e.FileNumber, Notes = e.Notes,
-        IdNumber = e.IdNumber, IdIssuer = e.IdIssuer
+        IdNumber = e.IdNumber, IdIssuer = e.IdIssuer, MaxCreditLimit = e.MaxCreditLimit
     };
 
     private SupplierSyncDto MapSupplier(CloudSupplier e, Dictionary<int, Guid> _) => new()

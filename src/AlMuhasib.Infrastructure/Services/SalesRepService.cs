@@ -62,6 +62,7 @@ public sealed class SalesRepService : ISalesRepService
                 BaseAmount = baseAmount,
                 CommissionAmount = commission,
                 PaidAmount = 0,
+                Currency = invoice.Currency,
                 Status = SalesRepCommissionStatus.Unpaid,
                 CreatedBy = user,
                 CreatedAt = now
@@ -76,6 +77,7 @@ public sealed class SalesRepService : ISalesRepService
             existing.CommissionAmount = commission;
             existing.CustomerId = invoice.CustomerId;
             existing.InvoiceDate = invoice.Date;
+            existing.Currency = invoice.Currency;
             existing.UpdatedAt = now;
             existing.UpdatedBy = user;
             existing.Status = ResolveStatus(existing.CommissionAmount, existing.PaidAmount);
@@ -125,7 +127,7 @@ public sealed class SalesRepService : ISalesRepService
 
         var collectionsQ = db.SalesRepCollections.AsNoTracking()
             .Where(c => !c.IsDeleted && c.SalesRepresentativeId == salesRepresentativeId
-                        && (c.InvoiceId == null || c.Invoice!.Currency == AccountingCurrency.IQD));
+                        && c.Currency == AccountingCurrency.IQD);
         if (fromDate is not null) collectionsQ = collectionsQ.Where(c => c.CollectionDate >= fromDate);
         if (toDate is not null) collectionsQ = collectionsQ.Where(c => c.CollectionDate < toDate);
         var collections = await collectionsQ.Include(c => c.Invoice).ToListAsync(ct);

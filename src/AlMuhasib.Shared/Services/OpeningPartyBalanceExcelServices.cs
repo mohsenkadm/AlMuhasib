@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.IO;
 using System.Text;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
 using ClosedXML.Excel;
@@ -16,7 +17,9 @@ public class OpeningCustomerBalanceExcelService : IOpeningCustomerBalanceExcelSe
         "رقم_الملف",
         "المبلغ",
         "التاريخ",
-        "ملاحظات"
+        "ملاحظات",
+        "العملة",
+        "سعر_الصرف"
     ];
 
     public byte[] GenerateTemplate()
@@ -36,6 +39,8 @@ public class OpeningCustomerBalanceExcelService : IOpeningCustomerBalanceExcelSe
             "4) المبلغ: رقم أكبر من صفر — المبلغ الذي في ذمة العميل (آجل).",
             "5) التاريخ: بصيغة yyyy/MM/dd مثل 2024/01/15. الخلية الفارغة = تاريخ اليوم.",
             "6) ملاحظات: اختياري.",
+            "7) العملة: IQD أو USD (فارغ = IQD).",
+            "8) سعر_الصرف: مطلوب عند USD (دولار→دينار) ويجب أن يكون أكبر من صفر.",
             "",
             "ملاحظة: يُنشأ رصيد آجل على ذمة العميل دون التأثير على القاصة أو المخزون."
         };
@@ -47,8 +52,8 @@ public class OpeningCustomerBalanceExcelService : IOpeningCustomerBalanceExcelSe
         var data = workbook.Worksheets.Add("البيانات");
         data.RightToLeft = true;
         WriteHeaders(data);
-        AddSampleRow(data, 2, "أحمد محمد", "07701234567", "F-1001", 500000, new DateTime(2024, 6, 1), "مثال — رصيد سابق");
-        AddSampleRow(data, 3, "سارة علي", "", "", 250000, DateTime.Today, "مثال — عميلة جديدة");
+        AddSampleRow(data, 2, "أحمد محمد", "07701234567", "F-1001", 500000, new DateTime(2024, 6, 1), "مثال — رصيد سابق", "IQD", 1);
+        AddSampleRow(data, 3, "سارة علي", "", "", 250, DateTime.Today, "مثال — عميلة جديدة بالدولار", "USD", 1500);
 
         data.Column(1).Width = 22;
         data.Column(2).Width = 16;
@@ -56,6 +61,8 @@ public class OpeningCustomerBalanceExcelService : IOpeningCustomerBalanceExcelSe
         data.Column(4).Width = 14;
         data.Column(5).Width = 14;
         data.Column(6).Width = 28;
+        data.Column(7).Width = 10;
+        data.Column(8).Width = 12;
 
         data.Range(2, 4, 500, 4).CreateDataValidation().Decimal.Between(0.01, 999999999999);
         data.Range(2, 5, 500, 5).CreateDataValidation().Date.Between(new DateTime(2000, 1, 1), new DateTime(2100, 12, 31));
@@ -82,7 +89,7 @@ public class OpeningCustomerBalanceExcelService : IOpeningCustomerBalanceExcelSe
     }
 
     private static void AddSampleRow(IXLWorksheet sheet, int row, string name, string? phone,
-        string? file, decimal amount, DateTime date, string? notes)
+        string? file, decimal amount, DateTime date, string? notes, string currency, decimal fxRate)
     {
         sheet.Cell(row, 1).Value = name;
         sheet.Cell(row, 2).Value = phone ?? string.Empty;
@@ -91,6 +98,8 @@ public class OpeningCustomerBalanceExcelService : IOpeningCustomerBalanceExcelSe
         sheet.Cell(row, 5).Value = date;
         sheet.Cell(row, 5).Style.DateFormat.Format = "yyyy/MM/dd";
         sheet.Cell(row, 6).Value = notes ?? string.Empty;
+        sheet.Cell(row, 7).Value = currency;
+        sheet.Cell(row, 8).Value = fxRate;
         sheet.Row(row).Style.Fill.BackgroundColor = XLColor.FromHtml("#E1F5FE");
     }
 }
@@ -103,7 +112,9 @@ public class OpeningSupplierBalanceExcelService : IOpeningSupplierBalanceExcelSe
         "الهاتف",
         "المبلغ",
         "التاريخ",
-        "ملاحظات"
+        "ملاحظات",
+        "العملة",
+        "سعر_الصرف"
     ];
 
     public byte[] GenerateTemplate()
@@ -123,6 +134,8 @@ public class OpeningSupplierBalanceExcelService : IOpeningSupplierBalanceExcelSe
             "4) المبلغ: رقم أكبر من صفر — المبلغ المستحق للمورد (آجل).",
             "5) التاريخ: بصيغة yyyy/MM/dd مثل 2024/01/15. الخلية الفارغة = تاريخ اليوم.",
             "6) ملاحظات: اختياري.",
+            "7) العملة: IQD أو USD (فارغ = IQD).",
+            "8) سعر_الصرف: مطلوب عند USD ويجب أن يكون أكبر من صفر.",
             "",
             "ملاحظة: يُنشأ رصيد آجل على ذمة المورد دون التأثير على القاصة أو المخزون."
         };
@@ -149,6 +162,8 @@ public class OpeningSupplierBalanceExcelService : IOpeningSupplierBalanceExcelSe
         data.Cell(2, 4).Value = new DateTime(2024, 6, 1);
         data.Cell(2, 4).Style.DateFormat.Format = "yyyy/MM/dd";
         data.Cell(2, 5).Value = "مثال — رصيد سابق";
+        data.Cell(2, 6).Value = "IQD";
+        data.Cell(2, 7).Value = 1;
         data.Row(2).Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF3E0");
 
         data.Column(1).Width = 22;
@@ -156,6 +171,8 @@ public class OpeningSupplierBalanceExcelService : IOpeningSupplierBalanceExcelSe
         data.Column(3).Width = 14;
         data.Column(4).Width = 14;
         data.Column(5).Width = 28;
+        data.Column(6).Width = 10;
+        data.Column(7).Width = 12;
 
         data.Range(2, 3, 500, 3).CreateDataValidation().Decimal.Between(0.01, 999999999999);
         data.Range(2, 4, 500, 4).CreateDataValidation().Date.Between(new DateTime(2000, 1, 1), new DateTime(2100, 12, 31));
@@ -208,6 +225,8 @@ internal static class OpeningPartyExcelParseHelper
             else
                 importRow.Date = date;
 
+            ApplyCurrencyAndFx(importRow, sheet.Cell(rowNum, 7), sheet.Cell(rowNum, 8));
+
             rows.Add(importRow);
         }
 
@@ -250,10 +269,49 @@ internal static class OpeningPartyExcelParseHelper
             else
                 importRow.Date = date;
 
+            ApplyCurrencyAndFx(importRow, sheet.Cell(rowNum, 6), sheet.Cell(rowNum, 7));
+
             rows.Add(importRow);
         }
 
         return rows;
+    }
+
+
+    private static void ApplyCurrencyAndFx(OpeningPartyBalanceImportRow importRow, IXLCell currencyCell, IXLCell fxCell)
+    {
+        var raw = currencyCell.GetString().Trim();
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            importRow.Currency = AccountingCurrency.IQD;
+            importRow.FxRate = 1m;
+            return;
+        }
+
+        if (raw.Equals("USD", StringComparison.OrdinalIgnoreCase)
+            || raw.Equals("$", StringComparison.Ordinal)
+            || raw.Contains("دولار", StringComparison.OrdinalIgnoreCase))
+        {
+            importRow.Currency = AccountingCurrency.USD;
+        }
+        else if (raw.Equals("IQD", StringComparison.OrdinalIgnoreCase)
+                 || raw.Contains("دينار", StringComparison.OrdinalIgnoreCase)
+                 || raw.Equals("د.ع", StringComparison.OrdinalIgnoreCase))
+        {
+            importRow.Currency = AccountingCurrency.IQD;
+            importRow.FxRate = 1m;
+            return;
+        }
+        else
+        {
+            importRow.Errors.Add("العملة غير صالحة (IQD أو USD)");
+            return;
+        }
+
+        if (!TryParseDecimal(fxCell, out var fx) || fx <= 0)
+            importRow.Errors.Add("سعر الصرف مطلوب وصالح عند العملة دولار");
+        else
+            importRow.FxRate = fx;
     }
 
     private static string? NullIfEmpty(string value) =>

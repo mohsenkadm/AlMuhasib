@@ -61,6 +61,8 @@ public class CloudCustomer : CloudBaseEntity
     public string? Notes { get; set; }
     public string? IdNumber { get; set; }
     public string? IdIssuer { get; set; }
+    /// <summary>حد أقصى للدين الآجل (بالدينار).</summary>
+    public decimal? MaxCreditLimit { get; set; }
 }
 public class CloudSupplier : CloudBaseEntity
 {

@@ -427,6 +427,7 @@ internal static class SyncMapper
         d.Notes = c.Notes;
         d.IdNumber = c.IdNumber;
         d.IdIssuer = c.IdIssuer;
+        d.MaxCreditLimit = c.MaxCreditLimit;
         return d;
     }
     private static SupplierSyncDto MapSupplier(Supplier s) { var d = new SupplierSyncDto(); CopyBase(s, d); d.Name = s.Name; d.Phone = s.Phone; d.Address = s.Address; d.Notes = s.Notes; return d; }
@@ -761,7 +762,7 @@ internal static class SyncMapper
         await UpsertSimpleAsync(db, db.Customers, items, (e, d) =>
         {
             e.Name = d.Name; e.Phone = d.Phone; e.Address = d.Address; e.FileNumber = d.FileNumber; e.Notes = d.Notes;
-            e.IdNumber = d.IdNumber; e.IdIssuer = d.IdIssuer;
+            e.IdNumber = d.IdNumber; e.IdIssuer = d.IdIssuer; e.MaxCreditLimit = d.MaxCreditLimit;
         }, ct);
 
     private static async Task<Dictionary<Guid, int>> UpsertSuppliersAsync(AppDbContext db, List<SupplierSyncDto> items, CancellationToken ct) =>

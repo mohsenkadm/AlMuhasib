@@ -1,5 +1,6 @@
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Models;
 
 namespace AlMuhasib.Core;
@@ -36,13 +37,19 @@ public static class InvoiceFilters
         IQueryable<Invoice> invoices,
         IQueryable<InstallmentPlan> plans,
         AccountingCurrency currency = AccountingCurrency.IQD)
-        => invoices.Where(i =>
-            i.Currency == currency &&
-            ((i.InvoiceType == InvoiceType.Sale
-              && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
-             || (i.InvoiceType == InvoiceType.Installment
-                 && !plans.Any(p => p.InvoiceId == i.Id && p.InstallmentType == InstallmentType.OpeningBalance))
-             || i.InvoiceType == InvoiceType.SaleReturn));
+        => ApplyOperationalSalesTypes(invoices, plans)
+            .Where(i => i.Currency == currency);
+
+    /// <summary>إجماليات الربح/المبيعات حسب نطاق العملة — عند All لا يُفلتر بعملة (أفصح *Usd منفصلاً).</summary>
+    public static IQueryable<Invoice> ForProfitAndSalesTotals(
+        IQueryable<Invoice> invoices,
+        IQueryable<InstallmentPlan> plans,
+        ReportCurrencyScope scope)
+    {
+        var q = ApplyOperationalSalesTypes(invoices, plans);
+        var strict = ReportCurrencyScopeHelper.ToStrictFilter(scope);
+        return strict is null ? q : q.Where(i => i.Currency == strict.Value);
+    }
 
     /// <summary>إجماليات المشتريات لعملة واحدة — الافتراضي دينار.</summary>
     public static IQueryable<Invoice> ForPurchasesTotals(
@@ -53,6 +60,28 @@ public static class InvoiceFilters
             ((i.InvoiceType == InvoiceType.Purchase
               && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
              || i.InvoiceType == InvoiceType.PurchaseReturn));
+
+    public static IQueryable<Invoice> ForPurchasesTotals(
+        IQueryable<Invoice> invoices,
+        ReportCurrencyScope scope)
+    {
+        var q = invoices.Where(i =>
+            (i.InvoiceType == InvoiceType.Purchase
+             && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
+            || i.InvoiceType == InvoiceType.PurchaseReturn);
+        var strict = ReportCurrencyScopeHelper.ToStrictFilter(scope);
+        return strict is null ? q : q.Where(i => i.Currency == strict.Value);
+    }
+
+    private static IQueryable<Invoice> ApplyOperationalSalesTypes(
+        IQueryable<Invoice> invoices,
+        IQueryable<InstallmentPlan> plans)
+        => invoices.Where(i =>
+            (i.InvoiceType == InvoiceType.Sale
+             && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
+            || (i.InvoiceType == InvoiceType.Installment
+                && !plans.Any(p => p.InvoiceId == i.Id && p.InstallmentType == InstallmentType.OpeningBalance))
+            || i.InvoiceType == InvoiceType.SaleReturn);
 
     public static decimal SumSignedNet(IEnumerable<Invoice> invoices)
         => invoices.Sum(SignedNetAmount);

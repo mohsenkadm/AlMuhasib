@@ -15,6 +15,10 @@ public class SalesRepCommissionEntryConfiguration : IEntityTypeConfiguration<Sal
         builder.Property(x => x.BaseAmount).HasPrecision(18, 2);
         builder.Property(x => x.CommissionAmount).HasPrecision(18, 2);
         builder.Property(x => x.PaidAmount).HasPrecision(18, 2);
+        builder.Property(x => x.Currency)
+            .HasConversion<string>()
+            .HasMaxLength(10)
+            .HasDefaultValue(AlMuhasib.Core.Enums.AccountingCurrency.IQD);
         builder.Property(x => x.Notes).HasMaxLength(1000);
 
         builder.Ignore(x => x.UnpaidAmount);

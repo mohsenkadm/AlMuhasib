@@ -6,6 +6,7 @@ using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -21,6 +22,7 @@ public partial class EmployeesViewModel : ViewModelBase
     private readonly IUserPreferencesService _userPreferences;
 
     public ObservableCollection<EmployeeListRow> Employees { get; } = [];
+    public ObservableCollection<CurrencyOption> CurrencyOptions { get; } = new(CurrencyOption.All);
 
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private int _currentPage = 1;
@@ -42,6 +44,7 @@ public partial class EmployeesViewModel : ViewModelBase
     [ObservableProperty] private DateTime _editHireDate = DateTime.Today;
     [ObservableProperty] private bool _editIsActive = true;
     [ObservableProperty] private string _editOpeningBalance = string.Empty;
+    [ObservableProperty] private CurrencyOption? _editOpeningCurrencyOption;
     [ObservableProperty] private string _editNotes = string.Empty;
     [ObservableProperty] private string _dialogError = string.Empty;
 
@@ -50,7 +53,7 @@ public partial class EmployeesViewModel : ViewModelBase
 
     [ObservableProperty] private int _activeCount;
     [ObservableProperty] private int _inactiveCount;
-    [ObservableProperty] private decimal _totalAdvances;
+    [ObservableProperty] private string _totalAdvances = "0";
 
     private int? _editingId;
     private System.Timers.Timer? _debounceTimer;
@@ -69,6 +72,7 @@ public partial class EmployeesViewModel : ViewModelBase
         _userPreferences = userPreferences;
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Employees);
         PageTitle = "الموظفون";
+        EditOpeningCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
     }
 
     public override async Task InitializeAsync()
@@ -128,29 +132,35 @@ public partial class EmployeesViewModel : ViewModelBase
         Employees.Clear();
         foreach (var emp in items)
         {
-            var payments = voucherList
-                .Where(v => v.EmployeeId == emp.Id && v.VoucherType == VoucherType.Payment)
-                .Sum(v => v.Amount);
-            var receipts = voucherList
-                .Where(v => v.EmployeeId == emp.Id && v.VoucherType == VoucherType.Receipt)
-                .Sum(v => v.Amount);
-            var balance = EmployeeBalanceHelper.ComputeAdvanceBalance(emp.OpeningBalance, payments, receipts);
+            var balance = ComputeEmployeeBalance(emp, voucherList);
             Employees.Add(new EmployeeListRow(emp, balance));
         }
 
         var all = (await _unitOfWork.Employees.GetAllAsync()).ToList();
         ActiveCount = all.Count(e => e.IsActive);
         InactiveCount = all.Count(e => !e.IsActive);
-        TotalAdvances = all.Sum(emp =>
+
+        decimal totalIqd = 0;
+        decimal totalUsd = 0;
+        foreach (var emp in all)
         {
-            var payments = voucherList
-                .Where(v => v.EmployeeId == emp.Id && v.VoucherType == VoucherType.Payment)
-                .Sum(v => v.Amount);
-            var receipts = voucherList
-                .Where(v => v.EmployeeId == emp.Id && v.VoucherType == VoucherType.Receipt)
-                .Sum(v => v.Amount);
-            return EmployeeBalanceHelper.ComputeAdvanceBalance(emp.OpeningBalance, payments, receipts);
-        });
+            var bal = ComputeEmployeeBalance(emp, voucherList);
+            totalIqd += bal.Iqd;
+            totalUsd += bal.Usd;
+        }
+
+        TotalAdvances = totalUsd == 0
+            ? AccountingCurrencyHelper.Format(totalIqd, AccountingCurrency.IQD)
+            : $"{AccountingCurrencyHelper.Format(totalIqd, AccountingCurrency.IQD)} | {AccountingCurrencyHelper.Format(totalUsd, AccountingCurrency.USD)}";
+    }
+
+    private static DualCurrencyBalance ComputeEmployeeBalance(Employee emp, List<Voucher> voucherList)
+    {
+        var rows = voucherList
+            .Where(v => v.EmployeeId == emp.Id)
+            .Select(v => (v.Currency, v.VoucherType, v.Amount));
+        return EmployeeBalanceHelper.ComputeAdvanceBalances(
+            emp.OpeningBalance, emp.OpeningBalanceCurrency, rows);
     }
 
     partial void OnSearchTextChanged(string value)
@@ -201,6 +211,7 @@ public partial class EmployeesViewModel : ViewModelBase
         EditHireDate = DateTime.Today;
         EditIsActive = true;
         EditOpeningBalance = string.Empty;
+        EditOpeningCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
         EditNotes = string.Empty;
         DialogError = string.Empty;
         IsDialogOpen = true;
@@ -220,7 +231,9 @@ public partial class EmployeesViewModel : ViewModelBase
         EditJobTitle = emp.JobTitle ?? string.Empty;
         EditHireDate = emp.HireDate;
         EditIsActive = emp.IsActive;
-        EditOpeningBalance = emp.OpeningBalance.ToString("0");
+        EditOpeningBalance = emp.OpeningBalance.ToString("0.##");
+        EditOpeningCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == emp.OpeningBalanceCurrency)
+            ?? CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
         EditNotes = emp.Notes ?? string.Empty;
         DialogError = string.Empty;
         IsDialogOpen = true;
@@ -245,6 +258,9 @@ public partial class EmployeesViewModel : ViewModelBase
             }
         }
 
+        var openingCurrency = EditOpeningCurrencyOption?.Currency ?? AccountingCurrency.IQD;
+        opening = AccountingCurrencyHelper.NormalizeAmount(opening, openingCurrency);
+
         DialogError = string.Empty;
         try
         {
@@ -252,7 +268,7 @@ public partial class EmployeesViewModel : ViewModelBase
             {
                 var emp = await _unitOfWork.Employees.GetByIdAsync(_editingId.Value);
                 if (emp is null) return;
-                ApplyFields(emp, opening);
+                ApplyFields(emp, opening, openingCurrency);
                 emp.UpdatedAt = DateTime.UtcNow;
                 emp.UpdatedBy = _currentUserService.Username;
                 _unitOfWork.Employees.Update(emp);
@@ -261,7 +277,7 @@ public partial class EmployeesViewModel : ViewModelBase
             else
             {
                 var emp = new Employee { CreatedBy = _currentUserService.Username };
-                ApplyFields(emp, opening);
+                ApplyFields(emp, opening, openingCurrency);
                 await _unitOfWork.Employees.AddAsync(emp);
                 await _unitOfWork.SaveChangesAsync();
             }
@@ -275,7 +291,7 @@ public partial class EmployeesViewModel : ViewModelBase
         }
     }
 
-    private void ApplyFields(Employee emp, decimal opening)
+    private void ApplyFields(Employee emp, decimal opening, AccountingCurrency openingCurrency)
     {
         emp.Name = EditName.Trim();
         emp.Phone = string.IsNullOrWhiteSpace(EditPhone) ? null : EditPhone.Trim();
@@ -284,6 +300,7 @@ public partial class EmployeesViewModel : ViewModelBase
         emp.HireDate = EditHireDate.Date;
         emp.IsActive = EditIsActive;
         emp.OpeningBalance = opening;
+        emp.OpeningBalanceCurrency = openingCurrency;
         emp.Notes = string.IsNullOrWhiteSpace(EditNotes) ? null : EditNotes.Trim();
     }
 
@@ -334,7 +351,8 @@ public partial class EmployeesViewModel : ViewModelBase
                 المسمى = r.JobTitle ?? "",
                 تاريخ_التعيين = r.HireDate.ToString("yyyy/MM/dd"),
                 الحالة = r.IsActive ? "فعال" : "غير فعال",
-                رصيد_السلفة = r.AdvanceBalance.ToString("N0"),
+                رصيد_السلفة_دينار = r.AdvanceBalanceIqd.ToString("N0"),
+                رصيد_السلفة_دولار = r.AdvanceBalanceUsd.ToString("N2"),
                 ملاحظات = r.Notes ?? ""
             });
 
@@ -362,7 +380,7 @@ public partial class EmployeesViewModel : ViewModelBase
     {
         try
         {
-            var columns = new[] { "الاسم", "الهاتف", "المسمى", "تاريخ التعيين", "الحالة", "رصيد السلفة" };
+            var columns = new[] { "الاسم", "الهاتف", "المسمى", "تاريخ التعيين", "الحالة", "سلفة د.ع", "سلفة $" };
             IList<object[]> rows = Employees.Select(r => new object[]
             {
                 r.Name,
@@ -370,7 +388,8 @@ public partial class EmployeesViewModel : ViewModelBase
                 r.JobTitle ?? "",
                 r.HireDate.ToString("yyyy/MM/dd"),
                 r.IsActive ? "فعال" : "غير فعال",
-                r.AdvanceBalance.ToString("N0")
+                r.AdvanceBalanceIqd.ToString("N0"),
+                r.AdvanceBalanceUsd.ToString("N2")
             }).ToList();
             _exportService.PrintTable("قائمة الموظفين", columns, rows);
         }
@@ -386,10 +405,11 @@ public partial class EmployeesViewModel : ViewModelBase
 
 public sealed class EmployeeListRow
 {
-    public EmployeeListRow(Employee employee, decimal advanceBalance)
+    public EmployeeListRow(Employee employee, DualCurrencyBalance advanceBalance)
     {
         Employee = employee;
-        AdvanceBalance = advanceBalance;
+        AdvanceBalanceIqd = advanceBalance.Iqd;
+        AdvanceBalanceUsd = advanceBalance.Usd;
     }
 
     public Employee Employee { get; }
@@ -402,5 +422,13 @@ public sealed class EmployeeListRow
     public bool IsActive => Employee.IsActive;
     public string? Notes => Employee.Notes;
     public decimal OpeningBalance => Employee.OpeningBalance;
-    public decimal AdvanceBalance { get; }
+    public AccountingCurrency OpeningBalanceCurrency => Employee.OpeningBalanceCurrency;
+    public decimal AdvanceBalanceIqd { get; }
+    public decimal AdvanceBalanceUsd { get; }
+
+    /// <summary>عرض مختصر للجدول — دينار، ويُلحق الدولار إن وُجد.</summary>
+    public string AdvanceBalanceDisplay =>
+        AdvanceBalanceUsd == 0
+            ? AdvanceBalanceIqd.ToString("N0")
+            : $"{AdvanceBalanceIqd:N0} د.ع | {AdvanceBalanceUsd:N2} $";
 }
