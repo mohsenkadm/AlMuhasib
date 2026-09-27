@@ -30,7 +30,12 @@ public interface IInstallmentService
         string? searchTerm = null, IReadOnlyCollection<InstallmentStatus>? statuses = null,
         bool updateOverdueStatuses = true, bool includeCashBox = true);
 
-    Task<(int Count, decimal TotalAmount, decimal PaidAmount, decimal RemainingAmount)> GetInstallmentTotalsAsync(
+    /// <summary>
+    /// مجاميع الأقساط: الحقول الأساسية بالدينار فقط (لا خلط)،
+    /// مع إفصاح دولار منفصل (*Usd).
+    /// </summary>
+    Task<(int Count, decimal TotalAmount, decimal PaidAmount, decimal RemainingAmount,
+        int CountUsd, decimal TotalAmountUsd, decimal PaidAmountUsd, decimal RemainingAmountUsd)> GetInstallmentTotalsAsync(
         InstallmentStatus? status = null, int? customerId = null, string? searchTerm = null,
         IReadOnlyCollection<InstallmentStatus>? statuses = null, bool updateOverdueStatuses = false);
 }

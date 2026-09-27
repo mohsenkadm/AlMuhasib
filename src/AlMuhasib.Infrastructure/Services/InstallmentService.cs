@@ -435,7 +435,8 @@ public class InstallmentService : IInstallmentService
         IQueryable<Installment> itemsQuery = context.Installments
             .AsNoTracking()
             .Where(i => pageIds.Contains(i.Id))
-            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Customer);
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Customer)
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Invoice);
 
         if (includeCashBox)
             itemsQuery = itemsQuery.Include(i => i.CashBox);
@@ -449,7 +450,8 @@ public class InstallmentService : IInstallmentService
         return (items, totalCount);
     }
 
-    public async Task<(int Count, decimal TotalAmount, decimal PaidAmount, decimal RemainingAmount)> GetInstallmentTotalsAsync(
+    public async Task<(int Count, decimal TotalAmount, decimal PaidAmount, decimal RemainingAmount,
+        int CountUsd, decimal TotalAmountUsd, decimal PaidAmountUsd, decimal RemainingAmountUsd)> GetInstallmentTotalsAsync(
         InstallmentStatus? status = null, int? customerId = null, string? searchTerm = null,
         IReadOnlyCollection<InstallmentStatus>? statuses = null, bool updateOverdueStatuses = false)
     {
@@ -459,21 +461,28 @@ public class InstallmentService : IInstallmentService
         await using var context = await _contextFactory.CreateDbContextAsync();
         var query = BuildInstallmentsQuery(context, status, customerId, searchTerm, statuses);
 
-        var agg = await query
-            .Select(i => new { i.Amount, i.PaidAmount, i.RemainingAmount })
-            .GroupBy(_ => 1)
-            .Select(g => new
+        var rows = await query
+            .Select(i => new
             {
-                Count = g.Count(),
-                TotalAmount = g.Sum(x => x.Amount),
-                PaidAmount = g.Sum(x => x.PaidAmount),
-                RemainingAmount = g.Sum(x => x.RemainingAmount)
+                i.Amount,
+                i.PaidAmount,
+                i.RemainingAmount,
+                Currency = i.InstallmentPlan!.Invoice!.Currency
             })
-            .FirstOrDefaultAsync();
+            .ToListAsync();
 
-        return agg is null
-            ? (0, 0m, 0m, 0m)
-            : (agg.Count, agg.TotalAmount, agg.PaidAmount, agg.RemainingAmount);
+        var iqd = rows.Where(x => x.Currency == AccountingCurrency.IQD).ToList();
+        var usd = rows.Where(x => x.Currency == AccountingCurrency.USD).ToList();
+
+        return (
+            iqd.Count,
+            iqd.Sum(x => x.Amount),
+            iqd.Sum(x => x.PaidAmount),
+            iqd.Sum(x => x.RemainingAmount),
+            usd.Count,
+            usd.Sum(x => x.Amount),
+            usd.Sum(x => x.PaidAmount),
+            usd.Sum(x => x.RemainingAmount));
     }
 
     private static IQueryable<Installment> BuildInstallmentsQuery(
@@ -483,8 +492,8 @@ public class InstallmentService : IInstallmentService
         string? searchTerm,
         IReadOnlyCollection<InstallmentStatus>? statuses)
     {
-        var query = context.Installments.AsNoTracking()
-            .Where(i => i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD);
+        // لا نخفي أقساط الدولار — المجاميع تفصل IQD/USD دون خلط
+        var query = context.Installments.AsNoTracking().AsQueryable();
 
         if (statuses is { Count: > 0 })
         {
@@ -577,6 +586,8 @@ public class InstallmentService : IInstallmentService
                 ? notePrefix
                 : $"{notePrefix} | {request.Notes.Trim()}";
 
+            var (currency, fxRate) = await MultiCurrencyFeatureGate.ApplyForWriteAsync(
+                context, request.Currency, request.FxRate, "رصيد افتتاحي أقساط");
             var invoice = new Invoice
             {
                 InvoiceNumber = invoiceNumber,
@@ -584,9 +595,8 @@ public class InstallmentService : IInstallmentService
                 CustomerId = customerId,
                 WarehouseId = warehouse.Id,
                 PaymentMethod = PaymentMethod.Installment,
-                Currency = request.Currency,
-                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
-                    request.Currency, request.FxRate, "رصيد افتتاحي أقساط"),
+                Currency = currency,
+                FxRate = fxRate,
                 TotalAmount = request.TotalAmount,
                 DiscountAmount = 0,
                 NetAmount = request.TotalAmount,

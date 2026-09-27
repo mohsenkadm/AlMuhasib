@@ -20,6 +20,7 @@ public partial class OpeningInstallmentBalanceViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IOpeningInstallmentExcelService _excelService;
+    private readonly IFeatureFlagService _featureFlags;
 
     public ObservableCollection<Customer> Customers { get; } = [];
     public ObservableCollection<Customer> FilteredCustomers { get; } = [];
@@ -44,6 +45,7 @@ public partial class OpeningInstallmentBalanceViewModel : ViewModelBase
     [ObservableProperty] private CurrencyOption? _selectedCurrencyOption;
     [ObservableProperty] private decimal _fxRate = 1m;
     [ObservableProperty] private bool _showFxRateInput;
+    [ObservableProperty] private bool _showMultiCurrency;
 
     public ObservableCollection<CurrencyOption> CurrencyOptions { get; } = new(CurrencyOption.All);
     public string AmountCurrencyLabel =>
@@ -63,12 +65,14 @@ public partial class OpeningInstallmentBalanceViewModel : ViewModelBase
         IInstallmentService installmentService,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        IOpeningInstallmentExcelService excelService)
+        IOpeningInstallmentExcelService excelService,
+        IFeatureFlagService featureFlags)
     {
         _installmentService = installmentService;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _excelService = excelService;
+        _featureFlags = featureFlags;
         PageTitle = "أرصدة الأقساط الافتتاحية";
         SelectedCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
     }
@@ -80,6 +84,7 @@ public partial class OpeningInstallmentBalanceViewModel : ViewModelBase
         try
         {
             LoadPermissions(_currentUserService, "OpeningInstallments");
+            ShowMultiCurrency = _featureFlags.MultiCurrency;
             await LoadCustomersAsync();
             GenerateSchedulePreview();
         }
@@ -224,7 +229,9 @@ public partial class OpeningInstallmentBalanceViewModel : ViewModelBase
 
     private OpeningInstallmentBalanceRequest BuildRequest(int? customerId, string? customerName)
     {
-        var currency = SelectedCurrencyOption?.Currency ?? AccountingCurrency.IQD;
+        var currency = ShowMultiCurrency
+            ? (SelectedCurrencyOption?.Currency ?? AccountingCurrency.IQD)
+            : AccountingCurrency.IQD;
         return new OpeningInstallmentBalanceRequest
         {
             CustomerId = customerId,
@@ -258,7 +265,7 @@ public partial class OpeningInstallmentBalanceViewModel : ViewModelBase
 
     partial void OnSelectedCurrencyOptionChanged(CurrencyOption? value)
     {
-        ShowFxRateInput = value?.Currency == AccountingCurrency.USD;
+        ShowFxRateInput = ShowMultiCurrency && value?.Currency == AccountingCurrency.USD;
         if (value?.Currency == AccountingCurrency.IQD)
             FxRate = 1m;
         OnPropertyChanged(nameof(AmountCurrencyLabel));

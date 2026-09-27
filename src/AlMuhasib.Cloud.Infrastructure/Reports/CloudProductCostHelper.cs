@@ -1,6 +1,7 @@
 using AlMuhasib.Cloud.Core.Entities;
 using AlMuhasib.Cloud.Infrastructure.Data;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using Microsoft.EntityFrameworkCore;
 
 namespace AlMuhasib.Cloud.Infrastructure.Reports;
@@ -66,6 +67,10 @@ public static class CloudProductCostHelper
         return await q.SumAsync(c => (decimal?)c.Amount) ?? 0;
     }
 
+    /// <summary>
+    /// بنود المشتريات لمتوسط التكلفة بالدينار.
+    /// مشتريات USD تُحوَّل عبر FxRate اللقطة على الفاتورة داخل COGS فقط.
+    /// </summary>
     public static async Task<IReadOnlyDictionary<int, List<CloudInvoiceItem>>> GetPurchaseItemsByProductAsync(
         CloudDbContext context,
         IEnumerable<int>? productIds = null)
@@ -73,7 +78,6 @@ public static class CloudProductCostHelper
         var query = context.InvoiceItems
             .Include(ii => ii.Invoice)
             .Where(ii => ii.ProductId != null
-                         && ii.Invoice!.Currency == AccountingCurrency.IQD
                          && (ii.Invoice.InvoiceType == InvoiceType.Purchase
                              || ii.Invoice.InvoiceType == InvoiceType.PurchaseReturn));
 
@@ -88,20 +92,35 @@ public static class CloudProductCostHelper
         var items = await query.ToListAsync();
         return items
             .GroupBy(ii => ii.ProductId!.Value)
-            .ToDictionary(g => g.Key, g => g.Select(ToSignedPurchaseItem).ToList());
+            .ToDictionary(g => g.Key, g => g.Select(ToSignedPurchaseItemInIqd).ToList());
     }
 
-    private static CloudInvoiceItem ToSignedPurchaseItem(CloudInvoiceItem item)
+    public static CloudInvoiceItem ToSignedPurchaseItemInIqd(CloudInvoiceItem item)
     {
-        if (item.Invoice?.InvoiceType != InvoiceType.PurchaseReturn)
+        var isReturn = item.Invoice?.InvoiceType == InvoiceType.PurchaseReturn;
+        var isUsd = item.Invoice?.Currency == AccountingCurrency.USD;
+
+        if (!isReturn && !isUsd)
             return item;
+
+        var qty = isReturn ? -Math.Abs(item.Quantity) : item.Quantity;
+        var total = isReturn ? -Math.Abs(item.TotalPrice) : item.TotalPrice;
+        var unit = item.UnitPrice;
+
+        if (isUsd)
+        {
+            var fx = item.Invoice!.FxRate;
+            AccountingCurrencyRules.EnsureValidFxRate(AccountingCurrency.USD, fx, "تكلفة مخزون من فاتورة دولار");
+            total = AccountingCurrencyHelper.RoundIqd(total * fx);
+            unit = AccountingCurrencyHelper.RoundIqd(unit * fx);
+        }
 
         return new CloudInvoiceItem
         {
             ProductId = item.ProductId,
-            Quantity = -Math.Abs(item.Quantity),
-            TotalPrice = -Math.Abs(item.TotalPrice),
-            UnitPrice = item.UnitPrice,
+            Quantity = qty,
+            TotalPrice = total,
+            UnitPrice = unit,
             Invoice = item.Invoice
         };
     }

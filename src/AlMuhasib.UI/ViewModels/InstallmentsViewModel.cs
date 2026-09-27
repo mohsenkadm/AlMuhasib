@@ -540,8 +540,11 @@ public partial class InstallmentsViewModel : ViewModelBase
 
             var totals = await _installmentService.GetInstallmentTotalsAsync(
                 InstallmentStatus.Overdue, updateOverdueStatuses: false);
+            var overdueNote = totals.CountUsd > 0
+                ? $"إجمالي الأقساط المتأخرة (د.ع) — إفصاح $: {totals.RemainingAmountUsd:N2}"
+                : "إجمالي الأقساط المتأخرة";
             OverdueFooter.SetFromTotals(totals.Count, totals.TotalAmount, totals.PaidAmount, totals.RemainingAmount,
-                "إجمالي الأقساط المتأخرة");
+                overdueNote);
         }
         catch (Exception ex)
         {
@@ -837,8 +840,11 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
         var totals = await _installmentService.GetInstallmentTotalsAsync(
             InstallmentStatus.Paid, searchTerm: search, updateOverdueStatuses: false);
+        var paidNote = totals.CountUsd > 0
+            ? $"إجمالي الأقساط المسددة (د.ع: {totals.Count:N0}) — إفصاح $: {totals.PaidAmountUsd:N2}"
+            : $"إجمالي الأقساط المسددة ({totals.Count:N0})";
         PaidFooter.SetFromTotals(totals.Count, totals.TotalAmount, totals.PaidAmount, totals.RemainingAmount,
-            $"إجمالي الأقساط المسددة ({totals.Count:N0})");
+            paidNote);
     }
 
     [RelayCommand]
@@ -925,7 +931,8 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
     private bool _unpaidOverdueSynced;
     private string? _unpaidTotalsCacheKey;
-    private (int Count, decimal TotalAmount, decimal PaidAmount, decimal RemainingAmount)? _unpaidTotalsCache;
+    private (int Count, decimal TotalAmount, decimal PaidAmount, decimal RemainingAmount,
+        int CountUsd, decimal TotalAmountUsd, decimal PaidAmountUsd, decimal RemainingAmountUsd)? _unpaidTotalsCache;
 
     [RelayCommand]
     private async Task LoadUnpaidAsync()
@@ -1028,8 +1035,11 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         }
 
         var cached = _unpaidTotalsCache.Value;
+        var unpaidNote = cached.CountUsd > 0
+            ? $"إجمالي غير المسدد (د.ع: {cached.Count:N0}) — إفصاح $: {cached.RemainingAmountUsd:N2}"
+            : $"إجمالي الأقساط غير المسددة ({cached.Count:N0})";
         UnpaidFooter.SetFromTotals(cached.Count, cached.TotalAmount, cached.PaidAmount, cached.RemainingAmount,
-            $"إجمالي الأقساط غير المسددة ({cached.Count:N0})");
+            unpaidNote);
     }
 
     [RelayCommand]

@@ -242,4 +242,31 @@ public partial class MainWindowViewModel
             PackIconKind.CurrencyUsd,
             activateIfExists: true);
     }
+
+    /// <summary>
+    /// يزامن FeatureFlags.MultiCurrency من BusinessSettings عند بدء الجلسة
+    /// حتى لا تبقى الواجهة ON بينما قاعدة البيانات OFF (أو العكس).
+    /// </summary>
+    private async Task SyncMultiCurrencyFlagFromBusinessSettingsAsync()
+    {
+        try
+        {
+            var settingsService = _serviceProvider.GetService<IBusinessSettingsService>();
+            var featureFlags = _serviceProvider.GetService<IFeatureFlagService>();
+            if (settingsService is null || featureFlags is null)
+                return;
+
+            var settings = await settingsService.GetOrCreateAsync();
+            if (_userPreferences.Current.FeatureFlags.MultiCurrency == settings.MultiCurrencyEnabled)
+                return;
+
+            _userPreferences.Update(p => p.FeatureFlags.MultiCurrency = settings.MultiCurrencyEnabled);
+            featureFlags.NotifyFlagsChanged();
+            ApplyMenuVisibilityFromPreferences();
+        }
+        catch
+        {
+            // قاعدة البيانات قد لا تكون جاهزة بعد؛ نبقى على التفضيلات المحلية
+        }
+    }
 }

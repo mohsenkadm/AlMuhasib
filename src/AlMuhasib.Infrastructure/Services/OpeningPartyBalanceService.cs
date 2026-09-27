@@ -350,6 +350,8 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
             var warehouse = await context.Warehouses.OrderBy(w => w.Id).FirstOrDefaultAsync()
                 ?? throw new InvalidOperationException("يجب إنشاء مخزن واحد على الأقل قبل إدخال الأرصدة الافتتاحية");
 
+            var (currency, fxRate) = await MultiCurrencyFeatureGate.ApplyForWriteAsync(
+                context, request.Currency, request.FxRate, "رصيد افتتاحي عميل");
             var invoiceNumber = await InvoiceNumberHelper.GenerateNextAsync(context, InvoiceType.Sale);
             var invoice = new Invoice
             {
@@ -358,9 +360,8 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
                 CustomerId = customerId,
                 WarehouseId = warehouse.Id,
                 PaymentMethod = PaymentMethod.Credit,
-                Currency = request.Currency,
-                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
-                    request.Currency, request.FxRate, "رصيد افتتاحي عميل"),
+                Currency = currency,
+                FxRate = fxRate,
                 TotalAmount = request.Amount,
                 DiscountAmount = 0,
                 NetAmount = request.Amount,
@@ -419,6 +420,8 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
             var warehouse = await context.Warehouses.OrderBy(w => w.Id).FirstOrDefaultAsync()
                 ?? throw new InvalidOperationException("يجب إنشاء مخزن واحد على الأقل قبل إدخال الأرصدة الافتتاحية");
 
+            var (currency, fxRate) = await MultiCurrencyFeatureGate.ApplyForWriteAsync(
+                context, request.Currency, request.FxRate, "رصيد افتتاحي مورد");
             var invoiceNumber = await InvoiceNumberHelper.GenerateNextAsync(context, InvoiceType.Purchase);
             var invoice = new Invoice
             {
@@ -427,9 +430,8 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
                 SupplierId = supplierId,
                 WarehouseId = warehouse.Id,
                 PaymentMethod = PaymentMethod.Credit,
-                Currency = request.Currency,
-                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
-                    request.Currency, request.FxRate, "رصيد افتتاحي مورد"),
+                Currency = currency,
+                FxRate = fxRate,
                 TotalAmount = request.Amount,
                 DiscountAmount = 0,
                 NetAmount = request.Amount,
