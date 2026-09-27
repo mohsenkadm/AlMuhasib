@@ -40,12 +40,24 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _serialNumbers;
     [ObservableProperty] private bool _productPricingEnabled;
     [ObservableProperty] private bool _updateProductPriceOnPurchase;
+    [ObservableProperty] private bool _updateSalePriceOnPurchase;
     [ObservableProperty] private bool _addMissingProductsOnPurchase;
+    [ObservableProperty] private bool _purchaseExpenses;
+    [ObservableProperty] private bool _allocatePurchaseExpensesToProducts;
+    [ObservableProperty] private bool _whatsAppApiMessaging;
+    [ObservableProperty] private WhatsAppApiProvider _whatsAppApiProvider = WhatsAppApiProvider.UltraMsg;
+    [ObservableProperty] private string _whatsAppApiBaseUrl = string.Empty;
+    [ObservableProperty] private string _whatsAppApiKey = string.Empty;
+    [ObservableProperty] private string _whatsAppApiInstanceId = string.Empty;
+    [ObservableProperty] private string _whatsAppApiSenderId = string.Empty;
     [ObservableProperty] private bool _productDiscountEnabled;
     [ObservableProperty] private bool _loyaltySystem;
     [ObservableProperty] private bool _productOffers;
     [ObservableProperty] private bool _salesRepresentatives;
     [ObservableProperty] private bool _damageInvoices;
+
+    public WhatsAppApiProvider[] WhatsAppApiProviders { get; } =
+        [WhatsAppApiProvider.UltraMsg, WhatsAppApiProvider.MetaCloud, WhatsAppApiProvider.CustomWebhook];
 
     [ObservableProperty] private bool _templateMobileShop;
     [ObservableProperty] private bool _templateClothing;
@@ -73,7 +85,9 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             AutoBackupEnabled, PurchaseReturns, SalesReturns, WarehouseTransfers, UnitsOfMeasure, TransportFees,
             MultiCurrency, WarehouseInvoiceAndDriver, MenuWeight,
             ExpiryTracking, SerialNumbers, ProductPricingEnabled, UpdateProductPriceOnPurchase,
-            AddMissingProductsOnPurchase, ProductDiscountEnabled, LoyaltySystem, ProductOffers, SalesRepresentatives,
+            UpdateSalePriceOnPurchase, AddMissingProductsOnPurchase, PurchaseExpenses,
+            AllocatePurchaseExpensesToProducts, WhatsAppApiMessaging,
+            ProductDiscountEnabled, LoyaltySystem, ProductOffers, SalesRepresentatives,
             DamageInvoices,
             TemplateMobileShop, TemplateClothing,
             TemplateConstruction, TemplatePharmacy, CarShowroom, SettleCreditInvoicesInReports,
@@ -150,7 +164,16 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         SerialNumbers = p.FeatureFlags.SerialNumbers;
         ProductPricingEnabled = p.FeatureFlags.ProductPricingEnabled;
         UpdateProductPriceOnPurchase = p.FeatureFlags.UpdateProductPriceOnPurchase;
+        UpdateSalePriceOnPurchase = p.FeatureFlags.UpdateSalePriceOnPurchase;
         AddMissingProductsOnPurchase = p.FeatureFlags.AddMissingProductsOnPurchase;
+        PurchaseExpenses = p.FeatureFlags.PurchaseExpenses;
+        AllocatePurchaseExpensesToProducts = p.FeatureFlags.AllocatePurchaseExpensesToProducts && PurchaseExpenses;
+        WhatsAppApiMessaging = p.FeatureFlags.WhatsAppApiMessaging;
+        WhatsAppApiProvider = p.WhatsAppApi.Provider;
+        WhatsAppApiBaseUrl = p.WhatsAppApi.BaseUrl ?? string.Empty;
+        WhatsAppApiKey = p.WhatsAppApi.ApiKey ?? string.Empty;
+        WhatsAppApiInstanceId = p.WhatsAppApi.InstanceId ?? string.Empty;
+        WhatsAppApiSenderId = p.WhatsAppApi.SenderId ?? string.Empty;
         ProductDiscountEnabled = p.FeatureFlags.ProductDiscountEnabled;
         LoyaltySystem = p.FeatureFlags.LoyaltySystem;
         ProductOffers = p.FeatureFlags.ProductOffers;
@@ -190,7 +213,16 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnSerialNumbersChanged(bool value) => NotifyFeaturesCount();
     partial void OnProductPricingEnabledChanged(bool value) => NotifyFeaturesCount();
     partial void OnUpdateProductPriceOnPurchaseChanged(bool value) => NotifyFeaturesCount();
+    partial void OnUpdateSalePriceOnPurchaseChanged(bool value) => NotifyFeaturesCount();
     partial void OnAddMissingProductsOnPurchaseChanged(bool value) => NotifyFeaturesCount();
+    partial void OnPurchaseExpensesChanged(bool value)
+    {
+        if (!value)
+            AllocatePurchaseExpensesToProducts = false;
+        NotifyFeaturesCount();
+    }
+    partial void OnAllocatePurchaseExpensesToProductsChanged(bool value) => NotifyFeaturesCount();
+    partial void OnWhatsAppApiMessagingChanged(bool value) => NotifyFeaturesCount();
     partial void OnProductDiscountEnabledChanged(bool value) => NotifyFeaturesCount();
     partial void OnLoyaltySystemChanged(bool value) => NotifyFeaturesCount();
     partial void OnProductOffersChanged(bool value) => NotifyFeaturesCount();
@@ -242,7 +274,16 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.FeatureFlags.SerialNumbers = SerialNumbers;
             p.FeatureFlags.ProductPricingEnabled = ProductPricingEnabled;
             p.FeatureFlags.UpdateProductPriceOnPurchase = UpdateProductPriceOnPurchase;
+            p.FeatureFlags.UpdateSalePriceOnPurchase = UpdateSalePriceOnPurchase;
             p.FeatureFlags.AddMissingProductsOnPurchase = AddMissingProductsOnPurchase;
+            p.FeatureFlags.PurchaseExpenses = PurchaseExpenses;
+            p.FeatureFlags.AllocatePurchaseExpensesToProducts = PurchaseExpenses && AllocatePurchaseExpensesToProducts;
+            p.FeatureFlags.WhatsAppApiMessaging = WhatsAppApiMessaging;
+            p.WhatsAppApi.Provider = WhatsAppApiProvider;
+            p.WhatsAppApi.BaseUrl = string.IsNullOrWhiteSpace(WhatsAppApiBaseUrl) ? null : WhatsAppApiBaseUrl.Trim();
+            p.WhatsAppApi.ApiKey = string.IsNullOrWhiteSpace(WhatsAppApiKey) ? null : WhatsAppApiKey.Trim();
+            p.WhatsAppApi.InstanceId = string.IsNullOrWhiteSpace(WhatsAppApiInstanceId) ? null : WhatsAppApiInstanceId.Trim();
+            p.WhatsAppApi.SenderId = string.IsNullOrWhiteSpace(WhatsAppApiSenderId) ? null : WhatsAppApiSenderId.Trim();
             p.FeatureFlags.ProductDiscountEnabled = ProductDiscountEnabled;
             p.FeatureFlags.LoyaltySystem = LoyaltySystem;
             p.FeatureFlags.ProductOffers = ProductOffers;

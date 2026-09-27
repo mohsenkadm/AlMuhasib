@@ -22,5 +22,6 @@ public interface IProductPriceService
     Task<IReadOnlyList<ProductPrice>> GetByProductIdAsync(int productId);
     Task<IReadOnlyList<ProductPrice>> GetByProductIdsAsync(IEnumerable<int> productIds);
     Task UpdatePurchasePriceAsync(int productId, int pricingTypeId, decimal purchasePrice);
+    Task UpdatePricesOnPurchaseAsync(int productId, int pricingTypeId, decimal? purchasePrice, decimal? salePrice);
     Task<bool> ExistsAsync(int productId, int pricingTypeId, int? excludeId = null);
 }

@@ -42,6 +42,7 @@ public partial class InvoiceItemRow : ObservableObject
         PricingTypeId = value.PricingTypeId;
         PricingTypeName = value.Name;
         UnitPrice = value.Price;
+        SalePrice = value.SalePrice;
     }
 
     /// <summary>تعيين خيار التسعير دون إعادة كتابة سعر الوحدة (مثلاً عند استعادة سطر موجود).</summary>
@@ -87,6 +88,10 @@ public partial class InvoiceItemRow : ObservableObject
 
     [ObservableProperty]
     private decimal _unitPrice;
+
+    /// <summary>سعر البيع المعروض في فاتورة المشتريات عند تفعيل تحديث سعر البيع.</summary>
+    [ObservableProperty]
+    private decimal _salePrice;
 
     [ObservableProperty]
     private decimal _totalPrice;

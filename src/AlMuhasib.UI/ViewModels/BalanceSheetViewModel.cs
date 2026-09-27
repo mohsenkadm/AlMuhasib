@@ -53,6 +53,7 @@ public partial class BalanceSheetViewModel : ViewModelBase
     [ObservableProperty] private decimal _customerDebts;
     [ObservableProperty] private decimal _inventoryValue;
     [ObservableProperty] private decimal _installmentReceivables;
+    [ObservableProperty] private decimal _employeeAdvances;
     [ObservableProperty] private decimal _assetsTotal;
 
     // إفصاح دولار — لا يُدمج في مجاميع الميزانية بالدينار
@@ -112,6 +113,7 @@ public partial class BalanceSheetViewModel : ViewModelBase
             CustomerDebts = result.CustomerDebts;
             InventoryValue = result.InventoryValue;
             InstallmentReceivables = result.InstallmentReceivables;
+            EmployeeAdvances = result.EmployeeAdvances;
             AssetsTotal = result.AssetsTotal;
 
             CashBoxesTotalUsd = result.CashBoxesTotalUsd;
@@ -189,6 +191,7 @@ public partial class BalanceSheetViewModel : ViewModelBase
         rows.Add(new object[] { "المدينون (ديون العملاء)", CustomerDebts });
         rows.Add(new object[] { "قيمة مواد المخزون", InventoryValue });
         rows.Add(new object[] { "المبالغ المطلوبة (أقساط)", InstallmentReceivables });
+        rows.Add(new object[] { "سلف الموظفين", EmployeeAdvances });
         rows.Add(new object[] { "إجمالي الموجودات", AssetsTotal });
         if (ShowUsdDisclosure)
         {

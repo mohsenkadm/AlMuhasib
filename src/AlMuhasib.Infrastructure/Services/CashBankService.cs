@@ -636,7 +636,12 @@ public class CashBankService : ICashBankService
             {
                 case VoucherType.Receipt:
                     await AdjustCashBoxBalance(context, voucher.CashBoxId, voucher.Amount, username);
-                    if (voucher.InstallmentId.HasValue)
+                    if (voucher.EmployeeId.HasValue)
+                    {
+                        await EnsureEmployeeExistsAsync(context, voucher.EmployeeId.Value);
+                        // قبض من موظف = تخفيض سلفة (يُحسب من مجموع السندات)
+                    }
+                    else if (voucher.InstallmentId.HasValue)
                         await ApplyAmountToInstallmentAsync(context, voucher, username, adjustCash: false);
                     else if (voucher.InvoiceId.HasValue)
                         await ApplyAmountToCreditInvoiceAsync(context, voucher, username);
@@ -645,6 +650,8 @@ public class CashBankService : ICashBankService
                     break;
 
                 case VoucherType.DebtReceipt:
+                    if (voucher.EmployeeId.HasValue)
+                        throw new InvalidOperationException("سند قبض الدين لا يُستخدم مع الموظف — استخدم سند قبض عادي");
                     await AdjustCashBoxBalance(context, voucher.CashBoxId, voucher.Amount, username);
                     if (voucher.InstallmentId.HasValue)
                         await ApplyAmountToInstallmentAsync(context, voucher, username, adjustCash: false);
@@ -656,7 +663,12 @@ public class CashBankService : ICashBankService
 
                 case VoucherType.Payment:
                     await ValidateAndDeductCashBox(context, voucher.CashBoxId, voucher.Amount, username);
-                    if (voucher.InvoiceId.HasValue)
+                    if (voucher.EmployeeId.HasValue)
+                    {
+                        await EnsureEmployeeExistsAsync(context, voucher.EmployeeId.Value);
+                        // دفع لموظف = زيادة سلفة (يُحسب من مجموع السندات)
+                    }
+                    else if (voucher.InvoiceId.HasValue)
                         await ApplyAmountToPurchaseCreditInvoiceAsync(context, voucher, username);
                     else if (voucher.SupplierId.HasValue)
                         await ApplyPaymentToPurchaseInvoicesAsync(context, voucher, username);
@@ -767,7 +779,11 @@ public class CashBankService : ICashBankService
 
             if (voucher.VoucherType is VoucherType.Receipt or VoucherType.DebtReceipt)
             {
-                if (voucher.InstallmentId.HasValue)
+                if (voucher.EmployeeId.HasValue)
+                {
+                    // لا تطبيق على فواتير — عكس النقدية يكفي لإرجاع أثر السلفة
+                }
+                else if (voucher.InstallmentId.HasValue)
                     await ReverseInstallmentApplicationAsync(context, voucher, username);
                 else if (voucher.InvoiceId.HasValue)
                     await ReverseCreditInvoiceApplicationAsync(context, voucher, username);
@@ -776,7 +792,11 @@ public class CashBankService : ICashBankService
             }
             else if (voucher.VoucherType == VoucherType.Payment)
             {
-                if (voucher.InvoiceId.HasValue)
+                if (voucher.EmployeeId.HasValue)
+                {
+                    // لا تطبيق على فواتير مورد
+                }
+                else if (voucher.InvoiceId.HasValue)
                     await ReverseCreditInvoiceApplicationAsync(context, voucher, username);
                 else if (voucher.SupplierId.HasValue && CustomerBalanceHelper.IsDebtReceiptApplied(voucher.Notes))
                     await ReverseFifoSupplierApplicationAsync(context, voucher, username);
@@ -897,6 +917,7 @@ public class CashBankService : ICashBankService
             .Include(v => v.Customer)
             .Include(v => v.Supplier)
             .Include(v => v.Investor)
+            .Include(v => v.Employee)
             .Include(v => v.CashBox)
             .Include(v => v.BankAccount)
             .Include(v => v.Invoice)
@@ -911,6 +932,7 @@ public class CashBankService : ICashBankService
                 (v.Customer != null && v.Customer.Name.Contains(searchTerm)) ||
                 (v.Supplier != null && v.Supplier.Name.Contains(searchTerm)) ||
                 (v.Investor != null && v.Investor.Name.Contains(searchTerm)) ||
+                (v.Employee != null && v.Employee.Name.Contains(searchTerm)) ||
                 (v.Notes != null && v.Notes.Contains(searchTerm)));
 
         var totalCount = await query.CountAsync();
@@ -1615,11 +1637,19 @@ public class CashBankService : ICashBankService
     private static string GetVoucherTypeName(VoucherType type) => type switch
     {
         VoucherType.Receipt => "قبض",
-        VoucherType.Payment => "صرف",
+        VoucherType.Payment => "دفع",
         VoucherType.BankReceipt => "قبض مصرفي",
         VoucherType.InvestorDeposit => "إيداع مستثمر",
         VoucherType.InvestorWithdrawal => "سحب مستثمر",
         VoucherType.DebtReceipt => "قبض دين",
         _ => "سند"
     };
+
+    private static async Task EnsureEmployeeExistsAsync(AppDbContext context, int employeeId)
+    {
+        var exists = await context.Employees.AsNoTracking()
+            .AnyAsync(e => e.Id == employeeId && !e.IsDeleted);
+        if (!exists)
+            throw new InvalidOperationException("الموظف غير موجود");
+    }
 }

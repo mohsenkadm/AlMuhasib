@@ -38,6 +38,7 @@ public class UserAppPreferences
     public bool SoundEnabled { get; set; } = true;
 
     public BusinessFeatureFlags FeatureFlags { get; set; } = new();
+    public WhatsAppApiSettings WhatsAppApi { get; set; } = new();
     public BackupPreferences Backup { get; set; } = new();
     public ReminderPreferences Reminders { get; set; } = new();
 

@@ -25,6 +25,7 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<Product>? _products;
     private IRepository<Customer>? _customers;
     private IRepository<Driver>? _drivers;
+    private IRepository<Employee>? _employees;
     private IRepository<SalesRepresentative>? _salesRepresentatives;
     private IRepository<SalesRepCommissionRule>? _salesRepCommissionRules;
     private IRepository<SalesRepCommissionEntry>? _salesRepCommissionEntries;
@@ -63,6 +64,7 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<Product> Products => _products ??= new Repository<Product>(_contextFactory, GetActiveContext);
     public IRepository<Customer> Customers => _customers ??= new Repository<Customer>(_contextFactory, GetActiveContext);
     public IRepository<Driver> Drivers => _drivers ??= new Repository<Driver>(_contextFactory, GetActiveContext);
+    public IRepository<Employee> Employees => _employees ??= new Repository<Employee>(_contextFactory, GetActiveContext);
     public IRepository<SalesRepresentative> SalesRepresentatives =>
         _salesRepresentatives ??= new Repository<SalesRepresentative>(_contextFactory, GetActiveContext);
     public IRepository<SalesRepCommissionRule> SalesRepCommissionRules =>

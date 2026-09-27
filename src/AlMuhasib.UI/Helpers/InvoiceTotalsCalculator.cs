@@ -13,7 +13,7 @@ public static class InvoiceTotalsCalculator
         IInvoiceService invoiceService,
         InvoiceType invoiceType)
     {
-        var result = Compute(lineTotals, invoiceService, invoiceType, invoiceDiscountAmount: 0m, transportFeeAmount: 0m);
+        var result = Compute(lineTotals, invoiceService, invoiceType, invoiceDiscountAmount: 0m, transportFeeAmount: 0m, purchaseExpenseAmount: 0m);
         return (result.Subtotal, result.Rounding, result.GrandTotal);
     }
 
@@ -22,7 +22,7 @@ public static class InvoiceTotalsCalculator
         IInvoiceService invoiceService,
         InvoiceType invoiceType,
         decimal invoiceDiscountAmount)
-        => Compute(lineTotals, invoiceService, invoiceType, invoiceDiscountAmount, transportFeeAmount: 0m);
+        => Compute(lineTotals, invoiceService, invoiceType, invoiceDiscountAmount, transportFeeAmount: 0m, purchaseExpenseAmount: 0m);
 
     public static (decimal Subtotal, decimal InvoiceDiscount, decimal Rounding, decimal GrandTotal) Compute(
         IEnumerable<decimal> lineTotals,
@@ -30,12 +30,22 @@ public static class InvoiceTotalsCalculator
         InvoiceType invoiceType,
         decimal invoiceDiscountAmount,
         decimal transportFeeAmount)
+        => Compute(lineTotals, invoiceService, invoiceType, invoiceDiscountAmount, transportFeeAmount, purchaseExpenseAmount: 0m);
+
+    public static (decimal Subtotal, decimal InvoiceDiscount, decimal Rounding, decimal GrandTotal) Compute(
+        IEnumerable<decimal> lineTotals,
+        IInvoiceService invoiceService,
+        InvoiceType invoiceType,
+        decimal invoiceDiscountAmount,
+        decimal transportFeeAmount,
+        decimal purchaseExpenseAmount)
     {
         var sub = lineTotals.Sum();
         var discount = Math.Clamp(invoiceDiscountAmount, 0m, Math.Max(0m, sub));
         var netBeforeRounding = sub - discount;
         var rounding = invoiceService.CalculateRounding(netBeforeRounding, invoiceType);
         var transport = Math.Max(0m, transportFeeAmount);
-        return (sub, discount, rounding, netBeforeRounding + rounding + transport);
+        var purchaseExpense = Math.Max(0m, purchaseExpenseAmount);
+        return (sub, discount, rounding, netBeforeRounding + rounding + transport + purchaseExpense);
     }
 }

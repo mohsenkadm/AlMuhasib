@@ -181,6 +181,24 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     [ObservableProperty]
     private bool _showDocumentLinkFields;
 
+    [ObservableProperty]
+    private bool _showPartyTypeField;
+
+    [ObservableProperty]
+    private VoucherPartyKind _selectedPartyKind = VoucherPartyKind.Customer;
+
+    [ObservableProperty]
+    private bool _showEmployeeField;
+
+    [ObservableProperty]
+    private Employee? _selectedEmployee;
+
+    [ObservableProperty]
+    private string _employeeSearchText = string.Empty;
+
+    public ObservableCollection<Employee> Employees { get; } = [];
+    public ObservableCollection<Employee> FilteredEmployees { get; } = [];
+
     // ── Optional document links (Receipt / DebtReceipt) ──
     public ObservableCollection<Invoice> OpenCreditInvoices { get; } = [];
     public ObservableCollection<Installment> OpenInstallments { get; } = [];
@@ -215,7 +233,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     public List<VoucherTypeItem> VoucherTypes { get; } =
     [
         new("سند قبض", VoucherType.Receipt),
-        new("سند صرف", VoucherType.Payment),
+        new("سند دفع", VoucherType.Payment),
         new("سند قبض مصرفي", VoucherType.BankReceipt),
         new("إيداع مستثمر", VoucherType.InvestorDeposit),
         new("سحب مستثمر", VoucherType.InvestorWithdrawal),
@@ -226,12 +244,14 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     [
         new("الكل", null),
         new("سند قبض", VoucherType.Receipt),
-        new("سند صرف", VoucherType.Payment),
+        new("سند دفع", VoucherType.Payment),
         new("سند قبض مصرفي", VoucherType.BankReceipt),
         new("إيداع مستثمر", VoucherType.InvestorDeposit),
         new("سحب مستثمر", VoucherType.InvestorWithdrawal),
         new("سند قبض دين", VoucherType.DebtReceipt),
     ];
+
+    public ObservableCollection<VoucherPartyTypeItem> AvailablePartyTypes { get; } = [];
 
     // ══════════════════════════════════════════════════════
     // INITIALIZE
@@ -288,6 +308,15 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
 
         await RefreshInvestorsAsync();
 
+        var employees = await _unitOfWork.Employees.GetAllAsync();
+        Employees.Clear();
+        FilteredEmployees.Clear();
+        foreach (var e in employees.Where(x => x.IsActive).OrderBy(x => x.Name))
+        {
+            Employees.Add(e);
+            FilteredEmployees.Add(e);
+        }
+
         if (CashBoxes.Count > 0)
             SelectedCashBox = CashBoxes[0];
     }
@@ -316,21 +345,78 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
 
     private void UpdateFieldVisibility(VoucherType type)
     {
-        ShowCustomerField = type is VoucherType.Receipt or VoucherType.DebtReceipt;
-        ShowOptionalCustomerField = type is VoucherType.Payment;
-        ShowCustomerPickerField = ShowCustomerField || ShowOptionalCustomerField;
-        IsCustomerRequired = ShowCustomerField;
-        CustomerFieldHint = ShowOptionalCustomerField
-            ? "الزبون (اختياري — ابحث بالاسم أو الهاتف أو رقم العميل أو المعرف)"
-            : "العميل (ابحث بالاسم أو الهاتف أو رقم العميل أو المعرف)";
-        ShowSupplierField = type is VoucherType.Payment;
+        ShowPartyTypeField = type is VoucherType.Receipt or VoucherType.Payment or VoucherType.DebtReceipt;
         ShowInvestorField = type is VoucherType.InvestorDeposit or VoucherType.InvestorWithdrawal;
         ShowBankField = type is VoucherType.BankReceipt;
         ShowBankFeesField = type is VoucherType.BankReceipt;
-        RefreshDocumentLinkVisibility();
 
-        // Clear unrelated selections
-        if (!ShowCustomerField && !ShowOptionalCustomerField)
+        RebuildAvailablePartyTypes(type);
+        ApplyPartyKindVisibility();
+
+        if (!ShowInvestorField)
+        {
+            SelectedInvestor = null;
+            InvestorSearchText = string.Empty;
+            InvestorComboBoxFilter.Apply(Investors, FilteredInvestors, null);
+        }
+
+        if (!ShowBankField) SelectedBankAccount = null;
+        if (!ShowBankFeesField) BankFees = 0;
+
+        UpdateNetAmountText();
+    }
+
+    private void RebuildAvailablePartyTypes(VoucherType type)
+    {
+        AvailablePartyTypes.Clear();
+        switch (type)
+        {
+            case VoucherType.Receipt:
+                AvailablePartyTypes.Add(new("زبون", VoucherPartyKind.Customer));
+                AvailablePartyTypes.Add(new("موظف", VoucherPartyKind.Employee));
+                break;
+            case VoucherType.Payment:
+                AvailablePartyTypes.Add(new("زبون", VoucherPartyKind.Customer));
+                AvailablePartyTypes.Add(new("مورد", VoucherPartyKind.Supplier));
+                AvailablePartyTypes.Add(new("موظف", VoucherPartyKind.Employee));
+                break;
+            case VoucherType.DebtReceipt:
+                AvailablePartyTypes.Add(new("زبون", VoucherPartyKind.Customer));
+                break;
+            case VoucherType.InvestorDeposit:
+            case VoucherType.InvestorWithdrawal:
+                AvailablePartyTypes.Add(new("مستثمر", VoucherPartyKind.Investor));
+                break;
+        }
+
+        if (AvailablePartyTypes.Count > 0 &&
+            AvailablePartyTypes.All(p => p.Kind != SelectedPartyKind))
+            SelectedPartyKind = AvailablePartyTypes[0].Kind;
+    }
+
+    partial void OnSelectedPartyKindChanged(VoucherPartyKind value) => ApplyPartyKindVisibility();
+
+    private void ApplyPartyKindVisibility()
+    {
+        var type = SelectedVoucherType;
+        var kind = SelectedPartyKind;
+
+        ShowCustomerField = type is VoucherType.Receipt or VoucherType.DebtReceipt
+                            && kind == VoucherPartyKind.Customer;
+        ShowOptionalCustomerField = type == VoucherType.Payment && kind == VoucherPartyKind.Customer;
+        ShowCustomerPickerField = ShowCustomerField || ShowOptionalCustomerField;
+        IsCustomerRequired = ShowCustomerField || (type == VoucherType.Payment && kind == VoucherPartyKind.Customer);
+        CustomerFieldHint = ShowOptionalCustomerField && !IsCustomerRequired
+            ? "الزبون (ابحث بالاسم أو الهاتف أو رقم العميل أو المعرف)"
+            : "العميل (ابحث بالاسم أو الهاتف أو رقم العميل أو المعرف)";
+
+        ShowSupplierField = type == VoucherType.Payment && kind == VoucherPartyKind.Supplier;
+        ShowEmployeeField = type is VoucherType.Receipt or VoucherType.Payment
+                            && kind == VoucherPartyKind.Employee;
+        ShowInvestorField = type is VoucherType.InvestorDeposit or VoucherType.InvestorWithdrawal
+                            || kind == VoucherPartyKind.Investor;
+
+        if (!ShowCustomerPickerField)
         {
             SelectedCustomer = null;
             CustomerSearchText = string.Empty;
@@ -344,21 +430,41 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             SupplierComboBoxFilter.Apply(Suppliers, FilteredSuppliers, null);
         }
 
-        if (!ShowInvestorField)
+        if (!ShowEmployeeField)
         {
-            SelectedInvestor = null;
-            InvestorSearchText = string.Empty;
-            InvestorComboBoxFilter.Apply(Investors, FilteredInvestors, null);
+            SelectedEmployee = null;
+            EmployeeSearchText = string.Empty;
+            FilteredEmployees.Clear();
+            foreach (var e in Employees)
+                FilteredEmployees.Add(e);
         }
 
-        if (!ShowBankField) SelectedBankAccount = null;
-        if (!ShowBankFeesField) BankFees = 0;
+        RefreshDocumentLinkVisibility();
         if (!ShowDocumentLinkFields)
             ClearDocumentLinks();
         else
             _ = LoadDocumentLinksAsync();
+    }
 
-        UpdateNetAmountText();
+    partial void OnEmployeeSearchTextChanged(string value)
+    {
+        if (SelectedEmployee is not null && SelectedEmployee.Name == value)
+            return;
+
+        SelectedEmployee = null;
+        FilteredEmployees.Clear();
+        var term = value?.Trim() ?? string.Empty;
+        foreach (var e in Employees.Where(x =>
+                     string.IsNullOrEmpty(term) ||
+                     x.Name.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                     (x.Phone != null && x.Phone.Contains(term))))
+            FilteredEmployees.Add(e);
+    }
+
+    partial void OnSelectedEmployeeChanged(Employee? value)
+    {
+        if (value is not null)
+            EmployeeSearchText = value.Name;
     }
 
     private void RefreshDocumentLinkVisibility()
@@ -687,6 +793,16 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             BeautifulMessageDialog.ShowWarning("يرجى اختيار المستثمر");
             return;
         }
+        if (ShowSupplierField && SelectedSupplier is null)
+        {
+            BeautifulMessageDialog.ShowWarning("يرجى اختيار المورد");
+            return;
+        }
+        if (ShowEmployeeField && SelectedEmployee is null)
+        {
+            BeautifulMessageDialog.ShowWarning("يرجى اختيار الموظف");
+            return;
+        }
         if (ShowBankField && SelectedBankAccount is null)
         {
             BeautifulMessageDialog.ShowWarning("يرجى اختيار المصرف");
@@ -723,14 +839,10 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
                 BankFees = BankFees,
                 CashBoxId = SelectedCashBox.Id,
                 BankAccountId = SelectedBankAccount?.Id,
-                CustomerId = SelectedVoucherType switch
-                {
-                    VoucherType.Receipt or VoucherType.DebtReceipt => SelectedCustomer?.Id,
-                    VoucherType.Payment => SelectedCustomer?.Id,
-                    _ => null
-                },
-                SupplierId = SelectedVoucherType == VoucherType.Payment ? SelectedSupplier?.Id : null,
-                InvestorId = SelectedInvestor?.Id,
+                CustomerId = ShowCustomerPickerField ? SelectedCustomer?.Id : null,
+                SupplierId = ShowSupplierField ? SelectedSupplier?.Id : null,
+                EmployeeId = ShowEmployeeField ? SelectedEmployee?.Id : null,
+                InvestorId = ShowInvestorField ? SelectedInvestor?.Id : null,
                 InvoiceId = ShowDocumentLinkFields ? SelectedLinkedInvoice?.Id : null,
                 InstallmentId = ShowDocumentLinkFields ? SelectedLinkedInstallment?.Id : null,
                 Date = VoucherDate,
@@ -749,11 +861,16 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             CustomerSearchText = string.Empty;
             SelectedSupplier = null;
             SupplierSearchText = string.Empty;
+            SelectedEmployee = null;
+            EmployeeSearchText = string.Empty;
             SelectedInvestor = null;
             InvestorSearchText = string.Empty;
             CustomerComboBoxFilter.Apply(Customers, FilteredCustomers, null);
             SupplierComboBoxFilter.Apply(Suppliers, FilteredSuppliers, null);
             InvestorComboBoxFilter.Apply(Investors, FilteredInvestors, null);
+            FilteredEmployees.Clear();
+            foreach (var e in Employees)
+                FilteredEmployees.Add(e);
             SelectedBankAccount = null;
             ClearDocumentLinks();
             VoucherDate = DateTime.Now;
@@ -981,13 +1098,21 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     private static string GetVoucherTypeName(VoucherType type) => type switch
     {
         VoucherType.Receipt => "سند قبض",
-        VoucherType.Payment => "سند صرف",
+        VoucherType.Payment => "سند دفع",
         VoucherType.BankReceipt => "سند قبض مصرفي",
         VoucherType.InvestorDeposit => "إيداع مستثمر",
         VoucherType.InvestorWithdrawal => "سحب مستثمر",
         VoucherType.DebtReceipt => "سند قبض دين",
         _ => "سند"
     };
+}
+
+public enum VoucherPartyKind
+{
+    Customer,
+    Supplier,
+    Investor,
+    Employee
 }
 
 /// <summary>Helper record for voucher type ComboBox items.</summary>
@@ -998,6 +1123,11 @@ public record VoucherTypeItem(string Name, VoucherType Type)
 
 /// <summary>Filter option for voucher list type ComboBox (includes "الكل").</summary>
 public record VoucherFilterTypeOption(string Name, VoucherType? Type)
+{
+    public override string ToString() => Name;
+}
+
+public record VoucherPartyTypeItem(string Name, VoucherPartyKind Kind)
 {
     public override string ToString() => Name;
 }

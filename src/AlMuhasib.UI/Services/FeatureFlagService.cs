@@ -21,7 +21,11 @@ public sealed class FeatureFlagService : IFeatureFlagService
     public bool SerialNumbers => Current.SerialNumbers;
     public bool ProductPricingEnabled => Current.ProductPricingEnabled;
     public bool UpdateProductPriceOnPurchase => Current.UpdateProductPriceOnPurchase;
+    public bool UpdateSalePriceOnPurchase => Current.UpdateSalePriceOnPurchase;
     public bool AddMissingProductsOnPurchase => Current.AddMissingProductsOnPurchase;
+    public bool PurchaseExpenses => Current.PurchaseExpenses;
+    public bool AllocatePurchaseExpensesToProducts => Current.AllocatePurchaseExpensesToProducts;
+    public bool WhatsAppApiMessaging => Current.WhatsAppApiMessaging;
     public bool ProductDiscountEnabled => Current.ProductDiscountEnabled;
     public bool LoyaltySystem => Current.LoyaltySystem;
     public bool ProductOffers => Current.ProductOffers;

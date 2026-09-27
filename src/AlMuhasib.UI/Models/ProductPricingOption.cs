@@ -8,6 +8,8 @@ public partial class ProductPricingOption : ObservableObject
     public int PricingTypeId { get; init; }
     public string Name { get; init; } = string.Empty;
     public decimal Price { get; init; }
+    public decimal SalePrice { get; init; }
+    public decimal PurchasePrice { get; init; }
     public bool IsDefault { get; init; }
 
     public string Display => $"{Name} — {Price:N0}";
