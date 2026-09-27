@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>تفاصيل الفاتورة</summary>
-public class InvoiceItem : BaseEntity
+public class InvoiceItem : BranchScopedEntity
 {
     public int InvoiceId { get; set; }
     public int? ProductId { get; set; }

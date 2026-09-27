@@ -11,11 +11,16 @@ public class ProductService : IProductService
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IBranchContext _branchContext;
 
-    public ProductService(IDbContextFactory<AppDbContext> contextFactory, ICurrentUserService currentUserService)
+    public ProductService(
+        IDbContextFactory<AppDbContext> contextFactory,
+        ICurrentUserService currentUserService,
+        IBranchContext branchContext)
     {
         _contextFactory = contextFactory;
         _currentUserService = currentUserService;
+        _branchContext = branchContext;
     }
 
     public async Task<Product> CreateAsync(Product product)
@@ -24,13 +29,14 @@ public class ProductService : IProductService
         var username = _currentUserService.Username;
         var name = product.Name.Trim();
         var barcode = string.IsNullOrWhiteSpace(product.Barcode) ? null : product.Barcode.Trim();
+        var branchId = _branchContext.RequireWriteBranchId();
 
         Product? softDeleted = null;
         if (barcode is not null)
         {
             softDeleted = await context.Products
                 .IgnoreQueryFilters()
-                .Where(p => p.IsDeleted && p.Barcode == barcode)
+                .Where(p => p.IsDeleted && p.Barcode == barcode && p.BranchId == branchId)
                 .OrderByDescending(p => p.DeletedAt)
                 .FirstOrDefaultAsync();
         }
@@ -40,7 +46,7 @@ public class ProductService : IProductService
         {
             softDeleted = await context.Products
                 .IgnoreQueryFilters()
-                .Where(p => p.IsDeleted && p.Name == name)
+                .Where(p => p.IsDeleted && p.Name == name && p.BranchId == branchId)
                 .OrderByDescending(p => p.DeletedAt)
                 .FirstOrDefaultAsync();
         }

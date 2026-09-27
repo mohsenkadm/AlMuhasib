@@ -17,7 +17,7 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -35,6 +35,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<int?>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -50,6 +53,10 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("DeviceInfo")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<int>("EntityId")
                         .HasColumnType("int");
 
@@ -57,6 +64,10 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("IpAddress")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -91,6 +102,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("SyncId");
@@ -120,6 +133,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -127,6 +143,13 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("IQD");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
@@ -165,11 +188,88 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .IsUnique()
                         .HasFilter("[AccountNumber] IS NOT NULL AND [IsDeleted] = 0");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("SyncId");
 
                     b.ToTable("BankAccounts", (string)null);
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.Branch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsMain")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("IsDeleted");
+
+                    b.HasIndex("IsMain");
+
+                    b.HasIndex("SyncId");
+
+                    b.ToTable("Branches", (string)null);
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.BusinessSettings", b =>
@@ -179,6 +279,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -200,6 +303,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.Property<DateTime?>("LockedThroughDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("MultiCurrencyEnabled")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("PeriodLockEnabled")
                         .HasColumnType("bit");
@@ -228,6 +334,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("SyncId");
@@ -246,6 +354,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -295,6 +406,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("Date");
 
                     b.HasIndex("IsDeleted");
@@ -316,6 +429,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -323,6 +439,13 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("IQD");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
@@ -356,6 +479,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
 
                     b.HasIndex("IsDeleted");
 
@@ -372,6 +497,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -412,6 +540,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
 
                     b.HasIndex("IsDeleted");
 
@@ -492,6 +622,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<string>("Address")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -576,6 +709,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("FileNumber")
                         .IsUnique()
                         .HasFilter("[FileNumber] IS NOT NULL AND [IsDeleted] = 0");
@@ -598,6 +733,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -652,6 +790,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("IsDeleted");
@@ -668,6 +808,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -728,6 +871,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("CustomerId")
                         .IsUnique()
                         .HasFilter("[IsDeleted] = 0");
@@ -750,6 +895,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<string>("Address")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -800,6 +948,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("Name");
@@ -821,18 +971,23 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("CreatedBy")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime?>("DeletedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("DeletedBy")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<DateTime>("HireDate")
                         .HasColumnType("datetime2");
@@ -877,15 +1032,22 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("UpdatedBy")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsActive");
+
+                    b.HasIndex("IsDeleted");
 
                     b.HasIndex("Name");
 
                     b.HasIndex("Phone");
+
+                    b.HasIndex("SyncId");
 
                     b.ToTable("Employees", (string)null);
                 });
@@ -897,6 +1059,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -941,6 +1106,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("EntityKind")
                         .IsUnique()
                         .HasFilter("[IsDeleted] = 0");
@@ -950,6 +1117,76 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("SyncId");
 
                     b.ToTable("EntityCustomFieldSettings", (string)null);
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.ExchangeRate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("RateDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<decimal>("UsdToIqd")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("IsDeleted");
+
+                    b.HasIndex("RateDate");
+
+                    b.HasIndex("SyncId");
+
+                    b.ToTable("ExchangeRates", (string)null);
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.Expense", b =>
@@ -964,6 +1201,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<int>("CashBoxId")
                         .HasColumnType("int");
 
@@ -974,6 +1214,13 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("IQD");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
@@ -987,6 +1234,10 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.Property<int>("ExpenseTypeId")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("FxRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -1013,6 +1264,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("CashBoxId");
 
                     b.HasIndex("Date");
@@ -1033,6 +1286,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1075,6 +1331,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("Name")
@@ -1097,6 +1355,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("CashBoxId")
                         .HasColumnType("int");
@@ -1159,6 +1420,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("CashBoxId");
 
                     b.HasIndex("DueDate");
@@ -1181,6 +1444,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("CollectionCommissionRate")
                         .HasColumnType("decimal(18,2)");
@@ -1263,6 +1529,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("FileNumber");
@@ -1283,6 +1551,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1345,6 +1616,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("Name");
@@ -1365,6 +1638,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1417,6 +1693,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("Date");
 
                     b.HasIndex("InvestorId");
@@ -1437,6 +1715,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<int?>("CashBoxId")
                         .HasColumnType("int");
@@ -1460,6 +1741,13 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("CreditDueDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("IQD");
+
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
@@ -1479,6 +1767,10 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.Property<int?>("DriverId")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("FxRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<DateTime?>("HeldAt")
                         .HasColumnType("datetime2");
@@ -1532,6 +1824,10 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<decimal>("PurchaseExpenseAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int?>("RelatedInvoiceId")
                         .HasColumnType("int");
 
@@ -1571,10 +1867,6 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("PurchaseExpenseAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -1587,17 +1879,13 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("CashBoxId");
 
                     b.HasIndex("CustomerId");
 
-                    b.HasIndex("Date");
-
                     b.HasIndex("DriverId");
-
-                    b.HasIndex("InvoiceNumber")
-                        .IsUnique()
-                        .HasFilter("[IsDeleted] = 0");
 
                     b.HasIndex("InvoiceType");
 
@@ -1613,6 +1901,12 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasIndex("WarehouseId");
 
+                    b.HasIndex("BranchId", "Date");
+
+                    b.HasIndex("BranchId", "InvoiceNumber")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
                     b.ToTable("Invoices", (string)null);
                 });
 
@@ -1623,6 +1917,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1706,6 +2003,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("InvoiceId");
 
                     b.HasIndex("IsDeleted");
@@ -1730,6 +2029,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("BalanceAfter")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BranchId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
@@ -1797,6 +2099,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("InvoiceId");
 
                     b.HasIndex("IsDeleted");
@@ -1817,6 +2121,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1882,94 +2189,13 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("SyncId");
 
                     b.ToTable("LoyaltySettings", (string)null);
-                });
-
-            modelBuilder.Entity("AlMuhasib.Core.Entities.ProductOffer", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime?>("DeletedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("DeletedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("GiftProductId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("GiftQuantity")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
-
-                    b.Property<Guid>("SyncId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("TriggerProductId")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("TriggerQuantity")
-                        .HasPrecision(18, 3)
-                        .HasColumnType("decimal(18,3)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("GiftProductId");
-
-                    b.HasIndex("IsActive");
-
-                    b.HasIndex("IsDeleted");
-
-                    b.HasIndex("SyncId");
-
-                    b.HasIndex("TriggerProductId");
-
-                    b.ToTable("ProductOffers", (string)null);
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.PackagingType", b =>
@@ -1979,6 +2205,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2026,6 +2255,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
 
                     b.HasIndex("IsDeleted");
 
@@ -2130,6 +2361,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -2177,6 +2411,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("Name");
@@ -2199,10 +2435,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("CompanyName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<string>("CompanyIdIssuer")
                         .IsRequired()
@@ -2213,6 +2447,11 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2301,6 +2540,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("SyncId");
@@ -2320,14 +2561,17 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CarModel")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<int>("CategoryId")
                         .HasColumnType("int");
 
                     b.Property<string>("ChassisNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("CarModel")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -2428,6 +2672,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .IsUnique()
                         .HasFilter("[Barcode] IS NOT NULL AND [IsDeleted] = 0");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("CategoryId");
 
                     b.HasIndex("IsDeleted");
@@ -2450,6 +2696,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<string>("BatchNumber")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2500,6 +2749,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("ProductId");
@@ -2518,6 +2769,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<string>("ColorName")
                         .IsRequired()
@@ -2566,6 +2820,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("SyncId");
@@ -2575,6 +2831,94 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.ToTable("ProductColors", (string)null);
                 });
 
+            modelBuilder.Entity("AlMuhasib.Core.Entities.ProductOffer", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("GiftProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("GiftQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("TriggerProductId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TriggerQuantity")
+                        .HasPrecision(18, 3)
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("GiftProductId");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
+
+                    b.HasIndex("TriggerProductId");
+
+                    b.ToTable("ProductOffers", (string)null);
+                });
+
             modelBuilder.Entity("AlMuhasib.Core.Entities.ProductPrice", b =>
                 {
                     b.Property<int>("Id")
@@ -2582,6 +2926,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2633,6 +2980,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("PricingTypeId");
@@ -2653,6 +3002,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2707,6 +3059,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("ProductId");
@@ -2725,6 +3079,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2773,6 +3130,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("SyncId");
@@ -2789,6 +3148,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2839,6 +3201,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("ProductSizeId");
@@ -2859,6 +3223,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("ConversionFactor")
                         .HasPrecision(18, 4)
@@ -2914,6 +3281,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("PackagingTypeId");
@@ -2932,6 +3301,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -2980,6 +3352,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("Date");
 
                     b.HasIndex("IsDeleted");
@@ -3000,6 +3374,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -3047,6 +3424,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("InvestorId");
 
                     b.HasIndex("IsDeleted");
@@ -3069,6 +3448,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CollectionDate")
                         .HasColumnType("datetime2");
@@ -3138,6 +3520,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("CollectionDate");
 
                     b.HasIndex("CustomerId");
@@ -3166,6 +3550,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<decimal>("BaseAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<decimal>("CommissionAmount")
                         .HasPrecision(18, 2)
@@ -3237,6 +3624,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("InvoiceId");
@@ -3261,6 +3650,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<string>("CommissionType")
                         .IsRequired()
@@ -3327,6 +3719,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("IsDeleted");
@@ -3349,6 +3743,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -3403,6 +3800,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("SalesRepresentativeId");
@@ -3421,6 +3820,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<string>("CompensationNotes")
                         .HasMaxLength(1000)
@@ -3489,6 +3891,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsActive");
 
                     b.HasIndex("IsDeleted");
@@ -3513,6 +3917,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Property<string>("Address")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -3567,6 +3974,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("Name");
@@ -3607,6 +4016,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -3614,6 +4026,13 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("IQD");
 
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
@@ -3632,6 +4051,10 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<decimal>("FxRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -3665,6 +4088,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
 
                     b.HasIndex("Date");
 
@@ -3752,6 +4177,36 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.UserBranch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("UserId", "BranchId")
+                        .IsUnique();
+
+                    b.ToTable("UserBranches", (string)null);
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.UserLoginLog", b =>
@@ -4000,6 +4455,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
                     b.Property<int>("CashBoxId")
                         .HasColumnType("int");
 
@@ -4010,6 +4468,13 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)")
+                        .HasDefaultValue("IQD");
 
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
@@ -4026,6 +4491,10 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.Property<int?>("EmployeeId")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("FxRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
 
                     b.Property<int?>("InstallmentId")
                         .HasColumnType("int");
@@ -4059,11 +4528,11 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
-                    b.Property<Guid>("SyncId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<int?>("SupplierId")
                         .HasColumnType("int");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -4086,11 +4555,11 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasIndex("BankAccountId");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("CashBoxId");
 
                     b.HasIndex("CustomerId");
-
-                    b.HasIndex("Date");
 
                     b.HasIndex("EmployeeId");
 
@@ -4104,14 +4573,17 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasIndex("IsReconciled");
 
-                    b.HasIndex("SyncId");
-
                     b.HasIndex("SupplierId");
 
-                    b.HasIndex("VoucherNumber")
-                        .IsUnique();
+                    b.HasIndex("SyncId");
 
                     b.HasIndex("VoucherType");
+
+                    b.HasIndex("BranchId", "Date");
+
+                    b.HasIndex("BranchId", "VoucherNumber")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Vouchers", (string)null);
                 });
@@ -4123,6 +4595,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4169,6 +4644,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("Name")
@@ -4187,6 +4664,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4246,6 +4726,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("ProductId");
@@ -4265,6 +4747,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4320,6 +4805,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("FromWarehouseId");
 
                     b.HasIndex("IsDeleted");
@@ -4338,6 +4825,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -4385,6 +4875,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BranchId");
+
                     b.HasIndex("IsDeleted");
 
                     b.HasIndex("ProductId");
@@ -4398,49 +4890,185 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.AuditLog", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("AlMuhasib.Core.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.BankAccount", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.BusinessSettings", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.CapitalEntry", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.CashBox", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.Category", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.Customer", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.SalesRepresentative", "SalesRepresentative")
                         .WithMany("Customers")
                         .HasForeignKey("SalesRepresentativeId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Branch");
 
                     b.Navigation("SalesRepresentative");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.CustomerAttachment", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Customer", "Customer")
                         .WithMany("Attachments")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.CustomerLoyaltyAccount", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.Driver", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.Employee", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.EntityCustomFieldSettings", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.ExchangeRate", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.Expense", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.CashBox", "CashBox")
                         .WithMany()
                         .HasForeignKey("CashBoxId")
@@ -4453,13 +5081,32 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("CashBox");
 
                     b.Navigation("ExpenseType");
                 });
 
+            modelBuilder.Entity("AlMuhasib.Core.Entities.ExpenseType", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
             modelBuilder.Entity("AlMuhasib.Core.Entities.Installment", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.CashBox", "CashBox")
                         .WithMany()
                         .HasForeignKey("CashBoxId")
@@ -4471,6 +5118,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("CashBox");
 
                     b.Navigation("InstallmentPlan");
@@ -4478,6 +5127,12 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.InstallmentPlan", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Customer", "Customer")
                         .WithMany("InstallmentPlans")
                         .HasForeignKey("CustomerId")
@@ -4490,24 +5145,51 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Customer");
 
                     b.Navigation("Invoice");
                 });
 
+            modelBuilder.Entity("AlMuhasib.Core.Entities.Investor", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
             modelBuilder.Entity("AlMuhasib.Core.Entities.InvestorTransaction", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Investor", "Investor")
                         .WithMany("Transactions")
                         .HasForeignKey("InvestorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Investor");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.Invoice", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.CashBox", "CashBox")
                         .WithMany()
                         .HasForeignKey("CashBoxId")
@@ -4544,6 +5226,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("CashBox");
 
                     b.Navigation("Customer");
@@ -4561,6 +5245,12 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.InvoiceItem", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Invoice", "Invoice")
                         .WithMany("Items")
                         .HasForeignKey("InvoiceId")
@@ -4582,6 +5272,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasForeignKey("WarehouseId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Invoice");
 
                     b.Navigation("PricingType");
@@ -4591,27 +5283,14 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Navigation("Warehouse");
                 });
 
-            modelBuilder.Entity("AlMuhasib.Core.Entities.ProductOffer", b =>
-                {
-                    b.HasOne("AlMuhasib.Core.Entities.Product", "GiftProduct")
-                        .WithMany()
-                        .HasForeignKey("GiftProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("AlMuhasib.Core.Entities.Product", "TriggerProduct")
-                        .WithMany()
-                        .HasForeignKey("TriggerProductId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("GiftProduct");
-
-                    b.Navigation("TriggerProduct");
-                });
-
             modelBuilder.Entity("AlMuhasib.Core.Entities.LoyaltyPointTransaction", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
@@ -4623,9 +5302,33 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Customer");
 
                     b.Navigation("Invoice");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.LoyaltySettings", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.PackagingType", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.Permission", b =>
@@ -4639,19 +5342,55 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("AlMuhasib.Core.Entities.PricingType", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.PrintBrandingSettings", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
             modelBuilder.Entity("AlMuhasib.Core.Entities.Product", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Category", "Category")
                         .WithMany("Products")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Category");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.ProductBatch", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
@@ -4664,6 +5403,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Product");
 
                     b.Navigation("Warehouse");
@@ -4671,17 +5412,58 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.ProductColor", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.ProductOffer", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AlMuhasib.Core.Entities.Product", "GiftProduct")
+                        .WithMany()
+                        .HasForeignKey("GiftProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AlMuhasib.Core.Entities.Product", "TriggerProduct")
+                        .WithMany()
+                        .HasForeignKey("TriggerProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("GiftProduct");
+
+                    b.Navigation("TriggerProduct");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.ProductPrice", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.PricingType", "PricingType")
                         .WithMany("ProductPrices")
                         .HasForeignKey("PricingTypeId")
@@ -4694,6 +5476,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("PricingType");
 
                     b.Navigation("Product");
@@ -4701,6 +5485,12 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.ProductSerial", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
@@ -4712,6 +5502,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasForeignKey("WarehouseId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Product");
 
                     b.Navigation("Warehouse");
@@ -4719,17 +5511,31 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.ProductSize", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Product");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.ProductSizeStock", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
@@ -4748,6 +5554,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Product");
 
                     b.Navigation("ProductSize");
@@ -4757,6 +5565,12 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.ProductUnit", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.PackagingType", "PackagingType")
                         .WithMany("ProductUnits")
                         .HasForeignKey("PackagingTypeId")
@@ -4768,13 +5582,32 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("PackagingType");
 
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("AlMuhasib.Core.Entities.ProfitDistribution", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
             modelBuilder.Entity("AlMuhasib.Core.Entities.ProfitDistributionDetail", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Investor", "Investor")
                         .WithMany("ProfitDistributionDetails")
                         .HasForeignKey("InvestorId")
@@ -4787,6 +5620,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Investor");
 
                     b.Navigation("ProfitDistribution");
@@ -4794,6 +5629,12 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.SalesRepCollection", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
@@ -4811,6 +5652,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Customer");
 
                     b.Navigation("Invoice");
@@ -4820,6 +5663,12 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.SalesRepCommissionEntry", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
@@ -4837,6 +5686,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Customer");
 
                     b.Navigation("Invoice");
@@ -4846,6 +5697,12 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.SalesRepCommissionRule", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
@@ -4862,6 +5719,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Customer");
 
                     b.Navigation("Product");
@@ -4871,13 +5730,73 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.SalesRepTarget", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.SalesRepresentative", "SalesRepresentative")
                         .WithMany("Targets")
                         .HasForeignKey("SalesRepresentativeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("SalesRepresentative");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.SalesRepresentative", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.Supplier", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.Transfer", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.UserBranch", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany("UserBranches")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AlMuhasib.Core.Entities.User", "User")
+                        .WithMany("UserBranches")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.UserLoginLog", b =>
@@ -4932,6 +5851,12 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasForeignKey("BankAccountId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.CashBox", "CashBox")
                         .WithMany()
                         .HasForeignKey("CashBoxId")
@@ -4970,6 +5895,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
                     b.Navigation("BankAccount");
 
+                    b.Navigation("Branch");
+
                     b.Navigation("CashBox");
 
                     b.Navigation("Customer");
@@ -4985,8 +5912,25 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Navigation("Supplier");
                 });
 
+            modelBuilder.Entity("AlMuhasib.Core.Entities.Warehouse", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+                });
+
             modelBuilder.Entity("AlMuhasib.Core.Entities.WarehouseStock", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Product", "Product")
                         .WithMany("WarehouseStocks")
                         .HasForeignKey("ProductId")
@@ -4999,6 +5943,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Product");
 
                     b.Navigation("Warehouse");
@@ -5006,6 +5952,12 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.WarehouseTransfer", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Warehouse", "FromWarehouse")
                         .WithMany()
                         .HasForeignKey("FromWarehouseId")
@@ -5018,6 +5970,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("FromWarehouse");
 
                     b.Navigation("ToWarehouse");
@@ -5025,6 +5979,12 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.WarehouseTransferItem", b =>
                 {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("AlMuhasib.Core.Entities.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
@@ -5037,9 +5997,16 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("Branch");
+
                     b.Navigation("Product");
 
                     b.Navigation("WarehouseTransfer");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.Branch", b =>
+                {
+                    b.Navigation("UserBranches");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.Category", b =>
@@ -5061,6 +6028,11 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
             modelBuilder.Entity("AlMuhasib.Core.Entities.Driver", b =>
                 {
                     b.Navigation("Invoices");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.Employee", b =>
+                {
+                    b.Navigation("Vouchers");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.ExpenseType", b =>
@@ -5087,11 +6059,6 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Navigation("InstallmentPlans");
 
                     b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("AlMuhasib.Core.Entities.Employee", b =>
-                {
-                    b.Navigation("Vouchers");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.PackagingType", b =>
@@ -5152,6 +6119,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Navigation("Permissions");
 
                     b.Navigation("Tasks");
+
+                    b.Navigation("UserBranches");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.Warehouse", b =>

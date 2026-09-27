@@ -3,7 +3,7 @@ using AlMuhasib.Core.Enums;
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>المنتجات</summary>
-public class Product : BaseEntity
+public class Product : BranchScopedEntity
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }

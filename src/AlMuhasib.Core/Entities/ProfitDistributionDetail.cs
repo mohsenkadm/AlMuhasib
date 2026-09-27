@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>تفاصيل توزيع الأرباح لكل مستثمر</summary>
-public class ProfitDistributionDetail : BaseEntity
+public class ProfitDistributionDetail : BranchScopedEntity
 {
     public int ProfitDistributionId { get; set; }
     public int InvestorId { get; set; }

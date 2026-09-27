@@ -4,6 +4,7 @@ import 'package:get/get.dart' hide Trans;
 
 import '../../../core/getx/app_services.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/router/app_routes.dart';
 
 class LoginController extends GetxController {
   final formKey = GlobalKey<FormState>();
@@ -21,11 +22,17 @@ class LoginController extends GetxController {
     errorMessage.value = null;
 
     try {
-      await AppServices.auth.login(
+      final response = await AppServices.auth.login(
         usernameController.text.trim(),
         passwordController.text,
       );
-      Get.offAllNamed(AppServices.prefs.launchRoute);
+      if (response.requiresBranchSelection ||
+          (response.allowedBranches.length > 1 &&
+              AppServices.prefs.branchId == null)) {
+        Get.offAllNamed(AppRoutes.branchSelect);
+      } else {
+        Get.offAllNamed(AppServices.prefs.launchRoute);
+      }
     } on ApiException catch (e) {
       errorMessage.value = mapApiErrorCode(e.code).tr();
     } catch (_) {

@@ -10,18 +10,71 @@ namespace AlMuhasib.Infrastructure.Data;
 
 public class AppDbContext : DbContext
 {
+    /// <summary>Fail-closed when no branch is bound for branch-scoped entities.</summary>
+    public const int UnsetBranchId = -1;
+
     private readonly ICurrentUserService? _currentUserService;
+    private readonly IBranchContext? _branchContext;
 
     /// <summary>يُفعّل أثناء تطبيق Pull لتجنب استبدال طوابع التحديث من السحابة.</summary>
     public bool IsApplyingSyncPull { get; set; }
 
-    public AppDbContext(DbContextOptions<AppDbContext> options, ICurrentUserService? currentUserService = null)
+    /// <summary>تعطيل فلتر الفرع مؤقتاً (مزامنة / ترحيل / صيانة).</summary>
+    public bool BypassBranchFilter { get; set; }
+
+    public AppDbContext(
+        DbContextOptions<AppDbContext> options,
+        ICurrentUserService? currentUserService = null,
+        IBranchContext? branchContext = null)
         : base(options)
     {
         _currentUserService = currentUserService;
+        _branchContext = branchContext;
     }
 
+    /// <summary>Bypass فقط (مزامنة/صيانة) — لا يشمل AllBranches.</summary>
+    public bool IsBypassBranchFilterActive => BypassBranchFilter || IsApplyingSyncPull;
+
+    /// <summary>وضع التقارير عبر الفروع المسموحة فقط.</summary>
+    public bool IsAllBranchesFilterActive =>
+        !IsBypassBranchFilterActive && _branchContext?.IsAllBranchesMode == true;
+
+    /// <summary>
+    /// فرع واحد للفلتر. في AllBranches يُستخدم AllowedBranchIdsForFilter بدلًا منه.
+    /// </summary>
+    public int CurrentBranchIdForFilter
+    {
+        get
+        {
+            if (IsBypassBranchFilterActive || IsAllBranchesFilterActive)
+                return UnsetBranchId;
+            return _branchContext?.CurrentBranchId ?? UnsetBranchId;
+        }
+    }
+
+    /// <summary>
+    /// الفروع المسموحة في وضع AllBranches. فارغ أو [-1] = لا بيانات (fail-closed).
+    /// لا يُستخدم Suppress الكامل أبدًا لـ AllBranches — يمنع تسريب فروع غير مسموحة.
+    /// </summary>
+    public int[] AllowedBranchIdsForFilter
+    {
+        get
+        {
+            if (!IsAllBranchesFilterActive)
+                return [];
+            var ids = _branchContext?.AllowedBranchIds;
+            if (ids is null || ids.Count == 0)
+                return [UnsetBranchId];
+            return ids.ToArray();
+        }
+    }
+
+    /// <summary>true فقط لـ Bypass/SyncPull — ليس لـ AllBranches.</summary>
+    public bool SuppressBranchIdMatch => IsBypassBranchFilterActive;
+
     // DbSets
+    public DbSet<Branch> Branches => Set<Branch>();
+    public DbSet<UserBranch> UserBranches => Set<UserBranch>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<Category> Categories => Set<Category>();
@@ -88,17 +141,43 @@ public class AppDbContext : DbContext
             typeof(AppDbContext).Assembly,
             type => type.Namespace == "AlMuhasib.Infrastructure.Data.Configurations");
 
-        // Apply global query filter (IsDeleted == false) on every entity that inherits BaseEntity
+        // Soft-delete filter (+ BranchId for branch-scoped entities)
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             if (!typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
                 continue;
 
             var parameter = Expression.Parameter(entityType.ClrType, "e");
-            var property = Expression.Property(parameter, nameof(BaseEntity.IsDeleted));
-            var filter = Expression.Lambda(Expression.Equal(property, Expression.Constant(false)), parameter);
+            var isDeleted = Expression.Property(parameter, nameof(BaseEntity.IsDeleted));
+            Expression body = Expression.Equal(isDeleted, Expression.Constant(false));
 
-            modelBuilder.Entity(entityType.ClrType).HasQueryFilter(filter);
+            if (typeof(IBranchEntity).IsAssignableFrom(entityType.ClrType))
+            {
+                // Bypass → allow; AllBranches → BranchId ∈ AllowedBranchIds; else BranchId == Current
+                var branchId = Expression.Property(parameter, nameof(IBranchEntity.BranchId));
+                var self = Expression.Constant(this);
+
+                var suppress = Expression.Property(self, nameof(SuppressBranchIdMatch));
+                var allBranches = Expression.Property(self, nameof(IsAllBranchesFilterActive));
+                var currentBranch = Expression.Property(self, nameof(CurrentBranchIdForFilter));
+                var allowedArr = Expression.Property(self, nameof(AllowedBranchIdsForFilter));
+
+                var contains = typeof(Enumerable).GetMethods()
+                    .First(m => m.Name == nameof(Enumerable.Contains) && m.GetParameters().Length == 2)!
+                    .MakeGenericMethod(typeof(int));
+                var inAllowed = Expression.Call(contains, allowedArr, branchId);
+                var singleMatch = Expression.Equal(branchId, currentBranch);
+
+                // suppress || (allBranches && inAllowed) || (!allBranches && singleMatch)
+                var allClause = Expression.AndAlso(allBranches, inAllowed);
+                var singleClause = Expression.AndAlso(Expression.Not(allBranches), singleMatch);
+                var branchClause = Expression.OrElse(suppress, Expression.OrElse(allClause, singleClause));
+                body = Expression.AndAlso(body, branchClause);
+
+                modelBuilder.Entity(entityType.ClrType).HasIndex(nameof(IBranchEntity.BranchId));
+            }
+
+            modelBuilder.Entity(entityType.ClrType).HasQueryFilter(Expression.Lambda(body, parameter));
         }
 
         // Configure BaseEntity common columns for all derived types
@@ -120,10 +199,70 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Core.Entities.CloudSyncSettings>().HasData(new Core.Entities.CloudSyncSettings { Id = Core.Entities.CloudSyncSettings.SingletonId });
     }
 
+    public override int SaveChanges()
+    {
+        ApplyBranchWriteGuards();
+        return SaveChangesWithAudit();
+    }
+
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        ApplyBranchWriteGuards();
+        return SaveChangesWithAuditAsync(cancellationToken);
+    }
+
+    private void ApplyBranchWriteGuards()
+    {
+        if (BypassBranchFilter || IsApplyingSyncPull)
+            return;
+
+        var writeBranchId = _branchContext?.HasWriteBranchContext == true
+            ? _branchContext.CurrentBranchId
+            : null;
+
+        foreach (var entry in ChangeTracker.Entries<IBranchEntity>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (entry.Entity.BranchId <= 0)
+                {
+                    if (writeBranchId is not > 0)
+                        throw new InvalidOperationException(
+                            "Branch context is required before creating branch-scoped data.");
+                    entry.Entity.BranchId = writeBranchId.Value;
+                }
+                else if (writeBranchId is > 0 && entry.Entity.BranchId != writeBranchId.Value)
+                {
+                    throw new UnauthorizedAccessException("Cross-branch write denied.");
+                }
+                else if (_branchContext is not null && !_branchContext.IsBranchAllowed(entry.Entity.BranchId))
+                {
+                    throw new UnauthorizedAccessException("Branch not allowed for current user.");
+                }
+            }
+            else if (entry.State is EntityState.Modified or EntityState.Deleted)
+            {
+                if (writeBranchId is > 0 && entry.Entity.BranchId != writeBranchId.Value)
+                    throw new UnauthorizedAccessException("Cross-branch mutation denied.");
+                if (_branchContext is not null
+                    && !BypassBranchFilter
+                    && !_branchContext.IsBranchAllowed(entry.Entity.BranchId)
+                    && _branchContext.AllowedBranchIds.Count > 0)
+                {
+                    throw new UnauthorizedAccessException("Branch not allowed for current user.");
+                }
+            }
+        }
+    }
+
+    private int SaveChangesWithAudit() =>
+        SaveChangesWithAuditAsync(CancellationToken.None).GetAwaiter().GetResult();
+
+    private async Task<int> SaveChangesWithAuditAsync(CancellationToken cancellationToken)
     {
         var currentUser = _currentUserService?.Username ?? "System";
         var userId = _currentUserService?.UserId;
+        var branchId = _branchContext?.CurrentBranchId;
 
         // Collect audit entries BEFORE applying base entity changes
         var auditEntries = new List<AuditEntry>();
@@ -142,7 +281,7 @@ public class AppDbContext : DbContext
                     entry.Entity.CreatedAt = DateTime.UtcNow;
                     entry.Entity.CreatedBy = currentUser;
                     if (userId.HasValue)
-                        auditEntries.Add(new AuditEntry(entry, AuditAction.Add, userId.Value));
+                        auditEntries.Add(new AuditEntry(entry, AuditAction.Add, userId.Value, branchId));
                     break;
 
                 case EntityState.Modified:
@@ -157,13 +296,14 @@ public class AppDbContext : DbContext
                         auditEntries.Add(new AuditEntry(
                             entry,
                             becameDeleted ? AuditAction.Delete : AuditAction.Edit,
-                            userId.Value));
+                            userId.Value,
+                            branchId));
                     }
                     break;
 
                 case EntityState.Deleted:
                     if (userId.HasValue)
-                        auditEntries.Add(new AuditEntry(entry, AuditAction.Delete, userId.Value));
+                        auditEntries.Add(new AuditEntry(entry, AuditAction.Delete, userId.Value, branchId));
                     break;
             }
         }
@@ -176,7 +316,7 @@ public class AppDbContext : DbContext
                 AuditLogs.Add(log);
         }
 
-        return base.SaveChangesAsync(cancellationToken);
+        return await base.SaveChangesAsync(cancellationToken);
     }
 
     /// <summary>
@@ -201,12 +341,14 @@ public class AppDbContext : DbContext
         public EntityEntry Entry { get; }
         public AuditAction Action { get; }
         public int UserId { get; }
+        public int? BranchId { get; }
 
-        public AuditEntry(EntityEntry entry, AuditAction action, int userId)
+        public AuditEntry(EntityEntry entry, AuditAction action, int userId, int? branchId)
         {
             Entry = entry;
             Action = action;
             UserId = userId;
+            BranchId = branchId;
         }
 
         public AuditLog? ToAuditLog()
@@ -215,6 +357,9 @@ public class AppDbContext : DbContext
             var entityId = 0;
             if (Entry.Entity is BaseEntity be)
                 entityId = be.Id;
+
+            var resolvedBranchId = BranchId
+                ?? (Entry.Entity is IBranchEntity beBranch ? beBranch.BranchId : 0);
 
             string? oldValues = null;
             string? newValues = null;
@@ -267,6 +412,7 @@ public class AppDbContext : DbContext
             return new AuditLog
             {
                 UserId = UserId,
+                BranchId = resolvedBranchId > 0 ? resolvedBranchId : null,
                 Action = Action,
                 EntityName = entityName,
                 EntityId = entityId,

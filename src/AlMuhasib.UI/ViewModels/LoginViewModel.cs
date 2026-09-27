@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using System.Diagnostics;
 using System.IO;
@@ -14,6 +16,8 @@ public partial class LoginViewModel : ObservableObject
 {
     private readonly IAuthService _authService;
     private readonly CurrentUserService _currentUserService;
+    private readonly IBranchService _branchService;
+    private readonly IBranchContext _branchContext;
     private readonly ISoundService _sound;
 
     public ObservableCollection<LoginAdminOption> AdminUsers { get; } = [];
@@ -21,6 +25,7 @@ public partial class LoginViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsSelectingAdmin))]
     [NotifyPropertyChangedFor(nameof(IsEnteringPassword))]
+    [NotifyPropertyChangedFor(nameof(IsSelectingBranch))]
     private LoginStep _currentStep = LoginStep.SelectAdmin;
 
     [ObservableProperty]
@@ -47,16 +52,35 @@ public partial class LoginViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasAdmins;
 
-    public bool IsSelectingAdmin => CurrentStep == LoginStep.SelectAdmin;
-    public bool IsEnteringPassword => CurrentStep == LoginStep.EnterPassword;
+    public ObservableCollection<Branch> AvailableBranches { get; } = [];
+
+    [ObservableProperty]
+    private Branch? _selectedBranch;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSelectingAdmin))]
+    [NotifyPropertyChangedFor(nameof(IsEnteringPassword))]
+    [NotifyPropertyChangedFor(nameof(IsSelectingBranch))]
+    private bool _showBranchPicker;
+
+    public bool IsSelectingAdmin => CurrentStep == LoginStep.SelectAdmin && !ShowBranchPicker;
+    public bool IsEnteringPassword => CurrentStep == LoginStep.EnterPassword && !ShowBranchPicker;
+    public bool IsSelectingBranch => ShowBranchPicker;
 
     public event Action? LoginSucceeded;
     public event Action? StepChanged;
 
-    public LoginViewModel(IAuthService authService, CurrentUserService currentUserService, ISoundService sound)
+    public LoginViewModel(
+        IAuthService authService,
+        CurrentUserService currentUserService,
+        IBranchService branchService,
+        IBranchContext branchContext,
+        ISoundService sound)
     {
         _authService = authService;
         _currentUserService = currentUserService;
+        _branchService = branchService;
+        _branchContext = branchContext;
         _sound = sound;
     }
 
@@ -170,8 +194,34 @@ public partial class LoginViewModel : ObservableObject
             _currentUserService.UserId = result.User.Id;
             _currentUserService.Role = result.User.Role;
 
-            _sound.Play(SoundEffect.Login);
-            LoginSucceeded?.Invoke();
+            // Do not auto-relink revoked users to Main on every login.
+            var branches = await _branchService.GetBranchesForUserAsync(result.User.Id);
+            // Require explicit permissions — Admin role alone must not escalate to all branches.
+            var canViewAll = await _authService.HasPermissionAsync(
+                result.User.Id, Core.Entities.BranchPermissions.ViewAllBranches, "View");
+            var canManageAll = await _authService.HasPermissionAsync(
+                result.User.Id, Core.Entities.BranchPermissions.ManageAllBranches, "View");
+            _branchContext.SetAllowedBranches(branches.Select(b => b.Id), canViewAll, canManageAll);
+
+            if (branches.Count == 0)
+            {
+                ShowError("لا يوجد فرع مرتبط بالمستخدم. راجع إعدادات الفروع.");
+                return;
+            }
+
+            if (branches.Count == 1)
+            {
+                await BindBranchAndFinishAsync(branches[0]);
+                return;
+            }
+
+            AvailableBranches.Clear();
+            foreach (var b in branches)
+                AvailableBranches.Add(b);
+            var defaultId = await _branchService.GetDefaultBranchIdForUserAsync(result.User.Id);
+            SelectedBranch = branches.FirstOrDefault(b => b.Id == defaultId) ?? branches[0];
+            ShowBranchPicker = true;
+            StepChanged?.Invoke();
         }
         catch (Exception ex)
         {
@@ -181,6 +231,27 @@ public partial class LoginViewModel : ObservableObject
         {
             IsLoading = false;
         }
+    }
+
+    [RelayCommand]
+    private async Task ConfirmBranchAsync()
+    {
+        if (SelectedBranch is null)
+        {
+            ShowError("يرجى اختيار الفرع");
+            return;
+        }
+
+        await BindBranchAndFinishAsync(SelectedBranch);
+    }
+
+    private async Task BindBranchAndFinishAsync(Branch branch)
+    {
+        _branchContext.SetCurrentBranch(branch.Id, branch.Name, branch.Code);
+        ShowBranchPicker = false;
+        _sound.Play(SoundEffect.Login);
+        LoginSucceeded?.Invoke();
+        await Task.CompletedTask;
     }
 
     partial void OnCurrentStepChanged(LoginStep value) => StepChanged?.Invoke();

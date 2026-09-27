@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>رقم تسلسلي للمنتج (IMEI/SN).</summary>
-public class ProductSerial : BaseEntity
+public class ProductSerial : BranchScopedEntity
 {
     public int ProductId { get; set; }
     public int? WarehouseId { get; set; }

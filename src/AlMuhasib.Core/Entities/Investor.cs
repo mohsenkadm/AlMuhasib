@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>المستثمرون</summary>
-public class Investor : BaseEntity
+public class Investor : BranchScopedEntity
 {
     public string Name { get; set; } = string.Empty;
     public string? Phone { get; set; }

@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>Singleton print header/footer branding (Id = 1).</summary>
-public class PrintBrandingSettings : BaseEntity
+public class PrintBrandingSettings : BranchScopedEntity
 {
     public const int SingletonId = 1;
 

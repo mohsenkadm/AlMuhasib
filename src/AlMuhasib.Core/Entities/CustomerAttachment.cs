@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>مرفقات العميل</summary>
-public class CustomerAttachment : BaseEntity
+public class CustomerAttachment : BranchScopedEntity
 {
     public int CustomerId { get; set; }
     public string FileName { get; set; } = string.Empty;

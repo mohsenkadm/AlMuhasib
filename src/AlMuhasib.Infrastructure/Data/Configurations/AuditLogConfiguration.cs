@@ -23,8 +23,18 @@ public class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
             .HasForeignKey(a => a.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(a => a.Branch)
+            .WithMany()
+            .HasForeignKey(a => a.BranchId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(a => a.IpAddress).HasMaxLength(64);
+        builder.Property(a => a.DeviceInfo).HasMaxLength(200);
+
         builder.HasIndex(a => a.Timestamp);
         builder.HasIndex(a => new { a.EntityName, a.EntityId });
         builder.HasIndex(a => a.UserId);
+        builder.HasIndex(a => a.BranchId);
     }
 }

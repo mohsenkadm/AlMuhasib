@@ -1756,7 +1756,7 @@ public partial class ReportService : IReportService
                             v.Date <= endOfDay)
                 .Select(v => new { EmployeeId = v.EmployeeId!.Value, v.VoucherType, v.Amount })
                 .ToListAsync())
-              .Select(v => (v.EmployeeId, v.VoucherType, v.Amount))
+              .Select(v => (EmployeeId: v.EmployeeId, Type: v.VoucherType, Amount: v.Amount))
               .ToList();
 
         decimal employeeAdvances = 0m;

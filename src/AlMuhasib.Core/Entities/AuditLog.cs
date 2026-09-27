@@ -2,17 +2,21 @@ using AlMuhasib.Core.Enums;
 
 namespace AlMuhasib.Core.Entities;
 
-/// <summary>سجل العمليات</summary>
+/// <summary>سجل العمليات — يتضمن BranchId عند توفر سياق فرع.</summary>
 public class AuditLog : BaseEntity
 {
     public int UserId { get; set; }
+    public int? BranchId { get; set; }
     public AuditAction Action { get; set; }
     public string EntityName { get; set; } = string.Empty;
     public int EntityId { get; set; }
     public string? OldValues { get; set; }
     public string? NewValues { get; set; }
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public string? IpAddress { get; set; }
+    public string? DeviceInfo { get; set; }
 
     // Navigation
     public User User { get; set; } = null!;
+    public Branch? Branch { get; set; }
 }

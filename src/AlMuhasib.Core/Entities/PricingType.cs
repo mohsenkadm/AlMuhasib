@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>أنواع التسعير (سعر مفرد، جملة، وكيل...)</summary>
-public class PricingType : BaseEntity
+public class PricingType : BranchScopedEntity
 {
     public string Name { get; set; } = string.Empty;
     public bool IsDefault { get; set; }

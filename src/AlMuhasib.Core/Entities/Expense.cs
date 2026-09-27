@@ -3,7 +3,7 @@ using AlMuhasib.Core.Enums;
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>المصاريف</summary>
-public class Expense : BaseEntity
+public class Expense : BranchScopedEntity
 {
     public int ExpenseTypeId { get; set; }
 

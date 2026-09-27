@@ -3,7 +3,7 @@ using AlMuhasib.Core.Enums;
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>تحصيل استلمه المندوب من عميل</summary>
-public class SalesRepCollection : BaseEntity
+public class SalesRepCollection : BranchScopedEntity
 {
     public int SalesRepresentativeId { get; set; }
     public int CustomerId { get; set; }

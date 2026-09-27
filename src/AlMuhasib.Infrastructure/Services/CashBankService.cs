@@ -745,7 +745,8 @@ public class CashBankService : ICashBankService
         for (var inner = ex.InnerException; inner is not null; inner = inner.InnerException)
         {
             var message = inner.Message;
-            if (message.Contains("IX_Vouchers_VoucherNumber", StringComparison.OrdinalIgnoreCase)
+            if (message.Contains("IX_Vouchers_BranchId_VoucherNumber", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("IX_Vouchers_VoucherNumber", StringComparison.OrdinalIgnoreCase)
                 || message.Contains("unique index", StringComparison.OrdinalIgnoreCase)
                 || message.Contains("UNIQUE KEY", StringComparison.OrdinalIgnoreCase)
                 || message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase))
@@ -878,6 +879,10 @@ public class CashBankService : ICashBankService
 
     private static async Task<string> GetNextVoucherNumberAsync(AppDbContext context, VoucherType type)
     {
+        var branchId = context.CurrentBranchIdForFilter;
+        if (branchId <= 0)
+            throw new InvalidOperationException("يجب اختيار فرع قبل توليد رقم السند.");
+
         var prefix = type switch
         {
             VoucherType.Receipt => "RCV",
@@ -893,7 +898,9 @@ public class CashBankService : ICashBankService
         var numbers = await context.Vouchers
             .IgnoreQueryFilters()
             .AsNoTracking()
-            .Where(v => v.VoucherType == type && v.VoucherNumber.StartsWith(prefix + "-"))
+            .Where(v => v.BranchId == branchId
+                        && v.VoucherType == type
+                        && v.VoucherNumber.StartsWith(prefix + "-"))
             .Select(v => v.VoucherNumber)
             .ToListAsync();
 

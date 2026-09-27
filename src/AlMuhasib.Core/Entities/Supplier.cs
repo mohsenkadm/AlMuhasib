@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>الموردون</summary>
-public class Supplier : BaseEntity
+public class Supplier : BranchScopedEntity
 {
     public string Name { get; set; } = string.Empty;
     public string? Phone { get; set; }

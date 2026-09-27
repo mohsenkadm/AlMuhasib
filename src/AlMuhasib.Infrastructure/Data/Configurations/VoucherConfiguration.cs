@@ -71,11 +71,19 @@ public class VoucherConfiguration : IEntityTypeConfiguration<Voucher>
 
         builder.Property(v => v.ReconciledBy).HasMaxLength(100);
 
-        builder.HasIndex(v => v.VoucherNumber).IsUnique();
-        builder.HasIndex(v => v.Date);
+        builder.HasIndex(v => new { v.BranchId, v.VoucherNumber })
+            .IsUnique()
+            .HasFilter("[IsDeleted] = 0");
+        builder.HasIndex(v => new { v.BranchId, v.Date });
         builder.HasIndex(v => v.VoucherType);
         builder.HasIndex(v => v.InvoiceId);
         builder.HasIndex(v => v.InstallmentId);
         builder.HasIndex(v => v.IsReconciled);
+        builder.HasIndex(v => v.BranchId);
+
+        builder.HasOne(v => v.Branch)
+            .WithMany()
+            .HasForeignKey(v => v.BranchId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

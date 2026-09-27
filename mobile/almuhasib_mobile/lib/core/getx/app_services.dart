@@ -35,6 +35,7 @@ class AppServices {
     Get.put<ConnectivityController>(ConnectivityController(), permanent: true);
 
     final apiClient = ApiClient(
+      preferences: prefs,
       secureStorage: secureStorage,
       baseUrlResolver: () => prefs.apiBaseUrl,
     );

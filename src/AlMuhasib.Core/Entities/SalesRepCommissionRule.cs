@@ -3,7 +3,7 @@ using AlMuhasib.Core.Enums;
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>قاعدة عمولة لمندوب (نسبة مبيعات / ربح / ثابت / منتج / عميل)</summary>
-public class SalesRepCommissionRule : BaseEntity
+public class SalesRepCommissionRule : BranchScopedEntity
 {
     public int SalesRepresentativeId { get; set; }
 

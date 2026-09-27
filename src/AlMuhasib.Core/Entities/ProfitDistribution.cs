@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>توزيع الأرباح</summary>
-public class ProfitDistribution : BaseEntity
+public class ProfitDistribution : BranchScopedEntity
 {
     public DateTime Date { get; set; }
     public decimal TotalProfit { get; set; }

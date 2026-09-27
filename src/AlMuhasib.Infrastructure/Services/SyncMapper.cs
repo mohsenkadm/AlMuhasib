@@ -10,8 +10,38 @@ namespace AlMuhasib.Infrastructure.Services;
 
 internal static class SyncMapper
 {
+    private static Dictionary<int, Guid> _branchIdToSync = new();
+    private static Dictionary<Guid, int> _branchSyncToId = new();
+    private static int _mainBranchId;
+
+    private static async Task EnsureBranchMapsAsync(AppDbContext db, CancellationToken ct)
+    {
+        db.BypassBranchFilter = true;
+        var branches = await db.Branches.IgnoreQueryFilters().ToListAsync(ct);
+        if (branches.Count == 0)
+        {
+            var main = new Branch
+            {
+                Name = "الفرع الرئيسي",
+                Code = Branch.MainBranchCode,
+                IsActive = true,
+                IsMain = true,
+                CreatedBy = "Sync"
+            };
+            db.Branches.Add(main);
+            await db.SaveChangesAsync(ct);
+            branches.Add(main);
+        }
+
+        _branchIdToSync = branches.ToDictionary(b => b.Id, b => b.SyncId);
+        _branchSyncToId = branches.ToDictionary(b => b.SyncId, b => b.Id);
+        _mainBranchId = branches.FirstOrDefault(b => b.IsMain)?.Id ?? branches[0].Id;
+    }
+
     public static async Task<SyncDataBundle> BuildPushBundleAsync(AppDbContext db, DateTime? since, CancellationToken ct)
     {
+        await EnsureBranchMapsAsync(db, ct);
+
         var cutoff = since ?? DateTime.MinValue;
         bool ShouldSync(BaseEntity e) =>
             (e.UpdatedAt ?? e.CreatedAt) >= cutoff
@@ -209,6 +239,7 @@ internal static class SyncMapper
     public static async Task ApplyPullBundleAsync(AppDbContext db, SyncDataBundle data, CancellationToken ct)
     {
         db.IsApplyingSyncPull = true;
+        db.BypassBranchFilter = true;
         try
         {
             await ApplyPullBundleCoreAsync(db, data, ct);
@@ -216,11 +247,13 @@ internal static class SyncMapper
         finally
         {
             db.IsApplyingSyncPull = false;
+            db.BypassBranchFilter = false;
         }
     }
 
     private static async Task ApplyPullBundleCoreAsync(AppDbContext db, SyncDataBundle data, CancellationToken ct)
     {
+        await EnsureBranchMapsAsync(db, ct);
         var catBySync = await UpsertCategoriesAsync(db, data.Categories, ct);
         await UpsertProductsAsync(db, data.Products, catBySync, ct);
         var pricingTypeBySync = await UpsertPricingTypesAsync(db, data.PricingTypes, ct);
@@ -273,11 +306,22 @@ internal static class SyncMapper
         entity.IsDeleted = dto.IsDeleted;
         entity.DeletedAt = dto.DeletedAt;
         entity.DeletedBy = dto.DeletedBy;
+        if (entity is Core.Interfaces.IBranchEntity branchEntity)
+        {
+            branchEntity.BranchId = dto.BranchSyncId != Guid.Empty
+                                   && _branchSyncToId.TryGetValue(dto.BranchSyncId, out var bid)
+                ? bid
+                : _mainBranchId;
+        }
     }
 
     private static SyncDtoBase MapBase(BaseEntity e) => new CategorySyncDto
     {
-        SyncId = e.SyncId, CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy,
+        SyncId = e.SyncId,
+        BranchSyncId = e is Core.Interfaces.IBranchEntity be
+            ? _branchIdToSync.GetValueOrDefault(be.BranchId)
+            : Guid.Empty,
+        CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy,
         UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy, IsDeleted = e.IsDeleted,
         DeletedAt = e.DeletedAt, DeletedBy = e.DeletedBy, RowVersion = e.RowVersion
     };
@@ -582,6 +626,8 @@ internal static class SyncMapper
         dst.SyncId = src.SyncId; dst.CreatedAt = src.CreatedAt; dst.CreatedBy = src.CreatedBy;
         dst.UpdatedAt = src.UpdatedAt; dst.UpdatedBy = src.UpdatedBy; dst.IsDeleted = src.IsDeleted;
         dst.DeletedAt = src.DeletedAt; dst.DeletedBy = src.DeletedBy; dst.RowVersion = src.RowVersion;
+        if (src is Core.Interfaces.IBranchEntity be)
+            dst.BranchSyncId = _branchIdToSync.GetValueOrDefault(be.BranchId);
     }
 
     private static async Task<T?> FindBySyncIdAsync<T>(DbSet<T> set, Guid syncId, CancellationToken ct) where T : BaseEntity =>

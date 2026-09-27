@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>مندوب المبيعات — يُفعَّل عبر ميزة المندوبين</summary>
-public class SalesRepresentative : BaseEntity
+public class SalesRepresentative : BranchScopedEntity
 {
     public string Name { get; set; } = string.Empty;
     public string? Phone { get; set; }

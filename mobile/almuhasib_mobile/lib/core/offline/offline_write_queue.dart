@@ -23,6 +23,8 @@ class PendingWrite {
     required this.bodyJson,
     required this.clientSyncId,
     required this.createdAt,
+    this.branchId,
+    this.tenantId,
     this.status = PendingWriteStatus.pending,
     this.retryCount = 0,
     this.lastError,
@@ -38,6 +40,8 @@ class PendingWrite {
       clientSyncId: json['clientSyncId'] as String? ?? '',
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
+      branchId: json['branchId'] as int?,
+      tenantId: json['tenantId'] as int?,
       status: PendingWriteStatus.values.firstWhere(
         (e) => e.name == (json['status'] as String? ?? 'pending'),
         orElse: () => PendingWriteStatus.pending,
@@ -55,6 +59,8 @@ class PendingWrite {
         'bodyJson': bodyJson,
         'clientSyncId': clientSyncId,
         'createdAt': createdAt.toIso8601String(),
+        'branchId': branchId,
+        'tenantId': tenantId,
         'status': status.name,
         'retryCount': retryCount,
         if (lastError != null) 'lastError': lastError,
@@ -67,6 +73,8 @@ class PendingWrite {
   final Map<String, dynamic> bodyJson;
   final String clientSyncId;
   final DateTime createdAt;
+  final int? branchId;
+  final int? tenantId;
   PendingWriteStatus status;
   int retryCount;
   String? lastError;
@@ -148,6 +156,8 @@ class OfflineWriteService extends GetxService {
       bodyJson: payload,
       clientSyncId: syncId,
       createdAt: DateTime.now(),
+      branchId: AppServices.prefs.branchId,
+      tenantId: AppServices.prefs.tenantId,
     );
     pending.add(write);
     await _persist();
@@ -168,6 +178,12 @@ class OfflineWriteService extends GetxService {
     await _persist();
   }
 
+  /// Clears the entire offline queue (logout / user switch) to prevent cross-user flush.
+  Future<void> clearAll() async {
+    pending.clear();
+    await _persist();
+  }
+
   Future<int> flush() async {
     if (isFlushing.value) return 0;
     if (AppServices.connectivity.isOffline.value) return 0;
@@ -183,7 +199,30 @@ class OfflineWriteService extends GetxService {
     api.updateBaseUrl();
 
     try {
+      final currentBranchId = AppServices.prefs.branchId;
+      final currentTenantId = AppServices.prefs.tenantId;
+
       for (final write in List<PendingWrite>.from(items)) {
+        // Never flush a queued write into a different / missing branch/tenant context.
+        if (write.branchId == null ||
+            currentBranchId == null ||
+            write.branchId != currentBranchId) {
+          write.status = PendingWriteStatus.failed;
+          write.lastError = 'branch_context_mismatch';
+          pending.refresh();
+          await _persist();
+          continue;
+        }
+        if (write.tenantId == null ||
+            currentTenantId == null ||
+            write.tenantId != currentTenantId) {
+          write.status = PendingWriteStatus.failed;
+          write.lastError = 'tenant_context_mismatch';
+          pending.refresh();
+          await _persist();
+          continue;
+        }
+
         write.status = PendingWriteStatus.syncing;
         pending.refresh();
         try {

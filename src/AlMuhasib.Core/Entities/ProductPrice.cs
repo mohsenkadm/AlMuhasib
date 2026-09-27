@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>سعر منتج لنوع تسعير محدد (بيع + شراء)</summary>
-public class ProductPrice : BaseEntity
+public class ProductPrice : BranchScopedEntity
 {
     public int ProductId { get; set; }
     public int PricingTypeId { get; set; }

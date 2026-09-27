@@ -20,6 +20,7 @@ using AlMuhasib.Infrastructure.Services.RealEstate;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace AlMuhasib.Infrastructure;
 
@@ -67,6 +68,8 @@ public static class DependencyInjection
 
     private static void RegisterAccountingInfrastructure(IServiceCollection services, string connectionString, bool isBranchClient)
     {
+        services.TryAddSingleton<IBranchContext, BranchContext>();
+
         services.AddDbContextFactory<AppDbContext>(options =>
         {
             options.UseSqlServer(
@@ -79,6 +82,7 @@ public static class DependencyInjection
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IBranchService, BranchService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<IProductService, ProductService>();
         services.AddScoped<IPricingTypeService, PricingTypeService>();

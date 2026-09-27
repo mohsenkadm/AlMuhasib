@@ -4,7 +4,7 @@ using AlMuhasib.Core.Enums;
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>السندات</summary>
-public class Voucher : BaseEntity
+public class Voucher : BranchScopedEntity
 {
     public string VoucherNumber { get; set; } = string.Empty;
     public VoucherType VoucherType { get; set; }

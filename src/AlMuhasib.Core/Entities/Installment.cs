@@ -3,7 +3,7 @@ using AlMuhasib.Core.Enums;
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>الأقساط الفردية</summary>
-public class Installment : BaseEntity
+public class Installment : BranchScopedEntity
 {
     public int InstallmentPlanId { get; set; }
     public DateTime DueDate { get; set; }

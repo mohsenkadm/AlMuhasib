@@ -3,7 +3,7 @@ using AlMuhasib.Core.Enums;
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>عمولة محسوبة على فاتورة لمندوب</summary>
-public class SalesRepCommissionEntry : BaseEntity
+public class SalesRepCommissionEntry : BranchScopedEntity
 {
     public int SalesRepresentativeId { get; set; }
     public int InvoiceId { get; set; }

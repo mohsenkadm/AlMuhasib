@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
 /// <summary>إعدادات عمل قابلة للمزامنة (صف واحد — Id = 1).</summary>
-public class BusinessSettings : BaseEntity
+public class BusinessSettings : BranchScopedEntity
 {
     public const int SingletonId = 1;
 

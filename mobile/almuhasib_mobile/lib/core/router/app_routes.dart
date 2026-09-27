@@ -2,6 +2,7 @@ abstract final class AppRoutes {
   static const splash = '/splash';
   static const onboarding = '/onboarding';
   static const login = '/login';
+  static const branchSelect = '/branch-select';
   static const launchAccounting = '/launch/accounting';
   static const launchCar = '/launch/car';
   static const launchCarTrade = '/launch/car-trade';
