@@ -18,11 +18,16 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
 {
     private readonly CloudDbContext _db;
     private readonly ISyncEngine _syncEngine;
+    private readonly ITenantContext _tenantContext;
 
-    public CloudMobileWriteService(CloudDbContext db, ISyncEngine syncEngine)
+    public CloudMobileWriteService(
+        CloudDbContext db,
+        ISyncEngine syncEngine,
+        ITenantContext tenantContext)
     {
         _db = db;
         _syncEngine = syncEngine;
+        _tenantContext = tenantContext;
     }
 
     public Task<MobileWriteResponse> UpsertCustomerAsync(int tenantId, CreateCustomerRequest request, string username, CancellationToken ct = default)
@@ -1580,8 +1585,10 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         Guid syncId,
         CancellationToken ct)
     {
+        var branchSyncId = await ResolveWriteBranchSyncIdAsync(tenantId, ct);
         var bundle = new SyncDataBundle();
         configure(bundle);
+        StampBranchSyncId(bundle, branchSyncId);
         var response = await _syncEngine.PushAsync(tenantId, new SyncPushRequest { Data = bundle }, ct);
         return new MobileWriteResponse
         {
@@ -1589,6 +1596,68 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             Message = response.Conflicts.Count == 0 ? "تم الحفظ بنجاح" : "تعذر الحفظ",
             Conflicts = response.Conflicts
         };
+    }
+
+    private async Task<Guid> ResolveWriteBranchSyncIdAsync(int tenantId, CancellationToken ct)
+    {
+        var writeBranchId = _tenantContext.RequireWriteBranchId();
+        _db.BypassBranchFilter = true;
+        try
+        {
+            var syncId = await _db.Branches.AsNoTracking()
+                .Where(b => b.TenantId == tenantId && b.Id == writeBranchId && !b.IsDeleted)
+                .Select(b => b.SyncId)
+                .FirstOrDefaultAsync(ct);
+            if (syncId == Guid.Empty)
+                throw new InvalidOperationException("الفرع الحالي غير موجود.");
+            return syncId;
+        }
+        finally
+        {
+            _db.BypassBranchFilter = false;
+        }
+    }
+
+    private static void StampBranchSyncId(SyncDataBundle bundle, Guid branchSyncId)
+    {
+        static void StampAll(IEnumerable<SyncDtoBase> items, Guid id)
+        {
+            foreach (var item in items)
+            {
+                if (item.BranchSyncId == Guid.Empty)
+                    item.BranchSyncId = id;
+            }
+        }
+
+        StampAll(bundle.Categories, branchSyncId);
+        StampAll(bundle.Products, branchSyncId);
+        StampAll(bundle.PricingTypes, branchSyncId);
+        StampAll(bundle.ProductPrices, branchSyncId);
+        StampAll(bundle.BusinessSettings, branchSyncId);
+        StampAll(bundle.ExchangeRates, branchSyncId);
+        StampAll(bundle.Warehouses, branchSyncId);
+        StampAll(bundle.Customers, branchSyncId);
+        StampAll(bundle.Suppliers, branchSyncId);
+        StampAll(bundle.CashBoxes, branchSyncId);
+        StampAll(bundle.BankAccounts, branchSyncId);
+        StampAll(bundle.Investors, branchSyncId);
+        StampAll(bundle.ExpenseTypes, branchSyncId);
+        StampAll(bundle.PrintBrandingSettings, branchSyncId);
+        StampAll(bundle.WarehouseStocks, branchSyncId);
+        StampAll(bundle.WarehouseTransfers, branchSyncId);
+        StampAll(bundle.WarehouseTransferItems, branchSyncId);
+        StampAll(bundle.Invoices, branchSyncId);
+        StampAll(bundle.InvoiceItems, branchSyncId);
+        StampAll(bundle.InstallmentPlans, branchSyncId);
+        StampAll(bundle.Installments, branchSyncId);
+        StampAll(bundle.Vouchers, branchSyncId);
+        StampAll(bundle.Expenses, branchSyncId);
+        StampAll(bundle.Transfers, branchSyncId);
+        StampAll(bundle.InvestorTransactions, branchSyncId);
+        StampAll(bundle.ProfitDistributions, branchSyncId);
+        StampAll(bundle.ProfitDistributionDetails, branchSyncId);
+        StampAll(bundle.CapitalEntries, branchSyncId);
+        StampAll(bundle.CustomerAttachments, branchSyncId);
     }
 
     private static void ValidateInvoiceRequest(CreateInvoiceRequest request)

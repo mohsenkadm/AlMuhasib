@@ -194,10 +194,13 @@ public partial class LoginViewModel : ObservableObject
             _currentUserService.UserId = result.User.Id;
             _currentUserService.Role = result.User.Role;
 
-            await _branchService.EnsureUserLinkedToMainAsync(result.User.Id);
+            // Do not auto-relink revoked users to Main on every login.
             var branches = await _branchService.GetBranchesForUserAsync(result.User.Id);
-            var canViewAll = result.User.Role == Core.Enums.UserRole.Admin;
-            var canManageAll = canViewAll;
+            // Require explicit permissions — Admin role alone must not escalate to all branches.
+            var canViewAll = await _authService.HasPermissionAsync(
+                result.User.Id, Core.Entities.BranchPermissions.ViewAllBranches, "View");
+            var canManageAll = await _authService.HasPermissionAsync(
+                result.User.Id, Core.Entities.BranchPermissions.ManageAllBranches, "View");
             _branchContext.SetAllowedBranches(branches.Select(b => b.Id), canViewAll, canManageAll);
 
             if (branches.Count == 0)

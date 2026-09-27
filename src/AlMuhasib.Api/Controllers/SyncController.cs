@@ -24,7 +24,9 @@ public sealed class SyncController : ControllerBase
     public async Task<ActionResult<SyncPushResponse>> Push([FromBody] SyncPushRequest request, CancellationToken ct)
     {
         var tenantId = ResolveTenantId();
-        _tenantContext.SetTenant(tenantId);
+        // Preserve middleware account/branch binding (SetTenant must not wipe account id).
+        if (_tenantContext.TenantId is null or <= 0)
+            _tenantContext.SetTenant(tenantId);
         return Ok(await _syncEngine.PushAsync(tenantId, request, ct));
     }
 
@@ -32,7 +34,8 @@ public sealed class SyncController : ControllerBase
     public async Task<ActionResult<SyncPullResponse>> Pull([FromBody] SyncPullRequest request, CancellationToken ct)
     {
         var tenantId = ResolveTenantId();
-        _tenantContext.SetTenant(tenantId);
+        if (_tenantContext.TenantId is null or <= 0)
+            _tenantContext.SetTenant(tenantId);
         return Ok(await _syncEngine.PullAsync(tenantId, request, ct));
     }
 

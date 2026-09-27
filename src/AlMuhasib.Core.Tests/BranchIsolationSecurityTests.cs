@@ -99,4 +99,63 @@ public class BranchIsolationSecurityTests
         Assert.Single(rows);
         Assert.Equal(1, rows[0].BranchId);
     }
+
+    [Fact]
+    public async Task AllBranches_mode_only_returns_AllowedBranchIds_not_all_company_branches()
+    {
+        var ctx = new BranchContext();
+        ctx.SetAllowedBranches([1, 2], canViewAll: true, canManageAll: false);
+        ctx.SetAllBranchesMode();
+
+        await using var db = CreateDb(ctx);
+        db.BypassBranchFilter = true;
+        db.Categories.AddRange(Cat("A", 1), Cat("B", 2), Cat("Secret", 3));
+        await db.SaveChangesAsync();
+        db.BypassBranchFilter = false;
+
+        var visible = await db.Categories.OrderBy(c => c.BranchId).Select(c => c.Name).ToListAsync();
+        Assert.Equal(new[] { "A", "B" }, visible);
+        Assert.DoesNotContain("Secret", visible);
+    }
+
+    [Fact]
+    public async Task No_branch_bound_fail_closed_returns_empty()
+    {
+        var ctx = new BranchContext();
+        // Allowed set but no current branch / not all-branches
+        ctx.SetAllowedBranches([1, 2], false, false);
+
+        await using var db = CreateDb(ctx);
+        db.BypassBranchFilter = true;
+        db.Categories.Add(Cat("A", 1));
+        await db.SaveChangesAsync();
+        db.BypassBranchFilter = false;
+
+        var visible = await db.Categories.ToListAsync();
+        Assert.Empty(visible);
+    }
+
+    [Fact]
+    public async Task FindAsync_must_not_be_trusted_for_branch_isolation_use_LINQ()
+    {
+        // Documents EF FindAsync bypass of query filters — callers must use filtered LINQ.
+        var ctx = new BranchContext();
+        ctx.SetAllowedBranches([1], false, false);
+        ctx.SetCurrentBranch(1, "Main", "MAIN");
+
+        await using var db = CreateDb(ctx);
+        db.BypassBranchFilter = true;
+        db.Categories.AddRange(Cat("Mine", 1), Cat("Other", 2));
+        await db.SaveChangesAsync();
+        db.BypassBranchFilter = false;
+
+        var otherId = await db.Categories.IgnoreQueryFilters()
+            .Where(c => c.BranchId == 2).Select(c => c.Id).SingleAsync();
+
+        var viaFind = await db.Categories.FindAsync(otherId);
+        Assert.NotNull(viaFind); // FindAsync ignores filters — known EF behavior
+
+        var viaLinq = await db.Categories.FirstOrDefaultAsync(c => c.Id == otherId);
+        Assert.Null(viaLinq); // Correct isolation path
+    }
 }

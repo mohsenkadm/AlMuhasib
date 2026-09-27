@@ -1,6 +1,7 @@
 using System.Text.Json;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -16,9 +17,32 @@ public class SupervisoryReportService : ISupervisoryReportService
     };
 
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
+    private readonly IBranchContext _branchContext;
 
-    public SupervisoryReportService(IDbContextFactory<AppDbContext> contextFactory)
-        => _contextFactory = contextFactory;
+    public SupervisoryReportService(
+        IDbContextFactory<AppDbContext> contextFactory,
+        IBranchContext branchContext)
+    {
+        _contextFactory = contextFactory;
+        _branchContext = branchContext;
+    }
+
+    private HashSet<int> AllowedBranchIdsOrCurrent()
+    {
+        if (_branchContext.IsAllBranchesMode)
+        {
+            if (!_branchContext.CanViewAllBranches)
+                throw new UnauthorizedAccessException("All-branches mode is not allowed.");
+            return _branchContext.AllowedBranchIds.Count > 0
+                ? _branchContext.AllowedBranchIds.ToHashSet()
+                : new HashSet<int> { AppDbContext.UnsetBranchId };
+        }
+
+        var current = _branchContext.CurrentBranchId;
+        return current is > 0
+            ? new HashSet<int> { current.Value }
+            : new HashSet<int> { AppDbContext.UnsetBranchId };
+    }
 
     public async Task<(IReadOnlyList<DeletedInvoiceRow> Items, int TotalCount)> GetDeletedInvoicesAsync(
         SupervisoryQueryFilter filter, int page, int pageSize, InvoiceType? invoiceType = null)
@@ -31,6 +55,9 @@ public class SupervisoryReportService : ISupervisoryReportService
             .Include(i => i.Supplier)
             .Include(i => i.Warehouse)
             .Where(i => i.IsDeleted);
+
+        var allowedBranches = AllowedBranchIdsOrCurrent();
+        query = query.Where(i => allowedBranches.Contains(i.BranchId));
 
         if (invoiceType.HasValue)
             query = query.Where(i => i.InvoiceType == invoiceType.Value);
@@ -87,6 +114,9 @@ public class SupervisoryReportService : ISupervisoryReportService
             .Include(v => v.BankAccount)
             .Where(v => v.IsDeleted);
 
+        var allowedBranches = AllowedBranchIdsOrCurrent();
+        query = query.Where(v => allowedBranches.Contains(v.BranchId));
+
         if (voucherType.HasValue)
             query = query.Where(v => v.VoucherType == voucherType.Value);
 
@@ -138,6 +168,9 @@ public class SupervisoryReportService : ISupervisoryReportService
             .Include(p => p.Category)
             .Where(p => p.IsDeleted);
 
+        var allowedBranches = AllowedBranchIdsOrCurrent();
+        query = query.Where(p => allowedBranches.Contains(p.BranchId));
+
         query = ApplyDeletedFilters(query, filter, p =>
             p.Name.Contains(filter.SearchTerm!) ||
             (p.Barcode != null && p.Barcode.Contains(filter.SearchTerm!)) ||
@@ -177,6 +210,9 @@ public class SupervisoryReportService : ISupervisoryReportService
             .AsNoTracking()
             .Where(c => c.IsDeleted);
 
+        var allowedBranches = AllowedBranchIdsOrCurrent();
+        query = query.Where(c => allowedBranches.Contains(c.BranchId));
+
         query = ApplyDeletedFilters(query, filter, c =>
             c.Name.Contains(filter.SearchTerm!) ||
             (c.Phone != null && c.Phone.Contains(filter.SearchTerm!)) ||
@@ -215,6 +251,9 @@ public class SupervisoryReportService : ISupervisoryReportService
             .AsNoTracking()
             .Where(s => s.IsDeleted);
 
+        var allowedBranches = AllowedBranchIdsOrCurrent();
+        query = query.Where(s => allowedBranches.Contains(s.BranchId));
+
         query = ApplyDeletedFilters(query, filter, s =>
             s.Name.Contains(filter.SearchTerm!) ||
             (s.Phone != null && s.Phone.Contains(filter.SearchTerm!)) ||
@@ -252,6 +291,9 @@ public class SupervisoryReportService : ISupervisoryReportService
             .Include(e => e.ExpenseType)
             .Include(e => e.CashBox)
             .Where(e => e.IsDeleted);
+
+        var allowedBranches = AllowedBranchIdsOrCurrent();
+        query = query.Where(e => allowedBranches.Contains(e.BranchId));
 
         query = ApplyDeletedFilters(query, filter, e =>
             (e.ExpenseType != null && e.ExpenseType.Name.Contains(filter.SearchTerm!)) ||
@@ -299,12 +341,13 @@ public class SupervisoryReportService : ISupervisoryReportService
     public async Task<IReadOnlyList<string>> GetDeletedByUsernamesAsync()
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var fromInvoices = await context.Invoices.IgnoreQueryFilters().Where(x => x.IsDeleted && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
-        var fromVouchers = await context.Vouchers.IgnoreQueryFilters().Where(x => x.IsDeleted && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
-        var fromProducts = await context.Products.IgnoreQueryFilters().Where(x => x.IsDeleted && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
-        var fromCustomers = await context.Customers.IgnoreQueryFilters().Where(x => x.IsDeleted && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
-        var fromSuppliers = await context.Suppliers.IgnoreQueryFilters().Where(x => x.IsDeleted && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
-        var fromExpenses = await context.Expenses.IgnoreQueryFilters().Where(x => x.IsDeleted && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
+        var allowedBranches = AllowedBranchIdsOrCurrent();
+        var fromInvoices = await context.Invoices.IgnoreQueryFilters().Where(x => x.IsDeleted && allowedBranches.Contains(x.BranchId) && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
+        var fromVouchers = await context.Vouchers.IgnoreQueryFilters().Where(x => x.IsDeleted && allowedBranches.Contains(x.BranchId) && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
+        var fromProducts = await context.Products.IgnoreQueryFilters().Where(x => x.IsDeleted && allowedBranches.Contains(x.BranchId) && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
+        var fromCustomers = await context.Customers.IgnoreQueryFilters().Where(x => x.IsDeleted && allowedBranches.Contains(x.BranchId) && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
+        var fromSuppliers = await context.Suppliers.IgnoreQueryFilters().Where(x => x.IsDeleted && allowedBranches.Contains(x.BranchId) && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
+        var fromExpenses = await context.Expenses.IgnoreQueryFilters().Where(x => x.IsDeleted && allowedBranches.Contains(x.BranchId) && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
 
         return fromInvoices
             .Concat(fromVouchers)

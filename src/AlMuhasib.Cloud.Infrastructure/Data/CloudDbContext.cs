@@ -28,21 +28,38 @@ public class CloudDbContext : DbContext
     /// </summary>
     public int CurrentTenantId => _tenantContext?.TenantId ?? UnsetTenantId;
 
+    public bool IsBypassBranchFilterActive => BypassBranchFilter;
+
+    public bool IsAllBranchesFilterActive =>
+        !IsBypassBranchFilterActive && _tenantContext?.IsAllBranchesMode == true;
+
     /// <summary>فرع الفلتر العام. Unset عند المزامنة / كل الفروع / عدم الربط.</summary>
     public int CurrentBranchIdForFilter
     {
         get
         {
-            if (BypassBranchFilter)
-                return UnsetBranchId;
-            if (_tenantContext?.IsAllBranchesMode == true)
+            if (IsBypassBranchFilterActive || IsAllBranchesFilterActive)
                 return UnsetBranchId;
             return _tenantContext?.BranchId ?? UnsetBranchId;
         }
     }
 
-    public bool SuppressBranchIdMatch =>
-        BypassBranchFilter || _tenantContext?.IsAllBranchesMode == true;
+    /// <summary>Allowed branches in AllBranches mode — never full-tenant suppress.</summary>
+    public int[] AllowedBranchIdsForFilter
+    {
+        get
+        {
+            if (!IsAllBranchesFilterActive)
+                return [];
+            var ids = _tenantContext?.AllowedBranchIds;
+            if (ids is null || ids.Count == 0)
+                return [UnsetBranchId];
+            return ids.ToArray();
+        }
+    }
+
+    /// <summary>Bypass only — AllBranches uses AllowedBranchIdsForFilter.</summary>
+    public bool SuppressBranchIdMatch => IsBypassBranchFilterActive;
 
     /// <summary>تعطيل فلتر الفرع (مسارات Sync الإدارية).</summary>
     public bool BypassBranchFilter { get; set; }
@@ -673,16 +690,21 @@ public class CloudDbContext : DbContext
             var tenantMatch = Expression.Equal(entityTenantId, currentTenantId);
             body = Expression.AndAlso(body, tenantMatch);
 
-            // Branch isolation (fail-closed unless suppressed for sync / all-branches reports).
+            // Branch: Bypass → allow; AllBranches → ∈ AllowedBranchIds; else == CurrentBranchId.
             var entityBranchId = Expression.Property(parameter, nameof(CloudBaseEntity.BranchId));
-            var currentBranchId = Expression.Property(
-                Expression.Constant(this),
-                nameof(CurrentBranchIdForFilter));
-            var suppressBranch = Expression.Property(
-                Expression.Constant(this),
-                nameof(SuppressBranchIdMatch));
+            var self = Expression.Constant(this);
+            var currentBranchId = Expression.Property(self, nameof(CurrentBranchIdForFilter));
+            var suppressBranch = Expression.Property(self, nameof(SuppressBranchIdMatch));
+            var allBranches = Expression.Property(self, nameof(IsAllBranchesFilterActive));
+            var allowedArr = Expression.Property(self, nameof(AllowedBranchIdsForFilter));
+            var contains = typeof(Enumerable).GetMethods()
+                .First(m => m.Name == nameof(Enumerable.Contains) && m.GetParameters().Length == 2)!
+                .MakeGenericMethod(typeof(int));
+            var inAllowed = Expression.Call(contains, allowedArr, entityBranchId);
             var branchMatch = Expression.Equal(entityBranchId, currentBranchId);
-            var branchClause = Expression.OrElse(suppressBranch, branchMatch);
+            var allClause = Expression.AndAlso(allBranches, inAllowed);
+            var singleClause = Expression.AndAlso(Expression.Not(allBranches), branchMatch);
+            var branchClause = Expression.OrElse(suppressBranch, Expression.OrElse(allClause, singleClause));
             body = Expression.AndAlso(body, branchClause);
 
             builder.HasQueryFilter(Expression.Lambda(body, parameter));
@@ -714,6 +736,7 @@ public class CloudDbContext : DbContext
         var writeBranchId = _tenantContext is { IsAllBranchesMode: false, BranchId: > 0 }
             ? _tenantContext.BranchId
             : null;
+        var allowed = _tenantContext?.AllowedBranchIds ?? [];
 
         foreach (var entry in ChangeTracker.Entries<CloudBaseEntity>())
         {
@@ -736,6 +759,11 @@ public class CloudDbContext : DbContext
                     {
                         throw new UnauthorizedAccessException("Cross-branch write denied.");
                     }
+                    else if (allowed.Count > 0
+                             && !_tenantContext!.IsBranchAllowed(entry.Entity.BranchId))
+                    {
+                        throw new UnauthorizedAccessException("Branch not allowed for current user.");
+                    }
                 }
             }
             else if (entry.State is EntityState.Modified or EntityState.Deleted)
@@ -743,11 +771,24 @@ public class CloudDbContext : DbContext
                 if (entry.Entity.TenantId != tenantId.Value)
                     throw new InvalidOperationException("Cross-tenant write denied.");
 
-                if (!BypassBranchFilter
-                    && writeBranchId is > 0
-                    && entry.Entity.BranchId != writeBranchId.Value)
-                {
+                if (BypassBranchFilter)
+                    continue;
+
+                if (writeBranchId is > 0 && entry.Entity.BranchId != writeBranchId.Value)
                     throw new UnauthorizedAccessException("Cross-branch mutation denied.");
+
+                if (allowed.Count > 0
+                    && _tenantContext is not null
+                    && !_tenantContext.IsBranchAllowed(entry.Entity.BranchId))
+                {
+                    throw new UnauthorizedAccessException("Branch not allowed for current user.");
+                }
+
+                // AllBranches mode must not mutate arbitrary tenant branches.
+                if (_tenantContext is { IsAllBranchesMode: true }
+                    && (allowed.Count == 0 || !allowed.Contains(entry.Entity.BranchId)))
+                {
+                    throw new UnauthorizedAccessException("Cross-branch mutation denied in all-branches mode.");
                 }
             }
         }

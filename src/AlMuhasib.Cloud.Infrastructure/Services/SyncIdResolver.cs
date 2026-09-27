@@ -9,12 +9,14 @@ public sealed class SyncIdResolver
 {
     private readonly CloudDbContext _db;
     private readonly int _tenantId;
+    private readonly HashSet<int>? _allowedBranchIds;
     private readonly Dictionary<string, int> _cache = new();
 
-    public SyncIdResolver(CloudDbContext db, int tenantId)
+    public SyncIdResolver(CloudDbContext db, int tenantId, HashSet<int>? allowedBranchIds = null)
     {
         _db = db;
         _tenantId = tenantId;
+        _allowedBranchIds = allowedBranchIds;
     }
 
     public async Task<int?> ResolveCategoryAsync(Guid? syncId, CancellationToken ct) =>
@@ -161,6 +163,10 @@ public sealed class SyncIdResolver
         var entity = await set.IgnoreQueryFilters()
             .FirstOrDefaultAsync(e => e.TenantId == _tenantId && e.SyncId == syncId.Value, ct);
         if (entity is null)
+            return null;
+
+        // Cross-branch FK references are rejected when an allowed-branch set is provided.
+        if (_allowedBranchIds is { Count: > 0 } && !_allowedBranchIds.Contains(entity.BranchId))
             return null;
 
         _cache[key] = entity.Id;

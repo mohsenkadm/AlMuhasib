@@ -221,6 +221,7 @@ public sealed class AuthController : ControllerBase
         var main = await _db.Branches.FirstOrDefaultAsync(
             b => b.TenantId == account.TenantId && b.IsMain && !b.IsDeleted, ct);
 
+        var mainJustCreated = false;
         if (main is null)
         {
             main = new CloudBranch
@@ -235,10 +236,16 @@ public sealed class AuthController : ControllerBase
             };
             _db.Branches.Add(main);
             await _db.SaveChangesAsync(ct);
+            mainJustCreated = true;
 
             // Backfill any business rows still at BranchId=0 for this tenant.
             await BackfillTenantBranchIdsAsync(account.TenantId, main.Id, ct);
         }
+
+        // Auto-assign Main ONLY on first tenant bootstrap (Main just created).
+        // Never re-assign revoked accounts on every login — that was a privilege escalation.
+        if (!mainJustCreated)
+            return;
 
         var hasAssignment = await _db.TenantAccountBranches
             .AnyAsync(x => x.TenantAccountId == account.Id, ct);
@@ -304,22 +311,8 @@ public sealed class AuthController : ControllerBase
             .ThenBy(b => b.Name)
             .ToListAsync(ct);
 
-        if (assigned.Count > 0)
-            return assigned;
-
-        return await _db.Branches.AsNoTracking()
-            .Where(b => b.TenantId == tenantId && b.IsActive && !b.IsDeleted)
-            .OrderByDescending(b => b.IsMain)
-            .ThenBy(b => b.Name)
-            .Select(b => new BranchInfoDto
-            {
-                BranchId = b.Id,
-                SyncId = b.SyncId,
-                Name = b.Name,
-                Code = b.Code,
-                IsMain = b.IsMain,
-                IsDefault = b.IsMain
-            })
-            .ToListAsync(ct);
+        // Fail-closed: no TenantAccountBranches → no branch list (never escalate to all branches).
+        // Migration EnsureMainBranchAndAssignmentAsync must create explicit Main assignment.
+        return assigned;
     }
 }

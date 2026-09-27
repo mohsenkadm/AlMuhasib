@@ -39,15 +39,7 @@ public sealed class TenantContextMiddleware
                             .Where(x => x.TenantId == tenantId && x.TenantAccountId == accountId.Value)
                             .Select(x => x.BranchId)
                             .ToListAsync(context.RequestAborted);
-
-                        // Backward compatible: no assignments yet → all active branches for tenant (Main after migration).
-                        if (allowed.Count == 0)
-                        {
-                            allowed = await db.Branches.AsNoTracking()
-                                .Where(b => b.TenantId == tenantId && b.IsActive && !b.IsDeleted)
-                                .Select(b => b.Id)
-                                .ToListAsync(context.RequestAborted);
-                        }
+                        // Fail-closed: empty assignments → no branch access (never "all active branches").
                     }
                     finally
                     {
@@ -65,13 +57,39 @@ public sealed class TenantContextMiddleware
                 if (requestedBranch is null && int.TryParse(claimBranch, out var cb) && cb > 0)
                     requestedBranch = cb;
 
+                // No assignments and no manage-all claim → block data access entirely.
+                if (accountId is > 0 && allowed.Count == 0 && !canViewAll)
+                {
+                    // Still allow auth/select-branch style paths that do not need data;
+                    // any branch-bound API stays fail-closed (UnsetBranchId).
+                    tenantContext.SetTenant(tenantId, accountId);
+                    await _next(context);
+                    return;
+                }
+
                 if (allBranches && canViewAll)
                 {
+                    // Prefer explicit assignments; manage-all may expand to all active branches.
+                    if (allowed.Count == 0)
+                    {
+                        db.BypassBranchFilter = true;
+                        try
+                        {
+                            allowed = await db.Branches.AsNoTracking()
+                                .Where(b => b.TenantId == tenantId && b.IsActive && !b.IsDeleted)
+                                .Select(b => b.Id)
+                                .ToListAsync(context.RequestAborted);
+                        }
+                        finally
+                        {
+                            db.BypassBranchFilter = false;
+                        }
+                    }
                     tenantContext.SetAllBranchesMode(allowed);
                 }
                 else if (requestedBranch is > 0)
                 {
-                    if (allowed.Count > 0 && !allowed.Contains(requestedBranch.Value) && !canViewAll)
+                    if (!canViewAll && !allowed.Contains(requestedBranch.Value))
                     {
                         context.Response.StatusCode = StatusCodes.Status403Forbidden;
                         await context.Response.WriteAsJsonAsync(new

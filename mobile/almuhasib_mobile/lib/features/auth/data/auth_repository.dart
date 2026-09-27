@@ -1,5 +1,7 @@
+import 'package:get/get.dart';
+
 import '../../../core/network/api_client.dart';
-import '../../../core/network/api_exception.dart';
+import '../../../core/offline/offline_write_queue.dart';
 import '../../../core/storage/preferences_service.dart';
 import '../../../core/storage/secure_storage_service.dart';
 import '../../../core/services/notification_service.dart';
@@ -110,6 +112,12 @@ class AuthRepository {
 
   Future<void> logout() async {
     await _notificationService.logoutExternalUser();
+    // Prevent User A offline ops from flushing under User B after re-login.
+    try {
+      if (Get.isRegistered<OfflineWriteService>()) {
+        await Get.find<OfflineWriteService>().clearAll();
+      }
+    } catch (_) {}
     await _secureStorage.clearTokens();
     await _preferences.clearSession();
   }

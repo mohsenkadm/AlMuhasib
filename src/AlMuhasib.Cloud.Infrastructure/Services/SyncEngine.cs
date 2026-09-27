@@ -13,19 +13,23 @@ namespace AlMuhasib.Cloud.Infrastructure.Services;
 public sealed partial class SyncEngine : ISyncEngine
 {
     private readonly CloudDbContext _db;
+    private readonly ITenantContext? _tenantContext;
     private readonly Dictionary<Guid, int> _branchSyncCache = new();
     private int _mainBranchId;
+    private HashSet<int> _allowedBranchIds = [];
 
-    public SyncEngine(CloudDbContext db)
+    public SyncEngine(CloudDbContext db, ITenantContext? tenantContext = null)
     {
         _db = db;
+        _tenantContext = tenantContext;
     }
 
     public async Task<SyncPushResponse> PushAsync(int tenantId, SyncPushRequest request, CancellationToken ct = default)
     {
-        // Sync is tenant-scoped and maps Branch via SyncId; bypass EF branch filter for the operation.
+        // Sync maps Branch via SyncId; bypass EF filter but still enforce AllowedBranchIds in Resolve/Pull.
         _db.BypassBranchFilter = true;
-
+        try
+        {
         var tenantType = await _db.Tenants.AsNoTracking()
             .Where(t => t.Id == tenantId)
             .Select(t => t.ApplicationSystemType)
@@ -42,7 +46,8 @@ public sealed partial class SyncEngine : ISyncEngine
             return await PushGoldShopAsync(tenantId, request, ct);
 
         await EnsureBranchCacheAsync(tenantId, ct);
-        var resolver = new SyncIdResolver(_db, tenantId);
+        await RefreshAllowedBranchesAsync(tenantId, ct);
+        var resolver = new SyncIdResolver(_db, tenantId, _allowedBranchIds);
         var response = new SyncPushResponse { ServerTime = DateTime.UtcNow };
         var accepted = 0;
 
@@ -257,12 +262,20 @@ public sealed partial class SyncEngine : ISyncEngine
         }
 
         return response;
+        }
+        finally
+        {
+            _db.BypassBranchFilter = false;
+        }
     }
 
     public async Task<SyncPullResponse> PullAsync(int tenantId, SyncPullRequest request, CancellationToken ct = default)
     {
         _db.BypassBranchFilter = true;
+        try
+        {
         await EnsureBranchCacheAsync(tenantId, ct);
+        await RefreshAllowedBranchesAsync(tenantId, ct);
 
         var tenantType = await _db.Tenants.AsNoTracking()
             .Where(t => t.Id == tenantId)
@@ -320,6 +333,11 @@ public sealed partial class SyncEngine : ISyncEngine
             ServerTime = serverTime,
             HasMore = false
         };
+        }
+        finally
+        {
+            _db.BypassBranchFilter = false;
+        }
     }
 
     public async Task<SyncStatusResponse> GetStatusAsync(int tenantId, CancellationToken ct = default)
@@ -402,10 +420,103 @@ public sealed partial class SyncEngine : ISyncEngine
         _mainBranchId = branches.FirstOrDefault(b => b.IsMain)?.Id ?? branches[0].Id;
     }
 
-    private int ResolveBranchId(Guid branchSyncId) =>
-        branchSyncId != Guid.Empty && _branchSyncCache.TryGetValue(branchSyncId, out var id)
-            ? id
-            : _mainBranchId;
+    private async Task RefreshAllowedBranchesAsync(int tenantId, CancellationToken ct)
+    {
+        if (_tenantContext?.AllowedBranchIds.Count > 0)
+        {
+            _allowedBranchIds = _tenantContext.AllowedBranchIds.ToHashSet();
+            return;
+        }
+
+        if (_tenantContext?.TenantAccountId is > 0)
+        {
+            var ids = await _db.TenantAccountBranches.AsNoTracking()
+                .Where(x => x.TenantId == tenantId && x.TenantAccountId == _tenantContext.TenantAccountId.Value)
+                .Select(x => x.BranchId)
+                .ToListAsync(ct);
+            _allowedBranchIds = ids.ToHashSet();
+            return;
+        }
+
+        // Fail-closed: no account context → no branch sync scope.
+        _allowedBranchIds = [];
+    }
+
+    private bool IsBranchSyncAllowed(int branchId) =>
+        branchId > 0
+        && (_allowedBranchIds.Count == 0
+            ? false
+            : _allowedBranchIds.Contains(branchId)
+              || (_tenantContext?.CanViewAllBranches == true));
+
+
+    private IQueryable<T> QueryTenantBranchSince<T>(DbSet<T> set, int tenantId, DateTime since)
+        where T : CloudBaseEntity
+    {
+        var allowed = _allowedBranchIds;
+        if (allowed.Count == 0)
+            return set.AsQueryable().Where(_ => false);
+        return set.IgnoreQueryFilters()
+            .Where(e => e.TenantId == tenantId
+                        && allowed.Contains(e.BranchId)
+                        && (e.UpdatedAt ?? e.CreatedAt) >= since);
+    }
+
+    private IQueryable<T> QueryTenantBranch<T>(DbSet<T> set, int tenantId)
+        where T : CloudBaseEntity
+    {
+        var allowed = _allowedBranchIds;
+        if (allowed.Count == 0)
+            return set.AsQueryable().Where(_ => false);
+        return set.IgnoreQueryFilters()
+            .Where(e => e.TenantId == tenantId && allowed.Contains(e.BranchId));
+    }
+
+    /// <summary>
+    /// Resolves BranchSyncId. Empty/unknown → conflict (never silently remap to Main for multi-branch).
+    /// Single-branch tenants may omit BranchSyncId and default to Main when it is the only allowed branch.
+    /// </summary>
+    private bool TryResolveBranchId(Guid branchSyncId, out int branchId, out string? error)
+    {
+        branchId = 0;
+        error = null;
+
+        if (branchSyncId != Guid.Empty)
+        {
+            if (!_branchSyncCache.TryGetValue(branchSyncId, out branchId))
+            {
+                error = "BranchSyncId غير معروف لهذا المستأجر";
+                return false;
+            }
+        }
+        else if (_tenantContext?.BranchId is > 0)
+        {
+            branchId = _tenantContext.BranchId.Value;
+        }
+        else if (_allowedBranchIds.Count == 1)
+        {
+            branchId = _allowedBranchIds.First();
+        }
+        else if (_allowedBranchIds.Count == 0 && _mainBranchId > 0)
+        {
+            // Legacy: no assignments loaded — refuse rather than dump into Main for multi-branch.
+            error = "BranchSyncId مطلوب — لا توجد فروع مسموحة";
+            return false;
+        }
+        else
+        {
+            error = "BranchSyncId مطلوب عند وجود أكثر من فرع";
+            return false;
+        }
+
+        if (!IsBranchSyncAllowed(branchId))
+        {
+            error = "لا تملك صلاحية المزامنة إلى هذا الفرع";
+            return false;
+        }
+
+        return true;
+    }
 
     private Guid ResolveBranchSyncId(int branchId)
     {
@@ -428,14 +539,41 @@ public sealed partial class SyncEngine : ISyncEngine
             return false;
         }
 
+        if (!TryResolveBranchId(dto.BranchSyncId, out var branchId, out var branchError))
+        {
+            AddConflict(response, entityType, dto.SyncId, branchError ?? "فرع غير مسموح");
+            return false;
+        }
+
+        // Prevent relocating an existing row into another branch via empty/wrong BranchSyncId.
+        if (entity.Id > 0 && entity.BranchId > 0 && entity.BranchId != branchId)
+        {
+            AddConflict(response, entityType, dto.SyncId, "لا يمكن نقل السجل بين الفروع عبر المزامنة");
+            return false;
+        }
+
+        if (entity.Id > 0 && entity.BranchId > 0 && !IsBranchSyncAllowed(entity.BranchId))
+        {
+            AddConflict(response, entityType, dto.SyncId, "لا تملك صلاحية تعديل سجل في هذا الفرع");
+            return false;
+        }
+
         ApplyAudit(entity, dto);
-        entity.BranchId = ResolveBranchId(dto.BranchSyncId);
+        entity.BranchId = branchId;
         return true;
     }
 
     private async Task<T?> FindBySyncIdAsync<T>(DbSet<T> set, int tenantId, Guid syncId, CancellationToken ct)
-        where T : CloudBaseEntity =>
-        await set.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.TenantId == tenantId && e.SyncId == syncId, ct);
+        where T : CloudBaseEntity
+    {
+        var entity = await set.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(e => e.TenantId == tenantId && e.SyncId == syncId, ct);
+        if (entity is null)
+            return null;
+        if (entity.BranchId > 0 && !IsBranchSyncAllowed(entity.BranchId))
+            return null; // hide cross-branch rows (IDOR)
+        return entity;
+    }
 
     private async Task FlushAndCacheAsync<T>(
         DbSet<T> set,
@@ -1013,22 +1151,27 @@ public sealed partial class SyncEngine : ISyncEngine
 
     #region Pull helpers
 
-    private static async Task<List<TDto>> PullEntitiesAsync<TEntity, TDto>(
+    private async Task<List<TDto>> PullEntitiesAsync<TEntity, TDto>(
         DbSet<TEntity> set, int tenantId, DateTime since, Func<TEntity, Dictionary<int, Guid>, TDto> map, CancellationToken ct)
         where TEntity : CloudBaseEntity
     {
+        if (_allowedBranchIds.Count == 0)
+            return [];
+
+        var allowed = _allowedBranchIds;
         var entities = await set.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since)
+            .Where(e => e.TenantId == tenantId
+                        && allowed.Contains(e.BranchId)
+                        && (e.UpdatedAt ?? e.CreatedAt) >= since)
             .ToListAsync(ct);
         return entities.Select(e => map(e, new Dictionary<int, Guid>())).ToList();
     }
 
     private async Task<List<ProductSyncDto>> PullProductsAsync(int tenantId, DateTime since, CancellationToken ct)
     {
-        var categories = await _db.Categories.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToListAsync(ct);
+        var categories = await QueryTenantBranch(_db.Categories, tenantId).ToListAsync(ct);
         var catMap = categories.ToDictionary(c => c.Id, c => c.SyncId);
-        var products = await _db.Products.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        var products = await QueryTenantBranchSince(_db.Products, tenantId, since).ToListAsync(ct);
         return products.Select(p => new ProductSyncDto
         {
             SyncId = p.SyncId, BranchSyncId = ResolveBranchSyncId(p.BranchId), CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy, UpdatedAt = p.UpdatedAt, UpdatedBy = p.UpdatedBy,
@@ -1045,10 +1188,9 @@ public sealed partial class SyncEngine : ISyncEngine
 
     private async Task<List<ProductPriceSyncDto>> PullProductPricesAsync(int tenantId, DateTime since, CancellationToken ct)
     {
-        var products = await _db.Products.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var types = await _db.PricingTypes.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var items = await _db.ProductPrices.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        var products = await QueryTenantBranch(_db.Products, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var types = await QueryTenantBranch(_db.PricingTypes, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var items = await QueryTenantBranchSince(_db.ProductPrices, tenantId, since).ToListAsync(ct);
         return items.Select(p => new ProductPriceSyncDto
         {
             SyncId = p.SyncId, BranchSyncId = ResolveBranchSyncId(p.BranchId), CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy, UpdatedAt = p.UpdatedAt, UpdatedBy = p.UpdatedBy,
@@ -1062,10 +1204,9 @@ public sealed partial class SyncEngine : ISyncEngine
 
     private async Task<List<WarehouseStockSyncDto>> PullWarehouseStocksAsync(int tenantId, DateTime since, CancellationToken ct)
     {
-        var wh = await _db.Warehouses.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var pr = await _db.Products.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var items = await _db.WarehouseStocks.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        var wh = await QueryTenantBranch(_db.Warehouses, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var pr = await QueryTenantBranch(_db.Products, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var items = await QueryTenantBranchSince(_db.WarehouseStocks, tenantId, since).ToListAsync(ct);
         return items.Select(s => new WarehouseStockSyncDto
         {
             SyncId = s.SyncId, BranchSyncId = ResolveBranchSyncId(s.BranchId), CreatedAt = s.CreatedAt, CreatedBy = s.CreatedBy, UpdatedAt = s.UpdatedAt, UpdatedBy = s.UpdatedBy,
@@ -1077,9 +1218,8 @@ public sealed partial class SyncEngine : ISyncEngine
 
     private async Task<List<WarehouseTransferSyncDto>> PullWarehouseTransfersAsync(int tenantId, DateTime since, CancellationToken ct)
     {
-        var warehouses = await _db.Warehouses.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var transfers = await _db.WarehouseTransfers.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        var warehouses = await QueryTenantBranch(_db.Warehouses, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var transfers = await QueryTenantBranchSince(_db.WarehouseTransfers, tenantId, since).ToListAsync(ct);
         return transfers.Select(t => new WarehouseTransferSyncDto
         {
             SyncId = t.SyncId, BranchSyncId = ResolveBranchSyncId(t.BranchId), CreatedAt = t.CreatedAt, CreatedBy = t.CreatedBy, UpdatedAt = t.UpdatedAt, UpdatedBy = t.UpdatedBy,
@@ -1094,10 +1234,9 @@ public sealed partial class SyncEngine : ISyncEngine
 
     private async Task<List<WarehouseTransferItemSyncDto>> PullWarehouseTransferItemsAsync(int tenantId, DateTime since, CancellationToken ct)
     {
-        var transfers = await _db.WarehouseTransfers.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var products = await _db.Products.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var items = await _db.WarehouseTransferItems.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        var transfers = await QueryTenantBranch(_db.WarehouseTransfers, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var products = await QueryTenantBranch(_db.Products, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var items = await QueryTenantBranchSince(_db.WarehouseTransferItems, tenantId, since).ToListAsync(ct);
         return items.Select(i => new WarehouseTransferItemSyncDto
         {
             SyncId = i.SyncId, BranchSyncId = ResolveBranchSyncId(i.BranchId), CreatedAt = i.CreatedAt, CreatedBy = i.CreatedBy, UpdatedAt = i.UpdatedAt, UpdatedBy = i.UpdatedBy,
@@ -1110,12 +1249,11 @@ public sealed partial class SyncEngine : ISyncEngine
 
     private async Task<List<InvoiceSyncDto>> PullInvoicesAsync(int tenantId, DateTime since, CancellationToken ct)
     {
-        var customers = await _db.Customers.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var suppliers = await _db.Suppliers.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var warehouses = await _db.Warehouses.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var cashBoxes = await _db.CashBoxes.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var invoices = await _db.Invoices.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        var customers = await QueryTenantBranch(_db.Customers, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var suppliers = await QueryTenantBranch(_db.Suppliers, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var warehouses = await QueryTenantBranch(_db.Warehouses, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var cashBoxes = await QueryTenantBranch(_db.CashBoxes, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var invoices = await QueryTenantBranchSince(_db.Invoices, tenantId, since).ToListAsync(ct);
         return invoices.Select(i => new InvoiceSyncDto
         {
             SyncId = i.SyncId, BranchSyncId = ResolveBranchSyncId(i.BranchId), CreatedAt = i.CreatedAt, CreatedBy = i.CreatedBy, UpdatedAt = i.UpdatedAt, UpdatedBy = i.UpdatedBy,
@@ -1135,11 +1273,10 @@ public sealed partial class SyncEngine : ISyncEngine
 
     private async Task<List<InvoiceItemSyncDto>> PullInvoiceItemsAsync(int tenantId, DateTime since, CancellationToken ct)
     {
-        var invoices = await _db.Invoices.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var products = await _db.Products.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var pricingTypes = await _db.PricingTypes.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var items = await _db.InvoiceItems.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        var invoices = await QueryTenantBranch(_db.Invoices, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var products = await QueryTenantBranch(_db.Products, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var pricingTypes = await QueryTenantBranch(_db.PricingTypes, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var items = await QueryTenantBranchSince(_db.InvoiceItems, tenantId, since).ToListAsync(ct);
         return items.Select(i => new InvoiceItemSyncDto
         {
             SyncId = i.SyncId, BranchSyncId = ResolveBranchSyncId(i.BranchId), CreatedAt = i.CreatedAt, CreatedBy = i.CreatedBy, UpdatedAt = i.UpdatedAt, UpdatedBy = i.UpdatedBy,
@@ -1155,10 +1292,9 @@ public sealed partial class SyncEngine : ISyncEngine
 
     private async Task<List<InstallmentPlanSyncDto>> PullInstallmentPlansAsync(int tenantId, DateTime since, CancellationToken ct)
     {
-        var invoices = await _db.Invoices.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var customers = await _db.Customers.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var plans = await _db.InstallmentPlans.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        var invoices = await QueryTenantBranch(_db.Invoices, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var customers = await QueryTenantBranch(_db.Customers, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var plans = await QueryTenantBranchSince(_db.InstallmentPlans, tenantId, since).ToListAsync(ct);
         return plans.Select(p => new InstallmentPlanSyncDto
         {
             SyncId = p.SyncId, BranchSyncId = ResolveBranchSyncId(p.BranchId), CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy, UpdatedAt = p.UpdatedAt, UpdatedBy = p.UpdatedBy,
@@ -1172,10 +1308,9 @@ public sealed partial class SyncEngine : ISyncEngine
 
     private async Task<List<InstallmentSyncDto>> PullInstallmentsAsync(int tenantId, DateTime since, CancellationToken ct)
     {
-        var plans = await _db.InstallmentPlans.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var cashBoxes = await _db.CashBoxes.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var items = await _db.Installments.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        var plans = await QueryTenantBranch(_db.InstallmentPlans, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var cashBoxes = await QueryTenantBranch(_db.CashBoxes, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var items = await QueryTenantBranchSince(_db.Installments, tenantId, since).ToListAsync(ct);
         return items.Select(i => new InstallmentSyncDto
         {
             SyncId = i.SyncId, BranchSyncId = ResolveBranchSyncId(i.BranchId), CreatedAt = i.CreatedAt, CreatedBy = i.CreatedBy, UpdatedAt = i.UpdatedAt, UpdatedBy = i.UpdatedBy,
@@ -1189,15 +1324,14 @@ public sealed partial class SyncEngine : ISyncEngine
 
     private async Task<List<VoucherSyncDto>> PullVouchersAsync(int tenantId, DateTime since, CancellationToken ct)
     {
-        var customers = await _db.Customers.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var suppliers = await _db.Suppliers.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var investors = await _db.Investors.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var cashBoxes = await _db.CashBoxes.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var banks = await _db.BankAccounts.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var invoices = await _db.Invoices.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var installments = await _db.Installments.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var vouchers = await _db.Vouchers.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        var customers = await QueryTenantBranch(_db.Customers, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var suppliers = await QueryTenantBranch(_db.Suppliers, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var investors = await QueryTenantBranch(_db.Investors, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var cashBoxes = await QueryTenantBranch(_db.CashBoxes, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var banks = await QueryTenantBranch(_db.BankAccounts, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var invoices = await QueryTenantBranch(_db.Invoices, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var installments = await QueryTenantBranch(_db.Installments, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var vouchers = await QueryTenantBranchSince(_db.Vouchers, tenantId, since).ToListAsync(ct);
         return vouchers.Select(v => new VoucherSyncDto
         {
             SyncId = v.SyncId, BranchSyncId = ResolveBranchSyncId(v.BranchId), CreatedAt = v.CreatedAt, CreatedBy = v.CreatedBy, UpdatedAt = v.UpdatedAt, UpdatedBy = v.UpdatedBy,
@@ -1219,10 +1353,9 @@ public sealed partial class SyncEngine : ISyncEngine
 
     private async Task<List<ExpenseSyncDto>> PullExpensesAsync(int tenantId, DateTime since, CancellationToken ct)
     {
-        var types = await _db.ExpenseTypes.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var cashBoxes = await _db.CashBoxes.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var expenses = await _db.Expenses.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        var types = await QueryTenantBranch(_db.ExpenseTypes, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var cashBoxes = await QueryTenantBranch(_db.CashBoxes, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var expenses = await QueryTenantBranchSince(_db.Expenses, tenantId, since).ToListAsync(ct);
         return expenses.Select(e => new ExpenseSyncDto
         {
             SyncId = e.SyncId, BranchSyncId = ResolveBranchSyncId(e.BranchId), CreatedAt = e.CreatedAt, CreatedBy = e.CreatedBy, UpdatedAt = e.UpdatedAt, UpdatedBy = e.UpdatedBy,
@@ -1236,16 +1369,15 @@ public sealed partial class SyncEngine : ISyncEngine
 
     private async Task<List<TransferSyncDto>> PullTransfersAsync(int tenantId, DateTime since, CancellationToken ct)
     {
-        var cashBoxes = await _db.CashBoxes.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var banks = await _db.BankAccounts.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var cashBoxes = await QueryTenantBranch(_db.CashBoxes, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var banks = await QueryTenantBranch(_db.BankAccounts, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
         Guid ResolveId(TransferAccountType type, int id) => type switch
         {
             TransferAccountType.CashBox => cashBoxes.GetValueOrDefault(id),
             TransferAccountType.Bank => banks.GetValueOrDefault(id),
             _ => Guid.Empty
         };
-        var transfers = await _db.Transfers.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        var transfers = await QueryTenantBranchSince(_db.Transfers, tenantId, since).ToListAsync(ct);
         return transfers.Select(t => new TransferSyncDto
         {
             SyncId = t.SyncId, BranchSyncId = ResolveBranchSyncId(t.BranchId), CreatedAt = t.CreatedAt, CreatedBy = t.CreatedBy, UpdatedAt = t.UpdatedAt, UpdatedBy = t.UpdatedBy,
@@ -1258,9 +1390,8 @@ public sealed partial class SyncEngine : ISyncEngine
 
     private async Task<List<InvestorTransactionSyncDto>> PullInvestorTransactionsAsync(int tenantId, DateTime since, CancellationToken ct)
     {
-        var investors = await _db.Investors.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var txs = await _db.InvestorTransactions.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        var investors = await QueryTenantBranch(_db.Investors, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var txs = await QueryTenantBranchSince(_db.InvestorTransactions, tenantId, since).ToListAsync(ct);
         return txs.Select(t => new InvestorTransactionSyncDto
         {
             SyncId = t.SyncId, BranchSyncId = ResolveBranchSyncId(t.BranchId), CreatedAt = t.CreatedAt, CreatedBy = t.CreatedBy, UpdatedAt = t.UpdatedAt, UpdatedBy = t.UpdatedBy,
@@ -1272,10 +1403,9 @@ public sealed partial class SyncEngine : ISyncEngine
 
     private async Task<List<ProfitDistributionDetailSyncDto>> PullProfitDistributionDetailsAsync(int tenantId, DateTime since, CancellationToken ct)
     {
-        var dists = await _db.ProfitDistributions.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var investors = await _db.Investors.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var details = await _db.ProfitDistributionDetails.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        var dists = await QueryTenantBranch(_db.ProfitDistributions, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var investors = await QueryTenantBranch(_db.Investors, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var details = await QueryTenantBranchSince(_db.ProfitDistributionDetails, tenantId, since).ToListAsync(ct);
         return details.Select(d => new ProfitDistributionDetailSyncDto
         {
             SyncId = d.SyncId, BranchSyncId = ResolveBranchSyncId(d.BranchId), CreatedAt = d.CreatedAt, CreatedBy = d.CreatedBy, UpdatedAt = d.UpdatedAt, UpdatedBy = d.UpdatedBy,
@@ -1288,9 +1418,8 @@ public sealed partial class SyncEngine : ISyncEngine
 
     private async Task<List<CustomerAttachmentSyncDto>> PullCustomerAttachmentsAsync(int tenantId, DateTime since, CancellationToken ct)
     {
-        var customers = await _db.Customers.IgnoreQueryFilters().Where(e => e.TenantId == tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
-        var attachments = await _db.CustomerAttachments.IgnoreQueryFilters()
-            .Where(e => e.TenantId == tenantId && (e.UpdatedAt ?? e.CreatedAt) >= since).ToListAsync(ct);
+        var customers = await QueryTenantBranch(_db.Customers, tenantId).ToDictionaryAsync(e => e.Id, e => e.SyncId, ct);
+        var attachments = await QueryTenantBranchSince(_db.CustomerAttachments, tenantId, since).ToListAsync(ct);
         return attachments.Select(a => new CustomerAttachmentSyncDto
         {
             SyncId = a.SyncId, BranchSyncId = ResolveBranchSyncId(a.BranchId), CreatedAt = a.CreatedAt, CreatedBy = a.CreatedBy, UpdatedAt = a.UpdatedAt, UpdatedBy = a.UpdatedBy,

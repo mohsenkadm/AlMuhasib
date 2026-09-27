@@ -123,13 +123,8 @@ public sealed class BranchService : IBranchService
             .ThenBy(b => b.Name)
             .ToListAsync(ct);
 
-        if (branches.Count == 0)
-        {
-            var main = await db.Branches.AsNoTracking().FirstOrDefaultAsync(b => b.IsMain && b.IsActive, ct);
-            if (main is not null)
-                branches.Add(main);
-        }
-
+        // Fail-closed: no UserBranches → empty list (never escalate to Main).
+        // Migration / EnsureUserLinkedToMainAsync must create explicit assignments.
         return branches;
     }
 

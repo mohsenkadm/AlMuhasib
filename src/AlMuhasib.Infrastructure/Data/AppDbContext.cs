@@ -32,27 +32,45 @@ public class AppDbContext : DbContext
         _branchContext = branchContext;
     }
 
+    /// <summary>Bypass فقط (مزامنة/صيانة) — لا يشمل AllBranches.</summary>
+    public bool IsBypassBranchFilterActive => BypassBranchFilter || IsApplyingSyncPull;
+
+    /// <summary>وضع التقارير عبر الفروع المسموحة فقط.</summary>
+    public bool IsAllBranchesFilterActive =>
+        !IsBypassBranchFilterActive && _branchContext?.IsAllBranchesMode == true;
+
     /// <summary>
-    /// يُقيَّم لكل استعلام. عند Bypass أو وضع كل الفروع تُرجع UnsetBranchId
-    /// ويُعتمد على فلتر إضافي/تجاهل الفلاتر في مسارات التقارير.
+    /// فرع واحد للفلتر. في AllBranches يُستخدم AllowedBranchIdsForFilter بدلًا منه.
     /// </summary>
     public int CurrentBranchIdForFilter
     {
         get
         {
-            if (BypassBranchFilter || IsApplyingSyncPull)
-                return UnsetBranchId;
-            if (_branchContext?.IsAllBranchesMode == true)
+            if (IsBypassBranchFilterActive || IsAllBranchesFilterActive)
                 return UnsetBranchId;
             return _branchContext?.CurrentBranchId ?? UnsetBranchId;
         }
     }
 
-    /// <summary>true عندما يجب تعطيل مقارنة BranchId في الفلتر العام (bypass / all-branches).</summary>
-    public bool SuppressBranchIdMatch =>
-        BypassBranchFilter
-        || IsApplyingSyncPull
-        || _branchContext?.IsAllBranchesMode == true;
+    /// <summary>
+    /// الفروع المسموحة في وضع AllBranches. فارغ أو [-1] = لا بيانات (fail-closed).
+    /// لا يُستخدم Suppress الكامل أبدًا لـ AllBranches — يمنع تسريب فروع غير مسموحة.
+    /// </summary>
+    public int[] AllowedBranchIdsForFilter
+    {
+        get
+        {
+            if (!IsAllBranchesFilterActive)
+                return [];
+            var ids = _branchContext?.AllowedBranchIds;
+            if (ids is null || ids.Count == 0)
+                return [UnsetBranchId];
+            return ids.ToArray();
+        }
+    }
+
+    /// <summary>true فقط لـ Bypass/SyncPull — ليس لـ AllBranches.</summary>
+    public bool SuppressBranchIdMatch => IsBypassBranchFilterActive;
 
     // DbSets
     public DbSet<Branch> Branches => Set<Branch>();
@@ -135,16 +153,25 @@ public class AppDbContext : DbContext
 
             if (typeof(IBranchEntity).IsAssignableFrom(entityType.ClrType))
             {
-                // (!SuppressBranchIdMatch && BranchId == CurrentBranchIdForFilter) || SuppressBranchIdMatch
+                // Bypass → allow; AllBranches → BranchId ∈ AllowedBranchIds; else BranchId == Current
                 var branchId = Expression.Property(parameter, nameof(IBranchEntity.BranchId));
-                var currentBranch = Expression.Property(
-                    Expression.Constant(this),
-                    nameof(CurrentBranchIdForFilter));
-                var suppress = Expression.Property(
-                    Expression.Constant(this),
-                    nameof(SuppressBranchIdMatch));
-                var branchMatch = Expression.Equal(branchId, currentBranch);
-                var branchClause = Expression.OrElse(suppress, branchMatch);
+                var self = Expression.Constant(this);
+
+                var suppress = Expression.Property(self, nameof(SuppressBranchIdMatch));
+                var allBranches = Expression.Property(self, nameof(IsAllBranchesFilterActive));
+                var currentBranch = Expression.Property(self, nameof(CurrentBranchIdForFilter));
+                var allowedArr = Expression.Property(self, nameof(AllowedBranchIdsForFilter));
+
+                var contains = typeof(Enumerable).GetMethods()
+                    .First(m => m.Name == nameof(Enumerable.Contains) && m.GetParameters().Length == 2)!
+                    .MakeGenericMethod(typeof(int));
+                var inAllowed = Expression.Call(contains, allowedArr, branchId);
+                var singleMatch = Expression.Equal(branchId, currentBranch);
+
+                // suppress || (allBranches && inAllowed) || (!allBranches && singleMatch)
+                var allClause = Expression.AndAlso(allBranches, inAllowed);
+                var singleClause = Expression.AndAlso(Expression.Not(allBranches), singleMatch);
+                var branchClause = Expression.OrElse(suppress, Expression.OrElse(allClause, singleClause));
                 body = Expression.AndAlso(body, branchClause);
 
                 modelBuilder.Entity(entityType.ClrType).HasIndex(nameof(IBranchEntity.BranchId));

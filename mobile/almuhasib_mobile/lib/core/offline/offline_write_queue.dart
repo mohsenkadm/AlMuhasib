@@ -178,6 +178,12 @@ class OfflineWriteService extends GetxService {
     await _persist();
   }
 
+  /// Clears the entire offline queue (logout / user switch) to prevent cross-user flush.
+  Future<void> clearAll() async {
+    pending.clear();
+    await _persist();
+  }
+
   Future<int> flush() async {
     if (isFlushing.value) return 0;
     if (AppServices.connectivity.isOffline.value) return 0;
@@ -197,9 +203,9 @@ class OfflineWriteService extends GetxService {
       final currentTenantId = AppServices.prefs.tenantId;
 
       for (final write in List<PendingWrite>.from(items)) {
-        // Never flush a queued write into a different branch/tenant context.
-        if (write.branchId != null &&
-            currentBranchId != null &&
+        // Never flush a queued write into a different / missing branch/tenant context.
+        if (write.branchId == null ||
+            currentBranchId == null ||
             write.branchId != currentBranchId) {
           write.status = PendingWriteStatus.failed;
           write.lastError = 'branch_context_mismatch';
@@ -207,8 +213,8 @@ class OfflineWriteService extends GetxService {
           await _persist();
           continue;
         }
-        if (write.tenantId != null &&
-            currentTenantId != null &&
+        if (write.tenantId == null ||
+            currentTenantId == null ||
             write.tenantId != currentTenantId) {
           write.status = PendingWriteStatus.failed;
           write.lastError = 'tenant_context_mismatch';

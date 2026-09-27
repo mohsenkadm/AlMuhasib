@@ -15,17 +15,20 @@ public class InvoiceService : IInvoiceService
     private readonly ICurrentUserService _currentUserService;
     private readonly LoyaltyService _loyaltyService;
     private readonly IAccountingPeriodLockService _periodLockService;
+    private readonly IBranchContext _branchContext;
 
     public InvoiceService(
         IDbContextFactory<AppDbContext> contextFactory,
         ICurrentUserService currentUserService,
         LoyaltyService loyaltyService,
-        IAccountingPeriodLockService periodLockService)
+        IAccountingPeriodLockService periodLockService,
+        IBranchContext branchContext)
     {
         _contextFactory = contextFactory;
         _currentUserService = currentUserService;
         _loyaltyService = loyaltyService;
         _periodLockService = periodLockService;
+        _branchContext = branchContext;
     }
 
     public async Task<Invoice> CreateInvoiceAsync(
@@ -44,11 +47,23 @@ public class InvoiceService : IInvoiceService
             await _periodLockService.EnsureDateAllowedAsync(invoice.Date);
 
             var username = _currentUserService.Username;
+            var writeBranchId = _branchContext.RequireWriteBranchId();
+            invoice.BranchId = writeBranchId;
             invoice.CreatedBy = username;
             invoice.CreatedAt = DateTime.UtcNow;
 
             invoice.FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
                 invoice.Currency, invoice.FxRate, "فاتورة");
+
+            // Branch-scoped FK integrity (query filter already scopes sets to write branch).
+            if (!await context.Warehouses.AnyAsync(w => w.Id == invoice.WarehouseId))
+                throw new InvalidOperationException("المخزن غير موجود في الفرع الحالي");
+            if (invoice.CustomerId is > 0
+                && !await context.Customers.AnyAsync(c => c.Id == invoice.CustomerId.Value))
+                throw new InvalidOperationException("العميل غير موجود في الفرع الحالي");
+            if (invoice.SupplierId is > 0
+                && !await context.Suppliers.AnyAsync(s => s.Id == invoice.SupplierId.Value))
+                throw new InvalidOperationException("المورد غير موجود في الفرع الحالي");
 
             if (invoice.CashBoxId.HasValue)
             {
@@ -750,12 +765,13 @@ public class InvoiceService : IInvoiceService
     public async Task RestoreInvoiceAsync(int id)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
+        var writeBranchId = _branchContext.RequireWriteBranchId();
         var invoice = await context.Invoices
             .IgnoreQueryFilters()
             .Include(i => i.Items)
             .Include(i => i.InstallmentPlans)
                 .ThenInclude(p => p.Installments)
-            .FirstOrDefaultAsync(i => i.Id == id);
+            .FirstOrDefaultAsync(i => i.Id == id && i.BranchId == writeBranchId);
 
         if (invoice is null)
             throw new InvalidOperationException("الفاتورة غير موجودة");
@@ -783,7 +799,10 @@ public class InvoiceService : IInvoiceService
 
         var numberTaken = await context.Invoices
             .IgnoreQueryFilters()
-            .AnyAsync(i => i.Id != invoice.Id && i.InvoiceNumber == restoredNumber && !i.IsDeleted);
+            .AnyAsync(i => i.Id != invoice.Id
+                           && i.BranchId == writeBranchId
+                           && i.InvoiceNumber == restoredNumber
+                           && !i.IsDeleted);
         if (numberTaken)
             throw new InvalidOperationException(
                 $"لا يمكن استرجاع الفاتورة لأن رقمها ({restoredNumber}) مستخدم حالياً في فاتورة أخرى.");
@@ -1210,7 +1229,7 @@ public class InvoiceService : IInvoiceService
         return repaired;
     }
 
-    private static async Task AddCreditDownPaymentVoucherAsync(
+    private async Task AddCreditDownPaymentVoucherAsync(
         AppDbContext context,
         Invoice invoice,
         decimal amount,
@@ -1387,11 +1406,12 @@ public class InvoiceService : IInvoiceService
         }
     }
 
-    private static async Task<string> GetNextDebtReceiptNumberAsync(AppDbContext context)
+    private async Task<string> GetNextDebtReceiptNumberAsync(AppDbContext context)
     {
+        var branchId = _branchContext.RequireWriteBranchId();
         var lastVoucher = await context.Vouchers
             .IgnoreQueryFilters()
-            .Where(v => v.VoucherType == VoucherType.DebtReceipt)
+            .Where(v => v.BranchId == branchId && v.VoucherType == VoucherType.DebtReceipt)
             .OrderByDescending(v => v.Id)
             .FirstOrDefaultAsync();
 
@@ -1403,11 +1423,12 @@ public class InvoiceService : IInvoiceService
         return $"DRC{nextNum:D6}";
     }
 
-    private static async Task<string> GetNextPaymentVoucherNumberAsync(AppDbContext context)
+    private async Task<string> GetNextPaymentVoucherNumberAsync(AppDbContext context)
     {
+        var branchId = _branchContext.RequireWriteBranchId();
         var lastVoucher = await context.Vouchers
             .IgnoreQueryFilters()
-            .Where(v => v.VoucherType == VoucherType.Payment)
+            .Where(v => v.BranchId == branchId && v.VoucherType == VoucherType.Payment)
             .OrderByDescending(v => v.Id)
             .FirstOrDefaultAsync();
 

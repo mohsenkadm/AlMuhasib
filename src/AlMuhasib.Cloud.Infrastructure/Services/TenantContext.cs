@@ -16,7 +16,9 @@ public sealed class TenantContext : ITenantContext
     public void SetTenant(int tenantId, int? accountId = null)
     {
         TenantId = tenantId;
-        TenantAccountId = accountId;
+        // Do not wipe middleware-bound account id when callers pass only tenantId.
+        if (accountId.HasValue)
+            TenantAccountId = accountId;
     }
 
     public void SetBranch(int branchId, IEnumerable<int> allowedBranchIds, bool canViewAllBranches = false)
