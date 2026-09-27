@@ -316,6 +316,18 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         var isInstallment = request.PaymentMethod == PaymentMethod.Installment
                             || request.InvoiceType == InvoiceType.Installment;
 
+        if ((isCredit || isInstallment) && request.CustomerSyncId is { } customerSyncId && customerSyncId != Guid.Empty)
+        {
+            await EnsureCustomerCreditAllowedAsync(
+                tenantId,
+                customerSyncId,
+                netAmount,
+                isInstallment,
+                request.Currency,
+                request.FxRate,
+                ct);
+        }
+
         var invoiceDto = new InvoiceSyncDto
         {
             SyncId = invoiceSyncId,
@@ -1707,6 +1719,72 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
                 throw new ArgumentException("خطة الأقساط مطلوبة");
             if (request.InstallmentPlan.NumberOfInstallments < 1)
                 throw new ArgumentException("عدد الأقساط يجب أن يكون واحداً على الأقل");
+        }
+    }
+
+    /// <summary>
+    /// يفحص حد الائتمان السحابي (بالدينار) مع تحويل مبلغ الفاتورة عبر FxRate عند USD.
+    /// </summary>
+    private async Task EnsureCustomerCreditAllowedAsync(
+        int tenantId,
+        Guid customerSyncId,
+        decimal additionalAmount,
+        bool isInstallment,
+        AccountingCurrency currency,
+        decimal fxRate,
+        CancellationToken ct)
+    {
+        var customer = await _db.Customers.AsNoTracking()
+            .Where(c => c.TenantId == tenantId && c.SyncId == customerSyncId && !c.IsDeleted)
+            .Select(c => new { c.Id, c.MaxCreditLimit })
+            .FirstOrDefaultAsync(ct);
+        if (customer is null)
+            throw new ArgumentException("العميل غير موجود");
+
+        if (customer.MaxCreditLimit is null or <= 0)
+            return;
+
+        decimal currentDebtIqd;
+        if (isInstallment)
+        {
+            var rows = await _db.Installments.AsNoTracking()
+                .Where(i => i.TenantId == tenantId &&
+                            !i.IsDeleted &&
+                            i.InstallmentPlan!.CustomerId == customer.Id &&
+                            i.RemainingAmount > 0)
+                .Select(i => new
+                {
+                    i.RemainingAmount,
+                    Currency = i.InstallmentPlan!.Invoice!.Currency,
+                    FxRate = i.InstallmentPlan.Invoice.FxRate
+                })
+                .ToListAsync(ct);
+            currentDebtIqd = rows.Sum(r =>
+                AccountingCurrencyRules.ToBaseIqdStrict(r.RemainingAmount, r.Currency, r.FxRate));
+        }
+        else
+        {
+            var rows = await _db.Invoices.AsNoTracking()
+                .Where(i => i.TenantId == tenantId &&
+                            !i.IsDeleted &&
+                            i.CustomerId == customer.Id &&
+                            i.PaymentMethod == PaymentMethod.Credit &&
+                            i.RemainingAmount > 0)
+                .Select(i => new { i.RemainingAmount, i.Currency, i.FxRate })
+                .ToListAsync(ct);
+            currentDebtIqd = rows.Sum(r =>
+                AccountingCurrencyRules.ToBaseIqdStrict(r.RemainingAmount, r.Currency, r.FxRate));
+        }
+
+        var additionalIqd = AccountingCurrencyRules.ToBaseIqdStrict(additionalAmount, currency, fxRate);
+        var projected = currentDebtIqd + additionalIqd;
+        if (projected > customer.MaxCreditLimit.Value)
+        {
+            var currencyHint = currency == AccountingCurrency.USD
+                ? $" (فاتورة ${additionalAmount:N2} ≈ {additionalIqd:N0} د.ع)"
+                : string.Empty;
+            throw new InvalidOperationException(
+                $"تجاوز حد الائتمان: الدين الحالي {currentDebtIqd:N0} + الجديد {additionalIqd:N0}{currencyHint} > الحد {customer.MaxCreditLimit.Value:N0} د.ع");
         }
     }
 

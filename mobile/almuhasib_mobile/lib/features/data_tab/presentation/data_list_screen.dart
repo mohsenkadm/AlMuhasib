@@ -255,20 +255,25 @@ class _DataListBody extends StatelessWidget {
       case 'customers':
       case 'suppliers':
       case 'investors':
-        final balances = items
-            .whereType<LookupItem>()
-            .map((e) => e.balance ?? 0)
-            .toList();
-        final totalBalance = balances.fold<double>(0, (s, b) => s + b);
-        final withBalance = balances.where((b) => b != 0).length;
-        final positive = balances.where((b) => b > 0).length;
+        final lookups = items.whereType<LookupItem>().toList();
+        final totalIqd = lookups.fold<double>(0, (s, e) => s + e.effectiveBalanceIqd);
+        final totalUsd = lookups.fold<double>(0, (s, e) => s + e.effectiveBalanceUsd);
+        final withBalance = lookups
+            .where((e) => e.effectiveBalanceIqd != 0 || e.effectiveBalanceUsd != 0)
+            .length;
+        final positive = lookups
+            .where((e) => e.effectiveBalanceIqd > 0 || e.effectiveBalanceUsd > 0)
+            .length;
+        final heroValue = listType == 'customers' && totalUsd != 0
+            ? '${formatCurrency(totalIqd)} | ${formatCurrency(totalUsd)} \$'
+            : formatCurrency(totalIqd);
         return PageStatsHeader(
           heroTitle: listType == 'customers'
               ? 'total_outstanding'.tr()
               : 'balance'.tr(),
-          heroValue: formatCurrency(totalBalance),
+          heroValue: heroValue,
           heroSubtitle: '$count ${'records_count'.tr()}',
-          trendPositive: totalBalance <= 0,
+          trendPositive: totalIqd <= 0 && totalUsd <= 0,
           stats: [
             StatsChipData(
               label: 'records_count'.tr(),
@@ -393,17 +398,28 @@ class _DataListBody extends StatelessWidget {
     }
 
     if (item is LookupItem && listType != 'invoices') {
-      final showBalance = item.balance != null &&
-          (listType == 'customers' ||
-              listType == 'suppliers' ||
-              listType == 'investors');
-      final balanceText = showBalance
-          ? '${'balance'.tr()}: ${formatCurrency(item.balance!)}'
-          : null;
+      final isCustomer = listType == 'customers';
+      final showBalance = isCustomer
+          ? (item.balance != null ||
+              item.balanceIqd != null ||
+              item.balanceUsd != null)
+          : item.balance != null &&
+              (listType == 'suppliers' || listType == 'investors');
+      final balanceDisplay = !showBalance
+          ? null
+          : isCustomer
+              ? formatCustomerOutstanding(item)
+              : formatCurrency(item.balance!);
+      final balancePositive = isCustomer
+          ? (item.effectiveBalanceIqd > 0 || item.effectiveBalanceUsd > 0)
+          : (item.balance ?? 0) > 0;
+      final balanceText = balanceDisplay == null
+          ? null
+          : '${'balance'.tr()}: $balanceDisplay';
       return AppEntityCard(
-        title: listType == 'customers' ? item.displayName : item.name,
+        title: isCustomer ? item.displayName : item.name,
         subtitle: [
-          if (listType == 'customers' &&
+          if (isCustomer &&
               item.fileNumber != null &&
               item.fileNumber!.isNotEmpty)
             'رقم العميل: ${item.fileNumber}',
@@ -413,10 +429,10 @@ class _DataListBody extends StatelessWidget {
         leading: _LeadingBadge(icon: icon, color: accent, letter: item.name),
         trailing: showBalance
             ? AppSelectableText(
-                formatCurrency(item.balance!),
+                balanceDisplay!,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: item.balance! > 0
+                      color: balancePositive
                           ? AppColors.error
                           : AppColors.success,
                     ),
@@ -590,7 +606,8 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
     final displayName = widget.name.isNotEmpty
         ? widget.name
         : (product?.name ?? customer?.displayName ?? '');
-    final customerBalance = customer?.balance;
+    final customerBalanceText =
+        customer == null ? null : formatCustomerOutstanding(customer);
 
     return AppPageScaffold(
       title: displayName,
@@ -621,7 +638,7 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
                       ? 'balance'.tr()
                       : displayName,
                   value: widget.entityType == 'customer'
-                      ? formatCurrency(customerBalance ?? 0)
+                      ? (customerBalanceText ?? formatCurrency(0))
                       : product?.categoryName.isNotEmpty == true
                           ? product!.categoryName
                           : switch (widget.entityType) {
@@ -638,6 +655,8 @@ class _EntityDetailScreenState extends State<EntityDetailScreen> {
                           if (customer?.extra != null &&
                               customer!.extra!.isNotEmpty)
                             customer.extra!,
+                          if (customer?.effectiveBalanceUsd != 0)
+                            'USD: ${formatCurrency(customer!.effectiveBalanceUsd)}',
                         ].where((e) => e.isNotEmpty).join(' • ')
                       : product?.barcode,
                 ).fadeSlideIn(),

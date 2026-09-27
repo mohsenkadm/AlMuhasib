@@ -7,8 +7,14 @@ public class LookupItem
     public string Name { get; set; } = string.Empty;
     public string? Extra { get; set; }
     public string? FileNumber { get; set; }
-    /// <summary>رصيد الزبون المستحق (للعملاء فقط).</summary>
+    /// <summary>رصيد الزبون المستحق بالدينار (للتوافق العكسي؛ يساوي BalanceIqd).</summary>
     public decimal? Balance { get; set; }
+    /// <summary>رصيد الزبون المستحق بالدينار.</summary>
+    public decimal? BalanceIqd { get; set; }
+    /// <summary>رصيد الزبون المستحق بالدولار.</summary>
+    public decimal? BalanceUsd { get; set; }
+    /// <summary>حد أقصى للدين الآجل (د.ع).</summary>
+    public decimal? MaxCreditLimit { get; set; }
 }
 
 public sealed class ProductLookupItem : LookupItem
