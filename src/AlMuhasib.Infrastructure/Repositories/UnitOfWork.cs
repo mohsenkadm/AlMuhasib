@@ -9,15 +9,20 @@ namespace AlMuhasib.Infrastructure.Repositories;
 public class UnitOfWork : IUnitOfWork
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
+    private readonly IBranchContext? _branchContext;
     private AppDbContext? _activeContext;
     private IDbContextTransaction? _transaction;
 
-    public UnitOfWork(IDbContextFactory<AppDbContext> contextFactory)
+    public UnitOfWork(IDbContextFactory<AppDbContext> contextFactory, IBranchContext? branchContext = null)
     {
         _contextFactory = contextFactory;
+        _branchContext = branchContext;
     }
 
     private AppDbContext? GetActiveContext() => _activeContext;
+
+    private IRepository<TEntity> CreateRepo<TEntity>() where TEntity : BaseEntity =>
+        new Repository<TEntity>(_contextFactory, GetActiveContext, _branchContext);
 
     private IRepository<User>? _users;
     private IRepository<Permission>? _permissions;
@@ -58,49 +63,49 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<ProductPrice>? _productPrices;
     private IRepository<BusinessSettings>? _businessSettings;
 
-    public IRepository<User> Users => _users ??= new Repository<User>(_contextFactory, GetActiveContext);
-    public IRepository<Permission> Permissions => _permissions ??= new Repository<Permission>(_contextFactory, GetActiveContext);
-    public IRepository<Category> Categories => _categories ??= new Repository<Category>(_contextFactory, GetActiveContext);
-    public IRepository<Product> Products => _products ??= new Repository<Product>(_contextFactory, GetActiveContext);
-    public IRepository<Customer> Customers => _customers ??= new Repository<Customer>(_contextFactory, GetActiveContext);
-    public IRepository<Driver> Drivers => _drivers ??= new Repository<Driver>(_contextFactory, GetActiveContext);
-    public IRepository<Employee> Employees => _employees ??= new Repository<Employee>(_contextFactory, GetActiveContext);
+    public IRepository<User> Users => _users ??= CreateRepo<User>();
+    public IRepository<Permission> Permissions => _permissions ??= CreateRepo<Permission>();
+    public IRepository<Category> Categories => _categories ??= CreateRepo<Category>();
+    public IRepository<Product> Products => _products ??= CreateRepo<Product>();
+    public IRepository<Customer> Customers => _customers ??= CreateRepo<Customer>();
+    public IRepository<Driver> Drivers => _drivers ??= CreateRepo<Driver>();
+    public IRepository<Employee> Employees => _employees ??= CreateRepo<Employee>();
     public IRepository<SalesRepresentative> SalesRepresentatives =>
-        _salesRepresentatives ??= new Repository<SalesRepresentative>(_contextFactory, GetActiveContext);
+        _salesRepresentatives ??= CreateRepo<SalesRepresentative>();
     public IRepository<SalesRepCommissionRule> SalesRepCommissionRules =>
-        _salesRepCommissionRules ??= new Repository<SalesRepCommissionRule>(_contextFactory, GetActiveContext);
+        _salesRepCommissionRules ??= CreateRepo<SalesRepCommissionRule>();
     public IRepository<SalesRepCommissionEntry> SalesRepCommissionEntries =>
-        _salesRepCommissionEntries ??= new Repository<SalesRepCommissionEntry>(_contextFactory, GetActiveContext);
+        _salesRepCommissionEntries ??= CreateRepo<SalesRepCommissionEntry>();
     public IRepository<SalesRepTarget> SalesRepTargets =>
-        _salesRepTargets ??= new Repository<SalesRepTarget>(_contextFactory, GetActiveContext);
+        _salesRepTargets ??= CreateRepo<SalesRepTarget>();
     public IRepository<SalesRepCollection> SalesRepCollections =>
-        _salesRepCollections ??= new Repository<SalesRepCollection>(_contextFactory, GetActiveContext);
-    public IRepository<Supplier> Suppliers => _suppliers ??= new Repository<Supplier>(_contextFactory, GetActiveContext);
-    public IRepository<Warehouse> Warehouses => _warehouses ??= new Repository<Warehouse>(_contextFactory, GetActiveContext);
-    public IRepository<WarehouseStock> WarehouseStocks => _warehouseStocks ??= new Repository<WarehouseStock>(_contextFactory, GetActiveContext);
-    public IRepository<CashBox> CashBoxes => _cashBoxes ??= new Repository<CashBox>(_contextFactory, GetActiveContext);
-    public IRepository<BankAccount> BankAccounts => _bankAccounts ??= new Repository<BankAccount>(_contextFactory, GetActiveContext);
-    public IRepository<Investor> Investors => _investors ??= new Repository<Investor>(_contextFactory, GetActiveContext);
-    public IRepository<ExpenseType> ExpenseTypes => _expenseTypes ??= new Repository<ExpenseType>(_contextFactory, GetActiveContext);
-    public IRepository<Invoice> Invoices => _invoices ??= new Repository<Invoice>(_contextFactory, GetActiveContext);
-    public IRepository<InvoiceItem> InvoiceItems => _invoiceItems ??= new Repository<InvoiceItem>(_contextFactory, GetActiveContext);
-    public IRepository<InstallmentPlan> InstallmentPlans => _installmentPlans ??= new Repository<InstallmentPlan>(_contextFactory, GetActiveContext);
-    public IRepository<Installment> Installments => _installments ??= new Repository<Installment>(_contextFactory, GetActiveContext);
-    public IRepository<Voucher> Vouchers => _vouchers ??= new Repository<Voucher>(_contextFactory, GetActiveContext);
-    public IRepository<Expense> Expenses => _expenses ??= new Repository<Expense>(_contextFactory, GetActiveContext);
-    public IRepository<Transfer> Transfers => _transfers ??= new Repository<Transfer>(_contextFactory, GetActiveContext);
-    public IRepository<InvestorTransaction> InvestorTransactions => _investorTransactions ??= new Repository<InvestorTransaction>(_contextFactory, GetActiveContext);
-    public IRepository<ProfitDistribution> ProfitDistributions => _profitDistributions ??= new Repository<ProfitDistribution>(_contextFactory, GetActiveContext);
-    public IRepository<ProfitDistributionDetail> ProfitDistributionDetails => _profitDistributionDetails ??= new Repository<ProfitDistributionDetail>(_contextFactory, GetActiveContext);
-    public IRepository<CapitalEntry> CapitalEntries => _capitalEntries ??= new Repository<CapitalEntry>(_contextFactory, GetActiveContext);
-    public IRepository<AuditLog> AuditLogs => _auditLogs ??= new Repository<AuditLog>(_contextFactory, GetActiveContext);
-    public IRepository<CustomerAttachment> CustomerAttachments => _customerAttachments ??= new Repository<CustomerAttachment>(_contextFactory, GetActiveContext);
-    public IRepository<PrintBrandingSettings> PrintBrandingSettings => _printBrandingSettings ??= new Repository<PrintBrandingSettings>(_contextFactory, GetActiveContext);
-    public IRepository<UserTask> UserTasks => _userTasks ??= new Repository<UserTask>(_contextFactory, GetActiveContext);
-    public IRepository<UserNote> UserNotes => _userNotes ??= new Repository<UserNote>(_contextFactory, GetActiveContext);
-    public IRepository<PricingType> PricingTypes => _pricingTypes ??= new Repository<PricingType>(_contextFactory, GetActiveContext);
-    public IRepository<ProductPrice> ProductPrices => _productPrices ??= new Repository<ProductPrice>(_contextFactory, GetActiveContext);
-    public IRepository<BusinessSettings> BusinessSettings => _businessSettings ??= new Repository<BusinessSettings>(_contextFactory, GetActiveContext);
+        _salesRepCollections ??= CreateRepo<SalesRepCollection>();
+    public IRepository<Supplier> Suppliers => _suppliers ??= CreateRepo<Supplier>();
+    public IRepository<Warehouse> Warehouses => _warehouses ??= CreateRepo<Warehouse>();
+    public IRepository<WarehouseStock> WarehouseStocks => _warehouseStocks ??= CreateRepo<WarehouseStock>();
+    public IRepository<CashBox> CashBoxes => _cashBoxes ??= CreateRepo<CashBox>();
+    public IRepository<BankAccount> BankAccounts => _bankAccounts ??= CreateRepo<BankAccount>();
+    public IRepository<Investor> Investors => _investors ??= CreateRepo<Investor>();
+    public IRepository<ExpenseType> ExpenseTypes => _expenseTypes ??= CreateRepo<ExpenseType>();
+    public IRepository<Invoice> Invoices => _invoices ??= CreateRepo<Invoice>();
+    public IRepository<InvoiceItem> InvoiceItems => _invoiceItems ??= CreateRepo<InvoiceItem>();
+    public IRepository<InstallmentPlan> InstallmentPlans => _installmentPlans ??= CreateRepo<InstallmentPlan>();
+    public IRepository<Installment> Installments => _installments ??= CreateRepo<Installment>();
+    public IRepository<Voucher> Vouchers => _vouchers ??= CreateRepo<Voucher>();
+    public IRepository<Expense> Expenses => _expenses ??= CreateRepo<Expense>();
+    public IRepository<Transfer> Transfers => _transfers ??= CreateRepo<Transfer>();
+    public IRepository<InvestorTransaction> InvestorTransactions => _investorTransactions ??= CreateRepo<InvestorTransaction>();
+    public IRepository<ProfitDistribution> ProfitDistributions => _profitDistributions ??= CreateRepo<ProfitDistribution>();
+    public IRepository<ProfitDistributionDetail> ProfitDistributionDetails => _profitDistributionDetails ??= CreateRepo<ProfitDistributionDetail>();
+    public IRepository<CapitalEntry> CapitalEntries => _capitalEntries ??= CreateRepo<CapitalEntry>();
+    public IRepository<AuditLog> AuditLogs => _auditLogs ??= CreateRepo<AuditLog>();
+    public IRepository<CustomerAttachment> CustomerAttachments => _customerAttachments ??= CreateRepo<CustomerAttachment>();
+    public IRepository<PrintBrandingSettings> PrintBrandingSettings => _printBrandingSettings ??= CreateRepo<PrintBrandingSettings>();
+    public IRepository<UserTask> UserTasks => _userTasks ??= CreateRepo<UserTask>();
+    public IRepository<UserNote> UserNotes => _userNotes ??= CreateRepo<UserNote>();
+    public IRepository<PricingType> PricingTypes => _pricingTypes ??= CreateRepo<PricingType>();
+    public IRepository<ProductPrice> ProductPrices => _productPrices ??= CreateRepo<ProductPrice>();
+    public IRepository<BusinessSettings> BusinessSettings => _businessSettings ??= CreateRepo<BusinessSettings>();
 
     public async Task<int> SaveChangesAsync()
     {
