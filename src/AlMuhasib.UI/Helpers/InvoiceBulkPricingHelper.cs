@@ -33,6 +33,8 @@ public static class InvoiceBulkPricingHelper
                 PricingTypeId = p.PricingTypeId,
                 Name = p.PricingType?.Name ?? $"نوع {p.PricingTypeId}",
                 Price = usePurchasePrice ? p.PurchasePrice : p.SalePrice,
+                PurchasePrice = p.PurchasePrice,
+                SalePrice = p.SalePrice,
                 IsDefault = p.PricingType?.IsDefault == true
             })
             .ToList();

@@ -674,6 +674,8 @@ public class BalanceSheetResult
     public decimal CustomerDebts { get; set; }
     public decimal InventoryValue { get; set; }
     public decimal InstallmentReceivables { get; set; }
+    /// <summary>سلف الموظفين المستحقة (أصل).</summary>
+    public decimal EmployeeAdvances { get; set; }
     public decimal AssetsTotal { get; set; }
 
     public decimal Difference { get; set; }

@@ -25,7 +25,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
     private readonly IWhatsAppShareService _whatsAppShare;
     private readonly IProductPriceService _productPriceService;
     private readonly IUserPreferencesService _userPreferences;
-    private readonly bool _updateProductPriceOnPurchase;
+    private bool _updateProductPriceOnPurchase;
+    private bool _updateSalePriceOnPurchase;
     private readonly IPartyQuickDetailService _partyQuickDetail;
     private readonly IProductQuickDetailService _productQuickDetail;
 
@@ -192,6 +193,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         _pricingTypeService = pricingTypeService;
         _userPreferences = userPreferences;
         _updateProductPriceOnPurchase = userPreferences.Current.FeatureFlags.UpdateProductPriceOnPurchase
+            && userPreferences.Current.FeatureFlags.ProductPricingEnabled;
+        _updateSalePriceOnPurchase = userPreferences.Current.FeatureFlags.UpdateSalePriceOnPurchase
             && userPreferences.Current.FeatureFlags.ProductPricingEnabled;
         _partyQuickDetail = partyQuickDetail;
         _productQuickDetail = productQuickDetail;
@@ -589,7 +592,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             _invoiceService,
             InvoiceType.Purchase,
             invoiceDiscountAmount: 0m,
-            transportFeeAmount: ShowTransportFee ? TransportFeeAmount : 0m);
+            transportFeeAmount: ShowTransportFee ? TransportFeeAmount : 0m,
+            purchaseExpenseAmount: ShowPurchaseExpenses ? PurchaseExpenseAmount : 0m);
 
         RoundingAmount = rounding;
         _isRecalculating = true;
@@ -614,6 +618,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
     }
 
     partial void OnTransportFeeAmountChanged(decimal value) => RecalculateTotals();
+    partial void OnPurchaseExpenseAmountChanged(decimal value) => RecalculateTotals();
 
     // ── Save ───────────────────────────────────────────────
     [RelayCommand]
@@ -761,11 +766,28 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                 Date = InvoiceDate,
                 PaidAmount = IsCreditPayment ? Math.Clamp(CreditPaidAmount, 0m, GrandTotal) : 0m,
                 TransportFeeAmount = ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m,
+                PurchaseExpenseAmount = ShowPurchaseExpenses && !AllocatePurchaseExpensesToProducts
+                    ? Math.Max(0m, PurchaseExpenseAmount)
+                    : 0m,
                 RelatedInvoiceId = IsReturnMode ? _relatedInvoiceId : null,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
             };
 
+            // عند التقسيم: تُحمَّل المصاريف على أسعار البنود ولا تُضاف كبند رأس منفصل (تفادي الازدواج).
+            var expenseToAllocate = ShowPurchaseExpenses && AllocatePurchaseExpensesToProducts
+                ? Math.Max(0m, PurchaseExpenseAmount)
+                : 0m;
+            var perLineExpense = 0m;
+            var expenseRemainder = 0m;
+            if (expenseToAllocate > 0 && validItems.Count > 0)
+            {
+                perLineExpense = Math.Floor(expenseToAllocate / validItems.Count);
+                expenseRemainder = expenseToAllocate - (perLineExpense * validItems.Count);
+            }
+
             var invoiceItems = new List<InvoiceItem>();
+            var salePricesByProduct = new Dictionary<(int ProductId, int PricingTypeId), decimal>();
+            var rowIndex = 0;
             foreach (var row in validItems)
             {
                 // If product name matches an existing product, link it
@@ -791,7 +813,14 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
 
                 var stockQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(row));
                 var factor = ProductDiscountHelper.NormalizeConversionFactor(row.UnitConversionFactor);
-                var lineTotal = Math.Abs(row.Quantity) * factor * row.UnitPrice;
+                var unitPrice = row.UnitPrice;
+                if (expenseToAllocate > 0 && stockQty > 0)
+                {
+                    var share = perLineExpense + (rowIndex == validItems.Count - 1 ? expenseRemainder : 0m);
+                    unitPrice += share / stockQty;
+                }
+
+                var lineTotal = Math.Abs(row.Quantity) * factor * unitPrice;
 
                 var lineWarehouseId = InvoiceLineWarehouseHelper.ResolveLineWarehouseId(row, SelectedWarehouse.Id);
                 invoiceItems.Add(new InvoiceItem
@@ -800,11 +829,16 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                     PricingTypeId = row.PricingTypeId,
                     ItemName = row.ItemName.Trim(),
                     Quantity = stockQty,
-                    UnitPrice = row.UnitPrice,
+                    UnitPrice = unitPrice,
                     TotalPrice = lineTotal,
                     WarehouseId = lineWarehouseId,
                     CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row, [ClothingSizeInvoiceHelper.SizeLabel])
                 });
+
+                if (productId is > 0 && row.PricingTypeId is > 0 && ShowSalePriceColumn)
+                    salePricesByProduct[(productId.Value, row.PricingTypeId.Value)] = Math.Max(0m, row.SalePrice);
+
+                rowIndex++;
             }
 
             Invoice saved;
@@ -817,14 +851,21 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             {
                 saved = await _invoiceService.CreateInvoiceAsync(invoice, invoiceItems);
 
-                if (_updateProductPriceOnPurchase && !IsReturnMode)
+                if (!IsReturnMode && (_updateProductPriceOnPurchase || _updateSalePriceOnPurchase))
                 {
                     foreach (var item in invoiceItems.Where(i => i.ProductId is > 0 && i.PricingTypeId is > 0))
                     {
-                        await _productPriceService.UpdatePurchasePriceAsync(
+                        decimal? purchase = _updateProductPriceOnPurchase ? item.UnitPrice : null;
+                        decimal? sale = null;
+                        if (_updateSalePriceOnPurchase &&
+                            salePricesByProduct.TryGetValue((item.ProductId!.Value, item.PricingTypeId!.Value), out var sp))
+                            sale = sp;
+
+                        await _productPriceService.UpdatePricesOnPurchaseAsync(
                             item.ProductId!.Value,
                             item.PricingTypeId!.Value,
-                            item.UnitPrice);
+                            purchase,
+                            sale);
                     }
                 }
             }
@@ -982,6 +1023,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             Subtotal = Subtotal,
             RoundingAmount = RoundingAmount,
             TransportFeeAmount = ShowTransportFee ? TransportFeeAmount : 0m,
+            PurchaseExpenseAmount = ShowPurchaseExpenses ? PurchaseExpenseAmount : 0m,
             GrandTotal = GrandTotal,
             PaidAmount = paidAmount,
             RemainingAmount = remainingAmount,
@@ -1047,6 +1089,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         ErrorMessage = string.Empty;
         Notes = string.Empty;
         TransportFeeAmount = 0m;
+        PurchaseExpenseAmount = 0m;
         CreditPaidAmount = 0m;
         CreditRemainingAmount = 0m;
         IsCashPayment = true;

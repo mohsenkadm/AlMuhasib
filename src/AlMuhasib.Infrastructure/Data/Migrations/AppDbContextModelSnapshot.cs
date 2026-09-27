@@ -809,6 +809,87 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.ToTable("Drivers", (string)null);
                 });
 
+            modelBuilder.Entity("AlMuhasib.Core.Entities.Employee", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("HireDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("JobTitle")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<decimal>("OpeningBalance")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("Name");
+
+                    b.HasIndex("Phone");
+
+                    b.ToTable("Employees", (string)null);
+                });
+
             modelBuilder.Entity("AlMuhasib.Core.Entities.EntityCustomFieldSettings", b =>
                 {
                     b.Property<int>("Id")
@@ -1487,6 +1568,10 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("TransportFeeAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PurchaseExpenseAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
@@ -3939,6 +4024,9 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<int?>("EmployeeId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("InstallmentId")
                         .HasColumnType("int");
 
@@ -4003,6 +4091,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("Date");
+
+                    b.HasIndex("EmployeeId");
 
                     b.HasIndex("InstallmentId");
 
@@ -4853,6 +4943,11 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("AlMuhasib.Core.Entities.Employee", "Employee")
+                        .WithMany("Vouchers")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("AlMuhasib.Core.Entities.Installment", "Installment")
                         .WithMany()
                         .HasForeignKey("InstallmentId")
@@ -4878,6 +4973,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Navigation("CashBox");
 
                     b.Navigation("Customer");
+
+                    b.Navigation("Employee");
 
                     b.Navigation("Installment");
 
@@ -4990,6 +5087,11 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Navigation("InstallmentPlans");
 
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("AlMuhasib.Core.Entities.Employee", b =>
+                {
+                    b.Navigation("Vouchers");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.PackagingType", b =>

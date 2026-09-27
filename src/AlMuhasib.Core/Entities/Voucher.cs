@@ -20,6 +20,7 @@ public class Voucher : BaseEntity
     public int? CustomerId { get; set; }
     public int? SupplierId { get; set; }
     public int? InvestorId { get; set; }
+    public int? EmployeeId { get; set; }
     public int CashBoxId { get; set; }
     public int? BankAccountId { get; set; }
     public DateTime Date { get; set; }
@@ -41,6 +42,7 @@ public class Voucher : BaseEntity
     public Customer? Customer { get; set; }
     public Supplier? Supplier { get; set; }
     public Investor? Investor { get; set; }
+    public Employee? Employee { get; set; }
     public CashBox CashBox { get; set; } = null!;
     public BankAccount? BankAccount { get; set; }
     public Invoice? Invoice { get; set; }
@@ -48,5 +50,5 @@ public class Voucher : BaseEntity
 
     [NotMapped]
     public string PartyDisplayName =>
-        Customer?.Name ?? Supplier?.Name ?? Investor?.Name ?? string.Empty;
+        Customer?.Name ?? Supplier?.Name ?? Investor?.Name ?? Employee?.Name ?? string.Empty;
 }

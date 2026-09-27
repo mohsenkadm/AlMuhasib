@@ -198,7 +198,17 @@ public class ProductPriceService : IProductPriceService
     }
 
     public async Task UpdatePurchasePriceAsync(int productId, int pricingTypeId, decimal purchasePrice)
+        => await UpdatePricesOnPurchaseAsync(productId, pricingTypeId, purchasePrice, salePrice: null);
+
+    public async Task UpdatePricesOnPurchaseAsync(
+        int productId,
+        int pricingTypeId,
+        decimal? purchasePrice,
+        decimal? salePrice)
     {
+        if (purchasePrice is null && salePrice is null)
+            return;
+
         await using var context = await _contextFactory.CreateDbContextAsync();
         var existing = await context.ProductPrices
             .FirstOrDefaultAsync(p => p.ProductId == productId && p.PricingTypeId == pricingTypeId);
@@ -209,15 +219,18 @@ public class ProductPriceService : IProductPriceService
             {
                 ProductId = productId,
                 PricingTypeId = pricingTypeId,
-                PurchasePrice = purchasePrice,
-                SalePrice = 0,
+                PurchasePrice = Math.Max(0m, purchasePrice ?? 0m),
+                SalePrice = Math.Max(0m, salePrice ?? 0m),
                 CreatedBy = _currentUserService.Username,
                 CreatedAt = DateTime.UtcNow
             });
         }
         else
         {
-            existing.PurchasePrice = purchasePrice;
+            if (purchasePrice is decimal pp)
+                existing.PurchasePrice = Math.Max(0m, pp);
+            if (salePrice is decimal sp)
+                existing.SalePrice = Math.Max(0m, sp);
             existing.UpdatedAt = DateTime.UtcNow;
             existing.UpdatedBy = _currentUserService.Username;
         }

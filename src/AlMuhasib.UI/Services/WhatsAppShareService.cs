@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Core.Models.Ux;
 using AlMuhasib.Shared.Helpers;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Windows;
@@ -11,10 +12,17 @@ namespace AlMuhasib.UI.Services;
 public sealed class WhatsAppShareService : IWhatsAppShareService
 {
     private readonly IExportService _exportService;
+    private readonly IUserPreferencesService _preferences;
+    private readonly WhatsAppApiClient _apiClient;
 
-    public WhatsAppShareService(IExportService exportService)
+    public WhatsAppShareService(
+        IExportService exportService,
+        IUserPreferencesService preferences,
+        WhatsAppApiClient apiClient)
     {
         _exportService = exportService;
+        _preferences = preferences;
+        _apiClient = apiClient;
     }
 
     public void SharePdf(string? phone, string partyName, string pdfPath, string message, string title)
@@ -29,6 +37,12 @@ public sealed class WhatsAppShareService : IWhatsAppShareService
     {
         if (!TryResolvePhone(phone, partyName, out var waDigits, out _))
             return;
+
+        if (IsApiMode(out var settings))
+        {
+            _ = SendApiAsync(settings!, waDigits, message, pdfPath: null, title: "إرسال رسالة واتساب");
+            return;
+        }
 
         TryOpenWhatsAppChat(waDigits, message);
     }
@@ -88,6 +102,16 @@ public sealed class WhatsAppShareService : IWhatsAppShareService
         OpenWhatsAppWithPdf(waDigits, displayPhone, pdfPath, message, "إرسال الكشف عبر واتساب");
     }
 
+    private bool IsApiMode(out WhatsAppApiSettings? settings)
+    {
+        settings = null;
+        if (!_preferences.Current.FeatureFlags.WhatsAppApiMessaging)
+            return false;
+
+        settings = _preferences.Current.WhatsAppApi;
+        return true;
+    }
+
     private static bool TryResolvePhone(string? customerPhone, string customerName, out string waDigits, out string displayPhone)
     {
         waDigits = string.Empty;
@@ -122,10 +146,24 @@ public sealed class WhatsAppShareService : IWhatsAppShareService
             return;
         }
 
-        // 1) Open the chat with text first (URL schemes cannot carry file attachments).
+        if (IsApiMode(out var settings))
+        {
+            if (settings is null || !settings.IsConfigured)
+            {
+                BeautifulMessageDialog.ShowError(
+                    "ميزة واتساب API مفعّلة لكن الإعدادات غير مكتملة.\n" +
+                    "أكمل API Key ومعرّف المثيل من إعدادات الميزات.\n" +
+                    "لن يُستخدم واتساب سطح المكتب أثناء تفعيل هذه الميزة.");
+                return;
+            }
+
+            _ = SendApiAsync(settings, waDigits, message, pdfPath, shareTitle);
+            return;
+        }
+
+        // سطح المكتب فقط عندما تكون ميزة الـ API غير مفعّلة
         TryOpenWhatsAppChat(waDigits, message);
 
-        // 2) Attach PDF by focusing WhatsApp Desktop and pasting the file from clipboard.
         _ = Task.Run(() =>
         {
             var attached = WhatsAppDesktopAttachmentHelper.TryAttachPdf(pdfPath);
@@ -154,6 +192,35 @@ public sealed class WhatsAppShareService : IWhatsAppShareService
                     shareTitle);
             });
         });
+    }
+
+    private async Task SendApiAsync(
+        WhatsAppApiSettings settings,
+        string waDigits,
+        string message,
+        string? pdfPath,
+        string title)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(pdfPath))
+            {
+                // نص فقط عبر webhook/ultramsg كمستند فارغ غير مدعوم — نرسل عبر ultramsg chat إن أمكن
+                BeautifulMessageDialog.ShowWarning("إرسال النص فقط عبر API غير مكتمل لهذا المزوّد. أرسل كشف PDF.");
+                return;
+            }
+
+            await _apiClient.SendDocumentAsync(settings, waDigits, message, pdfPath);
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+                BeautifulMessageDialog.ShowSuccess($"تم إرسال الملف عبر واتساب API إلى {waDigits}.", title));
+        }
+        catch (Exception ex)
+        {
+            await Application.Current.Dispatcher.InvokeAsync(() =>
+                BeautifulMessageDialog.ShowError(
+                    $"فشل الإرسال عبر واتساب API:\n{ex.Message}\n\n" +
+                    "واتساب سطح المكتب معطّل أثناء تفعيل ميزة الـ API."));
+        }
     }
 
     private static void TryRevealPdfInExplorer(string pdfPath)

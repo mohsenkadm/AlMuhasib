@@ -24,9 +24,13 @@ public partial class PurchaseInvoiceViewModel
     [ObservableProperty] private bool _showSerialNumbers;
     [ObservableProperty] private bool _showClothingSizes;
     [ObservableProperty] private bool _showProductPricing;
+    [ObservableProperty] private bool _showSalePriceColumn;
     [ObservableProperty] private bool _showTransportFee;
+    [ObservableProperty] private bool _showPurchaseExpenses;
+    [ObservableProperty] private bool _allocatePurchaseExpensesToProducts;
     [ObservableProperty] private bool _showCarShowroomFields;
     [ObservableProperty] private decimal _transportFeeAmount;
+    [ObservableProperty] private decimal _purchaseExpenseAmount;
     [ObservableProperty] private string _clothingSizeHeader = ClothingSizeInvoiceHelper.SizeLabel;
     [ObservableProperty] private string _clothingColorHeader = ClothingSizeInvoiceHelper.ColorLabel;
     [ObservableProperty] private PricingType? _selectedBulkPricingType;
@@ -76,7 +80,15 @@ public partial class PurchaseInvoiceViewModel
         ShowSerialNumbers = _featureFlags.SerialNumbers;
         ShowClothingSizes = _featureFlags.TemplateClothing;
         ShowProductPricing = _featureFlags.ProductPricingEnabled;
+        _updateProductPriceOnPurchase = _featureFlags.UpdateProductPriceOnPurchase
+            && _featureFlags.ProductPricingEnabled;
+        _updateSalePriceOnPurchase = _featureFlags.UpdateSalePriceOnPurchase
+            && _featureFlags.ProductPricingEnabled;
+        ShowSalePriceColumn = _updateSalePriceOnPurchase && !IsReturnMode;
         ShowTransportFee = _featureFlags.TransportFees;
+        ShowPurchaseExpenses = _featureFlags.PurchaseExpenses && !IsReturnMode;
+        AllocatePurchaseExpensesToProducts = _featureFlags.AllocatePurchaseExpensesToProducts
+                                             && ShowPurchaseExpenses;
         ShowCarShowroomFields = _featureFlags.CarShowroom
             && _featureFlags.AddMissingProductsOnPurchase;
         ClothingSizeHeader = ClothingSizeInvoiceHelper.SizeLabel;
@@ -87,6 +99,8 @@ public partial class PurchaseInvoiceViewModel
 
         if (!ShowTransportFee)
             TransportFeeAmount = 0m;
+        if (!ShowPurchaseExpenses)
+            PurchaseExpenseAmount = 0m;
 
         if (!ShowUnitsOfMeasure)
         {

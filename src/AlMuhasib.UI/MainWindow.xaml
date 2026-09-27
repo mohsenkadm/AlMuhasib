@@ -1529,6 +1529,12 @@
                         <DataTemplate DataType="{x:Type vm:DriversViewModel}">
                             <views:DriversView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:EmployeesViewModel}">
+                            <views:EmployeesView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:EmployeeStatementViewModel}">
+                            <views:EmployeeStatementView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:SalesRepresentativesViewModel}">
                             <views:SalesRepresentativesView />
                         </DataTemplate>

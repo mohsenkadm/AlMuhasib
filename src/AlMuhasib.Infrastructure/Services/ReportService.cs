@@ -1741,7 +1741,40 @@ public partial class ReportService : IReportService
                         i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
             .SumAsync(i => i.RemainingAmount);
 
-        decimal assetsTotal = cashBoxesTotal + banksTotal + customerDebts + inventoryValue + installmentReceivables;
+        // سلف الموظفين = افتتاحي + سندات دفع − سندات قبض (بالدينار)
+        var employees = await context.Employees.AsNoTracking()
+            .Where(e => !e.IsDeleted)
+            .Select(e => new { e.Id, e.OpeningBalance })
+            .ToListAsync();
+        var employeeIds = employees.Select(e => e.Id).ToList();
+        var employeeVoucherRows = employeeIds.Count == 0
+            ? new List<(int EmployeeId, VoucherType Type, decimal Amount)>()
+            : (await context.Vouchers.AsNoTracking()
+                .Where(v => v.EmployeeId != null &&
+                            employeeIds.Contains(v.EmployeeId.Value) &&
+                            v.Currency == AccountingCurrency.IQD &&
+                            v.Date <= endOfDay)
+                .Select(v => new { EmployeeId = v.EmployeeId!.Value, v.VoucherType, v.Amount })
+                .ToListAsync())
+              .Select(v => (v.EmployeeId, v.VoucherType, v.Amount))
+              .ToList();
+
+        decimal employeeAdvances = 0m;
+        foreach (var emp in employees)
+        {
+            var payments = employeeVoucherRows
+                .Where(v => v.EmployeeId == emp.Id && v.Type == VoucherType.Payment)
+                .Sum(v => v.Amount);
+            var receipts = employeeVoucherRows
+                .Where(v => v.EmployeeId == emp.Id && v.Type == VoucherType.Receipt)
+                .Sum(v => v.Amount);
+            employeeAdvances += EmployeeBalanceHelper.ComputeAdvanceBalance(
+                emp.OpeningBalance, payments, receipts);
+        }
+        employeeAdvances = Math.Max(0m, employeeAdvances);
+
+        decimal assetsTotal = cashBoxesTotal + banksTotal + customerDebts + inventoryValue
+                              + installmentReceivables + employeeAdvances;
 
         decimal difference = equityAndLiabilitiesTotal - assetsTotal;
 
@@ -1823,6 +1856,7 @@ public partial class ReportService : IReportService
             CustomerDebts = customerDebts,
             InventoryValue = inventoryValue,
             InstallmentReceivables = installmentReceivables,
+            EmployeeAdvances = employeeAdvances,
             AssetsTotal = assetsTotal,
             Difference = difference,
             IsBalanced = Math.Abs(difference) < 1m

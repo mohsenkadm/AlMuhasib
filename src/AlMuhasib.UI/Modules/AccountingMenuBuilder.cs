@@ -54,6 +54,8 @@ public static class AccountingMenuBuilder
                 [
                     ("العملاء", PackIconKind.AccountGroup, typeof(CustomersViewModel), "Customers"),
                     ("السواقين", PackIconKind.AccountHardHat, typeof(DriversViewModel), "Drivers"),
+                    ("الموظفون", PackIconKind.BadgeAccountHorizontal, typeof(EmployeesViewModel), "Employees"),
+                    ("كشف حساب موظف", PackIconKind.FileAccount, typeof(EmployeeStatementViewModel), "EmployeeStatement"),
                     ("الموردون", PackIconKind.Factory, typeof(SuppliersViewModel), "Suppliers"),
                     ("أرصدة العملاء الافتتاحية", PackIconKind.AccountCash, typeof(OpeningCustomerBalanceViewModel), "OpeningCustomerBalances"),
                     ("أرصدة الموردين الافتتاحية", PackIconKind.CashRefund, typeof(OpeningSupplierBalanceViewModel), "OpeningSupplierBalances"),

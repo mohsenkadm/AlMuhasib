@@ -226,6 +226,7 @@ public partial class App : Application
         services.AddSingleton<IExportService>(sp => new TrackingExportService(
             sp.GetRequiredService<AlMuhasib.Shared.Services.ExcelExportService>(),
             sp.GetRequiredService<IRecentExcelExportService>()));
+        services.AddSingleton<WhatsAppApiClient>();
         services.AddSingleton<IWhatsAppShareService, WhatsAppShareService>();
         services.AddSingleton<IHelpSupportService, HelpSupportService>();
         services.AddSingleton<IPosFullscreenService, PosFullscreenService>();
@@ -248,6 +249,8 @@ public partial class App : Application
         services.AddTransient<ProductPricingViewModel>();
         services.AddTransient<CustomersViewModel>();
         services.AddTransient<DriversViewModel>();
+        services.AddTransient<EmployeesViewModel>();
+        services.AddTransient<EmployeeStatementViewModel>();
         services.AddTransient<SalesRepresentativesViewModel>();
         services.AddTransient<SalesRepCommissionRulesViewModel>();
         services.AddTransient<SalesRepTargetsViewModel>();

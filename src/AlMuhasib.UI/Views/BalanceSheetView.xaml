@@ -372,6 +372,16 @@
                         <TextBlock Grid.Column="1" Text="{Binding InstallmentReceivables, StringFormat=N0}" Style="{StaticResource LineValue}"/>
                     </Grid>
 
+                    <!-- Employee Advances -->
+                    <Grid Margin="0,8,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="سلف الموظفين (أصول)" Style="{StaticResource LineLabel}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding EmployeeAdvances, StringFormat=N0}" Style="{StaticResource LineValue}"/>
+                    </Grid>
+
                     <!-- Separator + Total -->
                     <Separator Margin="0,16,0,12"/>
                     <Grid>

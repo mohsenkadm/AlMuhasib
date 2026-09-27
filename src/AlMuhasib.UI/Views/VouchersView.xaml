@@ -55,7 +55,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="16" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="12" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="12" />
                     <RowDefinition Height="Auto" />
@@ -102,6 +102,17 @@
                                 Style="{StaticResource FilledDatePicker}"
                                 FontSize="13" />
                 </Grid>
+
+                <!-- نوع الشخص بعد نوع السند -->
+                <ComboBox Grid.Row="3" Margin="0,10,0,4"
+                          ItemsSource="{Binding AvailablePartyTypes}"
+                          SelectedValue="{Binding SelectedPartyKind}"
+                          SelectedValuePath="Kind"
+                          DisplayMemberPath="Name"
+                          materialDesign:HintAssist.Hint="نوع الشخص"
+                          Style="{StaticResource FilledComboBox}"
+                          FontSize="14"
+                          Visibility="{Binding ShowPartyTypeField, Converter={StaticResource BoolToVis}}" />
 
                 <!-- Row 2: Amount + BankFees + CashBox -->
                 <Grid Grid.Row="4">
@@ -210,13 +221,26 @@
                         </Border>
                     </StackPanel>
 
-                    <!-- Supplier (Payment, optional) -->
-                    <StackPanel Grid.Column="2"
+                    <!-- Employee -->
+                    <StackPanel Grid.Column="0"
+                                Visibility="{Binding ShowEmployeeField, Converter={StaticResource BoolToVis}}">
+                        <ComboBox ItemsSource="{Binding FilteredEmployees}"
+                                  SelectedItem="{Binding SelectedEmployee, UpdateSourceTrigger=PropertyChanged}"
+                                  Text="{Binding EmployeeSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                  IsEditable="True"
+                                  DisplayMemberPath="Name"
+                                  materialDesign:HintAssist.Hint="الموظف *"
+                                  Style="{StaticResource FilledComboBox}"
+                                  FontSize="13" />
+                    </StackPanel>
+
+                    <!-- Supplier (Payment) -->
+                    <StackPanel Grid.Column="0"
                                 Visibility="{Binding ShowSupplierField, Converter={StaticResource BoolToVis}}">
                         <ComboBox ItemsSource="{Binding FilteredSuppliers}"
                                   SelectedItem="{Binding SelectedSupplier, UpdateSourceTrigger=PropertyChanged}"
                                   Text="{Binding SupplierSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                  materialDesign:HintAssist.Hint="المورد (اختياري — ابحث بالاسم أو الهاتف أو المعرف)"
+                                  materialDesign:HintAssist.Hint="المورد (ابحث بالاسم أو الهاتف أو المعرف)"
                                   Style="{StaticResource SupplierSearchableComboBox}"
                                   FontSize="13" />
                         <Border Margin="0,6,0,0" CornerRadius="10" Padding="10,6"

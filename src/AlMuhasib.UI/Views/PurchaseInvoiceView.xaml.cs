@@ -27,6 +27,36 @@ public partial class PurchaseInvoiceView : UserControl
             ColSerial,
             pricing: ColPricingType);
         AttachCarShowroomColumns();
+        AttachSalePriceColumn();
+    }
+
+    private void AttachSalePriceColumn()
+    {
+        void Sync()
+        {
+            var show = DataContext is PurchaseInvoiceViewModel vm && vm.ShowSalePriceColumn;
+            Set(ColSalePrice, show);
+        }
+
+        void OnVmChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(PurchaseInvoiceViewModel.ShowSalePriceColumn) or null)
+                Sync();
+        }
+
+        void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+            if (e.OldValue is INotifyPropertyChanged oldVm)
+                oldVm.PropertyChanged -= OnVmChanged;
+            if (e.NewValue is INotifyPropertyChanged newVm)
+                newVm.PropertyChanged += OnVmChanged;
+            Sync();
+        }
+
+        DataContextChanged += OnDataContextChanged;
+        if (DataContext is INotifyPropertyChanged existing)
+            existing.PropertyChanged += OnVmChanged;
+        Sync();
     }
 
     private void AttachCarShowroomColumns()

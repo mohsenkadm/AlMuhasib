@@ -15,7 +15,7 @@ public class VoucherTypeToTextConverter : IValueConverter
             return type switch
             {
                 VoucherType.Receipt => "سند قبض",
-                VoucherType.Payment => "سند صرف",
+                VoucherType.Payment => "سند دفع",
                 VoucherType.BankReceipt => "سند قبض مصرفي",
                 VoucherType.InvestorDeposit => "إيداع مستثمر",
                 VoucherType.InvestorWithdrawal => "سحب مستثمر",

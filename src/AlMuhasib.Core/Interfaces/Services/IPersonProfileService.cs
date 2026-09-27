@@ -4,7 +4,8 @@ public enum PersonPartyType
 {
     Customer,
     Supplier,
-    Investor
+    Investor,
+    Employee
 }
 
 public enum PersonTimelineCategory

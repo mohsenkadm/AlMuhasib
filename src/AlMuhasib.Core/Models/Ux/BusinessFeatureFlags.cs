@@ -20,11 +20,23 @@ public class BusinessFeatureFlags
     /// <summary>عرض سعر المنتجات — معطّل افتراضياً (بدون سعر).</summary>
     public bool ProductPricingEnabled { get; set; }
 
-    /// <summary>تحديث سعر المنتج من فاتورة مشتريات عند الإنشاء — معطّل افتراضياً.</summary>
+    /// <summary>تحديث سعر الشراء من فاتورة مشتريات عند الإنشاء — معطّل افتراضياً.</summary>
     public bool UpdateProductPriceOnPurchase { get; set; }
+
+    /// <summary>تحديث سعر البيع من فاتورة مشتريات عند الإنشاء — معطّل افتراضياً.</summary>
+    public bool UpdateSalePriceOnPurchase { get; set; }
 
     /// <summary>عند حفظ فاتورة مشتريات: اقتراح إضافة الأسماء غير الموجودة كمنتجات قبل الحفظ — معطّل افتراضياً.</summary>
     public bool AddMissingProductsOnPurchase { get; set; }
+
+    /// <summary>مصاريف مشتريات في فاتورة المشتريات — معطّل افتراضياً.</summary>
+    public bool PurchaseExpenses { get; set; }
+
+    /// <summary>تقسيم مصاريف المشتريات على منتجات الفاتورة وإضافتها لسعر الشراء — معطّل افتراضياً.</summary>
+    public bool AllocatePurchaseExpensesToProducts { get; set; }
+
+    /// <summary>إرسال واتساب عبر API بدل سطح المكتب — معطّل افتراضياً (سطح المكتب يبقى فعّالاً).</summary>
+    public bool WhatsAppApiMessaging { get; set; }
 
     /// <summary>تفعيل الخصم على المنتجات والفواتير (بيع/أقساط/POS) — معطّل افتراضياً.</summary>
     public bool ProductDiscountEnabled { get; set; }

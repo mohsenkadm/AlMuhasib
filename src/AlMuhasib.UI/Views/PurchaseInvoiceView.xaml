@@ -521,10 +521,19 @@
                                 <DataGridTemplateColumn Header="الكمية" Width="140"
                                                         CellTemplate="{StaticResource InvoiceQuantityCellTemplate}"/>
 
-                                <DataGridTemplateColumn Header="سعر الوحدة" Width="115">
+                                <DataGridTemplateColumn Header="سعر الشراء" Width="115">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <TextBox Text="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                                     Style="{StaticResource NumericCellTextBox}" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <DataGridTemplateColumn x:Name="ColSalePrice" Header="سعر البيع" Width="115">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBox Text="{Binding SalePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                                                      Style="{StaticResource NumericCellTextBox}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -649,6 +658,25 @@
                                                Foreground="#1565C0" VerticalAlignment="Center"/>
                                     <TextBox Grid.Column="1"
                                              Text="{Binding TransportFeeAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                             Style="{StaticResource NumericCellTextBox}"
+                                             materialDesign:HintAssist.Hint="0"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,10"
+                                      Visibility="{Binding ShowPurchaseExpenses, Converter={StaticResource BoolToVis}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="140" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock Text="مصاريف مشتريات:" FontSize="13"
+                                                   Foreground="#EF6C00"/>
+                                        <TextBlock Text="يُقسَّم على المنتجات عند تفعيل التقسيم"
+                                                   FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   Visibility="{Binding AllocatePurchaseExpensesToProducts, Converter={StaticResource BoolToVis}}"/>
+                                    </StackPanel>
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding PurchaseExpenseAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                                              Style="{StaticResource NumericCellTextBox}"
                                              materialDesign:HintAssist.Hint="0"/>
                                 </Grid>

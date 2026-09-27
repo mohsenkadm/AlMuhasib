@@ -160,6 +160,8 @@ internal static class InvoicePdfGenerator
                         }
                         if (m.TransportFeeAmount != 0)
                             amountEntries.Add(("أجور النقل", FormatNumber(m.TransportFeeAmount), false));
+                        if (m.PurchaseExpenseAmount != 0)
+                            amountEntries.Add(("مصاريف مشتريات", FormatNumber(m.PurchaseExpenseAmount), false));
                         if (m.TaxRate != 0 || m.TaxAmount != 0)
                             amountEntries.Add((m.TaxRate != 0 ? $"الضريبة {m.TaxRate:0.##}%" : "الضريبة", FormatNumber(m.TaxAmount), false));
                         if (m.CompanyFeeAmount is { } fee && fee != 0)

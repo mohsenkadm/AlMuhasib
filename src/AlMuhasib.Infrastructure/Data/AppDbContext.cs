@@ -28,6 +28,7 @@ public class AppDbContext : DbContext
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<Driver> Drivers => Set<Driver>();
+    public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<SalesRepresentative> SalesRepresentatives => Set<SalesRepresentative>();
     public DbSet<SalesRepCommissionRule> SalesRepCommissionRules => Set<SalesRepCommissionRule>();
     public DbSet<SalesRepCommissionEntry> SalesRepCommissionEntries => Set<SalesRepCommissionEntry>();
