@@ -581,6 +581,8 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="العميل" Binding="{Binding InstallmentPlan.Customer.Name}" Width="*"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentPlan.Customer.Name" />
+                                <DataGridTextColumn Header="العملة" Binding="{Binding InstallmentPlan.Invoice.Currency}" Width="70"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentPlan.Invoice.Currency" />
                                 <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate">
                                     <DataGridTextColumn.ElementStyle>
@@ -591,7 +593,7 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N2}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
@@ -1255,6 +1257,8 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="العميل" Binding="{Binding InstallmentPlan.Customer.Name}" Width="*"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentPlan.Customer.Name" />
+                                <DataGridTextColumn Header="العملة" Binding="{Binding InstallmentPlan.Invoice.Currency}" Width="70"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentPlan.Invoice.Currency" />
                                 <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate">
                                     <DataGridTextColumn.ElementStyle>
@@ -1263,7 +1267,7 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N2}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
@@ -1271,7 +1275,7 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat=N2}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount">
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
