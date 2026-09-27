@@ -219,6 +219,7 @@ public class CloudDbContext : DbContext
         {
             e.Property(x => x.IdNumber).HasMaxLength(100);
             e.Property(x => x.IdIssuer).HasMaxLength(200);
+            e.Property(x => x.MaxCreditLimit).HasPrecision(18, 2);
         });
 
         modelBuilder.Entity<CloudPrintBrandingSettings>(e =>

@@ -51,10 +51,12 @@ public partial class CogsReportViewModel : ReportViewModelBase
         try
         {
             IsBusy = true;
-            var result = await _reportService.GetCogsReportAsync(DateFrom, DateTo, SelectedWarehouseId);
+            var result = await _reportService.GetCogsReportAsync(DateFrom, DateTo, SelectedWarehouseId, CurrencyScope);
 
             TotalCogs = FormatCurrency(result.TotalCogs);
-            TotalRevenue = FormatCurrency(result.TotalRevenue);
+            TotalRevenue = result.TotalRevenueUsd != 0 && CurrencyScope == ReportCurrencyScope.All
+                ? $"{FormatCurrency(result.TotalRevenue)} | {FormatCurrency(result.TotalRevenueUsd, AccountingCurrency.USD)}"
+                : FormatCurrency(result.TotalRevenue);
             GrossProfit = FormatCurrency(result.GrossProfit);
             ProductCount = result.ProductCount.ToString("N0");
             if (result.TopProductsChart.Count > 0)

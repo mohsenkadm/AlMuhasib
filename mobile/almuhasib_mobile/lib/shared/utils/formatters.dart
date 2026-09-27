@@ -1,10 +1,25 @@
 import 'package:intl/intl.dart';
 
+import '../models/master_data_models.dart';
+
 final currencyFormat = NumberFormat('#,##0.00', 'ar');
 final dateFormat = DateFormat('yyyy/MM/dd', 'ar');
 final shortDateFormat = DateFormat('MM/dd', 'ar');
 
 String formatCurrency(num value) => currencyFormat.format(value);
+
+/// Customer outstanding: dual IQD|USD when USD present; else single IQD.
+String formatCustomerOutstanding(LookupItem item) {
+  final iqd = item.effectiveBalanceIqd;
+  final usd = item.effectiveBalanceUsd;
+  if (item.hasDualBalanceFields && usd != 0) {
+    return '${formatCurrency(iqd)} د.ع | ${formatCurrency(usd)} \$';
+  }
+  if (item.balance != null || item.balanceIqd != null) {
+    return formatCurrency(iqd);
+  }
+  return formatCurrency(0);
+}
 
 String formatDate(DateTime date) => dateFormat.format(date);
 

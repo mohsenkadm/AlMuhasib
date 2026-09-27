@@ -68,6 +68,7 @@ public sealed class CustomerSyncDto : SyncDtoBase
     public string? Notes { get; set; }
     public string? IdNumber { get; set; }
     public string? IdIssuer { get; set; }
+    public decimal? MaxCreditLimit { get; set; }
 }
 
 public sealed class SupplierSyncDto : SyncDtoBase

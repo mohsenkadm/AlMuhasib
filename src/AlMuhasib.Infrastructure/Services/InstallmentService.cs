@@ -408,13 +408,13 @@ public class InstallmentService : IInstallmentService
     public async Task<(IEnumerable<Installment> Items, int TotalCount)> GetPagedInstallmentsAsync(
         int page, int pageSize, InstallmentStatus? status = null, int? customerId = null, string? searchTerm = null,
         IReadOnlyCollection<InstallmentStatus>? statuses = null, bool updateOverdueStatuses = true,
-        bool includeCashBox = true)
+        bool includeCashBox = true, AccountingCurrency? currency = null)
     {
         if (updateOverdueStatuses)
             await UpdateOverdueStatusesAsync();
 
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var query = BuildInstallmentsQuery(context, status, customerId, searchTerm, statuses);
+        var query = BuildInstallmentsQuery(context, status, customerId, searchTerm, statuses, currency);
 
         var totalCount = await query.CountAsync();
         var safePageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 500);
@@ -435,7 +435,8 @@ public class InstallmentService : IInstallmentService
         IQueryable<Installment> itemsQuery = context.Installments
             .AsNoTracking()
             .Where(i => pageIds.Contains(i.Id))
-            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Customer);
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Customer)
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Invoice);
 
         if (includeCashBox)
             itemsQuery = itemsQuery.Include(i => i.CashBox);
@@ -449,7 +450,8 @@ public class InstallmentService : IInstallmentService
         return (items, totalCount);
     }
 
-    public async Task<(int Count, decimal TotalAmount, decimal PaidAmount, decimal RemainingAmount)> GetInstallmentTotalsAsync(
+    public async Task<(int Count, decimal TotalAmount, decimal PaidAmount, decimal RemainingAmount,
+        int CountUsd, decimal TotalAmountUsd, decimal PaidAmountUsd, decimal RemainingAmountUsd)> GetInstallmentTotalsAsync(
         InstallmentStatus? status = null, int? customerId = null, string? searchTerm = null,
         IReadOnlyCollection<InstallmentStatus>? statuses = null, bool updateOverdueStatuses = false)
     {
@@ -457,23 +459,30 @@ public class InstallmentService : IInstallmentService
             await UpdateOverdueStatusesAsync();
 
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var query = BuildInstallmentsQuery(context, status, customerId, searchTerm, statuses);
+        var query = BuildInstallmentsQuery(context, status, customerId, searchTerm, statuses, currency: null);
 
-        var agg = await query
-            .Select(i => new { i.Amount, i.PaidAmount, i.RemainingAmount })
-            .GroupBy(_ => 1)
-            .Select(g => new
+        var rows = await query
+            .Select(i => new
             {
-                Count = g.Count(),
-                TotalAmount = g.Sum(x => x.Amount),
-                PaidAmount = g.Sum(x => x.PaidAmount),
-                RemainingAmount = g.Sum(x => x.RemainingAmount)
+                i.Amount,
+                i.PaidAmount,
+                i.RemainingAmount,
+                Currency = i.InstallmentPlan!.Invoice!.Currency
             })
-            .FirstOrDefaultAsync();
+            .ToListAsync();
 
-        return agg is null
-            ? (0, 0m, 0m, 0m)
-            : (agg.Count, agg.TotalAmount, agg.PaidAmount, agg.RemainingAmount);
+        var iqd = rows.Where(x => x.Currency == AccountingCurrency.IQD).ToList();
+        var usd = rows.Where(x => x.Currency == AccountingCurrency.USD).ToList();
+
+        return (
+            iqd.Count,
+            iqd.Sum(x => x.Amount),
+            iqd.Sum(x => x.PaidAmount),
+            iqd.Sum(x => x.RemainingAmount),
+            usd.Count,
+            usd.Sum(x => x.Amount),
+            usd.Sum(x => x.PaidAmount),
+            usd.Sum(x => x.RemainingAmount));
     }
 
     private static IQueryable<Installment> BuildInstallmentsQuery(
@@ -481,10 +490,14 @@ public class InstallmentService : IInstallmentService
         InstallmentStatus? status,
         int? customerId,
         string? searchTerm,
-        IReadOnlyCollection<InstallmentStatus>? statuses)
+        IReadOnlyCollection<InstallmentStatus>? statuses,
+        AccountingCurrency? currency)
     {
-        var query = context.Installments.AsNoTracking()
-            .Where(i => i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD);
+        // لا نخفي أقساط الدولار — الفلتر الاختياري صارم عند تمرير عملة
+        var query = context.Installments.AsNoTracking().AsQueryable();
+
+        if (currency.HasValue)
+            query = query.Where(i => i.InstallmentPlan!.Invoice!.Currency == currency.Value);
 
         if (statuses is { Count: > 0 })
         {

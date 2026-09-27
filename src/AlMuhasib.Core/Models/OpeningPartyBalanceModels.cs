@@ -55,6 +55,12 @@ public class OpeningPartyBalanceUpdateRequest
     public decimal Amount { get; set; }
     public DateTime Date { get; set; } = DateTime.Today;
     public string? Notes { get; set; }
+
+    /// <summary>عملة الرصيد — افتراضي دينار للتوافق مع البيانات القديمة.</summary>
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+
+    /// <summary>سعر الصرف (دولار→دينار) عند Currency=USD.</summary>
+    public decimal FxRate { get; set; } = 1m;
 }
 
 public class OpeningPartyBalanceQuery
@@ -98,6 +104,13 @@ public class OpeningPartyBalanceImportRow
     public decimal Amount { get; set; }
     public DateTime Date { get; set; } = DateTime.Today;
     public string? Notes { get; set; }
+
+    /// <summary>عملة السطر — فارغ/غير معروف يُعامل كدينار.</summary>
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+
+    /// <summary>سعر الصرف عند Currency=USD — مطلوب وصالح (&gt;0).</summary>
+    public decimal FxRate { get; set; } = 1m;
+
     public List<string> Errors { get; set; } = [];
     public bool IsValid => Errors.Count == 0;
     public string ErrorsText => Errors.Count == 0 ? "—" : string.Join(" | ", Errors);

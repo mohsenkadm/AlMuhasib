@@ -317,11 +317,12 @@ public partial class ReportService : IReportService
 
     private static async Task<decimal> CalculateCogsAsync(AppDbContext context, DateTime? fromInclusive, DateTime? toExclusive)
     {
+        // تكلفة البضاعة بالدينار لجميع المبيعات (بما فيها فواتير USD) —
+        // متوسط التكلفة يشمل مشتريات USD المحوّلة عبر FxRate اللقطة.
         var soldItemsQuery = context.InvoiceItems
             .Include(ii => ii.Invoice)
             .Where(ii => ii.ProductId != null
                          && ii.Invoice != null
-                         && ii.Invoice.Currency == AccountingCurrency.IQD
                          && (ii.Invoice.InvoiceType == InvoiceType.Sale
                              || ii.Invoice.InvoiceType == InvoiceType.Installment
                              || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
@@ -1741,37 +1742,38 @@ public partial class ReportService : IReportService
                         i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
             .SumAsync(i => i.RemainingAmount);
 
-        // سلف الموظفين = افتتاحي + سندات دفع − سندات قبض (بالدينار)
+        // سلف الموظفين بالدينار فقط في مجاميع الميزانية — الدولار إفصاح منفصل
         var employees = await context.Employees.AsNoTracking()
             .Where(e => !e.IsDeleted)
-            .Select(e => new { e.Id, e.OpeningBalance })
+            .Select(e => new { e.Id, e.OpeningBalance, e.OpeningBalanceCurrency })
             .ToListAsync();
         var employeeIds = employees.Select(e => e.Id).ToList();
         var employeeVoucherRows = employeeIds.Count == 0
-            ? new List<(int EmployeeId, VoucherType Type, decimal Amount)>()
+            ? new List<(int EmployeeId, AccountingCurrency Currency, VoucherType Type, decimal Amount)>()
             : (await context.Vouchers.AsNoTracking()
                 .Where(v => v.EmployeeId != null &&
                             employeeIds.Contains(v.EmployeeId.Value) &&
-                            v.Currency == AccountingCurrency.IQD &&
                             v.Date <= endOfDay)
-                .Select(v => new { EmployeeId = v.EmployeeId!.Value, v.VoucherType, v.Amount })
+                .Select(v => new { EmployeeId = v.EmployeeId!.Value, v.Currency, v.VoucherType, v.Amount })
                 .ToListAsync())
-              .Select(v => (EmployeeId: v.EmployeeId, Type: v.VoucherType, Amount: v.Amount))
+              .Select(v => (v.EmployeeId, v.Currency, Type: v.VoucherType, v.Amount))
               .ToList();
 
         decimal employeeAdvances = 0m;
+        decimal employeeAdvancesUsd = 0m;
         foreach (var emp in employees)
         {
-            var payments = employeeVoucherRows
-                .Where(v => v.EmployeeId == emp.Id && v.Type == VoucherType.Payment)
-                .Sum(v => v.Amount);
-            var receipts = employeeVoucherRows
-                .Where(v => v.EmployeeId == emp.Id && v.Type == VoucherType.Receipt)
-                .Sum(v => v.Amount);
-            employeeAdvances += EmployeeBalanceHelper.ComputeAdvanceBalance(
-                emp.OpeningBalance, payments, receipts);
+            var dual = EmployeeBalanceHelper.ComputeAdvanceBalances(
+                emp.OpeningBalance,
+                emp.OpeningBalanceCurrency,
+                employeeVoucherRows
+                    .Where(v => v.EmployeeId == emp.Id)
+                    .Select(v => (v.Currency, v.Type, v.Amount)));
+            employeeAdvances += dual.Iqd;
+            employeeAdvancesUsd += dual.Usd;
         }
         employeeAdvances = Math.Max(0m, employeeAdvances);
+        employeeAdvancesUsd = Math.Max(0m, employeeAdvancesUsd);
 
         decimal assetsTotal = cashBoxesTotal + banksTotal + customerDebts + inventoryValue
                               + installmentReceivables + employeeAdvances;
@@ -1857,6 +1859,7 @@ public partial class ReportService : IReportService
             InventoryValue = inventoryValue,
             InstallmentReceivables = installmentReceivables,
             EmployeeAdvances = employeeAdvances,
+            EmployeeAdvancesUsd = employeeAdvancesUsd,
             AssetsTotal = assetsTotal,
             Difference = difference,
             IsBalanced = Math.Abs(difference) < 1m

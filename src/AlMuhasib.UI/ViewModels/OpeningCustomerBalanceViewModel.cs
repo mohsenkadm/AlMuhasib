@@ -367,12 +367,15 @@ public partial class OpeningCustomerBalanceViewModel : ViewModelBase
             try
             {
                 IsBusy = true;
+                var currency = SelectedCurrencyOption?.Currency ?? AccountingCurrency.IQD;
                 await _balanceService.UpdateCustomerOpeningBalanceAsync(new OpeningPartyBalanceUpdateRequest
                 {
                     InvoiceId = _editingInvoiceId.Value,
                     Amount = Amount,
                     Date = BalanceDate.Date,
-                    Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
+                    Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim(),
+                    Currency = currency,
+                    FxRate = currency == AccountingCurrency.IQD ? 1m : FxRate
                 });
 
                 IsDialogOpen = false;
@@ -720,7 +723,9 @@ public partial class OpeningCustomerBalanceViewModel : ViewModelBase
                 FileNumber = r.FileNumber,
                 Amount = r.Amount,
                 Date = r.Date,
-                Notes = r.Notes
+                Notes = r.Notes,
+                Currency = r.Currency,
+                FxRate = r.Currency == AccountingCurrency.IQD ? 1m : r.FxRate
             }).ToList();
 
             ImportStatusMessage = $"جاري استيراد {requests.Count} سطر إلى النظام...";

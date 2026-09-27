@@ -207,7 +207,8 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
                 SyncId = c.SyncId,
                 Name = c.Name,
                 Extra = c.Phone,
-                FileNumber = c.FileNumber
+                FileNumber = c.FileNumber,
+                MaxCreditLimit = c.MaxCreditLimit
             })
             .ToListAsync(ct);
 
@@ -216,12 +217,11 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
 
         var customerIds = customers.Select(c => c.Id).ToList();
 
-        var creditByCustomer = await Scoped<CloudInvoice>()
+        var creditRows = await Scoped<CloudInvoice>()
             .Where(i => i.CustomerId != null && customerIds.Contains(i.CustomerId.Value) &&
-                        i.PaymentMethod == PaymentMethod.Credit &&
-                        i.Currency == AccountingCurrency.IQD)
-            .GroupBy(i => i.CustomerId!.Value)
-            .Select(g => new { CustomerId = g.Key, Remaining = g.Sum(i => i.RemainingAmount) })
+                        i.PaymentMethod == PaymentMethod.Credit)
+            .GroupBy(i => new { CustomerId = i.CustomerId!.Value, i.Currency })
+            .Select(g => new { g.Key.CustomerId, g.Key.Currency, Remaining = g.Sum(i => i.RemainingAmount) })
             .ToListAsync(ct);
 
         var planRows = await Scoped<CloudInstallmentPlan>()
@@ -229,47 +229,59 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
             .Select(p => new { p.Id, p.CustomerId })
             .ToListAsync(ct);
         var planIds = planRows.Select(p => p.Id).ToList();
-        var installmentByPlan = planIds.Count == 0
+        var installmentRows = planIds.Count == 0
             ? []
             : await Scoped<CloudInstallment>()
                 .Where(i => planIds.Contains(i.InstallmentPlanId) &&
-                            i.Status != InstallmentStatus.Paid &&
-                            i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
-                .GroupBy(i => i.InstallmentPlanId)
-                .Select(g => new { PlanId = g.Key, Remaining = g.Sum(i => i.RemainingAmount) })
+                            i.Status != InstallmentStatus.Paid)
+                .GroupBy(i => new { i.InstallmentPlanId, Currency = i.InstallmentPlan!.Invoice!.Currency })
+                .Select(g => new { PlanId = g.Key.InstallmentPlanId, g.Key.Currency, Remaining = g.Sum(i => i.RemainingAmount) })
                 .ToListAsync(ct);
 
-        var installmentByCustomer = planRows
-            .GroupBy(p => p.CustomerId)
-            .ToDictionary(
-                g => g.Key,
-                g => g.Sum(p => installmentByPlan.FirstOrDefault(x => x.PlanId == p.Id)?.Remaining ?? 0));
+        var installmentByCustomerCurrency = planRows
+            .SelectMany(p => installmentRows
+                .Where(x => x.PlanId == p.Id)
+                .Select(x => new { p.CustomerId, x.Currency, x.Remaining }))
+            .GroupBy(x => (x.CustomerId, x.Currency))
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.Remaining));
 
         var unappliedDebt = await Scoped<CloudVoucher>()
             .Where(v => v.CustomerId != null && customerIds.Contains(v.CustomerId.Value) &&
                         v.VoucherType == VoucherType.DebtReceipt &&
-                        v.Currency == AccountingCurrency.IQD &&
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
-            .GroupBy(v => v.CustomerId!.Value)
-            .Select(g => new { CustomerId = g.Key, Amount = g.Sum(v => v.Amount) })
+            .GroupBy(v => new { CustomerId = v.CustomerId!.Value, v.Currency })
+            .Select(g => new { g.Key.CustomerId, g.Key.Currency, Amount = g.Sum(v => v.Amount) })
             .ToListAsync(ct);
 
         var receipts = await Scoped<CloudVoucher>()
             .Where(v => v.CustomerId != null && customerIds.Contains(v.CustomerId.Value) &&
                         v.VoucherType == VoucherType.Receipt &&
-                        v.Currency == AccountingCurrency.IQD &&
                         (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
-            .GroupBy(v => v.CustomerId!.Value)
-            .Select(g => new { CustomerId = g.Key, Amount = g.Sum(v => v.Amount) })
+            .GroupBy(v => new { CustomerId = v.CustomerId!.Value, v.Currency })
+            .Select(g => new { g.Key.CustomerId, g.Key.Currency, Amount = g.Sum(v => v.Amount) })
             .ToListAsync(ct);
+
+        var creditByKey = creditRows.ToDictionary(x => (x.CustomerId, x.Currency), x => x.Remaining);
+        var debtByKey = unappliedDebt.ToDictionary(x => (x.CustomerId, x.Currency), x => x.Amount);
+        var receiptByKey = receipts.ToDictionary(x => (x.CustomerId, x.Currency), x => x.Amount);
+
+        decimal BalanceFor(int customerId, AccountingCurrency currency)
+        {
+            creditByKey.TryGetValue((customerId, currency), out var credit);
+            installmentByCustomerCurrency.TryGetValue((customerId, currency), out var inst);
+            debtByKey.TryGetValue((customerId, currency), out var debt);
+            receiptByKey.TryGetValue((customerId, currency), out var receipt);
+            return CustomerBalanceHelper.ComputeOutstandingBalance(credit, inst, debt, receipt);
+        }
 
         foreach (var customer in customers)
         {
-            var credit = creditByCustomer.FirstOrDefault(x => x.CustomerId == customer.Id)?.Remaining ?? 0;
-            installmentByCustomer.TryGetValue(customer.Id, out var inst);
-            var debt = unappliedDebt.FirstOrDefault(x => x.CustomerId == customer.Id)?.Amount ?? 0;
-            var receipt = receipts.FirstOrDefault(x => x.CustomerId == customer.Id)?.Amount ?? 0;
-            customer.Balance = CustomerBalanceHelper.ComputeOutstandingBalance(credit, inst, debt, receipt);
+            var balanceIqd = BalanceFor(customer.Id, AccountingCurrency.IQD);
+            var balanceUsd = BalanceFor(customer.Id, AccountingCurrency.USD);
+            customer.BalanceIqd = balanceIqd;
+            customer.BalanceUsd = balanceUsd;
+            // Backward compatible: Balance remains IQD.
+            customer.Balance = balanceIqd;
         }
 
         return customers;
