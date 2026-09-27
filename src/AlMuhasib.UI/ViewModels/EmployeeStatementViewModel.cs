@@ -106,55 +106,72 @@ public partial class EmployeeStatementViewModel : ReportViewModelBase
 
             vouchers = vouchers.OrderBy(v => v.Date).ThenBy(v => v.Id).ToList();
 
-            var opening = emp.OpeningBalance;
-            // Opening applies fully; if filtering by date, show opening as starting line
-            var running = opening;
-            var rows = new List<EmployeeStatementRow>
+            var dual = EmployeeBalanceHelper.ComputeAdvanceBalances(
+                emp.OpeningBalance,
+                emp.OpeningBalanceCurrency,
+                vouchers.Select(v => (v.Currency, v.VoucherType, v.Amount)));
+
+            var rows = new List<EmployeeStatementRow>();
+            decimal paymentsIqd = 0, paymentsUsd = 0, receiptsIqd = 0, receiptsUsd = 0;
+
+            foreach (var currency in new[] { AccountingCurrency.IQD, AccountingCurrency.USD })
             {
-                new()
+                var opening = emp.OpeningBalanceCurrency == currency ? emp.OpeningBalance : 0m;
+                var currencyVouchers = vouchers.Where(v => v.Currency == currency).ToList();
+                if (opening == 0 && currencyVouchers.Count == 0)
+                    continue;
+
+                var running = opening;
+                rows.Add(new EmployeeStatementRow
                 {
                     Date = DateFrom ?? emp.HireDate,
-                    Description = "رصيد افتتاحي (سلفة)",
+                    Description = $"رصيد افتتاحي (سلفة) — {AccountingCurrencyHelper.GetDisplayName(currency)}",
                     Debit = opening > 0 ? opening : 0,
                     Credit = opening < 0 ? Math.Abs(opening) : 0,
                     Balance = running,
-                    VoucherNumber = "—"
-                }
-            };
+                    VoucherNumber = "—",
+                    Currency = currency,
+                    CurrencyLabel = AccountingCurrencyHelper.GetLabel(currency)
+                });
 
-            decimal payments = 0;
-            decimal receipts = 0;
-            foreach (var v in vouchers)
-            {
-                if (v.VoucherType == VoucherType.Payment)
+                foreach (var v in currencyVouchers)
                 {
-                    payments += v.Amount;
-                    running += v.Amount;
-                    rows.Add(new EmployeeStatementRow
+                    if (EmployeeBalanceHelper.IsEmployeePayment(v.VoucherType))
                     {
-                        Date = v.Date,
-                        Description = "سند دفع (سلفة)",
-                        Debit = v.Amount,
-                        Credit = 0,
-                        Balance = running,
-                        VoucherNumber = v.VoucherNumber,
-                        Notes = v.Notes
-                    });
-                }
-                else if (v.VoucherType == VoucherType.Receipt)
-                {
-                    receipts += v.Amount;
-                    running -= v.Amount;
-                    rows.Add(new EmployeeStatementRow
+                        if (currency == AccountingCurrency.IQD) paymentsIqd += v.Amount;
+                        else paymentsUsd += v.Amount;
+                        running += v.Amount;
+                        rows.Add(new EmployeeStatementRow
+                        {
+                            Date = v.Date,
+                            Description = "سند دفع (سلفة)",
+                            Debit = v.Amount,
+                            Credit = 0,
+                            Balance = running,
+                            VoucherNumber = v.VoucherNumber,
+                            Notes = v.Notes,
+                            Currency = currency,
+                            CurrencyLabel = AccountingCurrencyHelper.GetLabel(currency)
+                        });
+                    }
+                    else if (EmployeeBalanceHelper.IsEmployeeReceipt(v.VoucherType))
                     {
-                        Date = v.Date,
-                        Description = "سند قبض من موظف",
-                        Debit = 0,
-                        Credit = v.Amount,
-                        Balance = running,
-                        VoucherNumber = v.VoucherNumber,
-                        Notes = v.Notes
-                    });
+                        if (currency == AccountingCurrency.IQD) receiptsIqd += v.Amount;
+                        else receiptsUsd += v.Amount;
+                        running -= v.Amount;
+                        rows.Add(new EmployeeStatementRow
+                        {
+                            Date = v.Date,
+                            Description = "سند قبض من موظف",
+                            Debit = 0,
+                            Credit = v.Amount,
+                            Balance = running,
+                            VoucherNumber = v.VoucherNumber,
+                            Notes = v.Notes,
+                            Currency = currency,
+                            CurrencyLabel = AccountingCurrencyHelper.GetLabel(currency)
+                        });
+                    }
                 }
             }
 
@@ -164,9 +181,11 @@ public partial class EmployeeStatementViewModel : ReportViewModelBase
                 Rows.Add(r);
 
             EmployeeName = emp.Name;
-            TotalPayments = FormatCurrency(payments + Math.Max(0, opening));
-            TotalReceipts = FormatCurrency(receipts);
-            Balance = FormatCurrency(EmployeeBalanceHelper.ComputeAdvanceBalance(opening, payments, receipts));
+            TotalPayments = FormatDual(
+                paymentsIqd + (emp.OpeningBalanceCurrency == AccountingCurrency.IQD ? Math.Max(0, emp.OpeningBalance) : 0),
+                paymentsUsd + (emp.OpeningBalanceCurrency == AccountingCurrency.USD ? Math.Max(0, emp.OpeningBalance) : 0));
+            TotalReceipts = FormatDual(receiptsIqd, receiptsUsd);
+            Balance = FormatDual(dual.Iqd, dual.Usd);
             TransactionCount = vouchers.Count.ToString("N0");
             PeriodLabel = BuildPeriodLabel();
         }
@@ -178,6 +197,15 @@ public partial class EmployeeStatementViewModel : ReportViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    private static string FormatDual(decimal iqd, decimal usd)
+    {
+        if (usd == 0)
+            return AccountingCurrencyHelper.Format(iqd, AccountingCurrency.IQD);
+        if (iqd == 0)
+            return AccountingCurrencyHelper.Format(usd, AccountingCurrency.USD);
+        return $"{AccountingCurrencyHelper.Format(iqd, AccountingCurrency.IQD)} | {AccountingCurrencyHelper.Format(usd, AccountingCurrency.USD)}";
     }
 
     [RelayCommand]
@@ -196,10 +224,11 @@ public partial class EmployeeStatementViewModel : ReportViewModelBase
             PartyPhone = SelectedEmployee.Phone,
             FromDate = DateFrom,
             ToDate = DateTo,
-            Columns = ["التاريخ", "البيان", "مدين", "دائن", "الرصيد", "رقم السند"],
+            Columns = ["التاريخ", "العملة", "البيان", "مدين", "دائن", "الرصيد", "رقم السند"],
             Rows = _allRows.Select(r => new object[]
             {
                 r.Date.ToString("yyyy/MM/dd"),
+                r.CurrencyLabel,
                 r.Description,
                 r.Debit,
                 r.Credit,
@@ -228,14 +257,15 @@ public partial class EmployeeStatementViewModel : ReportViewModelBase
             return;
         }
 
-        var columns = new[] { "التاريخ", "الوصف", "مدين", "دائن", "الرصيد", "رقم السند" };
+        var columns = new[] { "التاريخ", "العملة", "الوصف", "مدين", "دائن", "الرصيد", "رقم السند" };
         IList<object[]> rows = _allRows.Select(r => new object[]
         {
             r.Date.ToString("yyyy/MM/dd"),
+            r.CurrencyLabel,
             r.Description,
-            r.Debit.ToString("N0"),
-            r.Credit.ToString("N0"),
-            r.Balance.ToString("N0"),
+            r.Currency == AccountingCurrency.USD ? r.Debit.ToString("N2") : r.Debit.ToString("N0"),
+            r.Currency == AccountingCurrency.USD ? r.Credit.ToString("N2") : r.Credit.ToString("N0"),
+            r.Currency == AccountingCurrency.USD ? r.Balance.ToString("N2") : r.Balance.ToString("N0"),
             r.VoucherNumber
         }).ToList();
         _exportService.PrintTable($"كشف حساب موظف — {EmployeeName}", columns, rows);
@@ -262,4 +292,6 @@ public sealed class EmployeeStatementRow
     public decimal Balance { get; set; }
     public string VoucherNumber { get; set; } = string.Empty;
     public string? Notes { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel { get; set; } = AccountingCurrencyHelper.IqdLabel;
 }

@@ -52,10 +52,14 @@ public partial class ProfitAndLossReportViewModel : ReportViewModelBase
         try
         {
             IsBusy = true;
-            var result = await _reportService.GetProfitAndLossReportAsync(DateFrom, DateTo);
+            var result = await _reportService.GetProfitAndLossReportAsync(DateFrom, DateTo, CurrencyScope);
             _lastResult = result;
 
-            TotalSales = FormatCurrency(result.TotalSales);
+            TotalSales = result.TotalSalesUsd != 0 && CurrencyScope != ReportCurrencyScope.Iqd
+                ? (CurrencyScope == ReportCurrencyScope.Usd
+                    ? FormatCurrency(result.TotalSalesUsd, AccountingCurrency.USD)
+                    : $"{FormatCurrency(result.TotalSales)} | {FormatCurrency(result.TotalSalesUsd, AccountingCurrency.USD)}")
+                : FormatCurrency(result.TotalSales);
             GrossProfit = FormatCurrency(result.GrossProfit);
             OperatingProfit = FormatCurrency(result.OperatingProfit);
             NetProfit = FormatCurrency(result.NetProfit);

@@ -246,6 +246,12 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         if (request.Amount <= 0)
             throw new InvalidOperationException("المبلغ يجب أن يكون أكبر من صفر");
 
+        AccountingCurrencyRules.EnsureValidFxRate(
+            request.Currency, request.FxRate, $"تعديل رصيد افتتاحي {partyLabel}");
+        var amount = AccountingCurrencyHelper.NormalizeAmount(request.Amount, request.Currency);
+        var fxRate = AccountingCurrencyRules.RequireFxRateOrThrow(
+            request.Currency, request.FxRate, $"تعديل رصيد افتتاحي {partyLabel}");
+
         await using var context = await _contextFactory.CreateDbContextAsync();
         var invoice = await context.Invoices.FirstOrDefaultAsync(i => i.Id == request.InvoiceId)
             ?? throw new InvalidOperationException("الرصيد الافتتاحي غير موجود");
@@ -262,11 +268,13 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         var oldAmount = invoice.NetAmount;
 
         invoice.Date = request.Date.Date;
-        invoice.TotalAmount = request.Amount;
-        invoice.NetAmount = request.Amount;
-        invoice.RemainingAmount = request.Amount;
+        invoice.TotalAmount = amount;
+        invoice.NetAmount = amount;
+        invoice.RemainingAmount = amount;
         invoice.PaidAmount = 0;
         invoice.IsCreditPaid = false;
+        invoice.Currency = request.Currency;
+        invoice.FxRate = fxRate;
         invoice.Notes = OpeningCreditBalanceMarkers.BuildNotes(request.Notes);
         invoice.UpdatedBy = username;
         invoice.UpdatedAt = DateTime.UtcNow;
@@ -280,7 +288,7 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
                 EntityName = nameof(Invoice),
                 EntityId = invoice.Id,
                 OldValues = $"رصيد افتتاحي {partyLabel} بمبلغ {oldAmount:N0}",
-                NewValues = $"تعديل رصيد افتتاحي {partyLabel} بمبلغ {request.Amount:N0}",
+                NewValues = $"تعديل رصيد افتتاحي {partyLabel} بمبلغ {amount:N0} {request.Currency}",
                 Timestamp = DateTime.UtcNow,
                 CreatedBy = username,
                 CreatedAt = DateTime.UtcNow

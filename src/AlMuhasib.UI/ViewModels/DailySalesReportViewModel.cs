@@ -51,9 +51,15 @@ public partial class DailySalesReportViewModel : ReportViewModelBase
         try
         {
             IsBusy = true;
-            var result = await _reportService.GetDailySalesReportAsync(DateFrom, DateTo, SelectedWarehouseId, SelectedPaymentMethodItem?.Value);
+            var result = await _reportService.GetDailySalesReportAsync(
+                DateFrom, DateTo, SelectedWarehouseId, SelectedPaymentMethodItem?.Value, CurrencyScope);
 
-            TotalSales = FormatCurrency(result.TotalSales);
+            TotalSales = result.TotalSalesUsd != 0 && CurrencyScope != ReportCurrencyScope.Iqd
+                ? $"{FormatCurrency(result.TotalSales, CurrencyScope == ReportCurrencyScope.Usd ? AccountingCurrency.USD : AccountingCurrency.IQD)}"
+                  + (CurrencyScope == ReportCurrencyScope.All
+                      ? $" | {FormatCurrency(result.TotalSalesUsd, AccountingCurrency.USD)}"
+                      : string.Empty)
+                : FormatCurrency(result.TotalSales, CurrencyScope == ReportCurrencyScope.Usd ? AccountingCurrency.USD : AccountingCurrency.IQD);
             AverageDaily = FormatCurrency(result.AverageDaily);
             DayCount = result.DayCount.ToString("N0");
             InvoiceCount = result.InvoiceCount.ToString("N0");

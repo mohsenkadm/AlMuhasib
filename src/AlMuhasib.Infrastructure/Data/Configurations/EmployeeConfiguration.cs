@@ -16,6 +16,10 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.Property(x => x.JobTitle).HasMaxLength(200);
         builder.Property(x => x.Notes).HasMaxLength(1000);
         builder.Property(x => x.OpeningBalance).HasPrecision(18, 2);
+        builder.Property(x => x.OpeningBalanceCurrency)
+            .HasConversion<string>()
+            .HasMaxLength(10)
+            .HasDefaultValue(AlMuhasib.Core.Enums.AccountingCurrency.IQD);
 
         builder.HasIndex(x => x.Name);
         builder.HasIndex(x => x.IsActive);

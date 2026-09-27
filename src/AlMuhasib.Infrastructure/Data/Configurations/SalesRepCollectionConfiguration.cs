@@ -12,6 +12,10 @@ public class SalesRepCollectionConfiguration : IEntityTypeConfiguration<SalesRep
 
         builder.Property(x => x.Amount).HasPrecision(18, 2);
         builder.Property(x => x.HandedOverAmount).HasPrecision(18, 2);
+        builder.Property(x => x.Currency)
+            .HasConversion<string>()
+            .HasMaxLength(10)
+            .HasDefaultValue(AlMuhasib.Core.Enums.AccountingCurrency.IQD);
         builder.Property(x => x.PaymentMethod).HasConversion<string>().HasMaxLength(30);
         builder.Property(x => x.ReceiptNumber).HasMaxLength(50);
         builder.Property(x => x.Notes).HasMaxLength(1000);

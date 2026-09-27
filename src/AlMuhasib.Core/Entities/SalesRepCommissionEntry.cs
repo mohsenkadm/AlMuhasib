@@ -18,6 +18,9 @@ public class SalesRepCommissionEntry : BranchScopedEntity
     public decimal CommissionAmount { get; set; }
     public decimal PaidAmount { get; set; }
 
+    /// <summary>عملة العمولة — نفس عملة فاتورة المصدر.</summary>
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+
     public SalesRepCommissionStatus Status { get; set; } = SalesRepCommissionStatus.Unpaid;
 
     public string? Notes { get; set; }

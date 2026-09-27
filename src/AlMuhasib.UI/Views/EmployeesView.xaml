@@ -39,7 +39,7 @@
                                        Icon="AccountCheck" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
             <controls:AnimatedStatCard Title="غير فعالين" Value="{Binding InactiveCount}"
                                        Icon="AccountOff" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
-            <controls:AnimatedStatCard Title="إجمالي السلف" Value="{Binding TotalAdvances}"
+            <controls:AnimatedStatCard Title="إجمالي السلف" TextValue="{Binding TotalAdvances}"
                                        Icon="Cash" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
         </UniformGrid>
 
@@ -101,7 +101,7 @@
                         <DataGridTextColumn Header="المسمى الوظيفي" Binding="{Binding JobTitle}" Width="140"/>
                         <DataGridTextColumn Header="تاريخ التعيين" Binding="{Binding HireDate, StringFormat=yyyy/MM/dd}" Width="110"/>
                         <DataGridCheckBoxColumn Header="فعال" Binding="{Binding IsActive}" Width="70"/>
-                        <DataGridTextColumn Header="رصيد السلفة" Binding="{Binding AdvanceBalance, StringFormat=N0}" Width="110"/>
+                        <DataGridTextColumn Header="رصيد السلفة" Binding="{Binding AdvanceBalanceDisplay}" Width="160"/>
                         <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="140"/>
                         <DataGridTemplateColumn Header="الإجراءات" Width="110" MinWidth="110">
                             <DataGridTemplateColumn.CellStyle>
@@ -156,6 +156,11 @@
                             <TextBox md:HintAssist.Hint="رصيد افتتاحي (سلفة)"
                                      Text="{Binding EditOpeningBalance, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                            <ComboBox ItemsSource="{Binding CurrencyOptions}"
+                                      SelectedItem="{Binding EditOpeningCurrencyOption}"
+                                      DisplayMemberPath="DisplayName"
+                                      md:HintAssist.Hint="عملة الرصيد الافتتاحي"
+                                      Style="{StaticResource FilledComboBox}" Margin="0,0,0,12"/>
                             <TextBox md:HintAssist.Hint="ملاحظات"
                                      Text="{Binding EditNotes, UpdateSourceTrigger=PropertyChanged}"
                                      Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"
