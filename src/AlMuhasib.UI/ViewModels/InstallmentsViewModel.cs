@@ -23,6 +23,9 @@ public partial class InstallmentsViewModel : ViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IExportService _exportService;
     private readonly IWhatsAppShareService _whatsAppShare;
+    private readonly IFeatureFlagService _featureFlags;
+
+    [ObservableProperty] private bool _showMultiCurrency;
 
     // ── Tab selection ──────────────────────────────────────
     [ObservableProperty]
@@ -87,6 +90,7 @@ public partial class InstallmentsViewModel : ViewModelBase
     private CashBox? _paymentCashBox;
 
     public ObservableCollection<CashBox> PaymentCashBoxes { get; } = [];
+    private readonly List<CashBox> _allPaymentCashBoxes = [];
 
     [ObservableProperty]
     private string _paymentMessage = string.Empty;
@@ -101,6 +105,35 @@ public partial class InstallmentsViewModel : ViewModelBase
 
     public decimal BulkSelectedTotalRemaining =>
         BulkSelectedInstallments.Sum(i => i.RemainingAmount);
+
+    public string BulkSelectedTotalRemainingText
+    {
+        get
+        {
+            if (BulkSelectedInstallments.Count == 0)
+                return FormatAmount(0, AccountingCurrency.IQD);
+
+            if (!ShowMultiCurrency)
+                return FormatAmount(BulkSelectedTotalRemaining, AccountingCurrency.IQD);
+
+            var currencies = BulkSelectedInstallments
+                .Select(InstallmentCurrency)
+                .Distinct()
+                .ToList();
+            if (currencies.Count > 1)
+            {
+                var iqd = BulkSelectedInstallments
+                    .Where(i => InstallmentCurrency(i) == AccountingCurrency.IQD)
+                    .Sum(i => i.RemainingAmount);
+                var usd = BulkSelectedInstallments
+                    .Where(i => InstallmentCurrency(i) == AccountingCurrency.USD)
+                    .Sum(i => i.RemainingAmount);
+                return FormatDualSummary(iqd, usd);
+            }
+
+            return FormatAmount(BulkSelectedTotalRemaining, currencies[0]);
+        }
+    }
 
     public bool HasBulkSelection => BulkSelectedCount > 0;
 
@@ -174,7 +207,8 @@ public partial class InstallmentsViewModel : ViewModelBase
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
         IExportService exportService,
-        IWhatsAppShareService whatsAppShare)
+        IWhatsAppShareService whatsAppShare,
+        IFeatureFlagService featureFlags)
     {
         _installmentService = installmentService;
         _invoiceService = invoiceService;
@@ -182,6 +216,7 @@ public partial class InstallmentsViewModel : ViewModelBase
         _currentUserService = currentUserService;
         _exportService = exportService;
         _whatsAppShare = whatsAppShare;
+        _featureFlags = featureFlags;
 
         PageTitle = "الأقساط";
         PlansPager.Bind(LoadAllPlansAsync);
@@ -198,14 +233,13 @@ public partial class InstallmentsViewModel : ViewModelBase
         try
         {
             LoadPermissions(_currentUserService, "Installments");
+            ShowMultiCurrency = _featureFlags.MultiCurrency;
 
             // Load CashBoxes for payment tab
             var cashBoxes = await _unitOfWork.CashBoxes.GetAllAsync();
-            PaymentCashBoxes.Clear();
-            foreach (var cb in cashBoxes)
-                PaymentCashBoxes.Add(cb);
-            if (PaymentCashBoxes.Count > 0)
-                PaymentCashBox = PaymentCashBoxes[0];
+            _allPaymentCashBoxes.Clear();
+            _allPaymentCashBoxes.AddRange(cashBoxes);
+            ApplyPaymentCashBoxFilter(null);
 
             // Load all customers for payment search
             var customers = await _unitOfWork.Customers.GetAllAsync();
@@ -231,6 +265,32 @@ public partial class InstallmentsViewModel : ViewModelBase
         }
     }
 
+    private static AccountingCurrency PlanCurrency(InstallmentPlan? plan)
+        => plan?.Invoice?.Currency ?? AccountingCurrency.IQD;
+
+    private static AccountingCurrency InstallmentCurrency(Installment? installment)
+        => installment?.InstallmentPlan?.Invoice?.Currency ?? AccountingCurrency.IQD;
+
+    private string FormatAmount(decimal amount, AccountingCurrency currency)
+        => ShowMultiCurrency
+            ? AccountingCurrencyHelper.Format(amount, currency)
+            : AccountingCurrencyHelper.Format(amount, AccountingCurrency.IQD);
+
+    private string FormatInstallmentAmount(Installment? installment, Func<Installment, decimal> selector)
+    {
+        if (installment is null) return AccountingCurrencyHelper.Format(0, AccountingCurrency.IQD);
+        return FormatAmount(selector(installment), InstallmentCurrency(installment));
+    }
+
+    private string FormatDualSummary(decimal iqd, decimal usd)
+    {
+        if (!ShowMultiCurrency || usd == 0)
+            return AccountingCurrencyHelper.Format(iqd, AccountingCurrency.IQD);
+        if (iqd == 0)
+            return AccountingCurrencyHelper.Format(usd, AccountingCurrency.USD);
+        return $"{AccountingCurrencyHelper.Format(iqd, AccountingCurrency.IQD)} · {AccountingCurrencyHelper.Format(usd, AccountingCurrency.USD)}";
+    }
+
     partial void OnSelectedTabIndexChanged(int value)
     {
         ClearBulkSelection();
@@ -250,8 +310,10 @@ public partial class InstallmentsViewModel : ViewModelBase
         BulkSelectedInstallments.Clear();
         foreach (var inst in next)
             BulkSelectedInstallments.Add(inst);
+        SyncBulkCashBoxFilter();
         OnPropertyChanged(nameof(BulkSelectedCount));
         OnPropertyChanged(nameof(BulkSelectedTotalRemaining));
+        OnPropertyChanged(nameof(BulkSelectedTotalRemainingText));
         OnPropertyChanged(nameof(HasBulkSelection));
     }
 
@@ -260,8 +322,11 @@ public partial class InstallmentsViewModel : ViewModelBase
     {
         BulkSelectedInstallments.Clear();
         BulkPayMessage = string.Empty;
+        // أعد فلتر القاصات حسب خطة التسديد إن وُجدت، وإلا اعرض الكل
+        ApplyPaymentCashBoxFilter(PaymentSelectedPlan);
         OnPropertyChanged(nameof(BulkSelectedCount));
         OnPropertyChanged(nameof(BulkSelectedTotalRemaining));
+        OnPropertyChanged(nameof(BulkSelectedTotalRemainingText));
         OnPropertyChanged(nameof(HasBulkSelection));
     }
 
@@ -290,16 +355,30 @@ public partial class InstallmentsViewModel : ViewModelBase
             return;
         }
 
+        var currencies = BulkSelectedInstallments.Select(InstallmentCurrency).Distinct().ToList();
+        if (ShowMultiCurrency && currencies.Count > 1)
+        {
+            BulkPayMessage = "لا يمكن التسديد الجماعي لأقساط بعملات مختلفة — اختر أقساط عملة واحدة";
+            return;
+        }
+
+        var batchCurrency = currencies.FirstOrDefault();
+        if (ShowMultiCurrency && PaymentCashBox.Currency != batchCurrency)
+        {
+            BulkPayMessage = $"القاصة المحددة بعملة مختلفة عن الأقساط ({AccountingCurrencyHelper.GetLabel(batchCurrency)})";
+            return;
+        }
+
         var total = BulkSelectedTotalRemaining;
         var count = BulkSelectedCount;
         var preview = string.Join("\n", BulkSelectedInstallments.Take(8).Select(i =>
-            $"• {i.InstallmentPlan?.Customer?.Name ?? "—"} — {i.RemainingAmount:N0} د.ع ({i.DueDate:yyyy/MM/dd})"));
+            $"• {i.InstallmentPlan?.Customer?.Name ?? "—"} — {FormatInstallmentAmount(i, x => x.RemainingAmount)} ({i.DueDate:yyyy/MM/dd})"));
         if (count > 8)
             preview += $"\n... و {count - 8} قسط/أقساط أخرى";
 
         var confirmed = BeautifulMessageDialog.ShowConfirm(
             $"تسديد جماعي لـ {count} قسط/أقساط\n" +
-            $"الإجمالي: {total:N0} د.ع\n" +
+            $"الإجمالي: {FormatAmount(total, batchCurrency)}\n" +
             $"الصندوق: {PaymentCashBox.Name}\n\n" +
             preview +
             "\n\nهل تريد المتابعة؟");
@@ -323,7 +402,7 @@ public partial class InstallmentsViewModel : ViewModelBase
                 if (result.AllSucceeded)
                 {
                     BeautifulMessageDialog.ShowSuccess(
-                        $"تم تسديد {result.PaidCount} قسط/أقساط بإجمالي {result.TotalPaid:N0} د.ع\n\nيمكنك إرسال إيصال PDF عبر واتساب.");
+                        $"تم تسديد {result.PaidCount} قسط/أقساط بإجمالي {FormatAmount(result.TotalPaid, InstallmentCurrency(paidSnapshot.FirstOrDefault()))}\n\nيمكنك إرسال إيصال PDF عبر واتساب.");
                 }
                 else
                 {
@@ -331,7 +410,7 @@ public partial class InstallmentsViewModel : ViewModelBase
                     if (result.Errors.Count > 5)
                         errText += $"\n... و {result.Errors.Count - 5} أخطاء أخرى";
                     BeautifulMessageDialog.ShowWarning(
-                        $"تم تسديد {result.PaidCount} من {ids.Count} (إجمالي {result.TotalPaid:N0} د.ع)\n\n{errText}");
+                        $"تم تسديد {result.PaidCount} من {ids.Count} (إجمالي {FormatAmount(result.TotalPaid, InstallmentCurrency(paidSnapshot.FirstOrDefault()))})\n\n{errText}");
                 }
             }
             else
@@ -416,7 +495,7 @@ public partial class InstallmentsViewModel : ViewModelBase
             1, int.MaxValue,
             string.IsNullOrWhiteSpace(PlansSearchText) ? null : PlansSearchText.Trim(),
             installmentType: SelectedInstallmentTypeFilter);
-        PlansFooter.SetFromPlans(all, $"إجمالي نتائج البحث ({count:N0} خطة)");
+        PlansFooter.SetFromPlans(all, $"إجمالي نتائج البحث ({count:N0} خطة)", ShowMultiCurrency);
     }
 
     partial void OnSelectedInstallmentTypeFilterChanged(InstallmentType? value)
@@ -437,9 +516,6 @@ public partial class InstallmentsViewModel : ViewModelBase
         "العميل", "رقم الإضبارة", "العملة", "المبلغ الكلي", "عدد الأقساط", "مبلغ القسط", "تاريخ البدء",
         "رقم الفاتورة", "المسدد", "المتبقي", "أقساط مسددة"
     ];
-
-    private static AccountingCurrency PlanCurrency(InstallmentPlan p) =>
-        p.Invoice?.Currency ?? AccountingCurrency.IQD;
 
     private static object[] BuildPlanSummaryRow(InstallmentPlan p)
     {
@@ -540,11 +616,11 @@ public partial class InstallmentsViewModel : ViewModelBase
 
             var totals = await _installmentService.GetInstallmentTotalsAsync(
                 InstallmentStatus.Overdue, updateOverdueStatuses: false);
-            var overdueNote = totals.CountUsd > 0
-                ? $"إجمالي الأقساط المتأخرة (د.ع) — إفصاح $: {totals.RemainingAmountUsd:N2}"
+            var overdueNote = ShowMultiCurrency && totals.CountUsd > 0
+                ? $"إجمالي الأقساط المتأخرة — دينار + دولار منفصل"
                 : "إجمالي الأقساط المتأخرة";
             OverdueFooter.SetFromTotals(totals.Count, totals.TotalAmount, totals.PaidAmount, totals.RemainingAmount,
-                overdueNote);
+                overdueNote, ShowMultiCurrency, totals.CountUsd, totals.TotalAmountUsd, totals.PaidAmountUsd, totals.RemainingAmountUsd);
         }
         catch (Exception ex)
         {
@@ -593,9 +669,9 @@ public partial class InstallmentsViewModel : ViewModelBase
             return;
         }
 
-var confirmed = BeautifulMessageDialog.ShowConfirm(
+            var confirmed = BeautifulMessageDialog.ShowConfirm(
                 $"هل تريد تسديد المبلغ المتبقي بالكامل؟\n" +
-                $"المبلغ المتبقي: {installment.RemainingAmount:N0} د.ع\n" +
+                $"المبلغ المتبقي: {FormatInstallmentAmount(installment, i => i.RemainingAmount)}\n" +
                 $"العميل: {installment.InstallmentPlan?.Customer?.Name}");
 
             if (!confirmed) return;
@@ -674,7 +750,67 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
     partial void OnPaymentSelectedPlanChanged(InstallmentPlan? value)
     {
         ClearWhatsAppReceiptOption();
+        ApplyPaymentCashBoxFilter(value);
         _ = LoadPlanInstallmentsAsync(value);
+    }
+
+    private void ApplyPaymentCashBoxFilter(InstallmentPlan? plan)
+    {
+        if (ShowMultiCurrency && plan is not null)
+            ApplyPaymentCashBoxesByCurrency(PlanCurrency(plan), filter: true);
+        else
+            ApplyPaymentCashBoxesByCurrency(null, filter: false);
+    }
+
+    private void ApplyPaymentCashBoxesByCurrency(AccountingCurrency? currency, bool filter)
+    {
+        PaymentCashBoxes.Clear();
+        var filtered = ShowMultiCurrency && filter && currency.HasValue
+            ? _allPaymentCashBoxes.Where(c => c.Currency == currency.Value)
+            : _allPaymentCashBoxes.AsEnumerable();
+
+        foreach (var cb in filtered)
+            PaymentCashBoxes.Add(cb);
+
+        if (PaymentCashBox is null || !PaymentCashBoxes.Contains(PaymentCashBox))
+            PaymentCashBox = PaymentCashBoxes.FirstOrDefault();
+    }
+
+    /// <summary>عند التحديد الجماعي: اعرض فقط قاصات عملة الأقساط المحددة.</summary>
+    private void SyncBulkCashBoxFilter()
+    {
+        if (!ShowMultiCurrency || BulkSelectedInstallments.Count == 0)
+        {
+            ApplyPaymentCashBoxFilter(PaymentSelectedPlan);
+            return;
+        }
+
+        var currencies = BulkSelectedInstallments
+            .Select(InstallmentCurrency)
+            .Distinct()
+            .ToList();
+
+        if (currencies.Count == 1)
+            ApplyPaymentCashBoxesByCurrency(currencies[0], filter: true);
+        else
+            ApplyPaymentCashBoxesByCurrency(null, filter: false);
+    }
+
+    private static void EnsureInstallmentPlanCurrency(IEnumerable<Installment> installments, InstallmentPlan plan)
+    {
+        foreach (var inst in installments)
+        {
+            if (inst.InstallmentPlan is null)
+            {
+                inst.InstallmentPlan = plan;
+                continue;
+            }
+
+            if (inst.InstallmentPlan.Invoice is null && plan.Invoice is not null)
+                inst.InstallmentPlan.Invoice = plan.Invoice;
+            if (inst.InstallmentPlan.Customer is null && plan.Customer is not null)
+                inst.InstallmentPlan.Customer = plan.Customer;
+        }
     }
 
     private async Task LoadPlanInstallmentsAsync(InstallmentPlan? plan)
@@ -692,8 +828,10 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         try
         {
             var installments = (await _installmentService.GetInstallmentsByPlanIdAsync(plan.Id)).ToList();
+            EnsureInstallmentPlanCurrency(installments, plan);
             PaymentFooter.SetFromInstallments(installments,
-                $"خطة {plan.Invoice?.InvoiceNumber ?? plan.Id.ToString()} — {plan.Customer?.Name ?? ""}");
+                $"خطة {plan.Invoice?.InvoiceNumber ?? plan.Id.ToString()} — {plan.Customer?.Name ?? ""}",
+                ShowMultiCurrency);
 
             foreach (var inst in installments.Where(i => i.Status != InstallmentStatus.Paid))
                 PlanInstallments.Add(inst);
@@ -737,6 +875,12 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
             return;
         }
 
+        if (ShowMultiCurrency && PaymentCashBox.Currency != InstallmentCurrency(PaymentSelectedInstallment))
+        {
+            PaymentMessage = "عملة القاصة يجب أن تطابق عملة القسط";
+            return;
+        }
+
         try
         {
             IsBusy = true;
@@ -746,7 +890,7 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
             await _installmentService.PayInstallmentAsync(inst.Id, paid, PaymentCashBox.Id);
 
             IsPaymentSuccess = true;
-            PaymentMessage = $"تم تسديد {paid:N0} د.ع بنجاح";
+            PaymentMessage = $"تم تسديد {FormatAmount(paid, InstallmentCurrency(inst))} بنجاح";
             StageWhatsAppReceipt(BuildSinglePaymentReceipt(inst, paid, remainingAfter, PaymentCashBox.Name));
 
             await LoadPlanInstallmentsAsync(PaymentSelectedPlan);
@@ -793,13 +937,13 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
         try
         {
-            var installments = await _installmentService.GetInstallmentsByPlanIdAsync(plan.Id);
+            var installments = (await _installmentService.GetInstallmentsByPlanIdAsync(plan.Id)).ToList();
+            EnsureInstallmentPlanCurrency(installments, plan);
             foreach (var inst in installments)
                 DetailedInstallments.Add(inst);
             DetailedFooter.SetFromInstallments(installments,
-                plan is not null
-                    ? $"خطة {plan.Invoice?.InvoiceNumber ?? plan.Id.ToString()} — {plan.Customer?.Name ?? ""}"
-                    : string.Empty);
+                $"خطة {plan.Invoice?.InvoiceNumber ?? plan.Id.ToString()} — {plan.Customer?.Name ?? ""}",
+                ShowMultiCurrency);
         }
         catch (Exception ex)
         {
@@ -846,10 +990,11 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
         var totals = await _installmentService.GetInstallmentTotalsAsync(
             InstallmentStatus.Paid, searchTerm: search, updateOverdueStatuses: false);
-        var paidNote = totals.CountUsd > 0
-            ? $"إجمالي الأقساط المسددة (د.ع: {totals.Count:N0}) — إفصاح $: {totals.PaidAmountUsd:N2}"
+        var paidNote = ShowMultiCurrency && totals.CountUsd > 0
+            ? $"إجمالي الأقساط المسددة — دينار + دولار منفصل"
             : $"إجمالي الأقساط المسددة ({totals.Count:N0})";
-        PaidFooter.SetFromTotals(totals.Count, totals.TotalAmount, totals.PaidAmount, totals.RemainingAmount, paidNote);
+        PaidFooter.SetFromTotals(totals.Count, totals.TotalAmount, totals.PaidAmount, totals.RemainingAmount, paidNote,
+            ShowMultiCurrency, totals.CountUsd, totals.TotalAmountUsd, totals.PaidAmountUsd, totals.RemainingAmountUsd);
     }
 
     [RelayCommand]
@@ -1040,10 +1185,11 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
         }
 
         var cached = _unpaidTotalsCache.Value;
-        var unpaidNote = cached.CountUsd > 0
-            ? $"إجمالي غير المسدد (د.ع: {cached.Count:N0}) — إفصاح $: {cached.RemainingAmountUsd:N2}"
+        var unpaidNote = ShowMultiCurrency && cached.CountUsd > 0
+            ? $"إجمالي غير المسدد — دينار + دولار منفصل"
             : $"إجمالي الأقساط غير المسددة ({cached.Count:N0})";
-        UnpaidFooter.SetFromTotals(cached.Count, cached.TotalAmount, cached.PaidAmount, cached.RemainingAmount, unpaidNote);
+        UnpaidFooter.SetFromTotals(cached.Count, cached.TotalAmount, cached.PaidAmount, cached.RemainingAmount, unpaidNote,
+            ShowMultiCurrency, cached.CountUsd, cached.TotalAmountUsd, cached.PaidAmountUsd, cached.RemainingAmountUsd);
     }
 
     [RelayCommand]
@@ -1176,7 +1322,7 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
         var confirmed = BeautifulMessageDialog.ShowConfirm(
             $"هل تريد تسديد المبلغ المتبقي بالكامل؟\n" +
-            $"المبلغ المتبقي: {installment.RemainingAmount:N0} د.ع\n" +
+                $"المبلغ المتبقي: {FormatInstallmentAmount(installment, i => i.RemainingAmount)}\n" +
             $"العميل: {installment.InstallmentPlan?.Customer?.Name}");
 
         if (!confirmed) return;
@@ -1212,7 +1358,7 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
         var confirmed = BeautifulMessageDialog.ShowConfirm(
             $"هل تريد إلغاء تسديد هذا القسط؟\n" +
-            $"المبلغ المدفوع: {installment.PaidAmount:N0} د.ع\n" +
+            $"المبلغ المدفوع: {FormatInstallmentAmount(installment, i => i.PaidAmount)}\n" +
             $"العميل: {installment.InstallmentPlan?.Customer?.Name}\n\n" +
             $"⚠ سيتم خصم المبلغ من رصيد القاصة");
 
@@ -1251,7 +1397,7 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
         var confirmed = BeautifulMessageDialog.ShowConfirm(
             $"هل تريد تسديد المبلغ المتبقي بالكامل؟\n" +
-            $"المبلغ المتبقي: {installment.RemainingAmount:N0} د.ع");
+            $"المبلغ المتبقي: {FormatInstallmentAmount(installment, i => i.RemainingAmount)}");
 
         if (!confirmed) return;
 
@@ -1285,7 +1431,7 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
 
         var confirmed = BeautifulMessageDialog.ShowConfirm(
             $"هل تريد إلغاء تسديد هذا القسط؟\n" +
-            $"المبلغ المدفوع: {installment.PaidAmount:N0} د.ع\n\n" +
+            $"المبلغ المدفوع: {FormatInstallmentAmount(installment, i => i.PaidAmount)}\n\n" +
             $"⚠ سيتم خصم المبلغ من رصيد القاصة");
 
         if (!confirmed) return;
@@ -1325,6 +1471,15 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
     private decimal _summaryRemainingAmount;
 
     [ObservableProperty]
+    private string _summaryTotalAmountText = "0 د.ع";
+
+    [ObservableProperty]
+    private string _summaryPaidAmountText = "0 د.ع";
+
+    [ObservableProperty]
+    private string _summaryRemainingAmountText = "0 د.ع";
+
+    [ObservableProperty]
     private int _summaryPaidCount;
 
     [ObservableProperty]
@@ -1345,13 +1500,25 @@ var confirmed = BeautifulMessageDialog.ShowConfirm(
                 statuses: [InstallmentStatus.Pending, InstallmentStatus.PartiallyPaid]);
 
             SummaryTotalPlans = planCount;
-            SummaryPaidCount = paid.Count;
-            SummaryUnpaidCount = pendingPartial.Count;
-            SummaryOverdueCount = overdue.Count;
-            OverdueCount = overdue.Count;
+            SummaryPaidCount = ShowMultiCurrency ? paid.Count + paid.CountUsd : paid.Count;
+            SummaryUnpaidCount = ShowMultiCurrency
+                ? pendingPartial.Count + pendingPartial.CountUsd
+                : pendingPartial.Count;
+            SummaryOverdueCount = ShowMultiCurrency ? overdue.Count + overdue.CountUsd : overdue.Count;
+            OverdueCount = SummaryOverdueCount;
             SummaryPaidAmount = paid.PaidAmount;
             SummaryRemainingAmount = unpaid.RemainingAmount;
             SummaryTotalAmount = paid.TotalAmount + unpaid.TotalAmount;
+
+            SummaryPaidAmountText = FormatDualSummary(
+                paid.PaidAmount,
+                ShowMultiCurrency ? paid.PaidAmountUsd : 0);
+            SummaryRemainingAmountText = FormatDualSummary(
+                unpaid.RemainingAmount,
+                ShowMultiCurrency ? unpaid.RemainingAmountUsd : 0);
+            SummaryTotalAmountText = FormatDualSummary(
+                paid.TotalAmount + unpaid.TotalAmount,
+                ShowMultiCurrency ? paid.TotalAmountUsd + unpaid.TotalAmountUsd : 0);
         }
         catch
         {

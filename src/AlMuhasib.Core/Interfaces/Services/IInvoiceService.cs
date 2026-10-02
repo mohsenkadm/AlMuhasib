@@ -19,10 +19,10 @@ public interface IInvoiceService
     Task<string> GenerateInvoiceNumberAsync(InvoiceType type);
 
     /// <summary>
-    /// Applies rounding: UP for Purchase, DOWN for Sale.
-    /// Returns the rounding difference amount.
+    /// Applies IQD cash rounding (step 250): UP for Purchase, DOWN for Sale.
+    /// USD invoices skip IQD cash rounding (return 0).
     /// </summary>
-    decimal CalculateRounding(decimal netAmount, InvoiceType invoiceType);
+    decimal CalculateRounding(decimal netAmount, InvoiceType invoiceType, AccountingCurrency currency = AccountingCurrency.IQD);
 
     Task DeleteInvoiceAsync(int id);
 
@@ -56,7 +56,7 @@ public interface IInvoiceService
     Task PayCreditInvoiceAsync(int invoiceId, decimal amount, int cashBoxId);
 
     /// <summary>
-    /// يطبّق مرتجعات قديمة على فواتير الآجل إن لم تُطبَّق بعد. يُرجع عدد المرتجعات التي عولجت.
+    /// متوقف: لا يُعاد تطبيق المرتجعات تلقائياً (التطبيق عند الحفظ فقط). يُرجع 0 دائماً.
     /// </summary>
     Task<int> RepairUnappliedReturnCreditsAsync(CancellationToken cancellationToken = default);
 }

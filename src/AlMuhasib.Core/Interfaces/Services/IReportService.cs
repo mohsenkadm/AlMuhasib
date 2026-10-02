@@ -120,6 +120,9 @@ public interface IReportService
     Task<CashBoxMovementReportResult> GetCashBoxMovementReportAsync(int? cashBoxId, DateTime? from, DateTime? to);
     Task<CashBalancesSummaryReportResult> GetCashBalancesSummaryReportAsync();
     Task<TransfersReportResult> GetTransfersReportAsync(DateTime? from, DateTime? to);
+    Task<WarehouseTransfersReportResult> GetWarehouseTransfersReportAsync(
+        DateTime? from, DateTime? to, int? fromWarehouseId, int? toWarehouseId, string? search);
+    Task<WarehouseTransferDetailResult?> GetWarehouseTransferDetailAsync(int transferId);
     Task<InventoryValuationReportResult> GetInventoryValuationReportAsync(int? warehouseId, bool includeZero = false);
     Task<WarehouseProductProfitReportResult> GetWarehouseProductProfitReportAsync(int? warehouseId, bool includeZero = false);
     Task<StockTakingReportResult> GetStockTakingReportAsync(int? warehouseId, bool includeZero = true);
@@ -249,6 +252,8 @@ public class PurchasesReportResult
     public List<PurchasesReportRow> Rows { get; set; } = [];
     public List<DailyAmountPoint> DailyChart { get; set; } = [];
     public List<NameAmountPoint> BySupplierChart { get; set; } = [];
+    /// <summary>عملة سلسلة المخطط اليومي (دينار إن وُجد، وإلا دولار حتى لا يبقى المخطط فارغاً).</summary>
+    public AccountingCurrency DailyChartCurrency { get; set; } = AccountingCurrency.IQD;
 }
 
 public class PurchasesReportRow
@@ -277,6 +282,8 @@ public class NameAmountPoint
 {
     public string Name { get; set; } = string.Empty;
     public decimal Amount { get; set; }
+    /// <summary>مبلغ دولار منفصل لنفس الجهة (إن وُجد).</summary>
+    public decimal AmountUsd { get; set; }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -353,6 +360,8 @@ public class InstallmentSummaryRow
     public decimal TotalAmount { get; set; }
     public decimal PaidAmount { get; set; }
     public decimal RemainingAmount { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
     public int InstallmentCount { get; set; }
     public string Status { get; set; } = string.Empty;
 }
@@ -397,6 +406,9 @@ public class PaidInstallmentRow
     public string? CustomerFileNumber { get; set; }
     public string PlanNumber { get; set; } = string.Empty;
     public decimal Amount { get; set; }
+    public decimal OriginalAmount { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
     public DateTime PaymentDate { get; set; }
     public string CashBoxName { get; set; } = string.Empty;
 }
@@ -421,6 +433,9 @@ public class UnpaidInstallmentRow
     public DateTime DueDate { get; set; }
     public decimal Amount { get; set; }
     public decimal RemainingAmount { get; set; }
+    public decimal OriginalRemainingAmount { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
     public int OverdueDays { get; set; }
 }
 
@@ -674,7 +689,7 @@ public class BalanceSheetResult
     public List<BalanceSheetCashBoxRow> CashBoxes { get; set; } = [];
     public decimal BanksTotal { get; set; }
     public List<BalanceSheetBankRow> Banks { get; set; } = [];
-    /// <summary>إفصاح سيولة دولار — لا يُدمج في مجاميع الميزانية بالدينار.</summary>
+    /// <summary>مهجور — مع MultiCurrency تُدمج مبالغ الدولار في المجاميع بالدينار.</summary>
     public decimal CashBoxesTotalUsd { get; set; }
     public decimal BanksTotalUsd { get; set; }
     public decimal CustomerDebtsUsd { get; set; }
@@ -684,7 +699,7 @@ public class BalanceSheetResult
     public decimal InstallmentReceivables { get; set; }
     /// <summary>سلف الموظفين المستحقة بالدينار (أصل في الميزانية).</summary>
     public decimal EmployeeAdvances { get; set; }
-    /// <summary>إفصاح سلف موظفين بالدولار — لا يُدمج في مجاميع الميزانية بالدينار.</summary>
+    /// <summary>مهجور — مع MultiCurrency تُدمج سلف الدولار في EmployeeAdvances.</summary>
     public decimal EmployeeAdvancesUsd { get; set; }
     public decimal AssetsTotal { get; set; }
 
@@ -1346,6 +1361,8 @@ public class ReceivablesAgingRow
     public decimal RemainingAmount { get; set; }
     public int DaysOverdue { get; set; }
     public string AgingBucket { get; set; } = string.Empty;
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
 }
 
 public class PayablesAgingReportResult
@@ -1370,6 +1387,8 @@ public class PayablesAgingRow
     public decimal RemainingAmount { get; set; }
     public int DaysOverdue { get; set; }
     public string AgingBucket { get; set; } = string.Empty;
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
 }
 
 public class CustomerCollectionsReportResult
@@ -1537,6 +1556,52 @@ public class TransferReportRow
     public string CurrencyLabel => Currency == AccountingCurrency.USD ? "USD" : "د.ع";
     public string Notes { get; set; } = string.Empty;
     public string CreatedBy { get; set; } = string.Empty;
+}
+
+public class WarehouseTransfersReportResult
+{
+    public int TransferCount { get; set; }
+    public int TotalLineCount { get; set; }
+    public decimal TotalQuantity { get; set; }
+    public int WarehouseCount { get; set; }
+    public List<WarehouseTransferReportRow> Rows { get; set; } = [];
+    public List<DailyAmountPoint> DailyChart { get; set; } = [];
+    public List<NameAmountPoint> ByFromWarehouseChart { get; set; } = [];
+}
+
+public class WarehouseTransferReportRow
+{
+    public int Id { get; set; }
+    public string TransferNumber { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public string FromWarehouseName { get; set; } = string.Empty;
+    public string ToWarehouseName { get; set; } = string.Empty;
+    public int LineCount { get; set; }
+    public decimal TotalQuantity { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public string CreatedBy { get; set; } = string.Empty;
+}
+
+public class WarehouseTransferDetailResult
+{
+    public int Id { get; set; }
+    public string TransferNumber { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public string FromWarehouseName { get; set; } = string.Empty;
+    public string ToWarehouseName { get; set; } = string.Empty;
+    public string? Notes { get; set; }
+    public string CreatedBy { get; set; } = string.Empty;
+    public int LineCount { get; set; }
+    public decimal TotalQuantity { get; set; }
+    public List<WarehouseTransferDetailLine> Lines { get; set; } = [];
+}
+
+public class WarehouseTransferDetailLine
+{
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string? Barcode { get; set; }
+    public decimal Quantity { get; set; }
 }
 
 public class InventoryValuationReportResult
@@ -1741,7 +1806,7 @@ public class ExecutiveBusinessSummaryResult
     public DateTime? DateFrom { get; set; }
     public DateTime? DateTo { get; set; }
 
-    // المركز المالي (حتى DateTo)
+    // المركز المالي (حتى DateTo) — دينار
     public decimal CustomerReceivables { get; set; }
     public decimal CustomerCreditInvoiceRemaining { get; set; }
     public decimal CustomerUnappliedDebt { get; set; }
@@ -1760,6 +1825,19 @@ public class ExecutiveBusinessSummaryResult
     public decimal TotalEquity { get; set; }
     public decimal AccumulatedProfits { get; set; }
 
+    // المركز المالي — دولار (منفصل)
+    public decimal CustomerReceivablesUsd { get; set; }
+    public decimal CustomerCreditInvoiceRemainingUsd { get; set; }
+    public decimal CustomerUnappliedDebtUsd { get; set; }
+    public decimal CustomerUnappliedReceiptsUsd { get; set; }
+    public decimal InstallmentReceivablesUsd { get; set; }
+    public decimal SupplierPayablesUsd { get; set; }
+    public decimal SupplierCreditInvoiceRemainingUsd { get; set; }
+    public decimal SupplierUnappliedPaymentsUsd { get; set; }
+    public decimal CashBoxesBalanceUsd { get; set; }
+    public decimal BankBalanceUsd { get; set; }
+    public decimal NetWorkingCapitalUsd { get; set; }
+
     // المبيعات (الفترة)
     public decimal TotalSales { get; set; }
     public decimal CashSales { get; set; }
@@ -1767,6 +1845,11 @@ public class ExecutiveBusinessSummaryResult
     public decimal InstallmentSales { get; set; }
     public int SalesInvoiceCount { get; set; }
     public decimal AverageSaleInvoice { get; set; }
+    public decimal TotalSalesUsd { get; set; }
+    public decimal CashSalesUsd { get; set; }
+    public decimal CreditSalesUsd { get; set; }
+    public decimal InstallmentSalesUsd { get; set; }
+    public decimal AverageSaleInvoiceUsd { get; set; }
 
     // المشتريات والتكاليف (الفترة)
     public decimal TotalPurchases { get; set; }
@@ -1774,6 +1857,9 @@ public class ExecutiveBusinessSummaryResult
     public decimal CreditPurchases { get; set; }
     public int PurchaseInvoiceCount { get; set; }
     public decimal CostOfGoodsSold { get; set; }
+    public decimal TotalPurchasesUsd { get; set; }
+    public decimal CashPurchasesUsd { get; set; }
+    public decimal CreditPurchasesUsd { get; set; }
 
     // الأرباح (الفترة)
     public decimal GrossProfit { get; set; }
@@ -1785,18 +1871,27 @@ public class ExecutiveBusinessSummaryResult
     public decimal ProfitOpeningBalance { get; set; }
     public decimal NetProfit { get; set; }
     public decimal NetMarginPercent { get; set; }
+    public decimal TotalExpensesUsd { get; set; }
+    public decimal OperatingProfitUsd { get; set; }
+    public decimal NetProfitUsd { get; set; }
 
     // العملاء
     public int ActiveCustomersCount { get; set; }
     public decimal CustomerCollections { get; set; }
     public int CustomersWithBalanceCount { get; set; }
     public decimal HighestCustomerBalance { get; set; }
+    public decimal CustomerCollectionsUsd { get; set; }
+    public decimal HighestCustomerBalanceUsd { get; set; }
+    public int CustomersWithBalanceCountUsd { get; set; }
 
     // الموردين
     public int ActiveSuppliersCount { get; set; }
     public decimal SupplierPayments { get; set; }
     public int SuppliersWithBalanceCount { get; set; }
     public decimal HighestSupplierBalance { get; set; }
+    public decimal SupplierPaymentsUsd { get; set; }
+    public decimal HighestSupplierBalanceUsd { get; set; }
+    public int SuppliersWithBalanceCountUsd { get; set; }
 
     // المخزون
     public int StockedProductCount { get; set; }
@@ -1804,7 +1899,7 @@ public class ExecutiveBusinessSummaryResult
     public decimal InventoryPotentialProfit { get; set; }
     public int BelowMinimumStockCount { get; set; }
 
-    // الأقساط والنقد (أرصدة حتى «إلى» + نشاط الفترة)
+    // الأقساط والنقد
     public int OverdueInstallmentsCount { get; set; }
     public decimal OverdueInstallmentsAmount { get; set; }
     public decimal CollectedInstallments { get; set; }
@@ -1812,6 +1907,12 @@ public class ExecutiveBusinessSummaryResult
     public decimal PaymentVouchersAmount { get; set; }
     public decimal TransfersAmount { get; set; }
     public int TransfersCount { get; set; }
+    public int OverdueInstallmentsCountUsd { get; set; }
+    public decimal OverdueInstallmentsAmountUsd { get; set; }
+    public decimal CollectedInstallmentsUsd { get; set; }
+    public decimal ReceiptVouchersAmountUsd { get; set; }
+    public decimal PaymentVouchersAmountUsd { get; set; }
+    public decimal TransfersAmountUsd { get; set; }
 
     // تفاصيل للعرض في حوار الكروت (محدودة)
     public List<NameAmountPoint> ActiveCustomersDetail { get; set; } = [];

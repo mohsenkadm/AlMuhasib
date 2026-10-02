@@ -217,20 +217,55 @@ public class InvestorService : IInvestorService
             .OrderByDescending(t => t.Date).ThenByDescending(t => t.Id).Take(count).ToListAsync();
     }
 
-    public async Task<decimal> GetDistributableProfitsAsync()
+    public async Task<DistributableProfitBreakdown> GetDistributableProfitsAsync(DateTime periodDate)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var totalSales = await InvoiceSignedSums.SumSignedNetAsync(
-            InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans));
-        var totalPurchases = await InvoiceSignedSums.SumSignedNetAsync(
-            InvoiceFilters.ForPurchasesTotals(context.Invoices));
-        // أرباح التوزيع بالدينار فقط — لا تُخلط مصروفات الدولار مع ربح الدينار
-        var totalExpenses = await context.Expenses
-            .Where(e => e.Currency == AccountingCurrency.IQD)
-            .SumAsync(e => (decimal?)e.Amount ?? 0);
-        var alreadyDistributed = await context.ProfitDistributions.SumAsync(pd => (decimal?)pd.DistributedAmount ?? 0);
-        var profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context);
-        return totalSales - totalPurchases - totalExpenses - alreadyDistributed + profitOpening;
+        var foldInUsd = FinancialReportIqdFoldIn.ShouldFoldUsdIntoIqd(
+            await MultiCurrencyFeatureGate.IsEnabledAsync(context));
+
+        var monthStart = new DateTime(periodDate.Year, periodDate.Month, 1);
+        var monthEndExclusive = monthStart.AddMonths(1);
+
+        // مبيعات الشهر (مع MultiCurrency: طي الدولار إلى دينار بسعر المستند)
+        var salesQ = foldInUsd
+            ? InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans, ReportCurrencyScope.All)
+            : InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans);
+        salesQ = salesQ.Where(i => i.Date >= monthStart && i.Date < monthEndExclusive);
+
+        var salesRows = await salesQ
+            .Select(i => new { i.InvoiceType, i.NetAmount, i.Currency, i.FxRate })
+            .ToListAsync();
+        var totalSales = FinancialReportIqdFoldIn.SumSignedSalesInBaseIqd(
+            salesRows.Select(r => (r.InvoiceType, r.NetAmount, r.Currency, r.FxRate)), foldInUsd);
+
+        // تكلفة البضاعة المباعة خلال الشهر
+        var cogs = await ProductCostHelper.CalculateCogsAsync(context, monthStart, monthEndExclusive);
+
+        // مصاريف الشهر
+        var expensesQ = foldInUsd
+            ? context.Expenses.AsQueryable()
+            : context.Expenses.Where(e => e.Currency == AccountingCurrency.IQD);
+        expensesQ = expensesQ.Where(e => e.Date >= monthStart && e.Date < monthEndExclusive);
+
+        var expenseRows = await expensesQ
+            .Select(e => new { e.Amount, e.Currency, e.FxRate })
+            .ToListAsync();
+        var totalExpenses = FinancialReportIqdFoldIn.SumAmountsInBaseIqd(
+            expenseRows.Select(r => (r.Amount, r.Currency, r.FxRate)), foldInUsd);
+
+        var alreadyDistributed = await context.ProfitDistributions
+            .Where(pd => pd.Date >= monthStart && pd.Date < monthEndExclusive)
+            .SumAsync(pd => (decimal?)pd.DistributedAmount ?? 0);
+
+        return new DistributableProfitBreakdown
+        {
+            PeriodFrom = monthStart,
+            PeriodToExclusive = monthEndExclusive,
+            Sales = totalSales,
+            CostOfGoodsSold = cogs,
+            Expenses = totalExpenses,
+            AlreadyDistributedInPeriod = alreadyDistributed
+        };
     }
 
     public async Task<decimal> GetEligibleDepositAsync(int investorId, DateTime distributionDate, int eligibilityDays = 15)

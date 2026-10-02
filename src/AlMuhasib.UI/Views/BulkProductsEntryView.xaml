@@ -164,12 +164,7 @@
                                         Binding="{Binding DiscountExpiresText, UpdateSourceTrigger=PropertyChanged}"
                                         Width="110" Visibility="Collapsed"/>
 
-                    <DataGridTextColumn x:Name="ColSalePrice" Header="سعر البيع"
-                                        Binding="{Binding SalePrice, UpdateSourceTrigger=PropertyChanged}"
-                                        Width="100" Visibility="Collapsed"/>
-                    <DataGridTextColumn x:Name="ColPurchasePrice" Header="سعر الشراء"
-                                        Binding="{Binding PurchasePrice, UpdateSourceTrigger=PropertyChanged}"
-                                        Width="100" Visibility="Collapsed"/>
+                    <!-- أعمدة المخازن والأسعار تُبنى ديناميكياً في code-behind -->
 
                     <DataGridTextColumn x:Name="ColCf1" Header="حقل 1"
                                         Binding="{Binding CustomField1, UpdateSourceTrigger=PropertyChanged}"

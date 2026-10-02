@@ -678,19 +678,20 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
-                            <DatePicker Grid.Column="0" md:HintAssist.Hint="تاريخ التوزيع"
+                            <DatePicker Grid.Column="0" md:HintAssist.Hint="شهر التوزيع (حسب التاريخ)"
                                         SelectedDate="{Binding DistributionDate}"
-                                        Style="{StaticResource FilledDatePicker}"/>
+                                        Style="{StaticResource FilledDatePicker}"
+                                        ToolTip="يُحسب الربح الحقيقي لشهر هذا التاريخ: مبيعات − تكلفة البضاعة − مصاريف"/>
 
                             <TextBox Grid.Column="2"
-                                     md:HintAssist.Hint="الأرباح القابلة للتوزيع"
+                                     md:HintAssist.Hint="الربح الحقيقي القابل للتوزيع"
                                      Text="{Binding DistributableProfits, UpdateSourceTrigger=LostFocus}"
                                      Style="{StaticResource NumericTextBox}"
-                                     ToolTip="يمكن تعديل المبلغ قبل المعاينة أو التأكيد"/>
+                                     ToolTip="مبيعات الشهر − تكلفة البضاعة المباعة − المصاريف (بعد خصم ما وُزّع في نفس الشهر). يمكن تعديله يدوياً قبل التأكيد"/>
 
                             <Button Grid.Column="4" Command="{Binding ReloadDistributableProfitsCommand}"
                                     Style="{StaticResource IconButton}" Width="40" Height="40"
-                                    ToolTip="إعادة تحميل الأرباح المحسوبة من النظام"
+                                    ToolTip="إعادة حساب ربح الشهر من النظام"
                                     VerticalAlignment="Center">
                                 <md:PackIcon Kind="Refresh" Width="20" Height="20"/>
                             </Button>
@@ -700,6 +701,48 @@
                                     Style="{StaticResource MaterialDesignRaisedButton}"
                                     md:ButtonAssist.CornerRadius="8" Padding="24,8"/>
                         </Grid>
+
+                        <Border Grid.Row="2" Margin="0,4,0,0" Padding="12,10"
+                                Background="{DynamicResource MaterialDesign.Brush.Background}"
+                                CornerRadius="8" BorderThickness="1"
+                                BorderBrush="{DynamicResource MaterialDesign.Brush.Foreground.Light}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <TextBlock Text="{Binding ProfitPeriodLabel, StringFormat=شهر {0}}"
+                                               Opacity="0.7" FontSize="11"/>
+                                    <TextBlock Text="المبيعات" Opacity="0.65" FontSize="12"/>
+                                    <TextBlock Text="{Binding PeriodSales, StringFormat=N0}" FontWeight="SemiBold"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text=" " FontSize="11"/>
+                                    <TextBlock Text="تكلفة البضاعة" Opacity="0.65" FontSize="12"/>
+                                    <TextBlock Text="{Binding PeriodCogs, StringFormat=N0}" FontWeight="SemiBold"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text=" " FontSize="11"/>
+                                    <TextBlock Text="الربح الإجمالي" Opacity="0.65" FontSize="12"/>
+                                    <TextBlock Text="{Binding PeriodGrossProfit, StringFormat=N0}" FontWeight="SemiBold"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="3">
+                                    <TextBlock Text=" " FontSize="11"/>
+                                    <TextBlock Text="المصاريف" Opacity="0.65" FontSize="12"/>
+                                    <TextBlock Text="{Binding PeriodExpenses, StringFormat=N0}" FontWeight="SemiBold"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text=" " FontSize="11"/>
+                                    <TextBlock Text="الربح الحقيقي" Opacity="0.65" FontSize="12"/>
+                                    <TextBlock Text="{Binding PeriodNetProfit, StringFormat=N0}" FontWeight="Bold"
+                                               Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
                     </Grid>
                 </md:Card>
 

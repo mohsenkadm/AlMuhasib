@@ -13,6 +13,7 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class CustomerStatementViewModel : ReportViewModelBase
 {
     private readonly IWhatsAppShareService _whatsAppShare;
+    private readonly IFeatureFlagService _featureFlags;
 
     [ObservableProperty] private string _customerName = "—";
     [ObservableProperty] private string _totalDebit = "0";
@@ -34,10 +35,12 @@ public partial class CustomerStatementViewModel : ReportViewModelBase
 
     public CustomerStatementViewModel(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService,
-        IWhatsAppShareService whatsAppShare, IInvoiceService invoiceService)
+        IWhatsAppShareService whatsAppShare, IInvoiceService invoiceService,
+        IFeatureFlagService featureFlags)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
         _whatsAppShare = whatsAppShare;
+        _featureFlags = featureFlags;
         InitReportActionServices(invoiceService);
         PageTitle = "كشف حساب عميل";
         DateFrom = null;
@@ -95,7 +98,8 @@ public partial class CustomerStatementViewModel : ReportViewModelBase
             TotalDebit = FormatCurrency(result.TotalDebit);
             TotalCredit = FormatCurrency(result.TotalCredit);
             Balance = FormatCurrency(result.Balance);
-            ShowBalanceUsd = result.BalanceUsd != 0;
+            // مع MultiCurrency: عزل الرصيد بالدولار دائماً (حتى لو صفر)
+            ShowBalanceUsd = _featureFlags.MultiCurrency || result.BalanceUsd != 0;
             BalanceUsd = ShowBalanceUsd ? $"$ {result.BalanceUsd:N2}" : "—";
             TransactionCount = result.TransactionCount.ToString("N0");
             PeriodLabel = BuildPeriodLabel();

@@ -30,7 +30,10 @@ public sealed class AccountingPeriodLockService : IAccountingPeriodLockService
         CancellationToken cancellationToken = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        // إعدادات الشركة موحّدة — لا تُفلتر بفرع الجلسة
         var settings = await context.BusinessSettings.AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(s => !s.IsDeleted)
             .OrderBy(s => s.Id)
             .FirstOrDefaultAsync(cancellationToken);
 

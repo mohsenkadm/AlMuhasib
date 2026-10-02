@@ -42,6 +42,10 @@ public sealed class BusinessSettingsController : ControllerBase
         {
             return Ok(await _mobileWrite.UpdateBusinessSettingsAsync(tenantId, request, Username, ct));
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message });
+        }
         catch (InvalidOperationException ex)
         {
             return Conflict(new { message = ex.Message });

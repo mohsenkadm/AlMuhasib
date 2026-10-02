@@ -1,11 +1,11 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core;
-using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
-using AlMuhasib.Infrastructure.Services;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -20,12 +20,15 @@ public partial class InvoiceProfitLine : ObservableObject
     public decimal SalePrice { get; init; }
     public decimal LineDiscount { get; init; }
     public decimal LineProfit { get; init; }
+    public AccountingCurrency Currency { get; init; } = AccountingCurrency.IQD;
     public bool IsLoss => LineProfit < 0;
     public bool IsProfit => LineProfit > 0;
     public bool IsBreakEven => LineProfit == 0;
-    public string ProfitLabel => $"{LineProfit:N0} د.ع";
-    public string PurchasePriceLabel => PurchasePrice > 0 ? $"{PurchasePrice:N0}" : "—";
-    public string SalePriceLabel => $"{SalePrice:N0}";
+    public string ProfitLabel => AccountingCurrencyHelper.Format(LineProfit, Currency);
+    public string PurchasePriceLabel => PurchasePrice > 0
+        ? AccountingCurrencyHelper.Format(PurchasePrice, Currency)
+        : "—";
+    public string SalePriceLabel => AccountingCurrencyHelper.Format(SalePrice, Currency);
     public string QuantityLabel => Quantity.ToString("N0");
 }
 
@@ -35,16 +38,12 @@ public partial class InvoiceProfitCheckViewModel : ObservableObject
     private readonly IProductPriceService? _productPriceService;
     private readonly bool _pricingEnabled;
     private readonly bool _discountEnabled;
+    private readonly AccountingCurrency _currency;
     private decimal _grossLineProfit;
 
     public ObservableCollection<InvoiceProfitLine> Lines { get; } = [];
 
-    public IReadOnlyList<DiscountTypeOption> DiscountTypeOptions { get; } =
-    [
-        new(DiscountType.None, "بدون خصم كلي"),
-        new(DiscountType.Percentage, "نسبة مئوية (%)"),
-        new(DiscountType.FixedAmount, "قيمة ثابتة (د.ع)")
-    ];
+    public IReadOnlyList<DiscountTypeOption> DiscountTypeOptions { get; }
 
     [ObservableProperty]
     private DiscountTypeOption? _selectedDiscountOption;
@@ -60,6 +59,9 @@ public partial class InvoiceProfitCheckViewModel : ObservableObject
 
     [ObservableProperty]
     private decimal _totalProfit;
+
+    [ObservableProperty]
+    private string _totalProfitLabel = string.Empty;
 
     [ObservableProperty]
     private int _lossCount;
@@ -79,19 +81,29 @@ public partial class InvoiceProfitCheckViewModel : ObservableObject
     [ObservableProperty]
     private bool _isOverallProfit;
 
+    public string CurrencyLabel => AccountingCurrencyHelper.GetLabel(_currency);
+
     public bool Applied { get; private set; }
 
     public InvoiceProfitCheckViewModel(
         IUnitOfWork unitOfWork,
         IProductPriceService? productPriceService,
         bool pricingEnabled,
-        bool discountEnabled)
+        bool discountEnabled,
+        AccountingCurrency currency = AccountingCurrency.IQD)
     {
         _unitOfWork = unitOfWork;
         _productPriceService = productPriceService;
         _pricingEnabled = pricingEnabled;
         _discountEnabled = discountEnabled;
+        _currency = currency;
         ShowDiscountControls = discountEnabled;
+        DiscountTypeOptions =
+        [
+            new(DiscountType.None, "بدون خصم كلي"),
+            new(DiscountType.Percentage, "نسبة مئوية (%)"),
+            new(DiscountType.FixedAmount, $"قيمة ثابتة ({CurrencyLabel})")
+        ];
         SelectedDiscountOption = DiscountTypeOptions[0];
     }
 
@@ -110,14 +122,19 @@ public partial class InvoiceProfitCheckViewModel : ObservableObject
                                  ?? DiscountTypeOptions[0];
 
         var productIds = rows.Select(r => r.ProductId!.Value).Distinct().ToList();
-        var costs = await ResolveCostsAsync(productIds);
+        var pricingByProduct = rows
+            .GroupBy(r => r.ProductId!.Value)
+            .ToDictionary(g => g.Key, g => g.Select(r => r.PricingTypeId).FirstOrDefault(id => id is > 0));
+        var costs = await ResolveCostsAsync(productIds, pricingByProduct);
 
         Lines.Clear();
         foreach (var row in rows)
         {
             var cost = costs.GetValueOrDefault(row.ProductId!.Value);
             var lineDiscount = _discountEnabled ? row.DiscountAmount : 0m;
-            var profit = Math.Round((row.UnitPrice - cost) * row.Quantity - lineDiscount, 0);
+            var profit = AccountingCurrencyHelper.NormalizeAmount(
+                (row.UnitPrice - cost) * row.Quantity - lineDiscount,
+                _currency);
             Lines.Add(new InvoiceProfitLine
             {
                 ItemName = row.ItemName,
@@ -125,7 +142,8 @@ public partial class InvoiceProfitCheckViewModel : ObservableObject
                 PurchasePrice = cost,
                 SalePrice = row.UnitPrice,
                 LineDiscount = lineDiscount,
-                LineProfit = profit
+                LineProfit = profit,
+                Currency = _currency
             });
         }
 
@@ -156,7 +174,10 @@ public partial class InvoiceProfitCheckViewModel : ObservableObject
             ? ProductDiscountHelper.CalculateInvoiceDiscount(DiscountType, DiscountValue, subtotal)
             : 0m;
 
-        TotalProfit = Math.Round(_grossLineProfit - InvoiceDiscountAmount, 0);
+        TotalProfit = AccountingCurrencyHelper.NormalizeAmount(
+            _grossLineProfit - InvoiceDiscountAmount,
+            _currency);
+        TotalProfitLabel = AccountingCurrencyHelper.Format(TotalProfit, _currency);
         LossCount = Lines.Count(l => l.IsLoss);
         ProfitCount = Lines.Count(l => l.IsProfit);
         IsOverallLoss = TotalProfit < 0;
@@ -172,61 +193,16 @@ public partial class InvoiceProfitCheckViewModel : ObservableObject
         Applied = true;
     }
 
-    private async Task<Dictionary<int, decimal>> ResolveCostsAsync(IReadOnlyList<int> productIds)
+    private async Task<Dictionary<int, decimal>> ResolveCostsAsync(
+        IReadOnlyList<int> productIds,
+        IReadOnlyDictionary<int, int?>? pricingTypeByProduct = null)
     {
-        var result = new Dictionary<int, decimal>();
-        if (productIds.Count == 0)
-            return result;
-
-        var stocks = (await _unitOfWork.WarehouseStocks.FindAsync(s => productIds.Contains(s.ProductId))).ToList();
-        var allItems = (await _unitOfWork.InvoiceItems.FindAsync(i =>
-            i.ProductId != null && productIds.Contains(i.ProductId.Value))).ToList();
-        var purchaseInvoiceIds = (await _unitOfWork.Invoices.FindAsync(i => i.InvoiceType == InvoiceType.Purchase))
-            .Select(i => i.Id)
-            .ToHashSet();
-        var purchaseItems = allItems
-            .Where(i => i.ProductId is not null && purchaseInvoiceIds.Contains(i.InvoiceId))
-            .ToList();
-
-        Dictionary<int, decimal>? catalogPurchase = null;
-        if (_pricingEnabled && _productPriceService is not null)
-        {
-            var prices = await _productPriceService.GetByProductIdsAsync(productIds);
-            catalogPurchase = prices
-                .GroupBy(p => p.ProductId)
-                .ToDictionary(
-                    g => g.Key,
-                    g =>
-                    {
-                        var preferred = g.FirstOrDefault(p => p.PricingType?.IsDefault == true) ?? g.First();
-                        return preferred.PurchasePrice;
-                    });
-        }
-
-        foreach (var productId in productIds)
-        {
-            if (catalogPurchase is not null
-                && catalogPurchase.TryGetValue(productId, out var catalogCost)
-                && catalogCost > 0)
-            {
-                result[productId] = catalogCost;
-                continue;
-            }
-
-            var lastPurchase = purchaseItems
-                .Where(i => i.ProductId == productId && i.UnitPrice > 0)
-                .OrderByDescending(i => i.Id)
-                .FirstOrDefault();
-            if (lastPurchase is not null)
-            {
-                result[productId] = lastPurchase.UnitPrice;
-                continue;
-            }
-
-            result[productId] = Math.Round(
-                ProductCostHelper.ComputeAverageUnitCostForProduct(purchaseItems, stocks, productId), 0);
-        }
-
-        return result;
+        return await InvoiceDocumentCostResolver.ResolveProductCostsAsync(
+            _unitOfWork,
+            _productPriceService,
+            _pricingEnabled,
+            productIds,
+            _currency,
+            pricingTypeByProduct);
     }
 }

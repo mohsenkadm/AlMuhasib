@@ -11,9 +11,10 @@ public static class InvoiceTotalsCalculator
     public static (decimal Subtotal, decimal Rounding, decimal GrandTotal) Compute(
         IEnumerable<decimal> lineTotals,
         IInvoiceService invoiceService,
-        InvoiceType invoiceType)
+        InvoiceType invoiceType,
+        AccountingCurrency currency = AccountingCurrency.IQD)
     {
-        var result = Compute(lineTotals, invoiceService, invoiceType, invoiceDiscountAmount: 0m, transportFeeAmount: 0m, purchaseExpenseAmount: 0m);
+        var result = Compute(lineTotals, invoiceService, invoiceType, invoiceDiscountAmount: 0m, transportFeeAmount: 0m, purchaseExpenseAmount: 0m, currency);
         return (result.Subtotal, result.Rounding, result.GrandTotal);
     }
 
@@ -21,16 +22,9 @@ public static class InvoiceTotalsCalculator
         IEnumerable<decimal> lineTotals,
         IInvoiceService invoiceService,
         InvoiceType invoiceType,
-        decimal invoiceDiscountAmount)
-        => Compute(lineTotals, invoiceService, invoiceType, invoiceDiscountAmount, transportFeeAmount: 0m, purchaseExpenseAmount: 0m);
-
-    public static (decimal Subtotal, decimal InvoiceDiscount, decimal Rounding, decimal GrandTotal) Compute(
-        IEnumerable<decimal> lineTotals,
-        IInvoiceService invoiceService,
-        InvoiceType invoiceType,
         decimal invoiceDiscountAmount,
-        decimal transportFeeAmount)
-        => Compute(lineTotals, invoiceService, invoiceType, invoiceDiscountAmount, transportFeeAmount, purchaseExpenseAmount: 0m);
+        AccountingCurrency currency = AccountingCurrency.IQD)
+        => Compute(lineTotals, invoiceService, invoiceType, invoiceDiscountAmount, transportFeeAmount: 0m, purchaseExpenseAmount: 0m, currency);
 
     public static (decimal Subtotal, decimal InvoiceDiscount, decimal Rounding, decimal GrandTotal) Compute(
         IEnumerable<decimal> lineTotals,
@@ -38,12 +32,22 @@ public static class InvoiceTotalsCalculator
         InvoiceType invoiceType,
         decimal invoiceDiscountAmount,
         decimal transportFeeAmount,
-        decimal purchaseExpenseAmount)
+        AccountingCurrency currency = AccountingCurrency.IQD)
+        => Compute(lineTotals, invoiceService, invoiceType, invoiceDiscountAmount, transportFeeAmount, purchaseExpenseAmount: 0m, currency);
+
+    public static (decimal Subtotal, decimal InvoiceDiscount, decimal Rounding, decimal GrandTotal) Compute(
+        IEnumerable<decimal> lineTotals,
+        IInvoiceService invoiceService,
+        InvoiceType invoiceType,
+        decimal invoiceDiscountAmount,
+        decimal transportFeeAmount,
+        decimal purchaseExpenseAmount,
+        AccountingCurrency currency = AccountingCurrency.IQD)
     {
         var sub = lineTotals.Sum();
         var discount = Math.Clamp(invoiceDiscountAmount, 0m, Math.Max(0m, sub));
         var netBeforeRounding = sub - discount;
-        var rounding = invoiceService.CalculateRounding(netBeforeRounding, invoiceType);
+        var rounding = invoiceService.CalculateRounding(netBeforeRounding, invoiceType, currency);
         var transport = Math.Max(0m, transportFeeAmount);
         var purchaseExpense = Math.Max(0m, purchaseExpenseAmount);
         return (sub, discount, rounding, netBeforeRounding + rounding + transport + purchaseExpense);

@@ -25,6 +25,39 @@ public class ExpenseService : IExpenseService
         return await context.ExpenseTypes.OrderBy(et => et.Name).ToListAsync();
     }
 
+    public async Task EnsureDefaultExpenseTypesAsync()
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        if (await context.ExpenseTypes.AnyAsync())
+            return;
+
+        var defaults = new[]
+        {
+            "إيجار",
+            "كهرباء",
+            "ماء",
+            "إنترنت",
+            "رواتب",
+            "صيانة",
+            "نقل",
+            "قرطاسية",
+            "دعاية",
+            "مصاريف متنوعة"
+        };
+
+        var username = _currentUserService.Username ?? "system";
+        foreach (var name in defaults)
+        {
+            await context.ExpenseTypes.AddAsync(new ExpenseType
+            {
+                Name = name,
+                CreatedBy = username
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
+
     public async Task<ExpenseType> AddExpenseTypeAsync(string name)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();

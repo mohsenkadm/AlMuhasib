@@ -13,4 +13,9 @@ public interface ISqlServerInstanceDiscoveryService
     /// Tests connectivity to a data source using Windows authentication.
     /// </summary>
     Task<NetworkConnectionTestResult> TestLocalConnectionAsync(string dataSource, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Tests connectivity using a full SQL connection string (SharedServer / remote).
+    /// </summary>
+    Task<NetworkConnectionTestResult> TestConnectionStringAsync(string connectionString, CancellationToken cancellationToken = default);
 }

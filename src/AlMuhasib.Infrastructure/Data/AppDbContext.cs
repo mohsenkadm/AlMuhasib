@@ -101,6 +101,7 @@ public class AppDbContext : DbContext
     public DbSet<Voucher> Vouchers => Set<Voucher>();
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<Transfer> Transfers => Set<Transfer>();
+    public DbSet<CurrencyExchange> CurrencyExchanges => Set<CurrencyExchange>();
     public DbSet<InvestorTransaction> InvestorTransactions => Set<InvestorTransaction>();
     public DbSet<ProfitDistribution> ProfitDistributions => Set<ProfitDistribution>();
     public DbSet<ProfitDistributionDetail> ProfitDistributionDetails => Set<ProfitDistributionDetail>();
@@ -256,7 +257,10 @@ public class AppDbContext : DbContext
     }
 
     private int SaveChangesWithAudit() =>
-        SaveChangesWithAuditAsync(CancellationToken.None).GetAwaiter().GetResult();
+        SaveChangesWithAuditAsync(CancellationToken.None)
+            .ConfigureAwait(false)
+            .GetAwaiter()
+            .GetResult();
 
     private async Task<int> SaveChangesWithAuditAsync(CancellationToken cancellationToken)
     {

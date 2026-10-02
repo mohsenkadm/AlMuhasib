@@ -1,0 +1,165 @@
+<UserControl x:Class="AlMuhasib.UI.Views.BranchesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="تحديث" Command="{Binding RefreshCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="إضافة فرع" Command="{Binding OpenAddDialogCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Plus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+    </UserControl.Resources>
+
+    <Grid Margin="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <UniformGrid Grid.Row="0" Columns="2" Margin="0,0,0,16">
+            <controls:AnimatedStatCard Title="فروع فعالة" Value="{Binding ActiveCount}"
+                                       Icon="SourceBranch" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+            <controls:AnimatedStatCard Title="غير فعالة" Value="{Binding InactiveCount}"
+                                       Icon="SourceBranchRemove" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
+        </UniformGrid>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
+            <StackPanel>
+                <TextBlock Text="إدارة الفروع" FontSize="16" FontWeight="Bold"
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
+                <StackPanel Orientation="Horizontal">
+                    <Button Command="{Binding OpenAddDialogCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"
+                            IsEnabled="{Binding CanAdd}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="SourceBranchPlus" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="إضافة فرع"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding RefreshCommand}" Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تحديث"/>
+                        </StackPanel>
+                    </Button>
+                    <TextBox md:HintAssist.Hint="بحث بالاسم أو الرمز..."
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}"
+                             MinWidth="220" Margin="16,0,0,0"/>
+                </StackPanel>
+            </StackPanel>
+        </md:Card>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="2" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="قائمة الفروع"
+                                             TargetDataGrid="{Binding ElementName=BranchesGrid}"/>
+
+                <DataGrid x:Name="BranchesGrid" Grid.Row="1"
+                          ItemsSource="{Binding Branches}"
+                          SelectedItem="{Binding SelectedBranch}"
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          CanUserAddRows="False" SelectionMode="Single"
+                          HeadersVisibility="Column"
+                          Style="{StaticResource ModernDataGrid}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*"/>
+                        <DataGridTextColumn Header="الرمز" Binding="{Binding Code}" Width="120"/>
+                        <DataGridTextColumn Header="النوع" Binding="{Binding TypeDisplay}" Width="90"/>
+                        <DataGridTextColumn Header="الحالة" Binding="{Binding StatusDisplay}" Width="90"/>
+                        <DataGridTemplateColumn Header="الإجراءات" Width="110" MinWidth="110">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                            </DataGridTemplateColumn.CellStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" Style="{StaticResource TableEditIconButton}"
+                                                IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.ConfirmDeactivateCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}"
+                                                IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                Visibility="{Binding CanDeactivate, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <md:PackIcon Kind="Cancel" Width="18" Height="18"/>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </Grid>
+        </md:Card>
+
+        <md:DialogHost IsOpen="{Binding IsDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="3">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="420" MaxWidth="500">
+                    <StackPanel>
+                        <TextBlock Text="{Binding DialogTitle}" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"/>
+                        <TextBox md:HintAssist.Hint="اسم الفرع *"
+                                 Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <TextBox md:HintAssist.Hint="رمز الفرع * (مثال: BR02)"
+                                 Text="{Binding EditCode, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"
+                                 IsReadOnly="{Binding EditCodeReadOnly}"/>
+                        <CheckBox Content="فعال" IsChecked="{Binding EditIsActive}" Margin="0,0,0,12"
+                                  Visibility="{Binding IsEditMode, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        <TextBlock Text="{Binding DialogError}" Foreground="#D32F2F" Margin="0,0,0,8"
+                                   Visibility="{Binding DialogError, Converter={StaticResource NullToCollapsedConverter}}"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">
+                            <Button Content="حفظ" Command="{Binding SaveBranchCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
+                            <Button Content="إلغاء" Command="{Binding CancelDialogCommand}"
+                                    Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
+        <md:DialogHost IsOpen="{Binding IsDeactivateDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="3">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="360">
+                    <StackPanel>
+                        <TextBlock Text="تعطيل الفرع" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
+                        <TextBlock Margin="0,0,0,16" TextWrapping="Wrap">
+                            <Run Text="هل أنت متأكد من تعطيل الفرع "/>
+                            <Run Text="{Binding BranchToDeactivate.Name, Mode=OneWay}" FontWeight="Bold"/>
+                            <Run Text="؟ لن يظهر للمستخدمين بعد التعطيل."/>
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Content="تعطيل" Command="{Binding ExecuteDeactivateCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Background="#D32F2F" Foreground="White"
+                                    md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
+                            <Button Content="إلغاء" Command="{Binding CancelDeactivateCommand}"
+                                    Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+    </Grid>
+</UserControl>

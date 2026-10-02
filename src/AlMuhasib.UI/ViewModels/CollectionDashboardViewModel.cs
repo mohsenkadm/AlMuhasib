@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
@@ -17,6 +19,7 @@ public partial class CollectionDashboardViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IExportService _exportService;
+    private readonly IFeatureFlagService _featureFlags;
     private List<CollectionInstallmentRow> _allRows = [];
 
     [ObservableProperty] private int _dueTodayCount;
@@ -27,6 +30,7 @@ public partial class CollectionDashboardViewModel : ViewModelBase
     [ObservableProperty] private string _thisWeekAmountText = "0 د.ع";
     [ObservableProperty] private string? _selectedBucketFilter;
     [ObservableProperty] private CashBox? _paymentCashBox;
+    [ObservableProperty] private bool _showMultiCurrency;
 
     public ObservableCollection<CollectionInstallmentRow> Rows { get; } = [];
     public ObservableCollection<CashBox> CashBoxes { get; } = [];
@@ -36,19 +40,22 @@ public partial class CollectionDashboardViewModel : ViewModelBase
         IInstallmentService installmentService,
         IUnitOfWork unitOfWork,
         ICurrentUserService currentUserService,
-        IExportService exportService)
+        IExportService exportService,
+        IFeatureFlagService featureFlags)
     {
         _dashboardService = dashboardService;
         _installmentService = installmentService;
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
         _exportService = exportService;
+        _featureFlags = featureFlags;
         PageTitle = "لوحة التحصيل اليومية";
     }
 
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, "Installments");
+        ShowMultiCurrency = _featureFlags.MultiCurrency;
         foreach (var cb in await _unitOfWork.CashBoxes.GetAllAsync())
             CashBoxes.Add(cb);
         if (CashBoxes.Count > 0)
@@ -104,7 +111,11 @@ public partial class CollectionDashboardViewModel : ViewModelBase
         var data = Rows.Select(r => new object[]
         {
             r.CustomerName, r.CustomerPhone ?? "", r.DueDate.ToString("yyyy/MM/dd"),
-            r.StatusLabel, r.RemainingAmount.ToString("N0"), r.CurrencyLabel
+            r.StatusLabel,
+            ShowMultiCurrency
+                ? AccountingCurrencyHelper.Format(r.RemainingAmount, r.Currency)
+                : AccountingCurrencyHelper.Format(r.RemainingAmount, AccountingCurrency.IQD),
+            ShowMultiCurrency ? r.CurrencyLabel : AccountingCurrencyHelper.GetLabel(AccountingCurrency.IQD)
         }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "لوحة التحصيل", cols, (IList<object[]>)data);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
@@ -118,7 +129,11 @@ public partial class CollectionDashboardViewModel : ViewModelBase
         var data = Rows.Select(r => new object[]
         {
             r.CustomerName, r.CustomerPhone ?? "", r.DueDate.ToString("yyyy/MM/dd"),
-            r.StatusLabel, r.RemainingAmount.ToString("N0"), r.CurrencyLabel
+            r.StatusLabel,
+            ShowMultiCurrency
+                ? AccountingCurrencyHelper.Format(r.RemainingAmount, r.Currency)
+                : AccountingCurrencyHelper.Format(r.RemainingAmount, AccountingCurrency.IQD),
+            ShowMultiCurrency ? r.CurrencyLabel : AccountingCurrencyHelper.GetLabel(AccountingCurrency.IQD)
         }).ToList();
         _exportService.PrintTable("لوحة التحصيل اليومية", cols, (IList<object[]>)data);
     }
@@ -130,12 +145,13 @@ public partial class CollectionDashboardViewModel : ViewModelBase
         await RefreshAsync();
     }
 
-    private static string FormatDualAmount(decimal iqd, decimal usd)
+    private string FormatDualAmount(decimal iqd, decimal usd)
     {
-        var text = $"{iqd:N0} د.ع";
-        if (usd != 0)
-            text += $" | {usd:N2} $";
-        return text;
+        if (!ShowMultiCurrency || usd == 0)
+            return AccountingCurrencyHelper.Format(iqd, AccountingCurrency.IQD);
+        if (iqd == 0)
+            return AccountingCurrencyHelper.Format(usd, AccountingCurrency.USD);
+        return $"{AccountingCurrencyHelper.Format(iqd, AccountingCurrency.IQD)} · {AccountingCurrencyHelper.Format(usd, AccountingCurrency.USD)}";
     }
 
     [RelayCommand]
@@ -151,9 +167,17 @@ public partial class CollectionDashboardViewModel : ViewModelBase
         try
         {
             IsBusy = true;
+            if (ShowMultiCurrency && PaymentCashBox.Currency != row.Currency)
+            {
+                BeautifulMessageDialog.ShowWarning("عملة القاصة يجب أن تطابق عملة القسط");
+                return;
+            }
+
             await _installmentService.PayInstallmentAsync(row.InstallmentId, row.RemainingAmount, PaymentCashBox.Id);
-            BeautifulMessageDialog.ShowSuccess(
-                $"تم تسديد {AlMuhasib.Core.Helpers.AccountingCurrencyHelper.Format(row.RemainingAmount, row.Currency)} — {row.CustomerName}");
+            var paidText = ShowMultiCurrency
+                ? AccountingCurrencyHelper.Format(row.RemainingAmount, row.Currency)
+                : AccountingCurrencyHelper.Format(row.RemainingAmount, AccountingCurrency.IQD);
+            BeautifulMessageDialog.ShowSuccess($"تم تسديد {paidText} — {row.CustomerName}");
             await RefreshAsync();
         }
         catch (Exception ex)

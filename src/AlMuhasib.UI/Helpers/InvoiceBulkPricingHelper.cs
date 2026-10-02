@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Models;
 
@@ -25,17 +27,21 @@ public static class InvoiceBulkPricingHelper
 
     public static List<ProductPricingOption> ToOptions(
         IEnumerable<ProductPrice> prices,
-        bool usePurchasePrice)
+        bool usePurchasePrice,
+        AccountingCurrency currency = AccountingCurrency.IQD)
     {
         return prices
             .Select(p => new ProductPricingOption
             {
                 PricingTypeId = p.PricingTypeId,
                 Name = p.PricingType?.Name ?? $"نوع {p.PricingTypeId}",
-                Price = usePurchasePrice ? p.PurchasePrice : p.SalePrice,
+                Price = ProductListPriceHelper.ResolveListPrice(p, currency, usePurchasePrice),
                 PurchasePrice = p.PurchasePrice,
+                PurchasePriceUsd = p.PurchasePriceUsd,
                 SalePrice = p.SalePrice,
-                IsDefault = p.PricingType?.IsDefault == true
+                SalePriceUsd = p.SalePriceUsd,
+                IsDefault = p.PricingType?.IsDefault == true,
+                Currency = currency
             })
             .ToList();
     }

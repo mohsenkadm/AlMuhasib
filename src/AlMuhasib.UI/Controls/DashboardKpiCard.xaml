@@ -13,6 +13,7 @@
     <UserControl.Resources>
         <converters:NullToCollapsedConverter x:Key="NullToCollapsed" />
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
     </UserControl.Resources>
 
     <materialDesign:Card UniformCornerRadius="22"
@@ -66,87 +67,176 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
+            <!-- Accent top edge -->
             <Border Grid.Row="0" Height="3" VerticalAlignment="Top"
                     Background="{Binding AccentBrush, ElementName=Root}" />
 
-            <Grid Grid.Row="0" Margin="20,16,20,6">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Width="50" Height="50" CornerRadius="15"
-                        Background="{Binding AccentLightBrush, ElementName=Root}"
-                        VerticalAlignment="Top">
-                    <materialDesign:PackIcon Kind="{Binding Icon, ElementName=Root}"
-                                             Width="26" Height="26"
-                                             Foreground="{Binding AccentBrush, ElementName=Root}"
-                                             HorizontalAlignment="Center" VerticalAlignment="Center" />
-                </Border>
-                <StackPanel Grid.Column="1" Margin="14,0,8,0" VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Title, ElementName=Root}"
-                               FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" />
-                    <TextBlock Text="{Binding Value, ElementName=Root}"
-                               FontSize="23" FontWeight="Bold"
-                               Foreground="{Binding ValueBrush, ElementName=Root}"
-                               Margin="0,4,0,0" TextWrapping="Wrap" />
-                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
-                                Visibility="{Binding ShowTrend, ElementName=Root, Converter={StaticResource BoolToVis}}">
-                        <Border CornerRadius="9" Padding="8,3"
+            <Grid Grid.Row="0" Margin="18,16,18,8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Header: icon + title + detail -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Width="46" Height="46" CornerRadius="14"
+                            Background="{Binding AccentLightBrush, ElementName=Root}"
+                            VerticalAlignment="Top">
+                        <materialDesign:PackIcon Kind="{Binding Icon, ElementName=Root}"
+                                                 Width="24" Height="24"
+                                                 Foreground="{Binding AccentBrush, ElementName=Root}"
+                                                 HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+
+                    <StackPanel Grid.Column="1" Margin="12,0,8,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Title, ElementName=Root}"
+                                   FontSize="12.5" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource HintForegroundBrush}"
+                                   TextWrapping="Wrap" />
+
+                        <!-- Single-currency value (when USD lane hidden) -->
+                        <TextBlock Text="{Binding Value, ElementName=Root}"
+                                   FontSize="22" FontWeight="Bold"
+                                   Foreground="{Binding ValueBrush, ElementName=Root}"
+                                   Margin="0,6,0,0" TextWrapping="Wrap"
+                                   Visibility="{Binding ShowSecondaryValue, ElementName=Root, Converter={StaticResource InvBoolToVis}}" />
+                    </StackPanel>
+
+                    <Button Grid.Column="2"
+                            VerticalAlignment="Top"
+                            Width="32" Height="32" MinWidth="32" Padding="0"
+                            Visibility="{Binding ShowDetailButton, ElementName=Root, Converter={StaticResource BoolToVis}}"
+                            Command="{Binding DetailCommand, ElementName=Root}"
+                            Cursor="Hand"
+                            ToolTip="عرض تفاصيل المبلغ">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="{Binding AccentLightBrush, ElementName=Root}"/>
+                                <Setter Property="Foreground" Value="{Binding AccentBrush, ElementName=Root}"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                                    CornerRadius="16" Width="{TemplateBinding Width}" Height="{TemplateBinding Height}">
+                                                <materialDesign:PackIcon Kind="MagnifyScan" Width="16" Height="16"
+                                                                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                         Foreground="{TemplateBinding Foreground}"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </Grid>
+
+                <!-- Twin currency rail (IQD + USD) -->
+                <Border Grid.Row="1" Margin="0,12,0,0" CornerRadius="16"
+                        Background="{DynamicResource SubtleBorderBrush}"
+                        BorderBrush="{DynamicResource CardBorderBrush}"
+                        BorderThickness="1"
+                        Padding="3"
+                        Visibility="{Binding ShowSecondaryValue, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!-- IQD lane -->
+                        <Border Grid.Column="0" CornerRadius="13" Padding="12,10"
                                 Background="{Binding AccentLightBrush, ElementName=Root}">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Width="12" Height="12"
-                                                         VerticalAlignment="Center" Margin="0,0,4,0"
-                                                         Foreground="{Binding TrendBrush, ElementName=Root}"
-                                                         Kind="{Binding TrendIcon, ElementName=Root}" />
-                                <TextBlock Text="{Binding TrendText, ElementName=Root}"
-                                           FontSize="11" FontWeight="SemiBold"
-                                           Foreground="{Binding TrendBrush, ElementName=Root}"
-                                           VerticalAlignment="Center" />
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <Border Width="22" Height="22" CornerRadius="11" Margin="0,0,7,0"
+                                            Background="{Binding AccentBrush, ElementName=Root}">
+                                        <TextBlock Text="{Binding PrimaryCurrencyCode, ElementName=Root}"
+                                                   FontSize="9" FontWeight="Bold" Foreground="White"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Text="{Binding PrimaryCurrencyCaption, ElementName=Root}"
+                                               FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{Binding AccentBrush, ElementName=Root}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding Value, ElementName=Root}"
+                                           FontSize="15" FontWeight="Bold"
+                                           Foreground="{Binding ValueBrush, ElementName=Root}"
+                                           TextWrapping="Wrap" LineHeight="20" />
                             </StackPanel>
                         </Border>
-                        <TextBlock Text="آخر 14 يوم"
-                                   FontSize="10"
-                                   Margin="8,0,0,0"
-                                   VerticalAlignment="Center"
-                                   Foreground="{DynamicResource HintForegroundBrush}" />
-                    </StackPanel>
+
+                        <!-- Soft divider -->
+                        <Border Grid.Column="1" Width="1" Margin="3,10"
+                                Background="{DynamicResource CardBorderBrush}"
+                                Opacity="0.7" />
+
+                        <!-- USD lane -->
+                        <Border Grid.Column="2" CornerRadius="13" Padding="12,10"
+                                Background="{Binding SecondaryAccentLightBrush, ElementName=Root}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <Border Width="22" Height="22" CornerRadius="11" Margin="0,0,7,0"
+                                            Background="{Binding SecondaryAccentBrush, ElementName=Root}">
+                                        <materialDesign:PackIcon Kind="CurrencyUsd"
+                                                                 Width="13" Height="13"
+                                                                 Foreground="White"
+                                                                 HorizontalAlignment="Center"
+                                                                 VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Text="{Binding SecondaryCurrencyCaption, ElementName=Root}"
+                                               FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{Binding SecondaryAccentBrush, ElementName=Root}"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                                <TextBlock Text="{Binding SecondaryValue, ElementName=Root}"
+                                           FontSize="15" FontWeight="Bold"
+                                           Foreground="{Binding SecondaryAccentBrush, ElementName=Root}"
+                                           TextWrapping="Wrap" LineHeight="20" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Trend pill -->
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0"
+                            Visibility="{Binding ShowTrend, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                    <Border CornerRadius="9" Padding="8,3"
+                            Background="{Binding AccentLightBrush, ElementName=Root}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Width="12" Height="12"
+                                                     VerticalAlignment="Center" Margin="0,0,4,0"
+                                                     Foreground="{Binding TrendBrush, ElementName=Root}"
+                                                     Kind="{Binding TrendIcon, ElementName=Root}" />
+                            <TextBlock Text="{Binding TrendText, ElementName=Root}"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{Binding TrendBrush, ElementName=Root}"
+                                       VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Text="آخر 14 يوم"
+                               FontSize="10"
+                               Margin="8,0,0,0"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource HintForegroundBrush}" />
                 </StackPanel>
-                <Button Grid.Column="2"
-                        VerticalAlignment="Top"
-                        Width="32" Height="32" MinWidth="32" Padding="0"
-                        Visibility="{Binding ShowDetailButton, ElementName=Root, Converter={StaticResource BoolToVis}}"
-                        Command="{Binding DetailCommand, ElementName=Root}"
-                        Cursor="Hand"
-                        ToolTip="عرض تفاصيل المبلغ">
-                    <Button.Style>
-                        <Style TargetType="Button">
-                            <Setter Property="Background" Value="{Binding AccentLightBrush, ElementName=Root}"/>
-                            <Setter Property="Foreground" Value="{Binding AccentBrush, ElementName=Root}"/>
-                            <Setter Property="BorderThickness" Value="0"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
-                                                CornerRadius="16" Width="{TemplateBinding Width}" Height="{TemplateBinding Height}">
-                                            <materialDesign:PackIcon Kind="MagnifyScan" Width="16" Height="16"
-                                                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                                     Foreground="{TemplateBinding Foreground}"/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </Button.Style>
-                </Button>
             </Grid>
 
-            <!-- Edge-to-edge sparkline: no nested colored box -->
+            <!-- Edge-to-edge sparkline -->
             <Border Grid.Row="1" Height="56" Margin="0,4,0,0"
                     Visibility="{Binding ShowMiniChart, ElementName=Root, Converter={StaticResource BoolToVis}}"
                     ClipToBounds="True">
@@ -163,7 +253,7 @@
                 </Grid>
             </Border>
 
-            <ContentPresenter Grid.Row="2" Margin="20,4,20,16"
+            <ContentPresenter Grid.Row="2" Margin="18,4,18,16"
                               Content="{Binding DetailsContent, ElementName=Root}"
                               Visibility="{Binding DetailsContent, ElementName=Root, Converter={StaticResource NullToCollapsed}}" />
         </Grid>

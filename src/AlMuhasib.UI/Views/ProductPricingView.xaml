@@ -4,6 +4,7 @@
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             x:Name="Root"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
 
@@ -187,7 +188,7 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="سعر البيع" Width="120"
+                        <DataGridTemplateColumn Header="سعر البيع د.ع" Width="110"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SalePrice">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
@@ -196,11 +197,31 @@
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="سعر الشراء" Width="120"
+                        <DataGridTemplateColumn x:Name="ColSalePriceUsd" Header="سعر البيع $" Width="110"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SalePriceUsd"
+                                                Visibility="Collapsed">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding SalePriceUsd, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                             Style="{StaticResource NumericCellTextBox}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="سعر الشراء د.ع" Width="110"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PurchasePrice">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <TextBox Text="{Binding PurchasePrice, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                                             Style="{StaticResource NumericCellTextBox}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn x:Name="ColPurchasePriceUsd" Header="سعر الشراء $" Width="110"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PurchasePriceUsd"
+                                                Visibility="Collapsed">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding PurchasePriceUsd, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                                              Style="{StaticResource NumericCellTextBox}"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>

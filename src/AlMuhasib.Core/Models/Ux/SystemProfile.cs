@@ -13,4 +13,5 @@ public class SystemProfile
     public bool IsBranchClient => DeploymentMode == DeploymentMode.BranchClient;
     public bool IsMainServer => DeploymentMode == DeploymentMode.MainServer;
     public bool IsStandalone => DeploymentMode == DeploymentMode.Standalone;
+    public bool IsSharedServer => DeploymentMode == DeploymentMode.SharedServer;
 }

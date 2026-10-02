@@ -10,6 +10,7 @@
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              mc:Ignorable="d"
+             x:Name="Root"
              d:DataContext="{d:DesignInstance vm:InstallmentsReportViewModel, IsDesignTimeCreatable=False}"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
@@ -118,12 +119,15 @@
                                                     <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                 <DataGridTextColumn Header="رقم الخطة" Binding="{Binding PlanNumber}" Width="110"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PlanNumber"/>
-                                <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" Width="130"
+                                <DataGridTextColumn Header="الإجمالي (د.ع)" Binding="{Binding TotalAmount, StringFormat=N0}" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount"/>
-                                <DataGridTextColumn Header="المسدد" Binding="{Binding PaidAmount, StringFormat=N0}" Width="130"
+                                <DataGridTextColumn Header="المسدد (د.ع)" Binding="{Binding PaidAmount, StringFormat=N0}" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount"/>
-                                <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="130"
+                                <DataGridTextColumn Header="المتبقي (د.ع)" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
+                                <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70"
+                                                    Visibility="{Binding DataContext.ShowMultiCurrency, ElementName=Root, Converter={StaticResource BoolToVis}}"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrencyLabel"/>
                                 <DataGridTextColumn Header="عدد الأقساط" Binding="{Binding InstallmentCount}" Width="110"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentCount"/>
                                 <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="100"

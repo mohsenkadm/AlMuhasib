@@ -133,39 +133,55 @@ public partial class StockAdjustmentViewModel : ViewModelBase
         try
         {
             var username = _currentUserService.Username;
+            var warehouseId = SelectedWarehouse.Id;
+            var productIds = changedRows.Select(r => r.ProductId).ToHashSet();
+
+            await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var existingStocks = (await _unitOfWork.WarehouseStocks.FindAsync(
+                        s => s.WarehouseId == warehouseId && productIds.Contains(s.ProductId)))
+                    .ToDictionary(s => s.ProductId);
+
+                foreach (var row in changedRows)
+                {
+                    if (existingStocks.TryGetValue(row.ProductId, out var existing))
+                    {
+                        existing.Quantity = row.NewQuantity;
+                        existing.UpdatedBy = username;
+                        existing.UpdatedAt = DateTime.UtcNow;
+                        _unitOfWork.WarehouseStocks.Update(existing);
+                    }
+                    else if (row.NewQuantity > 0)
+                    {
+                        await _unitOfWork.WarehouseStocks.AddAsync(new WarehouseStock
+                        {
+                            WarehouseId = warehouseId,
+                            ProductId = row.ProductId,
+                            Quantity = row.NewQuantity,
+                            OpeningQuantity = 0,
+                            UnitCost = 0,
+                            CreatedBy = username,
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.CommitTransactionAsync();
+            }
+            catch
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                throw;
+            }
 
             foreach (var row in changedRows)
             {
-                var existing = (await _unitOfWork.WarehouseStocks.FindAsync(
-                    s => s.WarehouseId == SelectedWarehouse.Id && s.ProductId == row.ProductId))
-                    .FirstOrDefault();
-
-                if (existing is not null)
-                {
-                    existing.Quantity = row.NewQuantity;
-                    existing.UpdatedBy = username;
-                    existing.UpdatedAt = DateTime.UtcNow;
-                    _unitOfWork.WarehouseStocks.Update(existing);
-                }
-                else if (row.NewQuantity > 0)
-                {
-                    await _unitOfWork.WarehouseStocks.AddAsync(new WarehouseStock
-                    {
-                        WarehouseId = SelectedWarehouse.Id,
-                        ProductId = row.ProductId,
-                        Quantity = row.NewQuantity,
-                        OpeningQuantity = 0,
-                        UnitCost = 0,
-                        CreatedBy = username,
-                        CreatedAt = DateTime.UtcNow
-                    });
-                }
-
                 row.CurrentQuantity = row.NewQuantity;
                 row.RecalculateDifference();
             }
 
-            await _unitOfWork.SaveChangesAsync();
             UpdateChangedCount();
             BeautifulMessageDialog.ShowSuccess($"تم حفظ {changedRows.Count} تسوية مخزنية بنجاح");
         }

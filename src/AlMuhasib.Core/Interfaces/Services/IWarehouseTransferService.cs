@@ -6,4 +6,5 @@ public interface IWarehouseTransferService
 {
     Task<WarehouseTransfer> CreateTransferAsync(WarehouseTransfer transfer, IEnumerable<WarehouseTransferItem> items);
     Task<IReadOnlyList<WarehouseTransfer>> GetRecentAsync(int count = 50);
+    Task<WarehouseTransfer?> GetByIdAsync(int id);
 }

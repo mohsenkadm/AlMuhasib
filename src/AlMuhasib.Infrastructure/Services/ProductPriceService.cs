@@ -48,7 +48,8 @@ public class ProductPriceService : IProductPriceService
             throw new InvalidOperationException("المنتج مطلوب");
         if (price.PricingTypeId <= 0)
             throw new InvalidOperationException("نوع التسعير مطلوب");
-        if (price.SalePrice < 0 || price.PurchasePrice < 0)
+        if (price.SalePrice < 0 || price.PurchasePrice < 0
+            || price.SalePriceUsd < 0 || price.PurchasePriceUsd < 0)
             throw new InvalidOperationException("السعر لا يمكن أن يكون سالباً");
 
         ProductPrice? existing = null;
@@ -89,7 +90,9 @@ public class ProductPriceService : IProductPriceService
         existing.ProductId = price.ProductId;
         existing.PricingTypeId = price.PricingTypeId;
         existing.SalePrice = price.SalePrice;
+        existing.SalePriceUsd = price.SalePriceUsd;
         existing.PurchasePrice = price.PurchasePrice;
+        existing.PurchasePriceUsd = price.PurchasePriceUsd;
         existing.UpdatedAt = DateTime.UtcNow;
         existing.UpdatedBy = _currentUserService.Username;
         if (save)

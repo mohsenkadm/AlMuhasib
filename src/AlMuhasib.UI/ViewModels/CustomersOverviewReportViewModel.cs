@@ -77,11 +77,18 @@ public partial class CustomersOverviewReportViewModel : ReportViewModelBase
         };
         if (dlg.ShowDialog() != true) return;
 
-        var cols = new[] { "العميل", "الهاتف", "عدد الفواتير", "المبيعات", "المحصّل", "المستحق د.ع", "المستحق $" };
-        var rows = _allRows.Select(r => new object[]
-        {
-            r.CustomerName, r.Phone, r.InvoiceCount, r.SalesAmount, r.CollectedAmount, r.OutstandingBalance, r.OutstandingBalanceUsd
-        }).ToList();
+        var cols = ShowTotalOutstandingUsd
+            ? new[] { "العميل", "الهاتف", "عدد الفواتير", "المبيعات", "المحصّل", "المستحق د.ع", "المستحق $" }
+            : new[] { "العميل", "الهاتف", "عدد الفواتير", "المبيعات", "المحصّل", "المستحق" };
+        var rows = ShowTotalOutstandingUsd
+            ? _allRows.Select(r => new object[]
+            {
+                r.CustomerName, r.Phone, r.InvoiceCount, r.SalesAmount, r.CollectedAmount, r.OutstandingBalance, r.OutstandingBalanceUsd
+            }).ToList()
+            : _allRows.Select(r => new object[]
+            {
+                r.CustomerName, r.Phone, r.InvoiceCount, r.SalesAmount, r.CollectedAmount, r.OutstandingBalance
+            }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "ملخص العملاء", cols, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
@@ -89,11 +96,18 @@ public partial class CustomersOverviewReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "العميل", "الهاتف", "فواتير", "المبيعات", "المحصّل", "المستحق د.ع", "المستحق $" };
-        var rows = _allRows.Select(r => new object[]
-        {
-            r.CustomerName, r.Phone, r.InvoiceCount, r.SalesAmount, r.CollectedAmount, r.OutstandingBalance, r.OutstandingBalanceUsd
-        }).ToList();
+        var cols = ShowTotalOutstandingUsd
+            ? new[] { "العميل", "الهاتف", "فواتير", "المبيعات", "المحصّل", "المستحق د.ع", "المستحق $" }
+            : new[] { "العميل", "الهاتف", "فواتير", "المبيعات", "المحصّل", "المستحق" };
+        var rows = ShowTotalOutstandingUsd
+            ? _allRows.Select(r => new object[]
+            {
+                r.CustomerName, r.Phone, r.InvoiceCount, r.SalesAmount, r.CollectedAmount, r.OutstandingBalance, r.OutstandingBalanceUsd
+            }).ToList()
+            : _allRows.Select(r => new object[]
+            {
+                r.CustomerName, r.Phone, r.InvoiceCount, r.SalesAmount, r.CollectedAmount, r.OutstandingBalance
+            }).ToList();
         _exportService.PrintTable("ملخص العملاء", cols, rows);
     }
 }

@@ -15,11 +15,10 @@ public class OpeningCustomerBalanceExcelService : IOpeningCustomerBalanceExcelSe
         "اسم_العميل",
         "الهاتف",
         "رقم_الملف",
-        "المبلغ",
+        "الرصيد_دينار",
+        "الرصيد_دولار",
         "التاريخ",
-        "ملاحظات",
-        "العملة",
-        "سعر_الصرف"
+        "ملاحظات"
     ];
 
     public byte[] GenerateTemplate()
@@ -36,12 +35,12 @@ public class OpeningCustomerBalanceExcelService : IOpeningCustomerBalanceExcelSe
             "1) املأ البيانات في ورقة «البيانات» فقط — لا تغيّر أسماء الأعمدة.",
             "2) اسم_العميل: مطلوب. إذا لم يكن موجوداً في النظام سيُنشأ تلقائياً.",
             "3) الهاتف ورقم_الملف: اختياريان.",
-            "4) المبلغ: رقم أكبر من صفر — المبلغ الذي في ذمة العميل (آجل).",
-            "5) التاريخ: بصيغة yyyy/MM/dd مثل 2024/01/15. الخلية الفارغة = تاريخ اليوم.",
-            "6) ملاحظات: اختياري.",
-            "7) العملة: IQD أو USD (فارغ = IQD).",
-            "8) سعر_الصرف: مطلوب عند USD (دولار→دينار) ويجب أن يكون أكبر من صفر.",
+            "4) الرصيد_دينار والرصيد_دولار: اختياريان — يمكن ملء أحدهما أو كليهما.",
+            "5) عند الرصيد_دولار يُستخدم سعر الصرف الافتتاحي من معالج النقل / إعدادات النظام.",
+            "6) التاريخ: بصيغة yyyy/MM/dd مثل 2024/01/15. الخلية الفارغة = تاريخ اليوم.",
+            "7) ملاحظات: اختياري.",
             "",
+            "توافق: القوالب القديمة (المبلغ + العملة + سعر_الصرف) ما زالت تُقرأ إن وُجدت.",
             "ملاحظة: يُنشأ رصيد آجل على ذمة العميل دون التأثير على القاصة أو المخزون."
         };
         for (var i = 0; i < lines.Length; i++)
@@ -52,20 +51,19 @@ public class OpeningCustomerBalanceExcelService : IOpeningCustomerBalanceExcelSe
         var data = workbook.Worksheets.Add("البيانات");
         data.RightToLeft = true;
         WriteHeaders(data);
-        AddSampleRow(data, 2, "أحمد محمد", "07701234567", "F-1001", 500000, new DateTime(2024, 6, 1), "مثال — رصيد سابق", "IQD", 1);
-        AddSampleRow(data, 3, "سارة علي", "", "", 250, DateTime.Today, "مثال — عميلة جديدة بالدولار", "USD", 1500);
+        AddSampleRow(data, 2, "أحمد محمد", "07701234567", "F-1001", 500000, 0, new DateTime(2024, 6, 1), "مثال — رصيد دينار");
+        AddSampleRow(data, 3, "سارة علي", "", "", 0, 250, DateTime.Today, "مثال — رصيد دولار");
 
         data.Column(1).Width = 22;
         data.Column(2).Width = 16;
         data.Column(3).Width = 14;
         data.Column(4).Width = 14;
         data.Column(5).Width = 14;
-        data.Column(6).Width = 28;
-        data.Column(7).Width = 10;
-        data.Column(8).Width = 12;
+        data.Column(6).Width = 14;
+        data.Column(7).Width = 28;
 
-        data.Range(2, 4, 500, 4).CreateDataValidation().Decimal.Between(0.01, 999999999999);
-        data.Range(2, 5, 500, 5).CreateDataValidation().Date.Between(new DateTime(2000, 1, 1), new DateTime(2100, 12, 31));
+        data.Range(2, 4, 500, 5).CreateDataValidation().Decimal.Between(0, 999999999999);
+        data.Range(2, 6, 500, 6).CreateDataValidation().Date.Between(new DateTime(2000, 1, 1), new DateTime(2100, 12, 31));
 
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
@@ -73,7 +71,7 @@ public class OpeningCustomerBalanceExcelService : IOpeningCustomerBalanceExcelSe
     }
 
     public IReadOnlyList<OpeningPartyBalanceImportRow> ParseImportFile(string filePath)
-        => OpeningPartyExcelParseHelper.Parse(filePath, "اسم_العميل");
+        => OpeningPartyExcelParseHelper.ParseCustomer(filePath);
 
     private static void WriteHeaders(IXLWorksheet data)
     {
@@ -89,17 +87,16 @@ public class OpeningCustomerBalanceExcelService : IOpeningCustomerBalanceExcelSe
     }
 
     private static void AddSampleRow(IXLWorksheet sheet, int row, string name, string? phone,
-        string? file, decimal amount, DateTime date, string? notes, string currency, decimal fxRate)
+        string? file, decimal amountIqd, decimal amountUsd, DateTime date, string? notes)
     {
         sheet.Cell(row, 1).Value = name;
         sheet.Cell(row, 2).Value = phone ?? string.Empty;
         sheet.Cell(row, 3).Value = file ?? string.Empty;
-        sheet.Cell(row, 4).Value = amount;
-        sheet.Cell(row, 5).Value = date;
-        sheet.Cell(row, 5).Style.DateFormat.Format = "yyyy/MM/dd";
-        sheet.Cell(row, 6).Value = notes ?? string.Empty;
-        sheet.Cell(row, 7).Value = currency;
-        sheet.Cell(row, 8).Value = fxRate;
+        sheet.Cell(row, 4).Value = amountIqd;
+        sheet.Cell(row, 5).Value = amountUsd;
+        sheet.Cell(row, 6).Value = date;
+        sheet.Cell(row, 6).Style.DateFormat.Format = "yyyy/MM/dd";
+        sheet.Cell(row, 7).Value = notes ?? string.Empty;
         sheet.Row(row).Style.Fill.BackgroundColor = XLColor.FromHtml("#E1F5FE");
     }
 }
@@ -110,11 +107,10 @@ public class OpeningSupplierBalanceExcelService : IOpeningSupplierBalanceExcelSe
     [
         "اسم_المورد",
         "الهاتف",
-        "المبلغ",
+        "الرصيد_دينار",
+        "الرصيد_دولار",
         "التاريخ",
-        "ملاحظات",
-        "العملة",
-        "سعر_الصرف"
+        "ملاحظات"
     ];
 
     public byte[] GenerateTemplate()
@@ -131,12 +127,12 @@ public class OpeningSupplierBalanceExcelService : IOpeningSupplierBalanceExcelSe
             "1) املأ البيانات في ورقة «البيانات» فقط — لا تغيّر أسماء الأعمدة.",
             "2) اسم_المورد: مطلوب. إذا لم يكن موجوداً في النظام سيُنشأ تلقائياً.",
             "3) الهاتف: اختياري.",
-            "4) المبلغ: رقم أكبر من صفر — المبلغ المستحق للمورد (آجل).",
-            "5) التاريخ: بصيغة yyyy/MM/dd مثل 2024/01/15. الخلية الفارغة = تاريخ اليوم.",
-            "6) ملاحظات: اختياري.",
-            "7) العملة: IQD أو USD (فارغ = IQD).",
-            "8) سعر_الصرف: مطلوب عند USD ويجب أن يكون أكبر من صفر.",
+            "4) الرصيد_دينار والرصيد_دولار: اختياريان — يمكن ملء أحدهما أو كليهما.",
+            "5) عند الرصيد_دولار يُستخدم سعر الصرف الافتتاحي من معالج النقل / إعدادات النظام.",
+            "6) التاريخ: بصيغة yyyy/MM/dd مثل 2024/01/15. الخلية الفارغة = تاريخ اليوم.",
+            "7) ملاحظات: اختياري.",
             "",
+            "توافق: القوالب القديمة (المبلغ + العملة + سعر_الصرف) ما زالت تُقرأ إن وُجدت.",
             "ملاحظة: يُنشأ رصيد آجل على ذمة المورد دون التأثير على القاصة أو المخزون."
         };
         for (var i = 0; i < lines.Length; i++)
@@ -159,23 +155,21 @@ public class OpeningSupplierBalanceExcelService : IOpeningSupplierBalanceExcelSe
         data.Cell(2, 1).Value = "مورد مثال";
         data.Cell(2, 2).Value = "07709876543";
         data.Cell(2, 3).Value = 750000;
-        data.Cell(2, 4).Value = new DateTime(2024, 6, 1);
-        data.Cell(2, 4).Style.DateFormat.Format = "yyyy/MM/dd";
-        data.Cell(2, 5).Value = "مثال — رصيد سابق";
-        data.Cell(2, 6).Value = "IQD";
-        data.Cell(2, 7).Value = 1;
+        data.Cell(2, 4).Value = 0;
+        data.Cell(2, 5).Value = new DateTime(2024, 6, 1);
+        data.Cell(2, 5).Style.DateFormat.Format = "yyyy/MM/dd";
+        data.Cell(2, 6).Value = "مثال — رصيد سابق";
         data.Row(2).Style.Fill.BackgroundColor = XLColor.FromHtml("#FFF3E0");
 
         data.Column(1).Width = 22;
         data.Column(2).Width = 16;
         data.Column(3).Width = 14;
         data.Column(4).Width = 14;
-        data.Column(5).Width = 28;
-        data.Column(6).Width = 10;
-        data.Column(7).Width = 12;
+        data.Column(5).Width = 14;
+        data.Column(6).Width = 28;
 
-        data.Range(2, 3, 500, 3).CreateDataValidation().Decimal.Between(0.01, 999999999999);
-        data.Range(2, 4, 500, 4).CreateDataValidation().Date.Between(new DateTime(2000, 1, 1), new DateTime(2100, 12, 31));
+        data.Range(2, 3, 500, 4).CreateDataValidation().Decimal.Between(0, 999999999999);
+        data.Range(2, 5, 500, 5).CreateDataValidation().Date.Between(new DateTime(2000, 1, 1), new DateTime(2100, 12, 31));
 
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
@@ -188,80 +182,49 @@ public class OpeningSupplierBalanceExcelService : IOpeningSupplierBalanceExcelSe
 
 internal static class OpeningPartyExcelParseHelper
 {
+    public static IReadOnlyList<OpeningPartyBalanceImportRow> ParseCustomer(string filePath)
+        => Parse(filePath, hasFileNumber: true);
+
     public static IReadOnlyList<OpeningPartyBalanceImportRow> Parse(string filePath, string _)
-    {
-        using var workbook = new XLWorkbook(filePath);
-        var sheet = workbook.Worksheets.FirstOrDefault(w =>
-            w.Name.Equals("البيانات", StringComparison.OrdinalIgnoreCase))
-            ?? workbook.Worksheet(1);
-
-        var rows = new List<OpeningPartyBalanceImportRow>();
-        var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
-        for (var rowNum = 2; rowNum <= lastRow; rowNum++)
-        {
-            var partyName = sheet.Cell(rowNum, 1).GetString().Trim();
-            if (string.IsNullOrWhiteSpace(partyName))
-                continue;
-
-            var importRow = new OpeningPartyBalanceImportRow
-            {
-                RowNumber = rowNum,
-                PartyName = partyName,
-                Phone = NullIfEmpty(sheet.Cell(rowNum, 2).GetString()),
-                FileNumber = NullIfEmpty(sheet.Cell(rowNum, 3).GetString()),
-                Notes = NullIfEmpty(sheet.Cell(rowNum, 6).GetString())
-            };
-
-            if (!TryParseDecimal(sheet.Cell(rowNum, 4), out var amount) || amount <= 0)
-                importRow.Errors.Add("المبلغ غير صالح");
-            else
-                importRow.Amount = amount;
-
-            var dateCell = sheet.Cell(rowNum, 5);
-            if (IsBlankCell(dateCell))
-                importRow.Date = DateTime.Today;
-            else if (!TryParseDate(dateCell, out var date))
-                importRow.Errors.Add("التاريخ غير صالح");
-            else
-                importRow.Date = date;
-
-            ApplyCurrencyAndFx(importRow, sheet.Cell(rowNum, 7), sheet.Cell(rowNum, 8));
-
-            rows.Add(importRow);
-        }
-
-        return rows;
-    }
+        => ParseCustomer(filePath);
 
     public static IReadOnlyList<OpeningPartyBalanceImportRow> ParseSupplier(string filePath)
+        => Parse(filePath, hasFileNumber: false);
+
+    private static IReadOnlyList<OpeningPartyBalanceImportRow> Parse(string filePath, bool hasFileNumber)
     {
         using var workbook = new XLWorkbook(filePath);
         var sheet = workbook.Worksheets.FirstOrDefault(w =>
             w.Name.Equals("البيانات", StringComparison.OrdinalIgnoreCase))
             ?? workbook.Worksheet(1);
 
+        var headerMap = ReadHeaderMap(sheet);
+        var dualMode = headerMap.ContainsKey("الرصيد_دينار") || headerMap.ContainsKey("الرصيد_دولار");
         var rows = new List<OpeningPartyBalanceImportRow>();
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
+
         for (var rowNum = 2; rowNum <= lastRow; rowNum++)
         {
-            var partyName = sheet.Cell(rowNum, 1).GetString().Trim();
+            var partyName = GetCell(sheet, rowNum, headerMap, hasFileNumber ? "اسم_العميل" : "اسم_المورد", 1);
             if (string.IsNullOrWhiteSpace(partyName))
                 continue;
 
             var importRow = new OpeningPartyBalanceImportRow
             {
                 RowNumber = rowNum,
-                PartyName = partyName,
-                Phone = NullIfEmpty(sheet.Cell(rowNum, 2).GetString()),
-                Notes = NullIfEmpty(sheet.Cell(rowNum, 5).GetString())
+                PartyName = partyName.Trim(),
+                Phone = NullIfEmpty(GetCell(sheet, rowNum, headerMap, "الهاتف", 2)),
+                FileNumber = hasFileNumber
+                    ? NullIfEmpty(GetCell(sheet, rowNum, headerMap, "رقم_الملف", 3))
+                    : null,
+                Notes = NullIfEmpty(GetCell(sheet, rowNum, headerMap, "ملاحظات",
+                    dualMode ? (hasFileNumber ? 7 : 6) : (hasFileNumber ? 6 : 5)))
             };
 
-            if (!TryParseDecimal(sheet.Cell(rowNum, 3), out var amount) || amount <= 0)
-                importRow.Errors.Add("المبلغ غير صالح");
-            else
-                importRow.Amount = amount;
-
-            var dateCell = sheet.Cell(rowNum, 4);
+            var dateCol = dualMode ? (hasFileNumber ? 6 : 5) : (hasFileNumber ? 5 : 4);
+            var dateCell = headerMap.TryGetValue("التاريخ", out var dateHeaderCol)
+                ? sheet.Cell(rowNum, dateHeaderCol)
+                : sheet.Cell(rowNum, dateCol);
             if (IsBlankCell(dateCell))
                 importRow.Date = DateTime.Today;
             else if (!TryParseDate(dateCell, out var date))
@@ -269,7 +232,37 @@ internal static class OpeningPartyExcelParseHelper
             else
                 importRow.Date = date;
 
-            ApplyCurrencyAndFx(importRow, sheet.Cell(rowNum, 6), sheet.Cell(rowNum, 7));
+            if (dualMode)
+            {
+                var iqdText = GetCell(sheet, rowNum, headerMap, "الرصيد_دينار", hasFileNumber ? 4 : 3);
+                var usdText = GetCell(sheet, rowNum, headerMap, "الرصيد_دولار", hasFileNumber ? 5 : 4);
+                var hasIqd = TryParseDecimalText(iqdText, out var iqd) && iqd > 0;
+                var hasUsd = TryParseDecimalText(usdText, out var usd) && usd > 0;
+                if (hasIqd) importRow.Amount = iqd;
+                if (hasUsd) importRow.AmountUsd = usd;
+                // صفر/صفر مسموح — يُنشأ الطرف فقط
+            }
+            else
+            {
+                var amountCol = hasFileNumber ? 4 : 3;
+                var amountCell = headerMap.TryGetValue("المبلغ", out var amountHeader)
+                    ? sheet.Cell(rowNum, amountHeader)
+                    : sheet.Cell(rowNum, amountCol);
+                if (!TryParseDecimal(amountCell, out var amount) || amount <= 0)
+                    importRow.Errors.Add("المبلغ غير صالح");
+                else
+                    importRow.Amount = amount;
+
+                var currencyCol = hasFileNumber ? 7 : 6;
+                var fxCol = hasFileNumber ? 8 : 7;
+                var currencyCell = headerMap.TryGetValue("العملة", out var cCol)
+                    ? sheet.Cell(rowNum, cCol)
+                    : sheet.Cell(rowNum, currencyCol);
+                var fxCell = headerMap.TryGetValue("سعر_الصرف", out var fCol)
+                    ? sheet.Cell(rowNum, fCol)
+                    : sheet.Cell(rowNum, fxCol);
+                ApplyCurrencyAndFx(importRow, currencyCell, fxCell);
+            }
 
             rows.Add(importRow);
         }
@@ -277,6 +270,25 @@ internal static class OpeningPartyExcelParseHelper
         return rows;
     }
 
+    private static Dictionary<string, int> ReadHeaderMap(IXLWorksheet sheet)
+    {
+        var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var lastCol = sheet.LastColumnUsed()?.ColumnNumber() ?? 1;
+        for (var c = 1; c <= lastCol; c++)
+        {
+            var header = sheet.Cell(1, c).GetString().Trim();
+            if (!string.IsNullOrWhiteSpace(header) && !map.ContainsKey(header))
+                map[header] = c;
+        }
+        return map;
+    }
+
+    private static string GetCell(IXLWorksheet sheet, int row, Dictionary<string, int> map, string key, int fallbackCol)
+    {
+        if (map.TryGetValue(key, out var col))
+            return sheet.Cell(row, col).GetFormattedString().Trim();
+        return sheet.Cell(row, fallbackCol).GetFormattedString().Trim();
+    }
 
     private static void ApplyCurrencyAndFx(OpeningPartyBalanceImportRow importRow, IXLCell currencyCell, IXLCell fxCell)
     {
@@ -325,6 +337,15 @@ internal static class OpeningPartyExcelParseHelper
             return false;
         return string.IsNullOrWhiteSpace(cell.GetString())
                && string.IsNullOrWhiteSpace(cell.GetFormattedString());
+    }
+
+    private static bool TryParseDecimalText(string? text, out decimal value)
+    {
+        value = 0;
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        var normalized = NormalizeNumericText(text);
+        return decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out value)
+               || decimal.TryParse(normalized, NumberStyles.Number, CultureInfo.CurrentCulture, out value);
     }
 
     private static bool TryParseDecimal(IXLCell cell, out decimal value)
@@ -392,20 +413,20 @@ internal static class OpeningPartyExcelParseHelper
         return text;
     }
 
-    private static bool TryParseDate(IXLCell cell, out DateTime value)
+    private static bool TryParseDate(IXLCell cell, out DateTime date)
     {
-        value = default;
+        date = default;
         if (cell.TryGetValue(out DateTime dt))
         {
-            value = dt.Date;
+            date = dt.Date;
             return true;
         }
 
-        if (cell.TryGetValue(out double serial) && !double.IsNaN(serial) && serial > 20000)
+        if (cell.TryGetValue(out double oa) && oa > 0)
         {
             try
             {
-                value = DateTime.FromOADate(serial).Date;
+                date = DateTime.FromOADate(oa).Date;
                 return true;
             }
             catch
@@ -417,25 +438,10 @@ internal static class OpeningPartyExcelParseHelper
         var text = cell.GetString().Trim();
         if (string.IsNullOrWhiteSpace(text))
             text = cell.GetFormattedString().Trim();
-        if (string.IsNullOrWhiteSpace(text))
-            return false;
 
-        var cultures = new[]
-        {
-            CultureInfo.InvariantCulture,
-            CultureInfo.GetCultureInfo("en-US"),
-            CultureInfo.CurrentCulture,
-            CultureInfo.GetCultureInfo("ar-IQ")
-        };
-        foreach (var culture in cultures)
-        {
-            if (DateTime.TryParse(text, culture, DateTimeStyles.AllowWhiteSpaces, out value))
-            {
-                value = value.Date;
-                return true;
-            }
-        }
-
-        return false;
+        return DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out date)
+               || DateTime.TryParse(text, CultureInfo.CurrentCulture, DateTimeStyles.None, out date)
+               || DateTime.TryParseExact(text, ["yyyy/MM/dd", "yyyy-MM-dd", "dd/MM/yyyy"],
+                   CultureInfo.InvariantCulture, DateTimeStyles.None, out date);
     }
 }

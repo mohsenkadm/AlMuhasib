@@ -66,6 +66,7 @@ public sealed class SystemProfileService : ISystemProfileService
     public bool IsBranchClient => _current.IsBranchClient;
     public bool IsMainServer => _current.IsMainServer;
     public bool IsStandalone => _current.IsStandalone;
+    public bool IsSharedServer => _current.IsSharedServer;
 
     public void ChangeSystem(ApplicationSystemType system)
     {

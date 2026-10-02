@@ -29,6 +29,10 @@ public partial class DashboardKpiCard : UserControl
             SetResourceReference(AccentLightBrushProperty, "PrimaryHueLightBrush");
         if (ReadLocalValue(ValueBrushProperty) == DependencyProperty.UnsetValue)
             SetResourceReference(ValueBrushProperty, "TextPrimaryBrush");
+        if (ReadLocalValue(SecondaryAccentBrushProperty) == DependencyProperty.UnsetValue)
+            SetResourceReference(SecondaryAccentBrushProperty, "DashboardKpiTealBrush");
+        if (ReadLocalValue(SecondaryAccentLightBrushProperty) == DependencyProperty.UnsetValue)
+            SetResourceReference(SecondaryAccentLightBrushProperty, "DashboardKpiTealLightBrush");
 
         MiniChartXAxes = DefaultSparkX;
         MiniChartYAxes = DefaultSparkY;
@@ -60,6 +64,34 @@ public partial class DashboardKpiCard : UserControl
     public static readonly DependencyProperty ValueBrushProperty =
         DependencyProperty.Register(nameof(ValueBrush), typeof(Brush), typeof(DashboardKpiCard),
             new PropertyMetadata(Brushes.Black));
+
+    public static readonly DependencyProperty SecondaryValueProperty =
+        DependencyProperty.Register(nameof(SecondaryValue), typeof(string), typeof(DashboardKpiCard),
+            new PropertyMetadata(string.Empty));
+
+    public static readonly DependencyProperty ShowSecondaryValueProperty =
+        DependencyProperty.Register(nameof(ShowSecondaryValue), typeof(bool), typeof(DashboardKpiCard),
+            new PropertyMetadata(false));
+
+    public static readonly DependencyProperty SecondaryAccentBrushProperty =
+        DependencyProperty.Register(nameof(SecondaryAccentBrush), typeof(Brush), typeof(DashboardKpiCard),
+            new PropertyMetadata(null));
+
+    public static readonly DependencyProperty SecondaryAccentLightBrushProperty =
+        DependencyProperty.Register(nameof(SecondaryAccentLightBrush), typeof(Brush), typeof(DashboardKpiCard),
+            new PropertyMetadata(null));
+
+    public static readonly DependencyProperty PrimaryCurrencyCodeProperty =
+        DependencyProperty.Register(nameof(PrimaryCurrencyCode), typeof(string), typeof(DashboardKpiCard),
+            new PropertyMetadata("د.ع"));
+
+    public static readonly DependencyProperty PrimaryCurrencyCaptionProperty =
+        DependencyProperty.Register(nameof(PrimaryCurrencyCaption), typeof(string), typeof(DashboardKpiCard),
+            new PropertyMetadata("دينار"));
+
+    public static readonly DependencyProperty SecondaryCurrencyCaptionProperty =
+        DependencyProperty.Register(nameof(SecondaryCurrencyCaption), typeof(string), typeof(DashboardKpiCard),
+            new PropertyMetadata("دولار"));
 
     public static readonly DependencyProperty DetailsContentProperty =
         DependencyProperty.Register(nameof(DetailsContent), typeof(object), typeof(DashboardKpiCard),
@@ -147,6 +179,48 @@ public partial class DashboardKpiCard : UserControl
     {
         get => (Brush)GetValue(ValueBrushProperty);
         set => SetValue(ValueBrushProperty, value);
+    }
+
+    public string SecondaryValue
+    {
+        get => (string)GetValue(SecondaryValueProperty);
+        set => SetValue(SecondaryValueProperty, value);
+    }
+
+    public bool ShowSecondaryValue
+    {
+        get => (bool)GetValue(ShowSecondaryValueProperty);
+        set => SetValue(ShowSecondaryValueProperty, value);
+    }
+
+    public Brush SecondaryAccentBrush
+    {
+        get => (Brush)GetValue(SecondaryAccentBrushProperty);
+        set => SetValue(SecondaryAccentBrushProperty, value);
+    }
+
+    public Brush SecondaryAccentLightBrush
+    {
+        get => (Brush)GetValue(SecondaryAccentLightBrushProperty);
+        set => SetValue(SecondaryAccentLightBrushProperty, value);
+    }
+
+    public string PrimaryCurrencyCode
+    {
+        get => (string)GetValue(PrimaryCurrencyCodeProperty);
+        set => SetValue(PrimaryCurrencyCodeProperty, value);
+    }
+
+    public string PrimaryCurrencyCaption
+    {
+        get => (string)GetValue(PrimaryCurrencyCaptionProperty);
+        set => SetValue(PrimaryCurrencyCaptionProperty, value);
+    }
+
+    public string SecondaryCurrencyCaption
+    {
+        get => (string)GetValue(SecondaryCurrencyCaptionProperty);
+        set => SetValue(SecondaryCurrencyCaptionProperty, value);
     }
 
     public object? DetailsContent

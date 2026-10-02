@@ -5,7 +5,7 @@ namespace AlMuhasib.UI.Controls;
 
 public static class ProductQuickDetailDialog
 {
-    public static void Show(IProductQuickDetailService service, int productId)
+    public static void Show(IProductQuickDetailService service, int productId, bool showMultiCurrency = false)
     {
         var model = new ProductQuickDetailOverlayViewModel();
         var overlay = new ProductQuickDetailOverlay { DataContext = model };
@@ -20,7 +20,7 @@ public static class ProductQuickDetailDialog
                     if (data is null)
                         model.SetError("لم يتم العثور على المنتج");
                     else
-                        model.Apply(data);
+                        model.Apply(data, showMultiCurrency);
                 });
             }
             catch (Exception ex)

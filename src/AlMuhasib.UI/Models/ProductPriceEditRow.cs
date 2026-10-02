@@ -16,7 +16,9 @@ public partial class ProductPriceEditRow : ObservableObject
     [ObservableProperty] private Product? _selectedProduct;
     [ObservableProperty] private PricingType? _selectedPricingType;
     [ObservableProperty] private decimal _salePrice;
+    [ObservableProperty] private decimal _salePriceUsd;
     [ObservableProperty] private decimal _purchasePrice;
+    [ObservableProperty] private decimal _purchasePriceUsd;
 
     public string ProductName => SelectedProduct?.Name ?? string.Empty;
     public string PricingTypeName => SelectedPricingType?.Name ?? string.Empty;
@@ -34,7 +36,9 @@ public partial class ProductPriceEditRow : ObservableObject
     }
 
     partial void OnSalePriceChanged(decimal value) => Changed?.Invoke(this);
+    partial void OnSalePriceUsdChanged(decimal value) => Changed?.Invoke(this);
     partial void OnPurchasePriceChanged(decimal value) => Changed?.Invoke(this);
+    partial void OnPurchasePriceUsdChanged(decimal value) => Changed?.Invoke(this);
 
     public ProductPrice ToEntity() => new()
     {
@@ -42,7 +46,9 @@ public partial class ProductPriceEditRow : ObservableObject
         ProductId = SelectedProduct?.Id ?? 0,
         PricingTypeId = SelectedPricingType?.Id ?? 0,
         SalePrice = SalePrice,
-        PurchasePrice = PurchasePrice
+        SalePriceUsd = SalePriceUsd,
+        PurchasePrice = PurchasePrice,
+        PurchasePriceUsd = PurchasePriceUsd
     };
 
     public static ProductPriceEditRow FromEntity(
@@ -56,7 +62,9 @@ public partial class ProductPriceEditRow : ObservableObject
             AvailableProducts = products,
             AvailablePricingTypes = pricingTypes,
             SalePrice = entity.SalePrice,
+            SalePriceUsd = entity.SalePriceUsd,
             PurchasePrice = entity.PurchasePrice,
+            PurchasePriceUsd = entity.PurchasePriceUsd,
             SelectedProduct = products.FirstOrDefault(p => p.Id == entity.ProductId) ?? entity.Product,
             SelectedPricingType = pricingTypes.FirstOrDefault(t => t.Id == entity.PricingTypeId) ?? entity.PricingType
         };

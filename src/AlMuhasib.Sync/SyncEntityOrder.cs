@@ -28,6 +28,7 @@ public static class SyncEntityOrder
         SyncEntityType.Voucher,
         SyncEntityType.Expense,
         SyncEntityType.Transfer,
+        SyncEntityType.CurrencyExchange,
         SyncEntityType.InvestorTransaction,
         SyncEntityType.ProfitDistribution,
         SyncEntityType.ProfitDistributionDetail,

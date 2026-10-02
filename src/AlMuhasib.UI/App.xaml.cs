@@ -39,6 +39,7 @@ public partial class App : Application
     private ServiceProvider? _serviceProvider;
     public IServiceProvider Services => _serviceProvider ?? throw new InvalidOperationException("Application is not initialized.");
     private bool _isLoggingOut;
+    private bool _isShuttingDown;
 
     public App()
     {
@@ -281,6 +282,7 @@ public partial class App : Application
         services.AddTransient<OpeningSupplierBalanceViewModel>();
         services.AddTransient<PlatformDeductionSettlementViewModel>();
         services.AddTransient<CashBankViewModel>();
+        services.AddTransient<CurrencyExchangeViewModel>();
         services.AddTransient<WarehousesViewModel>();
         services.AddTransient<OpeningStockViewModel>();
         services.AddTransient<StockAdjustmentViewModel>();
@@ -347,6 +349,7 @@ public partial class App : Application
         services.AddTransient<CashBoxMovementReportViewModel>();
         services.AddTransient<CashBalancesSummaryReportViewModel>();
         services.AddTransient<TransfersReportViewModel>();
+        services.AddTransient<WarehouseTransfersReportViewModel>();
         services.AddTransient<InventoryValuationReportViewModel>();
         services.AddTransient<WarehouseProductProfitReportViewModel>();
         services.AddTransient<StockTakingReportViewModel>();
@@ -358,6 +361,7 @@ public partial class App : Application
         services.AddTransient<ProfitAndLossReportViewModel>();
         services.AddTransient<StatementOfFinancialPositionReportViewModel>();
         services.AddTransient<UsersViewModel>();
+        services.AddTransient<BranchesViewModel>();
         services.AddTransient<PermissionsViewModel>();
         services.AddTransient<AuditLogViewModel>();
         services.AddTransient<SetupWizardViewModel>();
@@ -699,6 +703,9 @@ public partial class App : Application
                     splash.SetStatus("جاري تهيئة الحسابات والإعدادات...");
                     splash.SetProgress(0.62);
 
+                    // Multi-branch: bind MAIN before any seed writes (print branding, settings…).
+                    await BindStartupBranchContextAsync(scope.ServiceProvider);
+
                     var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
                     await authService.EnsureAdminAccountAsync();
 
@@ -728,6 +735,8 @@ public partial class App : Application
                             throw new InvalidOperationException(
                                 AlMuhasib.Infrastructure.Services.AccountingSchemaRepair.BranchSchemaOutdatedMessage);
                         }
+
+                        await BindStartupBranchContextAsync(scope.ServiceProvider);
                     }
                     else if (_systemProfile.ActiveSystem == ApplicationSystemType.CarContracts)
                     {
@@ -745,8 +754,21 @@ public partial class App : Application
                     }
                 }
 
-                var brandingService = scope.ServiceProvider.GetRequiredService<IPrintBrandingService>();
-                await brandingService.RefreshProviderAsync();
+                try
+                {
+                    var brandingService = scope.ServiceProvider.GetRequiredService<IPrintBrandingService>();
+                    await brandingService.RefreshProviderAsync();
+                }
+                catch (Exception brandingEx)
+                {
+                    // Non-fatal: login must still work if branding seed fails.
+                    LogException("PrintBrandingStartup", brandingEx);
+                }
+                finally
+                {
+                    // Do not leave a system branch attached before the login flow.
+                    scope.ServiceProvider.GetService<IBranchContext>()?.Clear();
+                }
             });
 
             splash.SetStatus("جاري إعداد النظام...");
@@ -763,6 +785,34 @@ public partial class App : Application
     }
 
     private sealed class UpdateShutdownException : Exception;
+
+    /// <summary>
+    /// After migrations, bind the MAIN branch so seed writes (print branding, settings)
+    /// satisfy AppDbContext branch write guards before the user logs in.
+    /// </summary>
+    private static async Task BindStartupBranchContextAsync(IServiceProvider sp)
+    {
+        var branchService = sp.GetService<IBranchService>();
+        var branchContext = sp.GetService<IBranchContext>();
+        if (branchService is null || branchContext is null)
+            return;
+
+        if (branchContext.HasWriteBranchContext)
+            return;
+
+        try
+        {
+            var main = await branchService.GetMainBranchAsync();
+            // Seed/startup writes (print branding, settings…) need an allowed write branch
+            // before any user session exists — otherwise ApplyBranchWriteGuards rejects.
+            branchContext.SetAllowedBranches([main.Id], canViewAll: true, canManageAll: true);
+            branchContext.SetCurrentBranch(main.Id, main.Name, main.Code);
+        }
+        catch (Exception ex)
+        {
+            LogException("BindStartupBranchContext", ex);
+        }
+    }
 
     /// <summary>
     /// Shows the login dialog. On success, creates and shows the main window
@@ -807,6 +857,7 @@ public partial class App : Application
         var mainVm = _serviceProvider.GetRequiredService<MainWindowViewModel>();
         var currentUser = _serviceProvider.GetRequiredService<CurrentUserService>();
         mainVm.LoggedInUsername = currentUser.Username;
+        mainVm.RefreshCurrentBranchDisplay();
 
         try
         {
@@ -994,20 +1045,76 @@ public partial class App : Application
             Shutdown();
     }
 
+    /// <summary>
+    /// يوقف الخدمات الخلفية قبل إغلاق العملية حتى لا تبقى في Task Manager.
+    /// </summary>
+    internal void PrepareForShutdown()
+    {
+        if (_serviceProvider is null)
+            return;
+
+        TryStop(() => _serviceProvider.GetService<IOfflineReminderService>()?.Stop());
+        TryStop(() => _serviceProvider.GetService<BackupSchedulerService>()?.Stop());
+        TryStop(() => _serviceProvider.GetService<IPosFullscreenService>()?.Close());
+        TryStop(() => _serviceProvider.GetService<IVoiceRecognitionService>()?.StopListening());
+        TryStop(() => _serviceProvider.GetService<ISyncService>()?.StopAutoSync());
+        TryStop(() => (_serviceProvider.GetService<IGoldScaleService>() as IDisposable)?.Dispose());
+        TryStop(() => (_serviceProvider.GetService<ISoundService>() as IDisposable)?.Dispose());
+
+        try
+        {
+            var hosting = _serviceProvider.GetService<IMainServerHostingService>();
+            hosting?.StopDiscoveryResponderAsync().Wait(TimeSpan.FromSeconds(2));
+        }
+        catch
+        {
+            // ignore discovery stop failures during exit
+        }
+    }
+
+    private static void TryStop(Action action)
+    {
+        try { action(); }
+        catch { /* ignore during shutdown */ }
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
-        // Prefer DisposeAsync: MainServerHostingService (and similar) only implement IAsyncDisposable.
-        if (_serviceProvider is IAsyncDisposable asyncDisposable)
+        if (_isShuttingDown)
         {
-            asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
-            _serviceProvider = null;
-        }
-        else
-        {
-            _serviceProvider?.Dispose();
-            _serviceProvider = null;
+            base.OnExit(e);
+            return;
         }
 
-        base.OnExit(e);
+        _isShuttingDown = true;
+
+        try
+        {
+            PrepareForShutdown();
+
+            // Prefer DisposeAsync: MainServerHostingService (and similar) only implement IAsyncDisposable.
+            if (_serviceProvider is IAsyncDisposable asyncDisposable)
+            {
+                var disposeTask = asyncDisposable.DisposeAsync().AsTask();
+                if (!disposeTask.Wait(TimeSpan.FromSeconds(5)))
+                    System.Diagnostics.Debug.WriteLine("[Exit] ServiceProvider dispose timed out.");
+            }
+            else
+            {
+                _serviceProvider?.Dispose();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Exit] Cleanup error: {ex}");
+        }
+        finally
+        {
+            _serviceProvider = null;
+            try { base.OnExit(e); } catch { /* ignore */ }
+
+            // ضمان خروج العملية بالكامل من Task Manager بعد إغلاق الواجهة
+            Environment.Exit(e.ApplicationExitCode);
+        }
     }
 }

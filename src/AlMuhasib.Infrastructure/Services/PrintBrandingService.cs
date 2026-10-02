@@ -9,8 +9,13 @@ namespace AlMuhasib.Infrastructure.Services;
 public class PrintBrandingService : IPrintBrandingService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IBranchContext? _branchContext;
 
-    public PrintBrandingService(IUnitOfWork unitOfWork) => _unitOfWork = unitOfWork;
+    public PrintBrandingService(IUnitOfWork unitOfWork, IBranchContext? branchContext = null)
+    {
+        _unitOfWork = unitOfWork;
+        _branchContext = branchContext;
+    }
 
     public async Task<PrintBrandingSettings> GetOrCreateSettingsAsync()
     {
@@ -21,7 +26,13 @@ public class PrintBrandingService : IPrintBrandingService
         var created = new PrintBrandingSettings
         {
             ShowHeaderText = true,
-            ShowFooterText = true
+            ShowFooterText = true,
+            // AppDbContext write guards stamp BranchId from the current write context.
+            BranchId = _branchContext?.HasWriteBranchContext == true
+                ? _branchContext.CurrentBranchId!.Value
+                : 0,
+            CreatedBy = "System",
+            CreatedAt = DateTime.UtcNow
         };
 
         await _unitOfWork.PrintBrandingSettings.AddAsync(created);
@@ -45,6 +56,8 @@ public class PrintBrandingService : IPrintBrandingService
         if (existing is null)
         {
             settings.Id = 0;
+            if (settings.BranchId <= 0 && _branchContext?.HasWriteBranchContext == true)
+                settings.BranchId = _branchContext.CurrentBranchId!.Value;
             await _unitOfWork.PrintBrandingSettings.AddAsync(settings);
             saved = settings;
         }

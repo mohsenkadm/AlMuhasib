@@ -1,20 +1,22 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/AlMuhasib.UI/AlMuhasib.UI.csproj" />
+    <Project Path="src/AlMuhasib.Admin/AlMuhasib.Admin.csproj" />
+    <Project Path="src/AlMuhasib.Api/AlMuhasib.Api.csproj" />
+    <Project Path="src/AlMuhasib.Cloud.Application/AlMuhasib.Cloud.Application.csproj" />
+    <Project Path="src/AlMuhasib.Cloud.Core/AlMuhasib.Cloud.Core.csproj" />
+    <Project Path="src/AlMuhasib.Cloud.Infrastructure/AlMuhasib.Cloud.Infrastructure.csproj" />
+    <Project Path="src/AlMuhasib.Core.Tests/AlMuhasib.Core.Tests.csproj" />
     <Project Path="src/AlMuhasib.Core/AlMuhasib.Core.csproj" />
     <Project Path="src/AlMuhasib.Infrastructure/AlMuhasib.Infrastructure.csproj" />
     <Project Path="src/AlMuhasib.Shared/AlMuhasib.Shared.csproj" />
-    <Project Path="src/AlMuhasib.Updater/AlMuhasib.Updater.csproj" />
     <Project Path="src/AlMuhasib.Sync/AlMuhasib.Sync.csproj" />
-    <Project Path="src/AlMuhasib.Cloud.Core/AlMuhasib.Cloud.Core.csproj" />
-    <Project Path="src/AlMuhasib.Cloud.Application/AlMuhasib.Cloud.Application.csproj" />
-    <Project Path="src/AlMuhasib.Cloud.Infrastructure/AlMuhasib.Cloud.Infrastructure.csproj" />
-    <Project Path="src/AlMuhasib.Api/AlMuhasib.Api.csproj" />
-    <Project Path="src/AlMuhasib.Admin/AlMuhasib.Admin.csproj" />
-    <Project Path="src/AlMuhasib.Core.Tests/AlMuhasib.Core.Tests.csproj" />
+    <Project Path="src/AlMuhasib.UI/AlMuhasib.UI.csproj" />
+    <Project Path="src/AlMuhasib.Updater/AlMuhasib.Updater.csproj" />
   </Folder>
   <Folder Name="/website/">
     <File Path="website/index.html" />
+    <File Path="src/AlMuhasib.UI/SplashWindow.xaml" />
+    <File Path="src/AlMuhasib.UI/SplashWindow.xaml.cs" />
     <File Path="website/css/styles.css" />
     <File Path="website/js/main.js" />
     <File Path="website/js/locales-data.js" />

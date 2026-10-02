@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.UI.Models;
 
 namespace AlMuhasib.UI.Services;
@@ -33,7 +34,13 @@ public sealed class InvoiceQueueService : IInvoiceQueueService
             .OrderByDescending(x => x.SavedAt)
             .ToList();
 
-    public void Enqueue<T>(InvoiceQueueKind kind, string name, T payload, int lineCount, decimal totalAmount) where T : class
+    public void Enqueue<T>(
+        InvoiceQueueKind kind,
+        string name,
+        T payload,
+        int lineCount,
+        decimal totalAmount,
+        AccountingCurrency currency = AccountingCurrency.IQD) where T : class
     {
         var item = new InvoiceQueueItem
         {
@@ -41,7 +48,8 @@ public sealed class InvoiceQueueService : IInvoiceQueueService
             Name = string.IsNullOrWhiteSpace(name) ? "فاتورة بانتظار الإكمال" : name.Trim(),
             SavedAt = DateTime.Now,
             LineCount = Math.Max(0, lineCount),
-            TotalAmount = totalAmount < 0 ? 0 : totalAmount
+            TotalAmount = totalAmount < 0 ? 0 : totalAmount,
+            Currency = currency
         };
 
         var payloadPath = Path.Combine(_itemsPath, $"{item.Id}.json");

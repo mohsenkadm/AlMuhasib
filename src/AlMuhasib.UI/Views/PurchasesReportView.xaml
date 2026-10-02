@@ -59,14 +59,23 @@
 
                 <!-- ═══ Charts Row ═══ -->
                 <UniformGrid Columns="2" Margin="0,0,0,4">
-                    <controls:ChartCard Title="المشتريات اليومية" Margin="0,0,8,0">
+                    <controls:ChartCard Title="{Binding DailyChartTitle}"
+                                        IsEmpty="{Binding IsDailyChartEmpty}"
+                                        Margin="0,0,8,0">
                         <controls:ChartCard.ChartContent>
-                            <lvc:CartesianChart Series="{Binding DailySeries}" XAxes="{Binding DailyXAxes}" YAxes="{Binding DailyYAxes}" Height="280"/>
+                            <lvc:CartesianChart Series="{Binding DailySeries}"
+                                                XAxes="{Binding DailyXAxes}"
+                                                YAxes="{Binding DailyYAxes}"
+                                                Height="280"
+                                                LegendPosition="Hidden"
+                                                TooltipPosition="Top"/>
                         </controls:ChartCard.ChartContent>
                     </controls:ChartCard>
-                    <controls:ChartCard Title="التوزيع حسب المورد" Margin="8,0,0,0">
+                    <controls:ChartCard Title="التوزيع حسب المورد"
+                                        IsEmpty="{Binding IsSupplierChartEmpty}"
+                                        Margin="8,0,0,0">
                         <controls:ChartCard.ChartContent>
-                            <lvc:PieChart Series="{Binding SupplierSeries}" Height="280"/>
+                            <lvc:PieChart Series="{Binding SupplierSeries}" Height="280" LegendPosition="Hidden"/>
                         </controls:ChartCard.ChartContent>
                     </controls:ChartCard>
                 </UniformGrid>

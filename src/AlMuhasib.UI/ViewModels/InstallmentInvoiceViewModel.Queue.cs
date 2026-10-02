@@ -41,7 +41,8 @@ public partial class InstallmentInvoiceViewModel
             queueName,
             BuildDraft(),
             Items.Count(i => !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity > 0),
-            GrandTotal);
+            GrandTotal,
+            DocumentCurrency);
         BeautifulMessageDialog.ShowSuccess("تمت إضافة الفاتورة إلى قائمة الانتظار.");
         _ = NewInvoice();
     }

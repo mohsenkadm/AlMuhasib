@@ -9,6 +9,14 @@ public static class PermissionCatalogHelper
 {
     private static readonly string[] AdminRecoveryScreens = ["Users", "Permissions"];
 
+    /// <summary>
+    /// صلاحيات نطاق الفروع — لا تُمنح تلقائياً مع الكتالوج الكامل أو «تحديد الكل».
+    /// مصدر وصول الفروع = ربط المستخدم بالفروع في شاشة المستخدمين.
+    /// </summary>
+    public static bool IsExplicitBranchScopeScreen(string screenName) =>
+        screenName is BranchPermissionScreens.ViewAllBranches
+            or BranchPermissionScreens.ManageAllBranches;
+
     public static Permission CreateFull(string screenName) => new()
     {
         ScreenName = screenName,
@@ -43,7 +51,11 @@ public static class PermissionCatalogHelper
         ScreenPermissionRegistry.AllScreens;
 
     public static List<Permission> CreateFullCatalog() =>
-        ScreenPermissionRegistry.AllScreens.Select(s => CreateFull(s.Name)).ToList();
+        ScreenPermissionRegistry.AllScreens
+            .Select(s => IsExplicitBranchScopeScreen(s.Name)
+                ? CreateDenied(s.Name)
+                : CreateFull(s.Name))
+            .ToList();
 
     /// <summary>
     /// Ensures login permissions match the registry. May grant admin recovery access.
@@ -77,7 +89,10 @@ public static class PermissionCatalogHelper
             if (byScreen.ContainsKey(name))
                 continue;
 
-            byScreen[name] = isAdmin ? CreateFull(name) : CreateDenied(name);
+            // الشاشات الجديدة للمدير: كامل — ما عدا نطاق «كل الفروع» يدوياً فقط.
+            byScreen[name] = isAdmin && !IsExplicitBranchScopeScreen(name)
+                ? CreateFull(name)
+                : CreateDenied(name);
             changed = true;
         }
 

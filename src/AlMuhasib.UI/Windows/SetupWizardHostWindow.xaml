@@ -194,54 +194,61 @@
             </ScrollViewer>
 
             <!-- Step 2: Deployment Mode -->
-            <Grid x:Name="Step2Panel" Grid.Row="2" Visibility="Collapsed">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="20"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="20"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+            <ScrollViewer x:Name="Step2Panel" Grid.Row="2" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <UniformGrid Columns="2" Rows="2" Margin="0,0,0,8">
+                    <Border x:Name="MainServerCard" Margin="0,0,10,10" CornerRadius="14" BorderThickness="2"
+                            BorderBrush="{DynamicResource SubtleBorderBrush}" Background="{DynamicResource BackgroundBrush}" Cursor="Hand"
+                            MouseLeftButtonUp="OnMainServerSelected">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
+                            <Border Width="72" Height="72" CornerRadius="36" Background="{DynamicResource DashboardKpiGreenLightBrush}" Margin="0,0,0,12">
+                                <md:PackIcon Kind="Server" Width="36" Height="36" Foreground="#2E7D32" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="حاسبة رئيسية" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="تخزين قاعدة البيانات على هذا الجهاز واستقبال الحاسبات الفرعية"
+                                       TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,8,0,0" MaxWidth="280"/>
+                        </StackPanel>
+                    </Border>
 
-                <Border x:Name="MainServerCard" Grid.Column="0" CornerRadius="14" BorderThickness="2"
-                        BorderBrush="{DynamicResource SubtleBorderBrush}" Background="{DynamicResource BackgroundBrush}" Cursor="Hand"
-                        MouseLeftButtonUp="OnMainServerSelected">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24">
-                        <Border Width="80" Height="80" CornerRadius="40" Background="{DynamicResource DashboardKpiGreenLightBrush}" Margin="0,0,0,14">
-                            <md:PackIcon Kind="Server" Width="40" Height="40" Foreground="#2E7D32" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="حاسبة رئيسية" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
-                        <TextBlock Text="تخزين قاعدة البيانات على هذا الجهاز واستقبال الحاسبات الفرعية"
-                                   TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,10,0,0" MaxWidth="280"/>
-                    </StackPanel>
-                </Border>
+                    <Border x:Name="BranchClientCard" Margin="10,0,0,10" CornerRadius="14" BorderThickness="2"
+                            BorderBrush="{DynamicResource SubtleBorderBrush}" Background="{DynamicResource BackgroundBrush}" Cursor="Hand"
+                            MouseLeftButtonUp="OnBranchClientSelected">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
+                            <Border Width="72" Height="72" CornerRadius="36" Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,0,12">
+                                <md:PackIcon Kind="LanConnect" Width="36" Height="36" Foreground="#1565C0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="حاسبة فرعية" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="الاتصال بحاسبة رئيسية عبر الشبكة بدون مزامنة"
+                                       TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,8,0,0" MaxWidth="280"/>
+                        </StackPanel>
+                    </Border>
 
-                <Border x:Name="BranchClientCard" Grid.Column="2" CornerRadius="14" BorderThickness="2"
-                        BorderBrush="{DynamicResource SubtleBorderBrush}" Background="{DynamicResource BackgroundBrush}" Cursor="Hand"
-                        MouseLeftButtonUp="OnBranchClientSelected">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24">
-                        <Border Width="80" Height="80" CornerRadius="40" Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,0,14">
-                            <md:PackIcon Kind="LanConnect" Width="40" Height="40" Foreground="#1565C0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="حاسبة فرعية" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
-                        <TextBlock Text="الاتصال بحاسبة رئيسية عبر الشبكة بدون مزامنة"
-                                   TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,10,0,0" MaxWidth="280"/>
-                    </StackPanel>
-                </Border>
+                    <Border x:Name="StandaloneCard" Margin="0,10,10,0" CornerRadius="14" BorderThickness="2"
+                            BorderBrush="{DynamicResource SubtleBorderBrush}" Background="{DynamicResource BackgroundBrush}" Cursor="Hand"
+                            MouseLeftButtonUp="OnStandaloneSelected">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
+                            <Border Width="72" Height="72" CornerRadius="36" Background="{DynamicResource DashboardKpiOrangeLightBrush}" Margin="0,0,0,12">
+                                <md:PackIcon Kind="DesktopClassic" Width="36" Height="36" Foreground="#E65100" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="حاسبة مستقلة" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="قاعدة بيانات محلية على هذا الجهاز فقط (الوضع التقليدي)"
+                                       TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,8,0,0" MaxWidth="280"/>
+                        </StackPanel>
+                    </Border>
 
-                <Border x:Name="StandaloneCard" Grid.Column="4" CornerRadius="14" BorderThickness="2"
-                        BorderBrush="{DynamicResource SubtleBorderBrush}" Background="{DynamicResource BackgroundBrush}" Cursor="Hand"
-                        MouseLeftButtonUp="OnStandaloneSelected">
-                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="24">
-                        <Border Width="80" Height="80" CornerRadius="40" Background="{DynamicResource DashboardKpiOrangeLightBrush}" Margin="0,0,0,14">
-                            <md:PackIcon Kind="DesktopClassic" Width="40" Height="40" Foreground="#E65100" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <TextBlock Text="حاسبة مستقلة" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
-                        <TextBlock Text="قاعدة بيانات محلية على هذا الجهاز فقط (الوضع التقليدي)"
-                                   TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,10,0,0" MaxWidth="280"/>
-                    </StackPanel>
-                </Border>
-            </Grid>
+                    <Border x:Name="SharedServerCard" Margin="10,10,0,0" CornerRadius="14" BorderThickness="2"
+                            BorderBrush="{DynamicResource SubtleBorderBrush}" Background="{DynamicResource BackgroundBrush}" Cursor="Hand"
+                            MouseLeftButtonUp="OnSharedServerSelected">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="20">
+                            <Border Width="72" Height="72" CornerRadius="36" Background="#E8EAF6" Margin="0,0,0,12">
+                                <md:PackIcon Kind="DatabaseExport" Width="36" Height="36" Foreground="#3949AB" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="سيرفر مشترك" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="إدخال Connection String لقاعدة بيانات على سيرفر SQL — كل الحاسبات تتصل بنفس القاعدة"
+                                       TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,8,0,0" MaxWidth="280"/>
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+            </ScrollViewer>
 
             <!-- Step 3: Branch Connection -->
             <ScrollViewer x:Name="Step3BranchPanel" Grid.Row="2" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
@@ -365,6 +372,47 @@
                             Margin="0,0,0,8"/>
 
                     <TextBlock Text="الافتراضي: SQL LocalDB — (localdb)\MSSQLLocalDB. يمكنك أيضاً اختيار .\SQLEXPRESS أو كتابة اسم السيرفر يدوياً."
+                               Foreground="{DynamicResource HintForegroundBrush}"
+                               FontSize="12"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Step 3: Shared remote SQL Server connection string -->
+            <ScrollViewer x:Name="Step3SharedServerPanel" Grid.Row="2" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <StackPanel MaxWidth="760" HorizontalAlignment="Center">
+                    <Border Background="#E8EAF6" CornerRadius="12" Padding="16" Margin="0,0,0,16">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <md:PackIcon Kind="DatabaseExport" Width="24" Height="24" Foreground="#3949AB" VerticalAlignment="Center"/>
+                                <TextBlock Text="الاتصال بقاعدة بيانات على سيرفر" FontSize="18" FontWeight="Bold" Foreground="#3949AB" Margin="10,0,0,0"/>
+                            </StackPanel>
+                            <TextBlock Text="الصق سلسلة الاتصال (Connection String) لسيرفر SQL. نفس السلسلة تُستخدم على كل الحاسبات للاتصال بقاعدة واحدة مشتركة."
+                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBox x:Name="SharedConnectionStringText"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             MinHeight="110"
+                             VerticalScrollBarVisibility="Auto"
+                             md:HintAssist.Hint="Server=...;Database=AlMuhasibDb;User Id=...;Password=...;TrustServerCertificate=True;"
+                             Margin="0,0,0,12"
+                             TextChanged="OnSharedConnectionStringChanged"/>
+
+                    <TextBlock x:Name="SharedConnectionTestResultText"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,8"/>
+
+                    <Button x:Name="TestSharedConnectionButton"
+                            Content="اختبار الاتصال"
+                            Click="OnTestSharedConnectionClick"
+                            Style="{StaticResource WizardSecondaryActionButton}"
+                            HorizontalAlignment="Stretch"
+                            Margin="0,0,0,8"/>
+
+                    <TextBlock Text="مثال: Server=192.168.1.10,1433;Database=AlMuhasibDb;User Id=sa;Password=YourPassword;TrustServerCertificate=True;MultipleActiveResultSets=True"
                                Foreground="{DynamicResource HintForegroundBrush}"
                                FontSize="12"
                                TextWrapping="Wrap"/>

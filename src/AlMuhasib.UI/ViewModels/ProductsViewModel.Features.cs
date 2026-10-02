@@ -175,6 +175,7 @@ public partial class ProductsViewModel
         ShowScientificName = _featureFlags.TemplatePharmacy;
         ShowUsageInstructions = _featureFlags.TemplatePharmacy;
         ShowCarShowroomFields = _featureFlags.CarShowroom;
+        ShowMultiCurrency = _featureFlags.MultiCurrency && _pricingEnabled;
 
         if (!ShowSizesSection)
         {

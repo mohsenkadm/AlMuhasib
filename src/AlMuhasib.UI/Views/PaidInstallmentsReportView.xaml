@@ -10,6 +10,7 @@
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              mc:Ignorable="d"
+             x:Name="Root"
              d:DataContext="{d:DesignInstance vm:PaidInstallmentsReportViewModel, IsDesignTimeCreatable=False}"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
@@ -140,8 +141,14 @@
                                                     <DataGridTextColumn Header="رقم العميل" Binding="{Binding CustomerFileNumber}" Width="90"/>
                                 <DataGridTextColumn Header="رقم الخطة" Binding="{Binding PlanNumber}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PlanNumber"/>
-                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="120"
+                                <DataGridTextColumn Header="المبلغ (د.ع)" Binding="{Binding Amount, StringFormat=N0}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
+                                <DataGridTextColumn Header="الأصل" Binding="{Binding OriginalAmount, StringFormat=N2}" Width="100"
+                                                    Visibility="{Binding DataContext.ShowMultiCurrency, ElementName=Root, Converter={StaticResource BoolToVis}}"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="OriginalAmount"/>
+                                <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70"
+                                                    Visibility="{Binding DataContext.ShowMultiCurrency, ElementName=Root, Converter={StaticResource BoolToVis}}"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrencyLabel"/>
                                 <DataGridTextColumn Header="تاريخ الدفع" Binding="{Binding PaymentDate, StringFormat=\{0:yyyy/MM/dd\}}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaymentDate"/>
                                 <DataGridTextColumn Header="الصندوق" Binding="{Binding CashBoxName}" Width="140"

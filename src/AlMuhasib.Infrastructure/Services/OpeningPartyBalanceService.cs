@@ -14,15 +14,18 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAccountingPeriodLockService _periodLockService;
+    private readonly IBranchContext _branchContext;
 
     public OpeningPartyBalanceService(
         IDbContextFactory<AppDbContext> contextFactory,
         ICurrentUserService currentUserService,
-        IAccountingPeriodLockService periodLockService)
+        IAccountingPeriodLockService periodLockService,
+        IBranchContext branchContext)
     {
         _contextFactory = contextFactory;
         _currentUserService = currentUserService;
         _periodLockService = periodLockService;
+        _branchContext = branchContext;
     }
 
     public Task<OpeningPartyBalancePagedResult> GetCustomerOpeningBalancesAsync(OpeningPartyBalanceQuery query)
@@ -45,7 +48,11 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         }
 
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var customers = await context.Customers.Select(c => new { c.Id, c.Name }).ToListAsync();
+        var branchId = _branchContext.CurrentBranchId;
+        var customersQuery = context.Customers.AsQueryable();
+        if (branchId is > 0)
+            customersQuery = customersQuery.Where(c => c.BranchId == branchId);
+        var customers = await customersQuery.Select(c => new { c.Id, c.Name }).ToListAsync();
         var nameCache = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var c in customers)
         {
@@ -88,7 +95,11 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         }
 
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var suppliers = await context.Suppliers.Select(s => new { s.Id, s.Name }).ToListAsync();
+        var branchId = _branchContext.CurrentBranchId;
+        var suppliersQuery = context.Suppliers.AsQueryable();
+        if (branchId is > 0)
+            suppliersQuery = suppliersQuery.Where(s => s.BranchId == branchId);
+        var suppliers = await suppliersQuery.Select(s => new { s.Id, s.Name }).ToListAsync();
         var nameCache = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (var s in suppliers)
         {
@@ -348,33 +359,66 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         await _periodLockService.EnsureDateAllowedAsync(request.Date.Date);
 
         await using var context = await _contextFactory.CreateDbContextAsync();
+        context.BypassBranchFilter = true;
         await using var transaction = await context.Database.BeginTransactionAsync();
         try
         {
             var username = _currentUserService.Username;
             var customerId = await ResolveCustomerIdAsync(context, request, username, nameCache);
-            var warehouse = await context.Warehouses.OrderBy(w => w.Id).FirstOrDefaultAsync()
-                ?? throw new InvalidOperationException("يجب إنشاء مخزن واحد على الأقل قبل إدخال الأرصدة الافتتاحية");
-
+            var warehouse = await ResolveWarehouseForOpeningAsync(context);
             var (currency, fxRate) = await MultiCurrencyFeatureGate.ApplyForWriteAsync(
                 context, request.Currency, request.FxRate, "رصيد افتتاحي عميل");
-            var invoiceNumber = await InvoiceNumberHelper.GenerateNextAsync(context, InvoiceType.Sale);
+            var amount = AccountingCurrencyHelper.NormalizeAmount(request.Amount, currency);
+
+            // لا تكرار: إن وُجد رصيد افتتاحي آجل بنفس العملة وغير مسدَّد — حدّثه
+            var existingOpening = await context.Invoices.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(i => !i.IsDeleted
+                                          && i.CustomerId == customerId
+                                          && i.InvoiceType == InvoiceType.Sale
+                                          && i.PaymentMethod == PaymentMethod.Credit
+                                          && i.Currency == currency
+                                          && i.Notes != null
+                                          && i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix));
+            if (existingOpening is not null)
+            {
+                if (existingOpening.PaidAmount > 0)
+                    return existingOpening;
+
+                existingOpening.TotalAmount = amount;
+                existingOpening.NetAmount = amount;
+                existingOpening.RemainingAmount = amount;
+                existingOpening.FxRate = fxRate;
+                existingOpening.Date = request.Date.Date;
+                existingOpening.Notes = OpeningCreditBalanceMarkers.BuildNotes(request.Notes);
+                existingOpening.IsCreditPaid = false;
+                existingOpening.UpdatedAt = DateTime.UtcNow;
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return existingOpening;
+            }
+
+            var branchId = _branchContext.CurrentBranchId ?? warehouse.BranchId;
+            if (branchId <= 0)
+                throw new InvalidOperationException("يجب اختيار فرع قبل إدخال أرصدة العملاء");
+
+            var invoiceNumber = await InvoiceNumberHelper.GenerateNextAsync(context, InvoiceType.Sale, branchId);
             var invoice = new Invoice
             {
                 InvoiceNumber = invoiceNumber,
                 InvoiceType = InvoiceType.Sale,
                 CustomerId = customerId,
                 WarehouseId = warehouse.Id,
+                BranchId = branchId,
                 PaymentMethod = PaymentMethod.Credit,
                 Currency = currency,
                 FxRate = fxRate,
-                TotalAmount = request.Amount,
+                TotalAmount = amount,
                 DiscountAmount = 0,
-                NetAmount = request.Amount,
+                NetAmount = amount,
                 RoundingAmount = 0,
                 RoundingType = RoundingType.RoundDown,
                 PaidAmount = 0,
-                RemainingAmount = request.Amount,
+                RemainingAmount = amount,
                 IsCreditPaid = false,
                 Date = request.Date.Date,
                 Notes = OpeningCreditBalanceMarkers.BuildNotes(request.Notes),
@@ -392,7 +436,7 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
                     Action = AuditAction.Add,
                     EntityName = nameof(Invoice),
                     EntityId = invoice.Id,
-                    NewValues = $"رصيد افتتاحي آجل للعميل #{customerId} بمبلغ {request.Amount:N0}",
+                    NewValues = $"رصيد افتتاحي آجل للعميل #{customerId} بمبلغ {request.Amount:N0} {currency}",
                     Timestamp = DateTime.UtcNow,
                     CreatedBy = username,
                     CreatedAt = DateTime.UtcNow
@@ -418,33 +462,65 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         await _periodLockService.EnsureDateAllowedAsync(request.Date.Date);
 
         await using var context = await _contextFactory.CreateDbContextAsync();
+        context.BypassBranchFilter = true;
         await using var transaction = await context.Database.BeginTransactionAsync();
         try
         {
             var username = _currentUserService.Username;
             var supplierId = await ResolveSupplierIdAsync(context, request, username, nameCache);
-            var warehouse = await context.Warehouses.OrderBy(w => w.Id).FirstOrDefaultAsync()
-                ?? throw new InvalidOperationException("يجب إنشاء مخزن واحد على الأقل قبل إدخال الأرصدة الافتتاحية");
-
+            var warehouse = await ResolveWarehouseForOpeningAsync(context);
             var (currency, fxRate) = await MultiCurrencyFeatureGate.ApplyForWriteAsync(
                 context, request.Currency, request.FxRate, "رصيد افتتاحي مورد");
-            var invoiceNumber = await InvoiceNumberHelper.GenerateNextAsync(context, InvoiceType.Purchase);
+            var amount = AccountingCurrencyHelper.NormalizeAmount(request.Amount, currency);
+
+            var existingOpening = await context.Invoices.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(i => !i.IsDeleted
+                                          && i.SupplierId == supplierId
+                                          && i.InvoiceType == InvoiceType.Purchase
+                                          && i.PaymentMethod == PaymentMethod.Credit
+                                          && i.Currency == currency
+                                          && i.Notes != null
+                                          && i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix));
+            if (existingOpening is not null)
+            {
+                if (existingOpening.PaidAmount > 0)
+                    return existingOpening;
+
+                existingOpening.TotalAmount = amount;
+                existingOpening.NetAmount = amount;
+                existingOpening.RemainingAmount = amount;
+                existingOpening.FxRate = fxRate;
+                existingOpening.Date = request.Date.Date;
+                existingOpening.Notes = OpeningCreditBalanceMarkers.BuildNotes(request.Notes);
+                existingOpening.IsCreditPaid = false;
+                existingOpening.UpdatedAt = DateTime.UtcNow;
+                await context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return existingOpening;
+            }
+
+            var branchId = _branchContext.CurrentBranchId ?? warehouse.BranchId;
+            if (branchId <= 0)
+                throw new InvalidOperationException("يجب اختيار فرع قبل إدخال أرصدة الموردين");
+
+            var invoiceNumber = await InvoiceNumberHelper.GenerateNextAsync(context, InvoiceType.Purchase, branchId);
             var invoice = new Invoice
             {
                 InvoiceNumber = invoiceNumber,
                 InvoiceType = InvoiceType.Purchase,
                 SupplierId = supplierId,
                 WarehouseId = warehouse.Id,
+                BranchId = branchId,
                 PaymentMethod = PaymentMethod.Credit,
                 Currency = currency,
                 FxRate = fxRate,
-                TotalAmount = request.Amount,
+                TotalAmount = amount,
                 DiscountAmount = 0,
-                NetAmount = request.Amount,
+                NetAmount = amount,
                 RoundingAmount = 0,
                 RoundingType = RoundingType.RoundDown,
                 PaidAmount = 0,
-                RemainingAmount = request.Amount,
+                RemainingAmount = amount,
                 IsCreditPaid = false,
                 Date = request.Date.Date,
                 Notes = OpeningCreditBalanceMarkers.BuildNotes(request.Notes),
@@ -462,7 +538,7 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
                     Action = AuditAction.Add,
                     EntityName = nameof(Invoice),
                     EntityId = invoice.Id,
-                    NewValues = $"رصيد افتتاحي آجل للمورد #{supplierId} بمبلغ {request.Amount:N0}",
+                    NewValues = $"رصيد افتتاحي آجل للمورد #{supplierId} بمبلغ {request.Amount:N0} {currency}",
                     Timestamp = DateTime.UtcNow,
                     CreatedBy = username,
                     CreatedAt = DateTime.UtcNow
@@ -480,6 +556,31 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         }
     }
 
+    private async Task<Warehouse> ResolveWarehouseForOpeningAsync(AppDbContext context)
+    {
+        var currentId = _branchContext.CurrentBranchId;
+        var allowed = _branchContext.AllowedBranchIds
+            .Where(id => id > 0)
+            .Distinct()
+            .ToHashSet();
+        if (allowed.Count == 0 && currentId is > 0)
+            allowed.Add(currentId.Value);
+
+        var query = context.Warehouses.IgnoreQueryFilters()
+            .Where(w => !w.IsDeleted);
+        if (allowed.Count > 0)
+            query = query.Where(w => allowed.Contains(w.BranchId));
+
+        var warehouse = await query
+            .OrderBy(w => currentId.HasValue && w.BranchId == currentId.Value ? 0 : 1)
+            .ThenBy(w => w.Id)
+            .FirstOrDefaultAsync();
+
+        return warehouse
+               ?? throw new InvalidOperationException(
+                   "يجب إنشاء مخزن واحد على الأقل لفرع مسموح قبل إدخال الأرصدة الافتتاحية");
+    }
+
     private static void ValidateRequest(OpeningPartyBalanceRequest request, string partyLabel)
     {
         if (request.Amount <= 0)
@@ -490,17 +591,21 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         request.Amount = AccountingCurrencyHelper.NormalizeAmount(request.Amount, request.Currency);
     }
 
-    private static async Task<int> ResolveCustomerIdAsync(
+    private async Task<int> ResolveCustomerIdAsync(
         AppDbContext context,
         OpeningPartyBalanceRequest request,
         string username,
         Dictionary<string, int>? nameCache)
     {
+        var branchId = _branchContext.CurrentBranchId
+                       ?? throw new InvalidOperationException("يجب اختيار فرع قبل إدخال أرصدة العملاء");
+
         if (request.PartyId is int existingId)
         {
-            var exists = await context.Customers.AnyAsync(c => c.Id == existingId);
+            var exists = await context.Customers.IgnoreQueryFilters()
+                .AnyAsync(c => c.Id == existingId && !c.IsDeleted && c.BranchId == branchId);
             if (!exists)
-                throw new InvalidOperationException("العميل المحدد غير موجود");
+                throw new InvalidOperationException("العميل المحدد غير موجود في الفرع الحالي");
             return existingId;
         }
 
@@ -510,7 +615,8 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         if (nameCache is not null && compact.Length > 0 && nameCache.TryGetValue(compact, out var cachedId))
             return cachedId;
 
-        var exact = await context.Customers.FirstOrDefaultAsync(c => c.Name == name);
+        var exact = await context.Customers.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(c => !c.IsDeleted && c.BranchId == branchId && c.Name == name);
         if (exact is not null)
         {
             if (nameCache is not null)
@@ -524,7 +630,10 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
 
         if (compact.Length > 0 && nameCache is null)
         {
-            var candidates = await context.Customers.Select(c => new { c.Id, c.Name }).ToListAsync();
+            var candidates = await context.Customers.IgnoreQueryFilters()
+                .Where(c => !c.IsDeleted && c.BranchId == branchId)
+                .Select(c => new { c.Id, c.Name })
+                .ToListAsync();
             var match = candidates.FirstOrDefault(c => ArabicNameNormalizer.Compact(c.Name) == compact);
             if (match is not null)
                 return match.Id;
@@ -535,6 +644,7 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
             Name = name,
             Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim(),
             FileNumber = string.IsNullOrWhiteSpace(request.FileNumber) ? null : request.FileNumber.Trim(),
+            BranchId = branchId,
             CreatedBy = username,
             CreatedAt = DateTime.UtcNow
         };
@@ -547,17 +657,21 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         return newCustomer.Id;
     }
 
-    private static async Task<int> ResolveSupplierIdAsync(
+    private async Task<int> ResolveSupplierIdAsync(
         AppDbContext context,
         OpeningPartyBalanceRequest request,
         string username,
         Dictionary<string, int>? nameCache)
     {
+        var branchId = _branchContext.CurrentBranchId
+                       ?? throw new InvalidOperationException("يجب اختيار فرع قبل إدخال أرصدة الموردين");
+
         if (request.PartyId is int existingId)
         {
-            var exists = await context.Suppliers.AnyAsync(s => s.Id == existingId);
+            var exists = await context.Suppliers.IgnoreQueryFilters()
+                .AnyAsync(s => s.Id == existingId && !s.IsDeleted && s.BranchId == branchId);
             if (!exists)
-                throw new InvalidOperationException("المورد المحدد غير موجود");
+                throw new InvalidOperationException("المورد المحدد غير موجود في الفرع الحالي");
             return existingId;
         }
 
@@ -567,7 +681,8 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         if (nameCache is not null && compact.Length > 0 && nameCache.TryGetValue(compact, out var cachedId))
             return cachedId;
 
-        var exact = await context.Suppliers.FirstOrDefaultAsync(s => s.Name == name);
+        var exact = await context.Suppliers.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(s => !s.IsDeleted && s.BranchId == branchId && s.Name == name);
         if (exact is not null)
         {
             if (nameCache is not null)
@@ -581,7 +696,10 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
 
         if (compact.Length > 0 && nameCache is null)
         {
-            var candidates = await context.Suppliers.Select(s => new { s.Id, s.Name }).ToListAsync();
+            var candidates = await context.Suppliers.IgnoreQueryFilters()
+                .Where(s => !s.IsDeleted && s.BranchId == branchId)
+                .Select(s => new { s.Id, s.Name })
+                .ToListAsync();
             var match = candidates.FirstOrDefault(s => ArabicNameNormalizer.Compact(s.Name) == compact);
             if (match is not null)
                 return match.Id;
@@ -591,6 +709,7 @@ public class OpeningPartyBalanceService : IOpeningPartyBalanceService
         {
             Name = name,
             Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim(),
+            BranchId = branchId,
             CreatedBy = username,
             CreatedAt = DateTime.UtcNow
         };

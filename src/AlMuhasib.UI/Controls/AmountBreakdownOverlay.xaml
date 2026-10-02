@@ -105,7 +105,7 @@
                                                            Visibility="{Binding Description, Converter={StaticResource NullToCollapsed}}"/>
                                             </StackPanel>
                                             <TextBlock Grid.Column="2" VerticalAlignment="Center"
-                                                       Text="{Binding Amount, Converter={StaticResource CurrencyFormat}}"
+                                                       Text="{Binding FormattedAmount}"
                                                        FontSize="16" FontWeight="Bold" Foreground="#00695C"
                                                        Margin="12,0,0,0"/>
                                         </Grid>
@@ -137,7 +137,7 @@
                                                 </StackPanel>
                                                 <TextBlock Grid.Column="1" VerticalAlignment="Center"
                                                            FontSize="14" FontWeight="Bold" Foreground="#00695C"
-                                                           Text="{Binding Amount, Converter={StaticResource CurrencyFormat}}"
+                                                           Text="{Binding FormattedAmount}"
                                                            Visibility="{Binding ShowAmount, Converter={StaticResource BoolVis}}"/>
                                             </Grid>
                                         </Border>
@@ -167,9 +167,23 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,16,0">
                             <TextBlock Text="{Binding ResultLabel}" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                            <TextBlock Text="{Binding ResultAmount, Converter={StaticResource CurrencyFormat}}"
+                            <TextBlock Text="{Binding ResultAmountText}"
                                        FontSize="26" FontWeight="Bold" Foreground="#004D40" Margin="0,2,0,0"
                                        TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,6,0,0"
+                                        Visibility="{Binding ShowResultUsd, Converter={StaticResource BoolVis}}">
+                                <Border Background="{DynamicResource DashboardKpiTealLightBrush}" CornerRadius="10" Padding="10,4">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding ResultLabelUsd}" FontSize="11"
+                                                   Foreground="{DynamicResource DashboardKpiTealBrush}"
+                                                   VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding ResultAmountUsdText}"
+                                                   FontSize="14" FontWeight="Bold"
+                                                   Foreground="{DynamicResource DashboardKpiTealBrush}"
+                                                   VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
                         </StackPanel>
                         <Button Grid.Column="1" VerticalAlignment="Center" Content="إغلاق"
                                 Style="{StaticResource PrimaryButton}"

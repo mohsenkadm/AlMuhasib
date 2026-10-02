@@ -104,19 +104,32 @@ public sealed class MainServerDiscoveryResponder : IAsyncDisposable
     {
         if (_cts is not null)
         {
-            await _cts.CancelAsync();
-            _cts.Dispose();
+            try { await _cts.CancelAsync(); } catch { /* ignore */ }
+            try { _cts.Dispose(); } catch { /* ignore */ }
             _cts = null;
         }
 
-        _client?.Dispose();
+        try { _client?.Dispose(); } catch { /* ignore */ }
         _client = null;
 
         if (_listenTask is not null)
         {
-            try { await _listenTask; } catch { /* ignore */ }
+            try
+            {
+                var finished = await Task.WhenAny(_listenTask, Task.Delay(TimeSpan.FromSeconds(2)));
+                if (finished == _listenTask)
+                    await _listenTask;
+            }
+            catch
+            {
+                // ignore listen-loop errors during shutdown
+            }
+
             _listenTask = null;
         }
+
+        _buildServerInfo = null;
+        _shouldRespond = null;
     }
 
     public async ValueTask DisposeAsync() => await StopAsync();

@@ -13,6 +13,7 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class SupplierStatementViewModel : ReportViewModelBase
 {
     private readonly IWhatsAppShareService _whatsAppShare;
+    private readonly IFeatureFlagService _featureFlags;
 
     [ObservableProperty] private string _supplierName = "—";
     [ObservableProperty] private string _totalDebit = "0";
@@ -30,10 +31,11 @@ public partial class SupplierStatementViewModel : ReportViewModelBase
 
     public SupplierStatementViewModel(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService,
-        IWhatsAppShareService whatsAppShare)
+        IWhatsAppShareService whatsAppShare, IFeatureFlagService featureFlags)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
         _whatsAppShare = whatsAppShare;
+        _featureFlags = featureFlags;
         PageTitle = "كشف حساب مورد";
     }
 
@@ -56,7 +58,7 @@ public partial class SupplierStatementViewModel : ReportViewModelBase
             TotalDebit = FormatCurrency(result.TotalDebit);
             TotalCredit = FormatCurrency(result.TotalCredit);
             Balance = FormatCurrency(result.Balance);
-            ShowBalanceUsd = result.BalanceUsd != 0;
+            ShowBalanceUsd = _featureFlags.MultiCurrency || result.BalanceUsd != 0;
             BalanceUsd = ShowBalanceUsd ? $"$ {result.BalanceUsd:N2}" : "—";
             InvoiceCount = result.InvoiceCount.ToString("N0");
 

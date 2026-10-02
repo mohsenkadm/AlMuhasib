@@ -61,6 +61,7 @@ public partial class MainWindowViewModel
         return item.ViewModelType switch
         {
             var t when t == typeof(WarehouseTransferViewModel) => flags.WarehouseTransfers,
+            var t when t == typeof(WarehouseTransfersReportViewModel) => flags.WarehouseTransfers,
             var t when t == typeof(DriversViewModel) => flags.WarehouseInvoiceAndDriver,
             var t when t == typeof(PackagingTypesViewModel) => flags.UnitsOfMeasure,
             var t when t == typeof(PackagingStockReportViewModel) => flags.UnitsOfMeasure,
@@ -83,6 +84,39 @@ public partial class MainWindowViewModel
             var t when t == typeof(SalesRepCustomersReportViewModel) => flags.SalesRepresentatives,
             _ => true
         };
+    }
+
+    /// <summary>
+    /// شاشات يتحكم فيها Feature Flag — إخفاؤها عبر تخصيص القائمة كان يبقيها مخفية
+    /// حتى بعد تفعيل الميزة؛ بوابة الميزة وحدها تقرّر الظهور.
+    /// </summary>
+    private static bool IsControlledByFeatureFlag(NavigationMenuItem item)
+    {
+        var allOff = new BusinessFeatureFlags
+        {
+            SettleCreditInvoicesInReports = false,
+            InvestorProfitEligibility15Days = false
+        };
+        return !IsFeatureFlagVisible(item, allOff);
+    }
+
+    /// <summary>يزيل مفاتيح الشاشات المرتبطة بالميزات من HiddenMenuScreens (تنظيف تلوث التخصيص).</summary>
+    public void PruneFeatureGatedHiddenMenus()
+    {
+        var hidden = _userPreferences.Current.HiddenMenuScreens;
+        if (hidden.Count == 0) return;
+
+        var featureKeys = FlattenMenuItems()
+            .Where(IsControlledByFeatureFlag)
+            .Select(GetMenuPreferenceKey)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        if (featureKeys.Count == 0) return;
+
+        var pruned = hidden.Where(k => !featureKeys.Contains(k)).ToList();
+        if (pruned.Count == hidden.Count) return;
+
+        _userPreferences.Update(p => p.HiddenMenuScreens = pruned);
     }
 
     [RelayCommand]
@@ -139,11 +173,19 @@ public partial class MainWindowViewModel
     private void BuildMenuVisibilityOptions()
     {
         MenuVisibilityOptions.Clear();
+        var flags = _userPreferences.Current.FeatureFlags;
+        var hidden = _userPreferences.Current.HiddenMenuScreens;
         foreach (var item in FlattenMenuItems())
         {
             if (!IsCustomizableMenuItem(item))
                 continue;
             if (!CanMenuBeShownByPermissions(item))
+                continue;
+            // لا تُدرج شاشات الميزات المعطّلة — حفظ التخصيص كان يضيفها لـ HiddenMenuScreens بالخطأ
+            if (!IsFeatureFlagVisible(item, flags))
+                continue;
+            // شاشات الميزات تظهر/تختفي مع العلم فقط — ليست ضمن تخصيص القائمة
+            if (IsControlledByFeatureFlag(item))
                 continue;
 
             var key = GetMenuPreferenceKey(item);
@@ -153,7 +195,7 @@ public partial class MainWindowViewModel
                 PreferenceKey = key,
                 Title = item.Title,
                 Icon = item.Icon,
-                IsVisible = item.IsVisible,
+                IsVisible = !hidden.Contains(key),
                 IsPinned = _userPreferences.Current.PinnedMenuScreens.Contains(key)
             });
         }

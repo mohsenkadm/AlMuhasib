@@ -70,6 +70,7 @@ public static class ReportMenuCatalog
             ("حركة صندوق / قاصة", PackIconKind.CashRegister, typeof(CashBoxMovementReportViewModel), ScreenPermissionRegistry.Reports),
             ("ملخص أرصدة نقدية", PackIconKind.CashMultiple, typeof(CashBalancesSummaryReportViewModel), ScreenPermissionRegistry.Reports),
             ("تقرير التحويلات", PackIconKind.SwapHorizontal, typeof(TransfersReportViewModel), ScreenPermissionRegistry.Reports),
+            ("تقرير نقل المخازن", PackIconKind.TruckDelivery, typeof(WarehouseTransfersReportViewModel), ScreenPermissionRegistry.Reports),
             ("تقييم المخزون بالتكلفة", PackIconKind.CashPlus, typeof(InventoryValuationReportViewModel), ScreenPermissionRegistry.Reports),
             ("ربح المنتجات في المخزن", PackIconKind.ChartLineVariant, typeof(WarehouseProductProfitReportViewModel), ScreenPermissionRegistry.Reports),
             ("جرد المخزون", PackIconKind.PackageVariant, typeof(StockTakingReportViewModel), ScreenPermissionRegistry.Reports),

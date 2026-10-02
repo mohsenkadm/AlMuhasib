@@ -11,7 +11,9 @@ public class ProductPriceConfiguration : IEntityTypeConfiguration<ProductPrice>
         builder.ToTable("ProductPrices");
 
         builder.Property(x => x.SalePrice).HasPrecision(18, 2);
+        builder.Property(x => x.SalePriceUsd).HasPrecision(18, 2);
         builder.Property(x => x.PurchasePrice).HasPrecision(18, 2);
+        builder.Property(x => x.PurchasePriceUsd).HasPrecision(18, 2);
 
         builder.HasIndex(x => new { x.ProductId, x.PricingTypeId })
             .IsUnique()

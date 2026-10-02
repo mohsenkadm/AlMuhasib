@@ -103,6 +103,61 @@ public static class ProductCostHelper
                 g => g.Select(ToSignedPurchaseItemInIqd).ToList());
     }
 
+    /// <summary>
+    /// تكلفة البضاعة المباعة للفترة [fromInclusive, toExclusive) بمتوسط التكلفة.
+    /// </summary>
+    public static async Task<decimal> CalculateCogsAsync(
+        AppDbContext context,
+        DateTime? fromInclusive,
+        DateTime? toExclusive)
+    {
+        var soldItemsQuery = context.InvoiceItems
+            .Include(ii => ii.Invoice)
+            .Where(ii => ii.ProductId != null
+                         && ii.Invoice != null
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale
+                             || ii.Invoice.InvoiceType == InvoiceType.Installment
+                             || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
+
+        if (fromInclusive.HasValue)
+            soldItemsQuery = soldItemsQuery.Where(ii => ii.Invoice!.Date >= fromInclusive.Value);
+        if (toExclusive.HasValue)
+            soldItemsQuery = soldItemsQuery.Where(ii => ii.Invoice!.Date < toExclusive.Value);
+
+        var soldItems = await soldItemsQuery.ToListAsync();
+        if (soldItems.Count == 0)
+            return 0;
+
+        var productIds = soldItems.Select(ii => ii.ProductId!.Value).Distinct().ToList();
+        var stocks = await context.WarehouseStocks
+            .Where(ws => productIds.Contains(ws.ProductId))
+            .ToListAsync();
+
+        var purchasesByProduct = await GetPurchaseItemsByProductAsync(context, productIds);
+        if (toExclusive.HasValue)
+        {
+            purchasesByProduct = purchasesByProduct.ToDictionary(
+                kv => kv.Key,
+                kv => kv.Value
+                    .Where(ii => ii.Invoice == null || ii.Invoice.Date < toExclusive.Value)
+                    .ToList());
+        }
+
+        decimal cogs = 0;
+        foreach (var sold in soldItems)
+        {
+            var productId = sold.ProductId!.Value;
+            var productPurchases = purchasesByProduct.GetValueOrDefault(productId) ?? [];
+            var avgCost = ComputeAverageUnitCostForProduct(productPurchases, stocks, productId);
+            var qty = sold.Invoice!.InvoiceType == InvoiceType.SaleReturn
+                ? -Math.Abs(sold.Quantity)
+                : sold.Quantity;
+            cogs += Math.Round(qty * avgCost, 0);
+        }
+
+        return cogs;
+    }
+
     /// <summary>تحويل بند شراء إلى وحدة تكلفة بالدينار (للمتوسط فقط).</summary>
     public static InvoiceItem ToSignedPurchaseItemInIqd(InvoiceItem item)
     {

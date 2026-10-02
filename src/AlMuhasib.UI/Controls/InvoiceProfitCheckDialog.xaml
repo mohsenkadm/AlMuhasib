@@ -260,7 +260,7 @@
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-                                        <Setter Property="Text" Value="{Binding TotalProfit, StringFormat='{}{0:N0} د.ع'}"/>
+                                        <Setter Property="Text" Value="{Binding TotalProfitLabel}"/>
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding IsOverallLoss}" Value="True">
                                                 <Setter Property="Foreground" Value="#C62828"/>

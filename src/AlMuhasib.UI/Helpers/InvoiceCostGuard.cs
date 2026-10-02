@@ -1,9 +1,8 @@
 using AlMuhasib.Core;
-using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
-using AlMuhasib.Infrastructure.Services;
 using AlMuhasib.UI.Models;
 
 namespace AlMuhasib.UI.Helpers;
@@ -29,7 +28,8 @@ public sealed class InvoiceCostGuard
 
     public async Task<IReadOnlyList<BelowCostLine>> FindBelowCostLinesAsync(
         IEnumerable<InvoiceItemRow> items,
-        bool discountEnabled)
+        bool discountEnabled,
+        AccountingCurrency currency = AccountingCurrency.IQD)
     {
         var rows = items
             .Where(i => i.ProductId is > 0 && !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity > 0 && !i.IsOfferGift)
@@ -38,7 +38,18 @@ public sealed class InvoiceCostGuard
             return [];
 
         var productIds = rows.Select(r => r.ProductId!.Value).Distinct().ToList();
-        var costs = await ResolveCostsAsync(productIds);
+        var pricingByProduct = rows
+            .GroupBy(r => r.ProductId!.Value)
+            .ToDictionary(g => g.Key, g => g.Select(r => r.PricingTypeId).FirstOrDefault(id => id is > 0));
+
+        var costs = await InvoiceDocumentCostResolver.ResolveProductCostsAsync(
+            _unitOfWork,
+            _productPriceService,
+            _pricingEnabled,
+            productIds,
+            currency,
+            pricingByProduct);
+
         var result = new List<BelowCostLine>();
 
         foreach (var row in rows)
@@ -61,7 +72,7 @@ public sealed class InvoiceCostGuard
             {
                 result.Add(new BelowCostLine(
                     row.ItemName,
-                    Math.Round(netUnitPrice, 0),
+                    AccountingCurrencyHelper.NormalizeAmount(netUnitPrice, currency),
                     cost,
                     row.DiscountPercent));
             }
@@ -70,68 +81,12 @@ public sealed class InvoiceCostGuard
         return result;
     }
 
-    public static string FormatBelowCostMessage(IReadOnlyList<BelowCostLine> lines)
+    public static string FormatBelowCostMessage(
+        IReadOnlyList<BelowCostLine> lines,
+        AccountingCurrency currency = AccountingCurrency.IQD)
     {
         var body = string.Join("\n", lines.Select(l =>
-            $"• {l.ItemName}: سعر البيع {l.UnitPrice:N0} د.ع < التكلفة {l.UnitCost:N0} د.ع"));
+            $"• {l.ItemName}: سعر البيع {AccountingCurrencyHelper.Format(l.UnitPrice, currency)} < التكلفة {AccountingCurrencyHelper.Format(l.UnitCost, currency)}"));
         return $"المواد التالية تُباع بأقل من التكلفة:\n{body}";
-    }
-
-    private async Task<Dictionary<int, decimal>> ResolveCostsAsync(IReadOnlyList<int> productIds)
-    {
-        var result = new Dictionary<int, decimal>();
-        if (productIds.Count == 0)
-            return result;
-
-        var stocks = (await _unitOfWork.WarehouseStocks.FindAsync(s => productIds.Contains(s.ProductId))).ToList();
-        var allItems = (await _unitOfWork.InvoiceItems.FindAsync(i =>
-            i.ProductId != null && productIds.Contains(i.ProductId.Value))).ToList();
-        var purchaseInvoiceIds = (await _unitOfWork.Invoices.FindAsync(i => i.InvoiceType == InvoiceType.Purchase))
-            .Select(i => i.Id)
-            .ToHashSet();
-        var purchaseItems = allItems
-            .Where(i => i.ProductId is not null && purchaseInvoiceIds.Contains(i.InvoiceId))
-            .ToList();
-
-        Dictionary<int, decimal>? catalogPurchase = null;
-        if (_pricingEnabled && _productPriceService is not null)
-        {
-            var prices = await _productPriceService.GetByProductIdsAsync(productIds);
-            catalogPurchase = prices
-                .GroupBy(p => p.ProductId)
-                .ToDictionary(
-                    g => g.Key,
-                    g =>
-                    {
-                        var preferred = g.FirstOrDefault(p => p.PricingType?.IsDefault == true) ?? g.First();
-                        return preferred.PurchasePrice;
-                    });
-        }
-
-        foreach (var productId in productIds)
-        {
-            if (catalogPurchase is not null
-                && catalogPurchase.TryGetValue(productId, out var catalogCost)
-                && catalogCost > 0)
-            {
-                result[productId] = catalogCost;
-                continue;
-            }
-
-            var lastPurchase = purchaseItems
-                .Where(i => i.ProductId == productId && i.UnitPrice > 0)
-                .OrderByDescending(i => i.Id)
-                .FirstOrDefault();
-            if (lastPurchase is not null)
-            {
-                result[productId] = lastPurchase.UnitPrice;
-                continue;
-            }
-
-            result[productId] = Math.Round(
-                ProductCostHelper.ComputeAverageUnitCostForProduct(purchaseItems, stocks, productId), 0);
-        }
-
-        return result;
     }
 }

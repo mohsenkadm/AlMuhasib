@@ -1,3 +1,4 @@
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Helpers;
@@ -76,6 +77,7 @@ internal static class SyncMapper
         var capitalEntries = await db.CapitalEntries.IgnoreQueryFilters().ToListAsync(ct);
         var customerAttachments = await db.CustomerAttachments.IgnoreQueryFilters().ToListAsync(ct);
         var printBranding = await db.PrintBrandingSettings.IgnoreQueryFilters().ToListAsync(ct);
+        var currencyExchanges = await db.CurrencyExchanges.IgnoreQueryFilters().ToListAsync(ct);
 
         var catMap = categories.ToDictionary(c => c.Id, c => c.SyncId);
         var changedStocks = warehouseStocks.Where(ShouldSync).ToList();
@@ -217,6 +219,9 @@ internal static class SyncMapper
         bundle.Transfers = changedTransfers
             .Select(t => MapTransferSafe(t, cbMap, bankMap))
             .Where(t => t is not null).Cast<TransferSyncDto>().ToList();
+        bundle.CurrencyExchanges = currencyExchanges.Where(ShouldSync)
+            .Where(x => cbMap.ContainsKey(x.FromCashBoxId) && cbMap.ContainsKey(x.ToCashBoxId))
+            .Select(x => MapCurrencyExchange(x, cbMap)).ToList();
         bundle.InvestorTransactions = investorTransactions.Where(ShouldSync)
             .Where(t => investorMap.ContainsKey(t.InvestorId))
             .Select(t => MapInvestorTransaction(t, investorMap)).ToList();
@@ -282,6 +287,7 @@ internal static class SyncMapper
         await UpsertVouchersAsync(db, data.Vouchers, custBySync, supBySync, invBySync, cbBySync, bankBySync, ct);
         await UpsertExpensesAsync(db, data.Expenses, etBySync, cbBySync, ct);
         await UpsertTransfersAsync(db, data.Transfers, cbBySync, bankBySync, ct);
+        await UpsertCurrencyExchangesAsync(db, data.CurrencyExchanges, cbBySync, ct);
         await UpsertInvestorTransactionsAsync(db, data.InvestorTransactions, invBySync, ct);
         var distMap = await UpsertProfitDistributionsAsync(db, data.ProfitDistributions, ct);
         await UpsertProfitDistributionDetailsAsync(db, data.ProfitDistributionDetails, distMap, invBySync, ct);
@@ -392,7 +398,9 @@ internal static class SyncMapper
         d.ProductSyncId = products[p.ProductId];
         d.PricingTypeSyncId = types[p.PricingTypeId];
         d.SalePrice = p.SalePrice;
+        d.SalePriceUsd = p.SalePriceUsd;
         d.PurchasePrice = p.PurchasePrice;
+        d.PurchasePriceUsd = p.PurchasePriceUsd;
         return d;
     }
     private static BusinessSettingsSyncDto MapBusinessSettings(BusinessSettings s)
@@ -538,6 +546,7 @@ internal static class SyncMapper
         d.ReconciledBy = v.ReconciledBy;
         d.Date = v.Date;
         d.Notes = v.Notes;
+        d.SettlementCurrency = CustomerBalanceHelper.GetFxSettlementCurrency(v.Notes);
         return d;
     }
     private static VoucherSyncDto? MapVoucherSafe(Voucher v, Dictionary<int, Guid> cust, Dictionary<int, Guid> sup, Dictionary<int, Guid> inv, Dictionary<int, Guid> cb, Dictionary<int, Guid> bank, Dictionary<int, Guid>? invoices = null, Dictionary<int, Guid>? installments = null)
@@ -557,6 +566,22 @@ internal static class SyncMapper
         d.ReconciledAt = v.ReconciledAt;
         d.ReconciledBy = v.ReconciledBy;
         d.Date = v.Date; d.Notes = v.Notes;
+        d.SettlementCurrency = CustomerBalanceHelper.GetFxSettlementCurrency(v.Notes);
+        return d;
+    }
+    private static CurrencyExchangeSyncDto MapCurrencyExchange(CurrencyExchange x, Dictionary<int, Guid> cb)
+    {
+        var d = new CurrencyExchangeSyncDto();
+        CopyBase(x, d);
+        d.FromCashBoxSyncId = cb[x.FromCashBoxId];
+        d.ToCashBoxSyncId = cb[x.ToCashBoxId];
+        d.FromCurrency = x.FromCurrency;
+        d.ToCurrency = x.ToCurrency;
+        d.FromAmount = x.FromAmount;
+        d.ToAmount = x.ToAmount;
+        d.FxRate = x.FxRate;
+        d.Date = x.Date;
+        d.Notes = x.Notes;
         return d;
     }
     private static ExpenseSyncDto MapExpense(Expense e, Dictionary<int, Guid> et, Dictionary<int, Guid> cb)
@@ -716,7 +741,9 @@ internal static class SyncMapper
             entity.ProductId = productId;
             entity.PricingTypeId = pricingTypeId;
             entity.SalePrice = dto.SalePrice;
+            entity.SalePriceUsd = dto.SalePriceUsd;
             entity.PurchasePrice = dto.PurchasePrice;
+            entity.PurchasePriceUsd = dto.PurchasePriceUsd;
         }
         await db.SaveChangesAsync(ct);
     }
@@ -999,7 +1026,33 @@ internal static class SyncMapper
             entity.IsReconciled = dto.IsReconciled;
             entity.ReconciledAt = dto.ReconciledAt;
             entity.ReconciledBy = dto.ReconciledBy;
-            entity.Date = dto.Date; entity.Notes = dto.Notes;
+            entity.Date = dto.Date;
+            entity.Notes = dto.SettlementCurrency is { } settle
+                ? CustomerBalanceHelper.MarkFxSettlement(dto.Notes, settle)
+                : dto.Notes;
+        }
+        await db.SaveChangesAsync(ct);
+    }
+
+    private static async Task UpsertCurrencyExchangesAsync(AppDbContext db, List<CurrencyExchangeSyncDto> items, Dictionary<Guid, int> cb, CancellationToken ct)
+    {
+        foreach (var dto in items)
+        {
+            if (!cb.TryGetValue(dto.FromCashBoxSyncId, out var fromId) || !cb.TryGetValue(dto.ToCashBoxSyncId, out var toId))
+                continue;
+            var entity = await FindBySyncIdAsync(db.CurrencyExchanges, dto.SyncId, ct) ?? new CurrencyExchange();
+            if (ShouldRejectIncoming(entity, dto)) continue;
+            if (entity.Id == 0) db.CurrencyExchanges.Add(entity);
+            ApplyBase(entity, dto);
+            entity.FromCashBoxId = fromId;
+            entity.ToCashBoxId = toId;
+            entity.FromCurrency = dto.FromCurrency;
+            entity.ToCurrency = dto.ToCurrency;
+            entity.FromAmount = dto.FromAmount;
+            entity.ToAmount = dto.ToAmount;
+            entity.FxRate = dto.FxRate;
+            entity.Date = dto.Date;
+            entity.Notes = dto.Notes;
         }
         await db.SaveChangesAsync(ct);
     }

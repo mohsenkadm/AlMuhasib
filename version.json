@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.31",
-  "releaseDate": "2026-09-25",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.31/AlMuhasib-1.14.31.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.31/Qayd-Setup-1.14.31.exe",
-  "sha256": "EDEFE962A60240486FBB52771D1EB8005904DBBC9DDEE7CC8690D35CBEF8F129",
-  "sizeBytes": 182919601,
-  "releaseNotes": "شاشة مقسمة وتحسين الوضع الداكن وترحيل طباعة الوحدات — تحديث اختياري آمن مع ترحيلات إضافية آمنة",
+  "version": "1.14.32",
+  "releaseDate": "2026-10-02",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.32/AlMuhasib-1.14.32.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.32/Qayd-Setup-1.14.32.exe",
+  "sha256": "3FED0308BE0F3C6D98F46629F4DE539132365B77CC733D20DA8C708408AB0385",
+  "sizeBytes": 184585827,
+  "releaseNotes": "تعدد العملات دينار/دولار والفروع ومبادلة العملة — تحديث اختياري آمن مع ترحيلات إضافية",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

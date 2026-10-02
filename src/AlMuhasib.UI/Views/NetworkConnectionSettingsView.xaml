@@ -23,6 +23,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" CornerRadius="18" Margin="0,0,0,18" Padding="24,22">
@@ -95,8 +96,35 @@
                 </StackPanel>
             </Border>
 
-            <!-- Main server settings -->
+            <!-- Shared remote SQL Server -->
             <Border Grid.Row="2" Style="{StaticResource NetworkSectionCard}"
+                    Visibility="{Binding IsSharedServer, Converter={StaticResource BoolVis}}">
+                <StackPanel>
+                    <TextBlock Text="سلسلة اتصال السيرفر المشترك" FontSize="18" FontWeight="Bold" Margin="0,0,0,14"/>
+                    <TextBlock Text="الصق Connection String لقاعدة البيانات المرفوعة على سيرفر SQL. نفس السلسلة على كل الحاسبات."
+                               TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12"/>
+
+                    <TextBox Text="{Binding SharedConnectionString, UpdateSourceTrigger=PropertyChanged}"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             MinHeight="100"
+                             VerticalScrollBarVisibility="Auto"
+                             materialDesign:HintAssist.Hint="Server=...;Database=...;User Id=...;Password=...;"
+                             Margin="0,0,0,16"/>
+
+                    <UniformGrid Columns="2">
+                        <Button Content="اختبار الاتصال" Command="{Binding TestConnectionCommand}"
+                                Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,8,0"/>
+                        <Button Content="حفظ الإعدادات" Command="{Binding SaveSharedServerSettingsCommand}"
+                                Style="{StaticResource MaterialDesignRaisedButton}" Margin="8,0,0,0"/>
+                    </UniformGrid>
+
+                    <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#607D8B" Margin="0,12,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Main server settings -->
+            <Border Grid.Row="3" Style="{StaticResource NetworkSectionCard}"
                     Visibility="{Binding ShowMainServerSettings, Converter={StaticResource BoolVis}}">
                 <StackPanel>
                     <TextBlock Text="إعدادات الحاسبة الرئيسية" FontSize="18" FontWeight="Bold" Margin="0,0,0,14"/>
@@ -122,7 +150,7 @@
                 </StackPanel>
             </Border>
 
-            <TextBlock Grid.Row="2" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#607D8B" Margin="0,8,0,0"
+            <TextBlock Grid.Row="3" Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="#607D8B" Margin="0,8,0,0"
                        Visibility="{Binding IsBranchClient, Converter={StaticResource BoolVis}}"/>
         </Grid>
     </ScrollViewer>

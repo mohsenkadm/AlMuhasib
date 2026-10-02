@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 
@@ -14,6 +15,7 @@ internal static class InvoiceDetailMapper
         string? paymentMethodOverride = null,
         decimal? companyFeeOverride = null)
     {
+        var currency = invoice.Currency;
         var payment = paymentMethodOverride ?? PaymentMethodLabel(invoice.PaymentMethod);
         var companyFee = companyFeeOverride ?? invoice.CompanyFeeAmount;
         var plan = invoice.InstallmentPlans.FirstOrDefault();
@@ -29,7 +31,7 @@ internal static class InvoiceDetailMapper
                 {
                     Number = i + 1,
                     DueDateText = inst.DueDate.ToString("yyyy/MM/dd"),
-                    AmountText = $"{inst.Amount:N0} د.ع",
+                    AmountText = AccountingCurrencyHelper.Format(inst.Amount, currency),
                     StatusText = inst.Status switch
                     {
                         InstallmentStatus.Paid => "مسدد",
@@ -66,22 +68,34 @@ internal static class InvoiceDetailMapper
             PaymentMethod = payment,
             Notes = string.IsNullOrWhiteSpace(invoice.Notes) ? null : invoice.Notes.Trim(),
             HasNotes = !string.IsNullOrWhiteSpace(invoice.Notes),
-            SubtotalText = $"{invoice.TotalAmount:N0} د.ع",
-            DiscountText = invoice.DiscountAmount > 0 ? $"{invoice.DiscountAmount:N0} د.ع" : "—",
-            RoundingText = invoice.RoundingAmount != 0 ? $"{invoice.RoundingAmount:N0} د.ع" : "—",
-            TransportFeeText = invoice.TransportFeeAmount > 0 ? $"{invoice.TransportFeeAmount:N0} د.ع" : null,
-            GrandTotalText = $"{invoice.NetAmount:N0} د.ع",
-            CompanyFeeText = companyFee > 0 ? $"{companyFee:N0} د.ع" : null,
+            SubtotalText = AccountingCurrencyHelper.Format(invoice.TotalAmount, currency),
+            DiscountText = invoice.DiscountAmount > 0
+                ? AccountingCurrencyHelper.Format(invoice.DiscountAmount, currency)
+                : "—",
+            RoundingText = invoice.RoundingAmount != 0
+                ? AccountingCurrencyHelper.Format(invoice.RoundingAmount, currency)
+                : "—",
+            TransportFeeText = invoice.TransportFeeAmount > 0
+                ? AccountingCurrencyHelper.Format(invoice.TransportFeeAmount, currency)
+                : null,
+            GrandTotalText = AccountingCurrencyHelper.Format(invoice.NetAmount, currency),
+            CompanyFeeText = companyFee > 0
+                ? AccountingCurrencyHelper.Format(companyFee, currency)
+                : null,
             HasCreditInfo = invoice.PaymentMethod == PaymentMethod.Credit,
-            PaidAmountText = invoice.PaymentMethod == PaymentMethod.Credit ? $"{invoice.PaidAmount:N0} د.ع" : null,
-            RemainingAmountText = invoice.PaymentMethod == PaymentMethod.Credit ? $"{invoice.RemainingAmount:N0} د.ع" : null,
+            PaidAmountText = invoice.PaymentMethod == PaymentMethod.Credit
+                ? AccountingCurrencyHelper.Format(invoice.PaidAmount, currency)
+                : null,
+            RemainingAmountText = invoice.PaymentMethod == PaymentMethod.Credit
+                ? AccountingCurrencyHelper.Format(invoice.RemainingAmount, currency)
+                : null,
             CreditStatusText = invoice.PaymentMethod == PaymentMethod.Credit
                 ? invoice.IsCreditPaid ? "مسددة بالكامل" : "غير مسددة"
                 : null,
             HasInstallments = plan is not null,
             InstallmentSummaryText = plan is null
                 ? null
-                : $"{plan.NumberOfInstallments} قسط × {plan.InstallmentAmount:N0} د.ع",
+                : $"{plan.NumberOfInstallments} قسط × {AccountingCurrencyHelper.Format(plan.InstallmentAmount, currency)}",
             Items = new(invoice.Items.OrderBy(i => i.Id).Select((item, index) => new InvoiceDetailItemRow
             {
                 Number = index + 1,
@@ -89,12 +103,15 @@ internal static class InvoiceDetailMapper
                     item.ItemName,
                     item.CustomFieldsJson),
                 QuantityText = item.Quantity.ToString("N0"),
-                UnitPriceText = $"{item.UnitPrice:N0}",
-                TotalPriceText = $"{item.TotalPrice:N0}"
+                UnitPriceText = FormatAmount(item.UnitPrice, currency),
+                TotalPriceText = FormatAmount(item.TotalPrice, currency)
             })),
             Installments = installmentRows
         };
     }
+
+    private static string FormatAmount(decimal amount, AccountingCurrency currency) =>
+        amount.ToString(currency == AccountingCurrency.USD ? "N2" : "N0");
 
     private static string PaymentMethodLabel(PaymentMethod method) => method switch
     {

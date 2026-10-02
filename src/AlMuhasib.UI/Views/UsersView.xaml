@@ -25,7 +25,7 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="16"/>
-            <ColumnDefinition Width="380"/>
+            <ColumnDefinition Width="400"/>
         </Grid.ColumnDefinitions>
 
         <!-- ═══════════════════════════════════════════ -->
@@ -118,6 +118,8 @@
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="FullName"/>
                         <DataGridTextColumn Header="الصلاحية" Binding="{Binding RoleDisplay}" Width="80"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RoleDisplay"/>
+                        <DataGridTextColumn Header="الفروع" Binding="{Binding BranchesDisplay}" Width="160"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="BranchesDisplay"/>
                         <DataGridTemplateColumn Header="الحالة" Width="80"
                                                 behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellTemplate>
@@ -170,7 +172,8 @@
         <!-- ═══════════════════════════════════════════ -->
         <!-- RIGHT: Add/Edit Form -->
         <!-- ═══════════════════════════════════════════ -->
-        <StackPanel Grid.Column="2">
+        <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel>
             <md:Card Style="{StaticResource ElevatedCard}" Padding="20" md:ElevationAssist.Elevation="Dp2" Margin="0,0,0,12">
                 <StackPanel>
                     <TextBlock FontSize="16" FontWeight="Bold" Margin="0,0,0,16">
@@ -221,6 +224,76 @@
                         <ComboBoxItem Content="مدير" Tag="{x:Static enums:UserRole.Admin}"/>
                         <ComboBoxItem Content="مستخدم" Tag="{x:Static enums:UserRole.User}"/>
                     </ComboBox>
+
+                    <!-- صلاحيات الفروع: ربط المستخدم بفرع أو أكثر -->
+                    <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="10" Padding="12" Margin="0,0,0,16"
+                            IsEnabled="{Binding CanAssignBranches}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <md:PackIcon Kind="SourceBranch" Width="20" Height="20" Foreground="#1565C0"
+                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="صلاحيات الفروع" FontWeight="SemiBold" FontSize="14"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock Text="حدد الفروع المسموح للمستخدم بالدخول إليها، واختر الفرع الافتراضي"
+                                       FontSize="11.5" Foreground="{DynamicResource HintForegroundBrush}"
+                                       TextWrapping="Wrap" Margin="0,0,0,10"/>
+
+                            <ItemsControl ItemsSource="{Binding BranchAccessItems}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Padding="8,6" Margin="0,0,0,4" CornerRadius="6"
+                                                Background="{DynamicResource DataGridBackgroundBrush}">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <CheckBox Grid.Column="0"
+                                                          IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                          VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding DisplayName}" FontSize="13" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding TypeLabel}" FontSize="11" Margin="8,0,0,0"
+                                                                   Foreground="{DynamicResource HintForegroundBrush}"
+                                                                   VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </CheckBox>
+                                                <Button Grid.Column="1"
+                                                        Content="افتراضي"
+                                                        Padding="8,2"
+                                                        Margin="8,0,0,0"
+                                                        FontSize="11"
+                                                        MinWidth="64"
+                                                        Command="{Binding DataContext.SetDefaultBranchCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        IsEnabled="{Binding IsSelected}"
+                                                        md:ButtonAssist.CornerRadius="6"
+                                                        ToolTip="تعيين كفرع افتراضي عند تسجيل الدخول">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button" BasedOn="{StaticResource OutlinedButton}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDefault}" Value="True">
+                                                                    <Setter Property="Background" Value="#E3F2FD"/>
+                                                                    <Setter Property="BorderBrush" Value="#1565C0"/>
+                                                                    <Setter Property="Foreground" Value="#1565C0"/>
+                                                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock Text="{Binding SelectedBranchesSummary}"
+                                       FontSize="11.5" Foreground="#1565C0" FontWeight="SemiBold"
+                                       Margin="0,8,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Border>
 
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                         <Button Command="{Binding SaveUserCommand}"
@@ -289,5 +362,6 @@
                 </StackPanel>
             </md:Card>
         </StackPanel>
+        </ScrollViewer>
     </Grid>
 </UserControl>

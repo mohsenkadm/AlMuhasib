@@ -127,8 +127,7 @@ public partial class BeautifulMessageDialog : Window
     {
         ResolveSoundService()?.Play(SoundEffect.Confirm);
         var dialog = new BeautifulMessageDialog();
-        dialog.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
-                     ?? Application.Current.MainWindow;
+        TryAssignOwner(dialog);
         dialog.MessageText.Text = message;
         dialog.TitleText.Text = title;
         dialog.UnsavedResult = UnsavedChangesDialogResult.Cancel;
@@ -144,8 +143,7 @@ public partial class BeautifulMessageDialog : Window
     private static bool Show(string message, string title, MessageDialogType type, bool isConfirm)
     {
         var dialog = new BeautifulMessageDialog();
-        dialog.Owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
-                     ?? Application.Current.MainWindow;
+        TryAssignOwner(dialog);
         dialog.MessageText.Text = message;
         dialog.TitleText.Text = title;
 
@@ -154,6 +152,32 @@ public partial class BeautifulMessageDialog : Window
 
         dialog.ShowDialog();
         return dialog.ResultYes;
+    }
+
+    private static void TryAssignOwner(Window dialog)
+    {
+        var owner = Application.Current?.Windows.OfType<Window>()
+                        .FirstOrDefault(w => w.IsActive && w.IsLoaded
+                                             && PresentationSource.FromVisual(w) is not null)
+                    ?? Application.Current?.Windows.OfType<Window>()
+                        .FirstOrDefault(w => w.IsLoaded && PresentationSource.FromVisual(w) is not null);
+
+        if (owner is null)
+        {
+            dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            return;
+        }
+
+        try
+        {
+            dialog.Owner = owner;
+            dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        }
+        catch (InvalidOperationException)
+        {
+            dialog.Owner = null;
+            dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        }
     }
 
     private static ISoundService? ResolveSoundService()

@@ -264,6 +264,15 @@ public sealed class GoldShopReportsController : GoldShopApiControllerBase
         var query = Db.GoldInvoices.IgnoreQueryFilters().AsNoTracking()
             .Include(i => i.Customer)
             .Where(i => i.TenantId == TenantId && i.IsDeleted);
+
+        // عزل الفروع: IgnoreQueryFilters يفتح soft-delete فقط، لا كل فروع المستأجر.
+        var allowed = TenantContext.AllowedBranchIds;
+        if (TenantContext.IsAllBranchesMode && allowed.Count > 0)
+            query = query.Where(i => allowed.Contains(i.BranchId));
+        else if (TenantContext.BranchId is > 0)
+            query = query.Where(i => i.BranchId == TenantContext.BranchId.Value);
+        else
+            query = query.Where(i => false);
         if (from.HasValue)
             query = query.Where(i => (i.DeletedAt ?? i.UpdatedAt ?? i.CreatedAt) >= from.Value.Date);
         if (to.HasValue)

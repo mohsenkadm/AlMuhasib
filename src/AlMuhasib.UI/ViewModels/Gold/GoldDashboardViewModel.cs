@@ -323,10 +323,11 @@ public partial class GoldDashboardViewModel : ViewModelBase
 
         var amounts = points.Select(p => p.Amount).ToArray();
         var labels = points.Select(p => p.Date.ToString("MM/dd")).ToArray();
+        var hasNegative = amounts.Any(a => a < 0);
 
-        SalesSeries = [ChartThemeConfig.Line(amounts, "المبيعات", 0)];
+        SalesSeries = [ChartThemeConfig.Column(amounts, "المبيعات", 0)];
         SalesXAxes = [ChartThemeConfig.CreateXAxis(labels, points.Count > 10 ? -35 : 0)];
-        SalesYAxes = [ChartThemeConfig.CreateYAxis()];
+        SalesYAxes = [ChartThemeConfig.CreateYAxis(forceNonNegative: !hasNegative)];
     }
 
     private static string FormatDual(decimal iqd, decimal usd) =>

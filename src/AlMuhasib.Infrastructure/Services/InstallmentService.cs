@@ -367,6 +367,7 @@ public class InstallmentService : IInstallmentService
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.Installments
             .Include(i => i.InstallmentPlan).ThenInclude(p => p.Customer)
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p.Invoice)
             .Include(i => i.CashBox)
             .Where(i => i.Status == status).OrderBy(i => i.DueDate).ToListAsync();
     }
@@ -401,8 +402,13 @@ public class InstallmentService : IInstallmentService
     public async Task<IEnumerable<Installment>> GetInstallmentsByPlanIdAsync(int planId)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.Installments.Include(i => i.CashBox)
-            .Where(i => i.InstallmentPlanId == planId).OrderBy(i => i.DueDate).ToListAsync();
+        return await context.Installments
+            .Include(i => i.CashBox)
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Customer)
+            .Include(i => i.InstallmentPlan).ThenInclude(p => p!.Invoice)
+            .Where(i => i.InstallmentPlanId == planId)
+            .OrderBy(i => i.DueDate)
+            .ToListAsync();
     }
 
     public async Task<(IEnumerable<Installment> Items, int TotalCount)> GetPagedInstallmentsAsync(

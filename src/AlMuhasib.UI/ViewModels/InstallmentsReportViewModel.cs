@@ -3,6 +3,7 @@ using System.Windows;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Charts;
@@ -14,6 +15,8 @@ namespace AlMuhasib.UI.ViewModels;
 
 public partial class InstallmentsReportViewModel : ReportViewModelBase
 {
+    private readonly IFeatureFlagService _featureFlags;
+
     [ObservableProperty] private string _totalAmount = "0";
     [ObservableProperty] private string _paidAmount = "0";
     [ObservableProperty] private string _unpaidAmount = "0";
@@ -22,6 +25,7 @@ public partial class InstallmentsReportViewModel : ReportViewModelBase
     [ObservableProperty] private string _paidCount = "0";
     [ObservableProperty] private string _unpaidCount = "0";
     [ObservableProperty] private string _overdueCount = "0";
+    [ObservableProperty] private bool _showMultiCurrency;
 
     [ObservableProperty] private int? _selectedCustomerId;
     [ObservableProperty] private string _selectedStatus = "الكل";
@@ -37,9 +41,11 @@ public partial class InstallmentsReportViewModel : ReportViewModelBase
     public ObservableCollection<InstallmentSummaryRow> Rows { get; } = [];
 
     public InstallmentsReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
-        IExportService exportService, ICurrentUserService currentUserService)
+        IExportService exportService, ICurrentUserService currentUserService,
+        IFeatureFlagService featureFlags)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
+        _featureFlags = featureFlags;
         PageTitle = "ملخص الأقساط";
         RegisterThemeChartReload(LoadDataAsync);
     }
@@ -47,6 +53,7 @@ public partial class InstallmentsReportViewModel : ReportViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, "Reports");
+        ShowMultiCurrency = _featureFlags.MultiCurrency;
         var customers = await _unitOfWork.Customers.GetAllAsync();
         foreach (var c in customers) Customers.Add(c);
         await LoadDataAsync();
@@ -99,8 +106,12 @@ public partial class InstallmentsReportViewModel : ReportViewModelBase
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "ملخص_الأقساط.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "العميل", "رقم الخطة", "الإجمالي", "المسدد", "المتبقي", "عدد الأقساط", "الحالة" };
-        var rows = _allRows.Select(r => new object[] { r.CustomerName, r.PlanNumber, r.TotalAmount, r.PaidAmount, r.RemainingAmount, r.InstallmentCount, r.Status }).ToList();
+        var cols = ShowMultiCurrency
+            ? new[] { "العميل", "رقم الخطة", "الإجمالي (د.ع)", "المسدد (د.ع)", "المتبقي (د.ع)", "العملة", "عدد الأقساط", "الحالة" }
+            : new[] { "العميل", "رقم الخطة", "الإجمالي", "المسدد", "المتبقي", "عدد الأقساط", "الحالة" };
+        var rows = _allRows.Select(r => ShowMultiCurrency
+            ? new object[] { r.CustomerName, r.PlanNumber, r.TotalAmount, r.PaidAmount, r.RemainingAmount, r.CurrencyLabel, r.InstallmentCount, r.Status }
+            : new object[] { r.CustomerName, r.PlanNumber, r.TotalAmount, r.PaidAmount, r.RemainingAmount, r.InstallmentCount, r.Status }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "ملخص الأقساط", cols, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
@@ -108,8 +119,12 @@ public partial class InstallmentsReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "العميل", "رقم الخطة", "الإجمالي", "المسدد", "المتبقي", "عدد الأقساط", "الحالة" };
-        var rows = _allRows.Select(r => new object[] { r.CustomerName, r.PlanNumber, r.TotalAmount, r.PaidAmount, r.RemainingAmount, r.InstallmentCount, r.Status }).ToList();
+        var cols = ShowMultiCurrency
+            ? new[] { "العميل", "رقم الخطة", "الإجمالي (د.ع)", "المسدد (د.ع)", "المتبقي (د.ع)", "العملة", "عدد الأقساط", "الحالة" }
+            : new[] { "العميل", "رقم الخطة", "الإجمالي", "المسدد", "المتبقي", "عدد الأقساط", "الحالة" };
+        var rows = _allRows.Select(r => ShowMultiCurrency
+            ? new object[] { r.CustomerName, r.PlanNumber, r.TotalAmount, r.PaidAmount, r.RemainingAmount, r.CurrencyLabel, r.InstallmentCount, r.Status }
+            : new object[] { r.CustomerName, r.PlanNumber, r.TotalAmount, r.PaidAmount, r.RemainingAmount, r.InstallmentCount, r.Status }).ToList();
         _exportService.PrintTable("ملخص الأقساط", cols, rows);
     }
 

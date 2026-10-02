@@ -41,6 +41,9 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
     [ObservableProperty] private Axis[] _dailyXAxes = [];
     [ObservableProperty] private Axis[] _dailyYAxes = [];
     [ObservableProperty] private ISeries[] _supplierSeries = [];
+    [ObservableProperty] private bool _isDailyChartEmpty = true;
+    [ObservableProperty] private bool _isSupplierChartEmpty = true;
+    [ObservableProperty] private string _dailyChartTitle = "المشتريات اليومية";
 
     private List<PurchasesReportRow> _allRows = [];
     public ObservableCollection<PurchasesReportRow> Rows { get; } = [];
@@ -116,14 +119,46 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
 
             if (result.DailyChart.Count > 0)
             {
-                DailySeries = [ChartThemeConfig.Line(result.DailyChart.Select(d => d.Amount).ToArray(), "المشتريات", 3)];
-                DailyXAxes = [ChartThemeConfig.CreateXAxis(result.DailyChart.Select(d => d.Date.ToString("MM/dd")).ToArray())];
-                DailyYAxes = [ChartThemeConfig.CreateYAxis()];
+                var suffix = result.DailyChartCurrency == AccountingCurrency.USD ? "$" : "د.ع";
+                var hasNegative = result.DailyChart.Any(d => d.Amount < 0);
+                // أعمدة أوضح من الخط (تعمل حتى بنقطة يوم واحد)
+                DailySeries =
+                [
+                    ChartThemeConfig.Column(
+                        result.DailyChart.Select(d => d.Amount).ToArray(),
+                        "المشتريات",
+                        3)
+                ];
+                DailyXAxes =
+                [
+                    ChartThemeConfig.CreateXAxis(
+                        result.DailyChart.Select(d => d.Date.ToString("MM/dd")).ToArray(),
+                        rotation: result.DailyChart.Count > 14 ? 45 : 0)
+                ];
+                DailyYAxes = [ChartThemeConfig.CreateYAxis(suffix, forceNonNegative: !hasNegative)];
+                DailyChartTitle = result.DailyChartCurrency == AccountingCurrency.USD
+                    ? "المشتريات اليومية ($)"
+                    : "المشتريات اليومية (د.ع)";
+                IsDailyChartEmpty = false;
+            }
+            else
+            {
+                DailySeries = [];
+                DailyXAxes = [];
+                DailyYAxes = [];
+                DailyChartTitle = "المشتريات اليومية";
+                IsDailyChartEmpty = true;
             }
 
             if (result.BySupplierChart.Count > 0)
             {
                 SupplierSeries = ChartThemeConfig.PieFromNameAmount(result.BySupplierChart);
+                IsSupplierChartEmpty = false;
+            }
+            else
+            {
+                SupplierSeries = [];
+                IsSupplierChartEmpty = true;
             }
 
             _allRows = result.Rows;

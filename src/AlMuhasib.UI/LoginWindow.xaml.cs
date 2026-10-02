@@ -39,14 +39,43 @@ public partial class LoginWindow : Window
     {
         CloseNumericPad(animate: false);
 
-        if (_viewModel.IsEnteringPassword)
+        if (_viewModel.IsSelectingBranch)
+            AnimateToBranchStep();
+        else if (_viewModel.IsEnteringPassword)
             AnimateToPasswordStep();
         else
             AnimateToAdminStep();
     }
 
+    private void AnimateToBranchStep()
+    {
+        AdminStepPanel.Visibility = Visibility.Collapsed;
+        PasswordStepPanel.Visibility = Visibility.Collapsed;
+        PasswordStepPanel.Opacity = 0;
+
+        BranchStepPanel.Visibility = Visibility.Visible;
+        BranchStepPanel.Opacity = 0;
+        if (BranchStepPanel.RenderTransform is TranslateTransform branchTransform)
+            branchTransform.X = 36;
+
+        var fadeIn = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(280))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        var slideIn = new DoubleAnimation(36, 0, TimeSpan.FromMilliseconds(320))
+        {
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+
+        BranchStepPanel.BeginAnimation(OpacityProperty, fadeIn);
+        if (BranchStepPanel.RenderTransform is TranslateTransform t)
+            t.BeginAnimation(TranslateTransform.XProperty, slideIn);
+    }
+
     private void AnimateToPasswordStep()
     {
+        BranchStepPanel.Visibility = Visibility.Collapsed;
+        BranchStepPanel.Opacity = 0;
         AdminStepPanel.Visibility = Visibility.Visible;
         PasswordStepPanel.Visibility = Visibility.Visible;
 
@@ -88,6 +117,8 @@ public partial class LoginWindow : Window
 
     private void AnimateToAdminStep()
     {
+        BranchStepPanel.Visibility = Visibility.Collapsed;
+        BranchStepPanel.Opacity = 0;
         PasswordStepPanel.Visibility = Visibility.Visible;
         AdminStepPanel.Visibility = Visibility.Visible;
 

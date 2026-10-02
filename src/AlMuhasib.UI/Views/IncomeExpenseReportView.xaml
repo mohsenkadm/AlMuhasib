@@ -79,7 +79,11 @@
                 <!-- ═══ Chart ═══ -->
                 <controls:ChartCard Title="الإيرادات مقابل المصروفات (شهري)">
                     <controls:ChartCard.ChartContent>
-                        <lvc:CartesianChart Series="{Binding MonthlySeries}" XAxes="{Binding MonthlyXAxes}" YAxes="{Binding MonthlyYAxes}" Height="350"/>
+                        <lvc:CartesianChart Series="{Binding MonthlySeries}"
+                                            XAxes="{Binding MonthlyXAxes}"
+                                            YAxes="{Binding MonthlyYAxes}"
+                                            LegendPosition="Bottom"
+                                            Height="350"/>
                     </controls:ChartCard.ChartContent>
                 </controls:ChartCard>
 

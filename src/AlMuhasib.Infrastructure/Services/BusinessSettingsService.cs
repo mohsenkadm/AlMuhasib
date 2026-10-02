@@ -25,6 +25,9 @@ public class BusinessSettingsService : IBusinessSettingsService
     public async Task<BusinessSettings> GetOrCreateAsync()
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
+        // Startup / pre-login seed must not require a user branch session.
+        context.BypassBranchFilter = true;
+
         var existing = await context.BusinessSettings
             .IgnoreQueryFilters()
             .OrderBy(s => s.Id)
@@ -32,8 +35,21 @@ public class BusinessSettingsService : IBusinessSettingsService
 
         if (existing is null)
         {
+            var mainBranchId = await context.Branches.AsNoTracking()
+                .Where(b => b.IsMain && !b.IsDeleted)
+                .Select(b => b.Id)
+                .FirstOrDefaultAsync();
+            if (mainBranchId <= 0)
+            {
+                mainBranchId = await context.Branches.AsNoTracking()
+                    .Where(b => b.Code == Branch.MainBranchCode && !b.IsDeleted)
+                    .Select(b => b.Id)
+                    .FirstOrDefaultAsync();
+            }
+
             context.BusinessSettings.Add(new BusinessSettings
             {
+                BranchId = mainBranchId > 0 ? mainBranchId : 1,
                 ProductPricingEnabled = false,
                 UpdateProductPriceOnPurchase = false,
                 MultiCurrencyEnabled = false,
@@ -72,6 +88,10 @@ public class BusinessSettingsService : IBusinessSettingsService
         bool? multiCurrencyEnabled)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
+        // إعدادات الشركة موحّدة عبر الفروع — يجب تجاوز حارس الكتابة وإلا يفشل
+        // معالج النقل عند الفرع الحالي ≠ BranchId المسجّل على BusinessSettings.
+        context.BypassBranchFilter = true;
+
         var existing = await context.BusinessSettings
             .IgnoreQueryFilters()
             .OrderBy(s => s.Id)
@@ -79,8 +99,21 @@ public class BusinessSettingsService : IBusinessSettingsService
 
         if (existing is null)
         {
+            var mainBranchId = await context.Branches.AsNoTracking()
+                .Where(b => b.IsMain && !b.IsDeleted)
+                .Select(b => b.Id)
+                .FirstOrDefaultAsync();
+            if (mainBranchId <= 0)
+            {
+                mainBranchId = await context.Branches.AsNoTracking()
+                    .Where(b => b.Code == Branch.MainBranchCode && !b.IsDeleted)
+                    .Select(b => b.Id)
+                    .FirstOrDefaultAsync();
+            }
+
             context.BusinessSettings.Add(new BusinessSettings
             {
+                BranchId = mainBranchId > 0 ? mainBranchId : 1,
                 ProductPricingEnabled = productPricingEnabled,
                 UpdateProductPriceOnPurchase = updateProductPriceOnPurchase,
                 MultiCurrencyEnabled = multiCurrencyEnabled ?? false,
@@ -107,6 +140,16 @@ public class BusinessSettingsService : IBusinessSettingsService
             existing.IsDeleted = false;
             existing.DeletedAt = null;
             existing.DeletedBy = null;
+
+            // وحّد علم تعدد العملات على كل صفوف الإعدادات إن وُجدت نسخ لكل فرع
+            if (multiCurrencyEnabled.HasValue)
+            {
+                var siblings = await context.BusinessSettings.IgnoreQueryFilters()
+                    .Where(s => !s.IsDeleted && s.Id != existing.Id)
+                    .ToListAsync();
+                foreach (var sibling in siblings)
+                    sibling.MultiCurrencyEnabled = multiCurrencyEnabled.Value;
+            }
         }
 
         await context.SaveChangesAsync();

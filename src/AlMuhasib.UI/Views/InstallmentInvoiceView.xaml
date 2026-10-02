@@ -150,17 +150,32 @@
                                  Margin="0,0,12,0"
                                  FontSize="14" />
 
-                        <!-- CashBox -->
-                        <ComboBox Grid.Row="1" Grid.Column="2"
-                                  ItemsSource="{Binding CashBoxes}"
-                                  SelectedItem="{Binding SelectedCashBox}"
-                                  DisplayMemberPath="Name"
-                                  materialDesign:HintAssist.Hint="الصندوق"
-                                  materialDesign:HintAssist.IsFloating="True"
-                                  materialDesign:ComboBoxAssist.ShowSelectedItem="True"
-                                  Style="{StaticResource FilledComboBox}"
-                                  Margin="0,0,12,0"
-                                  FontSize="14" />
+                        <!-- CashBox + عملة المستند عند تعدد العملات -->
+                        <Grid Grid.Row="1" Grid.Column="2" Margin="0,0,12,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ComboBox Grid.Column="0"
+                                      ItemsSource="{Binding CashBoxes}"
+                                      SelectedItem="{Binding SelectedCashBox}"
+                                      DisplayMemberPath="Name"
+                                      materialDesign:HintAssist.Hint="الصندوق"
+                                      materialDesign:HintAssist.IsFloating="True"
+                                      materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                      Style="{StaticResource FilledComboBox}"
+                                      FontSize="14" />
+                            <Border Grid.Column="1"
+                                    Margin="8,0,0,0"
+                                    Padding="10,6"
+                                    CornerRadius="8"
+                                    Background="{DynamicResource DashboardKpiGreenLightBrush}"
+                                    VerticalAlignment="Center"
+                                    Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolToVis}}">
+                                <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="#2E7D32"
+                                           Text="{Binding CurrencyAmountSuffix, StringFormat=العملة: {0}}"/>
+                            </Border>
+                        </Grid>
 
                         <!-- Installment Type -->
                         <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Margin="0,12,12,0" VerticalAlignment="Center">
@@ -485,17 +500,19 @@
                                                 </Style>
                                             </DataGridTextColumn.ElementStyle>
                                         </DataGridTextColumn>
-                                        <DataGridTextColumn Header="المبلغ"
-                                                            Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}"
-                                                            Width="*">
-                                            <DataGridTextColumn.ElementStyle>
-                                                <Style TargetType="TextBlock">
-                                                    <Setter Property="HorizontalAlignment" Value="Center" />
-                                                    <Setter Property="FontWeight" Value="SemiBold" />
-                                                    <Setter Property="Foreground" Value="{DynamicResource HighlightBrush}" />
-                                                </Style>
-                                            </DataGridTextColumn.ElementStyle>
-                                        </DataGridTextColumn>
+                                        <DataGridTemplateColumn Header="المبلغ" Width="*">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock HorizontalAlignment="Center"
+                                                               FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource HighlightBrush}">
+                                                        <Run Text="{Binding Amount, StringFormat=N0, Mode=OneWay}"/>
+                                                        <Run Text=" "/>
+                                                        <Run Text="{Binding DataContext.CurrencyAmountSuffix, RelativeSource={RelativeSource AncestorType=DataGrid}, Mode=OneWay}"/>
+                                                    </TextBlock>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
                                     </DataGrid.Columns>
                                 </DataGrid>
                             </Grid>
@@ -583,7 +600,11 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="المجموع:" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1" Text="{Binding Subtotal, StringFormat='{}{0:N0} د.ع'}" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" FontSize="11" Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center">
+                                        <Run Text="{Binding Subtotal, StringFormat=N0, Mode=OneWay}"/>
+                                        <Run Text=" "/>
+                                        <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                    </TextBlock>
                                 </Grid>
 
                                 <StackPanel Margin="0,0,0,8"
@@ -596,7 +617,7 @@
                                               Margin="0,0,0,6"
                                               Style="{StaticResource MaterialDesignOutlinedComboBox}"/>
                                     <TextBox Text="{Binding InvoiceDiscountValue, UpdateSourceTrigger=PropertyChanged}"
-                                             materialDesign:HintAssist.Hint="قيمة الخصم الكلي"
+                                             materialDesign:HintAssist.Hint="{Binding InvoiceDiscountValueHint}"
                                              Style="{StaticResource MaterialDesignOutlinedTextBox}"
                                              Margin="0,0,0,6"/>
                                     <Grid>
@@ -606,9 +627,12 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="مبلغ الخصم:" FontSize="13" VerticalAlignment="Center"
                                                    Foreground="{DynamicResource HighlightBrush}"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding InvoiceDiscountAmount, StringFormat='{}{0:N0} د.ع'}"
-                                                   FontSize="13" FontWeight="SemiBold"
-                                                   Foreground="{DynamicResource HighlightBrush}"/>
+                                        <TextBlock Grid.Column="1" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource HighlightBrush}">
+                                            <Run Text="{Binding InvoiceDiscountAmount, StringFormat=N0, Mode=OneWay}"/>
+                                            <Run Text=" "/>
+                                            <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                        </TextBlock>
                                     </Grid>
                                 </StackPanel>
 
@@ -618,7 +642,11 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="التقريب:" FontSize="13" Foreground="{DynamicResource HighlightBrush}" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1" Text="{Binding RoundingAmount, StringFormat='{}{0:N0} د.ع'}" FontSize="13" Foreground="{DynamicResource HighlightBrush}" FontWeight="Medium" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" FontSize="13" Foreground="{DynamicResource HighlightBrush}" FontWeight="Medium" VerticalAlignment="Center">
+                                        <Run Text="{Binding RoundingAmount, StringFormat=N0, Mode=OneWay}"/>
+                                        <Run Text=" "/>
+                                        <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                    </TextBlock>
                                 </Grid>
 
                                 <Grid Margin="0,0,0,10"
@@ -630,9 +658,9 @@
                                     <TextBlock Grid.Column="0" Text="أجور النقل:" FontSize="13"
                                                Foreground="#1565C0" VerticalAlignment="Center"/>
                                     <TextBox Grid.Column="1"
-                                             Text="{Binding TransportFeeAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                             Text="{Binding TransportFeeAmount, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource NumericCellTextBox}"
-                                             materialDesign:HintAssist.Hint="0"/>
+                                             materialDesign:HintAssist.Hint="{Binding CurrencyAmountSuffix, StringFormat=0 ({0})}"/>
                                 </Grid>
 
                                 <Separator Margin="0,4,0,12" Background="{DynamicResource HighlightBorderBrush}" />
@@ -643,7 +671,11 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="الإجمالي النهائي:" FontSize="18" FontWeight="Bold" Foreground="#BF360C" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1" Text="{Binding GrandTotal, StringFormat='{}{0:N0} د.ع'}" FontSize="20" FontWeight="Bold" Foreground="#BF360C" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" FontSize="20" FontWeight="Bold" Foreground="#BF360C" VerticalAlignment="Center">
+                                        <Run Text="{Binding GrandTotal, StringFormat=N0, Mode=OneWay}"/>
+                                        <Run Text=" "/>
+                                        <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                    </TextBlock>
                                 </Grid>
 
                                 <Separator Margin="0,4,0,12" Background="{DynamicResource HighlightBorderBrush}"
@@ -655,7 +687,11 @@
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0" Text="نسبة الشركة (8%) — منصة:" FontSize="14" FontWeight="SemiBold" Foreground="#4A148C" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1" Text="{Binding CompanyFeeAmount, StringFormat='{}{0:N0} د.ع'}" FontSize="16" FontWeight="Bold" Foreground="#4A148C" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" FontSize="16" FontWeight="Bold" Foreground="#4A148C" VerticalAlignment="Center">
+                                        <Run Text="{Binding CompanyFeeAmount, StringFormat=N0, Mode=OneWay}"/>
+                                        <Run Text=" "/>
+                                        <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                    </TextBlock>
                                 </Grid>
                             </StackPanel>
                         </Border>
@@ -935,30 +971,34 @@
                                   IsChecked="{Binding QueueSortNewestFirst}"
                                   VerticalAlignment="Center"/>
                     </Grid>
-                    <ListBox Grid.Row="2" ItemsSource="{Binding QueueItems}" BorderThickness="0" Background="Transparent">
+                    <ListBox Grid.Row="2" ItemsSource="{Binding QueueItems}" BorderThickness="0" Background="Transparent"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin" Value="0"/>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
                         <ListBox.ItemTemplate>
                             <DataTemplate>
-                                <Border Padding="10,8" Margin="0,0,0,6" CornerRadius="8"
+                                <Border Padding="12,10" Margin="0,0,0,8" CornerRadius="8"
                                         Background="{DynamicResource BackgroundBrush}"
                                         BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <StackPanel>
-                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"/>
-                                            <TextBlock Text="{Binding SummaryText, Mode=OneWay}" FontSize="11"
-                                                       Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="14"
+                                                   TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding SummaryText, Mode=OneWay}" FontSize="11"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   Margin="0,4,0,10" TextWrapping="Wrap"/>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                                             <Button Command="{Binding DataContext.LoadFromQueueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}" Style="{StaticResource PrimaryButton}"
-                                                    Height="32" Padding="12,0" Margin="0,0,6,0" Content="متابعة"/>
+                                                    Height="32" Padding="14,0" Margin="0,0,8,0" Content="متابعة"/>
                                             <Button Command="{Binding DataContext.DeleteFromQueueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}" ToolTip="حذف"/>
                                         </StackPanel>
-                                    </Grid>
+                                    </StackPanel>
                                 </Border>
                             </DataTemplate>
                         </ListBox.ItemTemplate>

@@ -33,6 +33,7 @@ public partial class InstallmentInvoiceViewModel
         ShowTransportFee = _featureFlags.TransportFees;
         ShowDriverSelection = _featureFlags.WarehouseInvoiceAndDriver;
         ShowProductPricing = _featureFlags.ProductPricingEnabled;
+        RefreshMultiCurrencyFeatureVisibility();
 
         foreach (var row in Items)
         {
@@ -140,7 +141,7 @@ public partial class InstallmentInvoiceViewModel
         }
 
         var prices = await _productPriceService.GetByProductIdAsync(productId);
-        var options = InvoiceBulkPricingHelper.ToOptions(prices, usePurchasePrice: false);
+        var options = InvoiceBulkPricingHelper.ToOptions(prices, usePurchasePrice: false, DocumentCurrency);
 
         row.AvailablePricingOptions.Clear();
         foreach (var option in options)
@@ -162,8 +163,7 @@ public partial class InstallmentInvoiceViewModel
         if (preferred is null)
             return;
 
-        var keepExistingPrice = row.PricingTypeId == preferred.PricingTypeId && row.UnitPrice > 0;
-        if (keepExistingPrice)
+        if (row.UnitPrice > 0)
             row.SetSelectedPricingOptionWithoutPrice(preferred);
         else
             row.SelectedPricingOption = preferred;

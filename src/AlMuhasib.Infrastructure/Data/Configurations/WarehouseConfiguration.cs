@@ -17,7 +17,7 @@ public class WarehouseConfiguration : IEntityTypeConfiguration<Warehouse>
         builder.Property(w => w.Location)
             .HasMaxLength(300);
 
-        builder.HasIndex(w => w.Name)
+        builder.HasIndex(w => new { w.BranchId, w.Name })
             .IsUnique()
             .HasFilter("[IsDeleted] = 0");
     }

@@ -166,10 +166,19 @@ public partial class ProductsViewModel : ViewModelBase
     private decimal _editPurchasePrice;
 
     [ObservableProperty]
+    private decimal _editSalePriceUsd;
+
+    [ObservableProperty]
+    private decimal _editPurchasePriceUsd;
+
+    [ObservableProperty]
     private string _priceEditError = string.Empty;
 
     [ObservableProperty]
     private bool _showPricingOnCards;
+
+    [ObservableProperty]
+    private bool _showMultiCurrency;
 
     // ── Per-product pricing dialog (table) ─────────────────
     [ObservableProperty]
@@ -227,6 +236,7 @@ public partial class ProductsViewModel : ViewModelBase
         _services = services;
         _pricingEnabled = userPreferences.Current.FeatureFlags.ProductPricingEnabled;
         ShowPricingOnCards = _pricingEnabled;
+        ShowMultiCurrency = featureFlags.MultiCurrency && _pricingEnabled;
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Products);
 
         PageTitle = "المنتجات";
@@ -399,7 +409,10 @@ public partial class ProductsViewModel : ViewModelBase
                         PricingTypeId = price.PricingTypeId,
                         PricingTypeName = price.PricingType?.Name ?? "",
                         SalePrice = price.SalePrice,
-                        PurchasePrice = price.PurchasePrice
+                        PurchasePrice = price.PurchasePrice,
+                        SalePriceUsd = price.SalePriceUsd,
+                        PurchasePriceUsd = price.PurchasePriceUsd,
+                        ShowUsd = ShowMultiCurrency
                     });
                 }
             }
@@ -1047,6 +1060,8 @@ public partial class ProductsViewModel : ViewModelBase
         EditPricingType = PricingTypes.FirstOrDefault(t => t.IsDefault) ?? PricingTypes.FirstOrDefault();
         EditSalePrice = 0;
         EditPurchasePrice = 0;
+        EditSalePriceUsd = 0;
+        EditPurchasePriceUsd = 0;
         PriceEditError = string.Empty;
         PricingDialogEditTitle = "إضافة سعر";
         IsPricingDialogEditMode = true;
@@ -1061,6 +1076,8 @@ public partial class ProductsViewModel : ViewModelBase
         EditPricingType = PricingTypes.FirstOrDefault(t => t.Id == line.PricingTypeId);
         EditSalePrice = line.SalePrice;
         EditPurchasePrice = line.PurchasePrice;
+        EditSalePriceUsd = line.SalePriceUsd;
+        EditPurchasePriceUsd = line.PurchasePriceUsd;
         PriceEditError = string.Empty;
         PricingDialogEditTitle = "تعديل السعر";
         IsPricingDialogEditMode = true;
@@ -1107,6 +1124,8 @@ public partial class ProductsViewModel : ViewModelBase
         EditPricingType = PricingTypes.FirstOrDefault(t => t.Id == line.PricingTypeId);
         EditSalePrice = line.SalePrice;
         EditPurchasePrice = line.PurchasePrice;
+        EditSalePriceUsd = line.SalePriceUsd;
+        EditPurchasePriceUsd = line.PurchasePriceUsd;
         PriceEditError = string.Empty;
         IsPriceEditDialogOpen = true;
     }
@@ -1121,6 +1140,8 @@ public partial class ProductsViewModel : ViewModelBase
         EditPricingType = PricingTypes.FirstOrDefault(t => t.IsDefault) ?? PricingTypes.FirstOrDefault();
         EditSalePrice = 0;
         EditPurchasePrice = 0;
+        EditSalePriceUsd = 0;
+        EditPurchasePriceUsd = 0;
         PriceEditError = string.Empty;
         IsPriceEditDialogOpen = true;
     }
@@ -1142,7 +1163,9 @@ public partial class ProductsViewModel : ViewModelBase
                 ProductId = _editingPriceProductId.Value,
                 PricingTypeId = EditPricingType.Id,
                 SalePrice = EditSalePrice,
-                PurchasePrice = EditPurchasePrice
+                PurchasePrice = EditPurchasePrice,
+                SalePriceUsd = ShowMultiCurrency ? EditSalePriceUsd : 0m,
+                PurchasePriceUsd = ShowMultiCurrency ? EditPurchasePriceUsd : 0m
             });
 
             if (IsProductPricingDialogOpen)
@@ -1192,7 +1215,10 @@ public partial class ProductsViewModel : ViewModelBase
                                   ?? price.PricingType?.Name
                                   ?? $"#{price.PricingTypeId}",
                 SalePrice = price.SalePrice,
-                PurchasePrice = price.PurchasePrice
+                PurchasePrice = price.PurchasePrice,
+                SalePriceUsd = price.SalePriceUsd,
+                PurchasePriceUsd = price.PurchasePriceUsd,
+                ShowUsd = ShowMultiCurrency
             });
         }
     }

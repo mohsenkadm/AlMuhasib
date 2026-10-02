@@ -120,7 +120,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
     [
         new(DiscountType.None, "بدون خصم كلي"),
         new(DiscountType.Percentage, "نسبة مئوية (%)"),
-        new(DiscountType.FixedAmount, "قيمة ثابتة (د.ع)")
+        new(DiscountType.FixedAmount, "قيمة ثابتة")
     ];
 
     [ObservableProperty]
@@ -137,6 +137,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         var match = InvoiceDiscountTypeOptions.FirstOrDefault(o => o.Type == value);
         if (!Equals(SelectedInvoiceDiscountOption, match))
             SelectedInvoiceDiscountOption = match;
+        OnPropertyChanged(nameof(InvoiceDiscountValueHint));
         RecalculateTotals();
     }
 
@@ -400,11 +401,13 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
 
         try
         {
+            var profitCurrency = ShowMultiCurrency ? DocumentCurrency : AccountingCurrency.IQD;
             var vm = new InvoiceProfitCheckViewModel(
                 _unitOfWork,
                 _productPriceService,
                 ShowProductPricing,
-                ShowProductDiscount);
+                ShowProductDiscount,
+                profitCurrency);
             await vm.LoadAsync(productRows, InvoiceDiscountType, InvoiceDiscountValue);
 
             var owner = Application.Current.MainWindow;
@@ -606,7 +609,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             _invoiceService,
             InvoiceType.Installment,
             InvoiceDiscountAmount,
-            ShowTransportFee ? TransportFeeAmount : 0m);
+            ShowTransportFee ? TransportFeeAmount : 0m,
+            DocumentCurrency);
 
         RoundingAmount = rounding;
         _isRecalculating = true;
@@ -677,10 +681,11 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             }
         }
 
-        var belowCost = await _costGuard.FindBelowCostLinesAsync(validItems, ShowProductDiscount);
+        var belowCostCurrency = ShowMultiCurrency ? DocumentCurrency : AccountingCurrency.IQD;
+        var belowCost = await _costGuard.FindBelowCostLinesAsync(validItems, ShowProductDiscount, belowCostCurrency);
         if (belowCost.Count > 0)
         {
-            var msg = InvoiceCostGuard.FormatBelowCostMessage(belowCost);
+            var msg = InvoiceCostGuard.FormatBelowCostMessage(belowCost, belowCostCurrency);
             if (!InvoiceValidationDialog.ShowWarningConfirm($"{msg}\n\nهل تريد المتابعة بالبيع؟"))
                 return;
         }
@@ -706,9 +711,9 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
                 customerId = newCustomer.Id;
             }
 
-            var currency = SelectedCashBox?.Currency ?? AccountingCurrency.IQD;
+            var currency = DocumentCurrency;
             var fxRate = 1m;
-            if (currency == AccountingCurrency.USD)
+            if (ShowMultiCurrency && currency == AccountingCurrency.USD)
             {
                 fxRate = await _exchangeRateService.GetUsdToIqdForDateOrLatestAsync(InvoiceDate);
                 if (fxRate <= 0)
@@ -804,13 +809,13 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             var successMsg =
                 $"تم حفظ فاتورة الأقساط بنجاح\n" +
                 $"رقم الفاتورة: {savedInvoice.InvoiceNumber}\n" +
-                $"المبلغ الكلي: {savedInvoice.NetAmount:N0} د.ع\n" +
+                $"المبلغ الكلي: {savedInvoice.NetAmount:N0} {CurrencyAmountSuffix}\n" +
                 $"نوع القسط: {(SelectedInstallmentType == InstallmentType.Platform ? "بيع منصة" : "يدوي")}\n";
             if (plan.CompanyFeeAmount > 0)
-                successMsg += $"نسبة الشركة (8%): {plan.CompanyFeeAmount:N0} د.ع\n";
+                successMsg += $"نسبة الشركة (8%): {plan.CompanyFeeAmount:N0} {CurrencyAmountSuffix}\n";
             successMsg +=
                 $"عدد الأقساط: {NumberOfInstallments}\n" +
-                $"مبلغ القسط: {plan.InstallmentAmount:N0} د.ع\n\n" +
+                $"مبلغ القسط: {plan.InstallmentAmount:N0} {CurrencyAmountSuffix}\n\n" +
                 "يمكنك الطباعة أو الإرسال عبر واتساب.";
             BeautifulMessageDialog.ShowSuccess(successMsg);
 
@@ -1055,7 +1060,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             return;
         }
 
-        PartyQuickDetailDialog.ShowCustomer(_partyQuickDetail, SelectedCustomer.Id);
+        PartyQuickDetailDialog.ShowCustomer(_partyQuickDetail, SelectedCustomer.Id, _featureFlags?.MultiCurrency == true);
     }
 
     [RelayCommand]
@@ -1067,7 +1072,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             return;
         }
 
-        ProductQuickDetailDialog.Show(_productQuickDetail, row.ProductId.Value);
+        ProductQuickDetailDialog.Show(_productQuickDetail, row.ProductId.Value, _featureFlags?.MultiCurrency == true);
     }
 
     [RelayCommand]

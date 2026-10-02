@@ -1,8 +1,11 @@
 using System.Collections.ObjectModel;
+using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Shared.Services;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -17,6 +20,7 @@ public partial class PersonProfileViewModel : ViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IWhatsAppShareService _whatsAppShare;
     private readonly IUserPreferencesService _preferences;
+    private readonly IFeatureFlagService _featureFlags;
 
     private List<PersonLookupItem> _allPeople = [];
     private PersonProfileResult? _currentProfile;
@@ -44,7 +48,11 @@ public partial class PersonProfileViewModel : ViewModelBase
     [ObservableProperty] private string _totalDebit = "0";
     [ObservableProperty] private string _totalCredit = "0";
     [ObservableProperty] private string _balance = "0";
+    [ObservableProperty] private string _totalDebitUsd = "0";
+    [ObservableProperty] private string _totalCreditUsd = "0";
+    [ObservableProperty] private string _balanceUsd = "0";
     [ObservableProperty] private string _transactionCount = "0";
+    [ObservableProperty] private bool _showMultiCurrency;
 
     [ObservableProperty] private bool _showCustomerExtras;
     [ObservableProperty] private bool _showInvestorExtras;
@@ -68,14 +76,19 @@ public partial class PersonProfileViewModel : ViewModelBase
         IExportService exportService,
         ICurrentUserService currentUserService,
         IWhatsAppShareService whatsAppShare,
-        IUserPreferencesService preferences)
+        IUserPreferencesService preferences,
+        IFeatureFlagService featureFlags)
     {
         _personProfileService = personProfileService;
         _exportService = exportService;
         _currentUserService = currentUserService;
         _whatsAppShare = whatsAppShare;
         _preferences = preferences;
+        _featureFlags = featureFlags;
         PageTitle = "ملف الشخص";
+        ShowMultiCurrency = _featureFlags.MultiCurrency;
+        _featureFlags.FlagsChanged += (_, _) =>
+            FeatureUiRefresh.Invoke(() => ShowMultiCurrency = _featureFlags.MultiCurrency);
 
         TypeFilters.Add(new PersonTypeFilterItem(null, "الكل", PackIconKind.AccountMultiple) { IsSelected = true });
         TypeFilters.Add(new PersonTypeFilterItem(PersonPartyType.Customer, "عملاء", PackIconKind.Account));
@@ -286,6 +299,12 @@ public partial class PersonProfileViewModel : ViewModelBase
             $"إجمالي الدائن: {TotalCredit}",
             $"الرصيد: {Balance}"
         };
+        if (ShowMultiCurrency)
+        {
+            summary.Add($"مدين $: {TotalDebitUsd}");
+            summary.Add($"دائن $: {TotalCreditUsd}");
+            summary.Add($"رصيد $: {BalanceUsd}");
+        }
 
         _exportService.PrintTable(title, cols, rows, summary);
     }
@@ -316,7 +335,11 @@ public partial class PersonProfileViewModel : ViewModelBase
         TotalDebit = FormatCurrency(profile.TotalDebit);
         TotalCredit = FormatCurrency(profile.TotalCredit);
         Balance = FormatCurrency(profile.Balance);
+        TotalDebitUsd = FormatCurrency(profile.TotalDebitUsd, AccountingCurrency.USD);
+        TotalCreditUsd = FormatCurrency(profile.TotalCreditUsd, AccountingCurrency.USD);
+        BalanceUsd = FormatCurrency(profile.BalanceUsd, AccountingCurrency.USD);
         TransactionCount = profile.TransactionCount.ToString("N0");
+        ShowMultiCurrency = _featureFlags.MultiCurrency;
 
         ShowCustomerExtras = profile.PartyType == PersonPartyType.Customer;
         ShowInvestorExtras = profile.PartyType == PersonPartyType.Investor;
@@ -383,7 +406,11 @@ public partial class PersonProfileViewModel : ViewModelBase
         TotalDebit = "0";
         TotalCredit = "0";
         Balance = "0";
+        TotalDebitUsd = FormatCurrency(0, AccountingCurrency.USD);
+        TotalCreditUsd = FormatCurrency(0, AccountingCurrency.USD);
+        BalanceUsd = FormatCurrency(0, AccountingCurrency.USD);
         TransactionCount = "0";
+        ShowMultiCurrency = _featureFlags.MultiCurrency;
         ShowCustomerExtras = false;
         ShowInvestorExtras = false;
         TimelineItems.Clear();
@@ -414,9 +441,10 @@ public partial class PersonProfileViewModel : ViewModelBase
             Debit = item.Debit,
             Credit = item.Credit,
             RunningBalance = item.RunningBalance,
-            DebitLabel = item.Debit > 0 ? item.Debit.ToString("N0") : "—",
-            CreditLabel = item.Credit > 0 ? item.Credit.ToString("N0") : "—",
-            BalanceLabel = item.RunningBalance.ToString("N0"),
+            Currency = item.Currency,
+            DebitLabel = item.Debit > 0 ? FormatCurrency(item.Debit, item.Currency) : "—",
+            CreditLabel = item.Credit > 0 ? FormatCurrency(item.Credit, item.Currency) : "—",
+            BalanceLabel = FormatCurrency(item.RunningBalance, item.Currency),
             Icon = icon,
             Accent = accent,
             AccentLight = accentLight,
@@ -449,7 +477,8 @@ public partial class PersonProfileViewModel : ViewModelBase
         return $"حتى {DateTo:yyyy/MM/dd}";
     }
 
-    private static string FormatCurrency(decimal value) => $"{value:N0} د.ع";
+    private static string FormatCurrency(decimal value, AccountingCurrency currency = AccountingCurrency.IQD) =>
+        AccountingCurrencyHelper.Format(value, currency);
 }
 
 public partial class PersonTypeFilterItem : ObservableObject
@@ -476,6 +505,7 @@ public partial class PersonTimelineDisplayItem : ObservableObject
     public decimal Debit { get; set; }
     public decimal Credit { get; set; }
     public decimal RunningBalance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public string DebitLabel { get; set; } = "—";
     public string CreditLabel { get; set; } = "—";
     public string BalanceLabel { get; set; } = "—";

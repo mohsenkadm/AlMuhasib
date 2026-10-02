@@ -54,12 +54,19 @@ public partial class IncomeExpenseReportViewModel : ReportViewModelBase
 
             if (result.MonthlyChart.Count > 0)
             {
-                MonthlySeries = [
-                    ChartThemeConfig.Column(result.MonthlyChart.Select(m => m.Income).ToArray(), "الواردات", 0),
-                    ChartThemeConfig.Column(result.MonthlyChart.Select(m => m.Expense).ToArray(), "المصروفات", 3)
+                MonthlySeries =
+                [
+                    ChartThemeConfig.Column(result.MonthlyChart.Select(m => m.Income).ToArray(), "الواردات", 2),
+                    ChartThemeConfig.Column(result.MonthlyChart.Select(m => m.Expense).ToArray(), "المصروفات", 5)
                 ];
                 MonthlyXAxes = [ChartThemeConfig.CreateXAxis(result.MonthlyChart.Select(m => m.Month).ToArray(), -45)];
                 MonthlyYAxes = [ChartThemeConfig.CreateYAxis()];
+            }
+            else
+            {
+                MonthlySeries = [];
+                MonthlyXAxes = [];
+                MonthlyYAxes = [];
             }
 
             _allRows = result.Rows;

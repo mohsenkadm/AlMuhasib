@@ -150,6 +150,11 @@ public partial class PermissionsViewModel : ViewModelBase
     {
         foreach (var s in Screens)
         {
+            // صلاحيات نطاق الفروع تُمنح يدوياً فقط — لا تُفعَّل مع «تحديد الكل»
+            // حتى لا يحصل مستخدم مربوط بفرع واحد على صلاحية كل الفروع بالخطأ.
+            if (IsExplicitBranchScopeScreen(s.ScreenName))
+                continue;
+
             s.CanView = true;
             s.CanAdd = true;
             s.CanEdit = true;
@@ -160,6 +165,9 @@ public partial class PermissionsViewModel : ViewModelBase
             s.IsViewOnly = false;
         }
     }
+
+    private static bool IsExplicitBranchScopeScreen(string screenName) =>
+        PermissionCatalogHelper.IsExplicitBranchScopeScreen(screenName);
 
     [RelayCommand]
     private async Task VerifyCatalogAsync()

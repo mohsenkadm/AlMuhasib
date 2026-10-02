@@ -5,13 +5,13 @@ namespace AlMuhasib.UI.Controls;
 
 public static class PartyQuickDetailDialog
 {
-    public static void ShowCustomer(IPartyQuickDetailService service, int customerId)
-        => Show(service, isCustomer: true, customerId);
+    public static void ShowCustomer(IPartyQuickDetailService service, int customerId, bool showMultiCurrency = false)
+        => Show(service, isCustomer: true, customerId, showMultiCurrency);
 
-    public static void ShowSupplier(IPartyQuickDetailService service, int supplierId)
-        => Show(service, isCustomer: false, supplierId);
+    public static void ShowSupplier(IPartyQuickDetailService service, int supplierId, bool showMultiCurrency = false)
+        => Show(service, isCustomer: false, supplierId, showMultiCurrency);
 
-    private static void Show(IPartyQuickDetailService service, bool isCustomer, int id)
+    private static void Show(IPartyQuickDetailService service, bool isCustomer, int id, bool showMultiCurrency)
     {
         var model = new PartyQuickDetailOverlayViewModel
         {
@@ -33,7 +33,7 @@ public static class PartyQuickDetailDialog
                     if (data is null)
                         model.SetError(isCustomer ? "لم يتم العثور على العميل" : "لم يتم العثور على المورد");
                     else
-                        model.Apply(data);
+                        model.Apply(data, showMultiCurrency);
                 });
             }
             catch (Exception ex)

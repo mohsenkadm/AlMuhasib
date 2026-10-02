@@ -102,6 +102,7 @@ public class CloudDbContext : DbContext
     public DbSet<CloudProfitDistributionDetail> ProfitDistributionDetails => Set<CloudProfitDistributionDetail>();
     public DbSet<CloudCapitalEntry> CapitalEntries => Set<CloudCapitalEntry>();
     public DbSet<CloudCustomerAttachment> CustomerAttachments => Set<CloudCustomerAttachment>();
+    public DbSet<CloudCurrencyExchange> CurrencyExchanges => Set<CloudCurrencyExchange>();
     public DbSet<CloudHotelSettings> HotelSettings => Set<CloudHotelSettings>();
     public DbSet<CloudHotelFloor> HotelFloors => Set<CloudHotelFloor>();
     public DbSet<CloudHotelRoomType> HotelRoomTypes => Set<CloudHotelRoomType>();
@@ -231,7 +232,9 @@ public class CloudDbContext : DbContext
         modelBuilder.Entity<CloudProductPrice>(e =>
         {
             e.Property(x => x.SalePrice).HasPrecision(18, 2);
+            e.Property(x => x.SalePriceUsd).HasPrecision(18, 2);
             e.Property(x => x.PurchasePrice).HasPrecision(18, 2);
+            e.Property(x => x.PurchasePriceUsd).HasPrecision(18, 2);
             e.HasIndex(x => new { x.TenantId, x.ProductId, x.PricingTypeId })
                 .IsUnique()
                 .HasFilter("[IsDeleted] = 0");
@@ -243,6 +246,21 @@ public class CloudDbContext : DbContext
                 .WithMany(t => t.ProductPrices)
                 .HasForeignKey(x => x.PricingTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<CloudCurrencyExchange>(e =>
+        {
+            e.ToTable("CurrencyExchanges");
+            e.Property(x => x.FromCurrency).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.ToCurrency).HasConversion<string>().HasMaxLength(10);
+            e.Property(x => x.FromAmount).HasPrecision(18, 4);
+            e.Property(x => x.ToAmount).HasPrecision(18, 4);
+            e.Property(x => x.FxRate).HasPrecision(18, 4);
+            e.Property(x => x.Notes).HasMaxLength(1000);
+            e.HasIndex(x => x.Date);
+            e.HasIndex(x => new { x.TenantId, x.SyncId });
+            e.HasOne(x => x.FromCashBox).WithMany().HasForeignKey(x => x.FromCashBoxId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.ToCashBox).WithMany().HasForeignKey(x => x.ToCashBoxId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<CloudExchangeRate>(e =>

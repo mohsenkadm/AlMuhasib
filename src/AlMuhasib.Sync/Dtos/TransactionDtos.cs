@@ -91,6 +91,8 @@ public sealed class VoucherSyncDto : SyncDtoBase
     public string? ReconciledBy { get; set; }
     public DateTime Date { get; set; }
     public string? Notes { get; set; }
+    /// <summary>عملة الذمة المسدّدة عند الدفع بعملة مختلفة — تُرمَّز أيضاً في Notes.</summary>
+    public AccountingCurrency? SettlementCurrency { get; set; }
 }
 
 public sealed class ExpenseSyncDto : SyncDtoBase
@@ -113,6 +115,19 @@ public sealed class TransferSyncDto : SyncDtoBase
     public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public decimal FxRate { get; set; } = 1m;
     public decimal Amount { get; set; }
+    public DateTime Date { get; set; }
+    public string? Notes { get; set; }
+}
+
+public sealed class CurrencyExchangeSyncDto : SyncDtoBase
+{
+    public Guid FromCashBoxSyncId { get; set; }
+    public Guid ToCashBoxSyncId { get; set; }
+    public AccountingCurrency FromCurrency { get; set; }
+    public AccountingCurrency ToCurrency { get; set; }
+    public decimal FromAmount { get; set; }
+    public decimal ToAmount { get; set; }
+    public decimal FxRate { get; set; }
     public DateTime Date { get; set; }
     public string? Notes { get; set; }
 }

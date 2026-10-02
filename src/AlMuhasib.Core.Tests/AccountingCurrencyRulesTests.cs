@@ -28,6 +28,29 @@ public class AccountingCurrencyRulesTests
                 AccountingCurrency.IQD, AccountingCurrency.USD, "فاتورة", "قاصة"));
     }
 
+    [Theory]
+    [InlineData(AccountingCurrency.USD)]
+    [InlineData(1)]
+    [InlineData((byte)1)]
+    [InlineData("USD")]
+    [InlineData("$")]
+    public void TryResolve_AcceptsUsdVariants(object value)
+    {
+        Assert.True(AccountingCurrencyHelper.TryResolve(value, out var currency));
+        Assert.Equal(AccountingCurrency.USD, currency);
+    }
+
+    [Theory]
+    [InlineData(AccountingCurrency.IQD)]
+    [InlineData(0)]
+    [InlineData("IQD")]
+    [InlineData("د.ع")]
+    public void TryResolve_AcceptsIqdVariants(object value)
+    {
+        Assert.True(AccountingCurrencyHelper.TryResolve(value, out var currency));
+        Assert.Equal(AccountingCurrency.IQD, currency);
+    }
+
     [Fact]
     public void ToBaseIqdStrict_ConvertsUsdWithStoredRate()
     {

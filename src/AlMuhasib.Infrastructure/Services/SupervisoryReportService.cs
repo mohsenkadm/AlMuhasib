@@ -168,8 +168,8 @@ public class SupervisoryReportService : ISupervisoryReportService
             .Include(p => p.Category)
             .Where(p => p.IsDeleted);
 
-        var allowedBranches = AllowedBranchIdsOrCurrent();
-        query = query.Where(p => allowedBranches.Contains(p.BranchId));
+        // المنتجات مشتركة — لا تُصفّى بفرع
+        _ = AllowedBranchIdsOrCurrent();
 
         query = ApplyDeletedFilters(query, filter, p =>
             p.Name.Contains(filter.SearchTerm!) ||
@@ -344,7 +344,7 @@ public class SupervisoryReportService : ISupervisoryReportService
         var allowedBranches = AllowedBranchIdsOrCurrent();
         var fromInvoices = await context.Invoices.IgnoreQueryFilters().Where(x => x.IsDeleted && allowedBranches.Contains(x.BranchId) && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
         var fromVouchers = await context.Vouchers.IgnoreQueryFilters().Where(x => x.IsDeleted && allowedBranches.Contains(x.BranchId) && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
-        var fromProducts = await context.Products.IgnoreQueryFilters().Where(x => x.IsDeleted && allowedBranches.Contains(x.BranchId) && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
+        var fromProducts = await context.Products.IgnoreQueryFilters().Where(x => x.IsDeleted && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
         var fromCustomers = await context.Customers.IgnoreQueryFilters().Where(x => x.IsDeleted && allowedBranches.Contains(x.BranchId) && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
         var fromSuppliers = await context.Suppliers.IgnoreQueryFilters().Where(x => x.IsDeleted && allowedBranches.Contains(x.BranchId) && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();
         var fromExpenses = await context.Expenses.IgnoreQueryFilters().Where(x => x.IsDeleted && allowedBranches.Contains(x.BranchId) && x.DeletedBy != null).Select(x => x.DeletedBy!).Distinct().ToListAsync();

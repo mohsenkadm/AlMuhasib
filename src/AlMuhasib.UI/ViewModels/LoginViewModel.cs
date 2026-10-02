@@ -89,6 +89,7 @@ public partial class LoginViewModel : ObservableObject
         IsLoadingAdmins = true;
         HasError = false;
         ErrorMessage = string.Empty;
+        ResetBranchPickerState();
 
         try
         {
@@ -129,6 +130,7 @@ public partial class LoginViewModel : ObservableObject
         Password = string.Empty;
         HasError = false;
         ErrorMessage = string.Empty;
+        ResetBranchPickerState();
         CurrentStep = LoginStep.EnterPassword;
         StepChanged?.Invoke();
     }
@@ -139,7 +141,18 @@ public partial class LoginViewModel : ObservableObject
         Password = string.Empty;
         HasError = false;
         ErrorMessage = string.Empty;
+        ResetBranchPickerState();
         CurrentStep = LoginStep.SelectAdmin;
+        StepChanged?.Invoke();
+    }
+
+    [RelayCommand]
+    private void BackToPassword()
+    {
+        HasError = false;
+        ErrorMessage = string.Empty;
+        ResetBranchPickerState();
+        CurrentStep = LoginStep.EnterPassword;
         StepChanged?.Invoke();
     }
 
@@ -194,32 +207,51 @@ public partial class LoginViewModel : ObservableObject
             _currentUserService.UserId = result.User.Id;
             _currentUserService.Role = result.User.Role;
 
-            // Do not auto-relink revoked users to Main on every login.
-            var branches = await _branchService.GetBranchesForUserAsync(result.User.Id);
-            // Require explicit permissions — Admin role alone must not escalate to all branches.
-            var canViewAll = await _authService.HasPermissionAsync(
-                result.User.Id, Core.Entities.BranchPermissions.ViewAllBranches, "View");
-            var canManageAll = await _authService.HasPermissionAsync(
-                result.User.Id, Core.Entities.BranchPermissions.ManageAllBranches, "View");
-            _branchContext.SetAllowedBranches(branches.Select(b => b.Id), canViewAll, canManageAll);
+            // مصدر الحقيقة الوحيد = الفروع المربوطة يدوياً في شاشة المستخدمين.
+            // لا نوسّع أبداً إلى كل الفروع النشطة بسبب صلاحية «عرض/إدارة كل الفروع».
+            var assigned = await _branchService.GetAssignedBranchesForUserAsync(result.User.Id);
+            IReadOnlyList<Branch> branches = assigned;
+
+            // إصلاح خلفي فقط: شركة بفرع واحد نشط بلا صف UserBranches.
+            if (branches.Count == 0)
+                branches = await _branchService.GetBranchesForUserAsync(result.User.Id);
 
             if (branches.Count == 0)
             {
-                ShowError("لا يوجد فرع مرتبط بالمستخدم. راجع إعدادات الفروع.");
+                _sound.Play(SoundEffect.Error);
+                ShowError("لا يوجد فرع مرتبط بهذا المستخدم. اربطه بفرع واحد على الأقل من شاشة المستخدمين.");
                 return;
             }
 
+            // وضع «كل الفروع» للتقارير يعمل فقط عبر الفروع المربوطة، ويتطلب أكثر من فرع.
+            var hasViewAllPerm = await _authService.HasPermissionAsync(
+                result.User.Id, BranchPermissionScreens.ViewAllBranches, "View");
+            var hasManageAllPerm = await _authService.HasPermissionAsync(
+                result.User.Id, BranchPermissionScreens.ManageAllBranches, "View");
+            var canViewAll = branches.Count > 1 && (hasViewAllPerm || hasManageAllPerm);
+            var canManageAll = branches.Count > 1 && hasManageAllPerm;
+
+            _branchContext.SetAllowedBranches(
+                branches.Select(b => b.Id),
+                canViewAll: canViewAll,
+                canManageAll: canManageAll);
+
+            // فرع واحد مربوط → دخول مباشر لهذا الفرع فقط، بدون شاشة اختيار.
             if (branches.Count == 1)
             {
                 await BindBranchAndFinishAsync(branches[0]);
                 return;
             }
 
+            // أكثر من فرع مربوط → اختيار من الفروع المربوطة فقط.
             AvailableBranches.Clear();
             foreach (var b in branches)
                 AvailableBranches.Add(b);
+
             var defaultId = await _branchService.GetDefaultBranchIdForUserAsync(result.User.Id);
-            SelectedBranch = branches.FirstOrDefault(b => b.Id == defaultId) ?? branches[0];
+            SelectedBranch = branches.FirstOrDefault(b => b.Id == defaultId)
+                             ?? branches[0];
+
             ShowBranchPicker = true;
             StepChanged?.Invoke();
         }
@@ -245,13 +277,48 @@ public partial class LoginViewModel : ObservableObject
         await BindBranchAndFinishAsync(SelectedBranch);
     }
 
+    [RelayCommand]
+    private async Task SelectBranchAndContinueAsync(Branch? branch)
+    {
+        if (branch is null) return;
+        SelectedBranch = branch;
+        await BindBranchAndFinishAsync(branch);
+    }
+
     private async Task BindBranchAndFinishAsync(Branch branch)
     {
-        _branchContext.SetCurrentBranch(branch.Id, branch.Name, branch.Code);
+        if (_branchContext.AllowedBranchIds.Count > 0
+            && !_branchContext.AllowedBranchIds.Contains(branch.Id))
+        {
+            _sound.Play(SoundEffect.Error);
+            ShowError("لا تملك صلاحية الدخول إلى هذا الفرع.");
+            return;
+        }
+
+        try
+        {
+            _branchContext.SetCurrentBranch(branch.Id, branch.Name, branch.Code);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _sound.Play(SoundEffect.Error);
+            ShowError("لا تملك صلاحية الدخول إلى هذا الفرع.");
+            return;
+        }
+
         ShowBranchPicker = false;
+        AvailableBranches.Clear();
+        SelectedBranch = null;
         _sound.Play(SoundEffect.Login);
         LoginSucceeded?.Invoke();
         await Task.CompletedTask;
+    }
+
+    private void ResetBranchPickerState()
+    {
+        ShowBranchPicker = false;
+        AvailableBranches.Clear();
+        SelectedBranch = null;
     }
 
     partial void OnCurrentStepChanged(LoginStep value) => StepChanged?.Invoke();

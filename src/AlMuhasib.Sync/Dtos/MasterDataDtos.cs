@@ -41,7 +41,9 @@ public sealed class ProductPriceSyncDto : SyncDtoBase
     public Guid ProductSyncId { get; set; }
     public Guid PricingTypeSyncId { get; set; }
     public decimal SalePrice { get; set; }
+    public decimal SalePriceUsd { get; set; }
     public decimal PurchasePrice { get; set; }
+    public decimal PurchasePriceUsd { get; set; }
 }
 
 public sealed class BusinessSettingsSyncDto : SyncDtoBase

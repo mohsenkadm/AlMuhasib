@@ -114,17 +114,19 @@
                                 <ItemsControl ItemsSource="{Binding Cards}">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
-                                            <UniformGrid Columns="4"/>
+                                            <UniformGrid Columns="{Binding DataContext.CardsColumns, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
                                         </ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate DataType="{x:Type vm:ExecutiveSummaryCardItem}">
                                             <controls:AnimatedStatCard Margin="0,0,12,12"
-                                                                       MinHeight="128"
+                                                                       MinHeight="{Binding DataContext.CardsMinHeight, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                        Title="{Binding Title}"
                                                                        Hint="{Binding Hint}"
                                                                        Value="{Binding Amount}"
                                                                        Suffix="{Binding Suffix}"
+                                                                       SecondaryValue="{Binding SecondaryValue}"
+                                                                       ShowSecondaryValue="{Binding ShowSecondaryValue}"
                                                                        Icon="{Binding Icon}"
                                                                        IconBackground="{Binding AccentLightBrush}"
                                                                        IconForeground="{Binding AccentBrush}"

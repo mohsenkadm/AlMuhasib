@@ -1,9 +1,11 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Windows;
 using System.Windows.Threading;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
@@ -29,10 +31,12 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     private readonly IFeatureFlagService _featureFlags;
     private readonly IExchangeRateService _exchangeRateService;
     private readonly IPosFullscreenService _posFullscreen;
+    private readonly InvoiceCostGuard _costGuard;
     private readonly DispatcherTimer _searchDebounce;
 
     private List<Product> _allProducts = [];
-    private Dictionary<int, decimal> _suggestedPrices = [];
+    private Dictionary<int, decimal> _lastSalePrices = [];
+    private Dictionary<int, (decimal SaleIqd, decimal SaleUsd)> _catalogListPrices = [];
     private Dictionary<int, int> _defaultPricingTypeByProduct = [];
     private readonly bool _pricingEnabled;
 
@@ -56,8 +60,10 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     [ObservableProperty] private bool _showChangeDue;
     [ObservableProperty] private bool _showCreditRemaining;
     [ObservableProperty] private bool _isPaymentDialogOpen;
+    [ObservableProperty] private DateTime? _creditDueDate;
     [ObservableProperty] private int _cartLineCount;
     [ObservableProperty] private bool _showProductDiscount;
+    [ObservableProperty] private string _currencyAmountSuffix = AccountingCurrencyHelper.IqdLabel;
     [ObservableProperty] private string _statusMessage = "امسح الباركود أو ابحث بالاسم ثم Enter للإضافة";
     [ObservableProperty] private string? _lastSavedInvoiceNumber;
     [ObservableProperty] private bool _printAfterSale = true;
@@ -67,8 +73,17 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     [
         new(DiscountType.None, "بدون خصم كلي"),
         new(DiscountType.Percentage, "نسبة مئوية (%)"),
-        new(DiscountType.FixedAmount, "قيمة ثابتة (د.ع)")
+        new(DiscountType.FixedAmount, "قيمة ثابتة")
     ];
+
+    public string InvoiceDiscountValueHint => InvoiceDiscountType switch
+    {
+        DiscountType.Percentage => "نسبة الخصم (%)",
+        DiscountType.FixedAmount => $"مبلغ الخصم ({CurrencyAmountSuffix})",
+        _ => "قيمة"
+    };
+
+    public string PaidAmountHint => $"المبلغ المدفوع ({CurrencyAmountSuffix})";
 
     [ObservableProperty] private DiscountTypeOption? _selectedInvoiceDiscountOption;
 
@@ -105,6 +120,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         _featureFlags = featureFlags;
         _exchangeRateService = exchangeRateService;
         _pricingEnabled = userPreferences.Current.FeatureFlags.ProductPricingEnabled;
+        _costGuard = new InvoiceCostGuard(unitOfWork, productPriceService, _pricingEnabled);
         PageTitle = "بيع سريع (POS)";
         SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions[0];
         ConfigurePosFeatureServices(productSerialService, productSizeService, productColorService);
@@ -129,7 +145,11 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         RecalcCartTotals();
     }
 
-    partial void OnInvoiceDiscountTypeChanged(DiscountType value) => RecalcCartTotals();
+    partial void OnInvoiceDiscountTypeChanged(DiscountType value)
+    {
+        OnPropertyChanged(nameof(InvoiceDiscountValueHint));
+        RecalcCartTotals();
+    }
     partial void OnInvoiceDiscountValueChanged(decimal value) => RecalcCartTotals();
 
     public override async Task InitializeAsync()
@@ -170,6 +190,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
             RefreshFilteredProducts();
             RefreshFavoriteProducts();
+            RefreshCurrencyAmountSuffix();
         }
         finally
         {
@@ -196,8 +217,57 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     }
 
     partial void OnSelectedWarehouseChanged(Warehouse? value) => PersistPosDefaults();
-    partial void OnSelectedCashBoxChanged(CashBox? value) => PersistPosDefaults();
+    partial void OnSelectedCashBoxChanged(CashBox? value)
+    {
+        PersistPosDefaults();
+        RefreshCurrencyAmountSuffix();
+        RefreshFilteredProducts();
+        RefreshFavoriteProducts();
+        RequoteCartForCashBoxCurrency();
+    }
+
     partial void OnPaidAmountChanged(decimal value) => RecalcChange();
+
+    private AccountingCurrency PosDocumentCurrency =>
+        _featureFlags.MultiCurrency
+            ? (SelectedCashBox?.Currency ?? AccountingCurrency.IQD)
+            : AccountingCurrency.IQD;
+
+    private void RefreshCurrencyAmountSuffix()
+    {
+        CurrencyAmountSuffix = AccountingCurrencyHelper.GetLabel(PosDocumentCurrency);
+        OnPropertyChanged(nameof(InvoiceDiscountValueHint));
+        OnPropertyChanged(nameof(PaidAmountHint));
+    }
+
+    private decimal ResolveSuggestedPrice(int productId)
+    {
+        if (_pricingEnabled && _catalogListPrices.TryGetValue(productId, out var catalog))
+        {
+            var list = ProductListPriceHelper.ResolveListPrice(
+                catalog.SaleIqd, catalog.SaleUsd, PosDocumentCurrency);
+            if (list > 0 || PosDocumentCurrency == AccountingCurrency.USD)
+                return list;
+        }
+
+        if (PosDocumentCurrency == AccountingCurrency.USD)
+            return 0m;
+
+        return _lastSalePrices.GetValueOrDefault(productId);
+    }
+
+    private void RequoteCartForCashBoxCurrency()
+    {
+        if (!_featureFlags.MultiCurrency || !_pricingEnabled)
+            return;
+
+        foreach (var line in CartLines.Where(l => !l.IsOfferGift && l.ProductId > 0))
+        {
+            line.UnitPrice = ResolveSuggestedPrice(line.ProductId);
+        }
+
+        RecalcCartTotals();
+    }
 
     [RelayCommand]
     private async Task AddProductFromSearch()
@@ -313,6 +383,12 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     [RelayCommand]
     private void OpenCurrencyChange()
     {
+        if (PosDocumentCurrency == AccountingCurrency.USD)
+        {
+            BeautifulMessageDialog.ShowInfo("حاسبة فئات الدينار متاحة لفواتير الدينار فقط.");
+            return;
+        }
+
         var applied = IraqiCurrencyChangeDialog.Show(
             invoiceTotal: GrandTotal,
             allowApplyPaid: true);
@@ -415,6 +491,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         if (!CanOpenPaymentDialog()) return;
         _printAfterConfirm = printReceipt;
         PaidAmount = GrandTotal;
+        CreditDueDate = DateTime.Today.AddMonths(1);
         RecalcChange();
         IsPaymentDialogOpen = true;
     }
@@ -521,14 +598,37 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             return;
         }
 
+        if (isCredit && CreditDueDate is null)
+        {
+            BeautifulMessageDialog.ShowWarning("حدد تاريخ استحقاق التسديد للآجل");
+            return;
+        }
+
+        if (isCredit && CreditDueDate.HasValue && CreditDueDate.Value.Date <= DateTime.Today)
+        {
+            BeautifulMessageDialog.ShowWarning("تاريخ الاستحقاق يجب أن يكون بعد اليوم");
+            return;
+        }
+
+        var belowCostCurrency = PosDocumentCurrency;
+        var belowCost = await _costGuard.FindBelowCostLinesAsync(
+            BuildCartProfitRows(), ShowProductDiscount, belowCostCurrency);
+        if (belowCost.Count > 0)
+        {
+            var msg = InvoiceCostGuard.FormatBelowCostMessage(belowCost, belowCostCurrency);
+            if (!InvoiceValidationDialog.ShowWarningConfirm($"{msg}\n\nهل تريد المتابعة بالبيع؟"))
+                return;
+        }
+
         IsBusy = true;
         try
         {
             var cartSnapshot = CartLines.ToList();
             var totalSnapshot = GrandTotal;
             var paidSnapshot = Math.Min(PaidAmount, GrandTotal);
-            var fxRate = await ResolveFxRateAsync(SelectedCashBox.Currency);
-            if (SelectedCashBox.Currency == AccountingCurrency.USD && fxRate <= 0)
+            var currency = PosDocumentCurrency;
+            var fxRate = await ResolveFxRateAsync(currency);
+            if (currency == AccountingCurrency.USD && fxRate <= 0)
             {
                 BeautifulMessageDialog.ShowWarning("سعر الصرف مطلوب لبيع بالدولار. سجّل سعر الصرف اليومي أولاً.");
                 return;
@@ -541,7 +641,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = isCredit ? PaymentMethod.Credit : PaymentMethod.Cash,
                 CashBoxId = SelectedCashBox.Id,
-                Currency = SelectedCashBox.Currency,
+                Currency = currency,
                 FxRate = fxRate,
                 Date = DateTime.Now,
                 DiscountAmount = (ShowProductDiscount ? InvoiceDiscountAmount : 0m)
@@ -549,7 +649,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 LoyaltyRedeemDiscountAmount = ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m,
                 LoyaltyPointsRedeemed = ShowLoyaltyPanel ? Math.Max(0, LoyaltyRedeemPoints) : 0,
                 PaidAmount = isCredit ? paidSnapshot : GrandTotal,
-                CreditDueDate = isCredit ? DateTime.Today.AddMonths(1) : null,
+                CreditDueDate = isCredit ? CreditDueDate : null,
                 Notes = isCredit ? "بيع سريع POS — آجل" : "بيع سريع POS"
             };
 
@@ -580,7 +680,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
             _recentActivity.Record(
                 "بيع سريع",
-                $"{saved.InvoiceNumber} — {saved.NetAmount:N0} د.ع",
+                $"{saved.InvoiceNumber} — {AccountingCurrencyHelper.Format(saved.NetAmount, currency)}",
                 "SaleInvoice",
                 typeof(PosQuickSaleViewModel));
 
@@ -589,8 +689,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             LoyaltyRedeemPoints = 0;
             LoyaltyDiscountAmount = 0m;
             StatusMessage = isCredit
-                ? $"تم البيع الآجل — {saved.InvoiceNumber} — مدفوع {paidSnapshot:N0} — متبقي {saved.RemainingAmount:N0} د.ع"
-                : $"تم البيع — {saved.InvoiceNumber} — {saved.NetAmount:N0} د.ع";
+                ? $"تم البيع الآجل — {saved.InvoiceNumber} — مدفوع {AccountingCurrencyHelper.Format(paidSnapshot, currency)} — متبقي {AccountingCurrencyHelper.Format(saved.RemainingAmount, currency)}"
+                : $"تم البيع — {saved.InvoiceNumber} — {AccountingCurrencyHelper.Format(saved.NetAmount, currency)}";
             if (applyLoyalty && saved.LoyaltyPointsEarned > 0)
                 StatusMessage += $" — +{saved.LoyaltyPointsEarned} نقطة ولاء";
             _sound.Play(SoundEffect.Success);
@@ -639,7 +739,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             FilteredProducts.Add(new PosProductTile
             {
                 Product = p,
-                Price = _suggestedPrices.GetValueOrDefault(p.Id),
+                Price = ResolveSuggestedPrice(p.Id),
                 IsFavorite = _favoriteProducts.IsFavorite(p.Id)
             });
         }
@@ -656,7 +756,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 FavoriteProducts.Add(new PosProductTile
                 {
                     Product = product,
-                    Price = _suggestedPrices.GetValueOrDefault(product.Id),
+                    Price = ResolveSuggestedPrice(product.Id),
                     IsFavorite = true
                 });
             }
@@ -665,7 +765,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
     private async Task LoadSuggestedPricesAsync()
     {
-        _suggestedPrices = new Dictionary<int, decimal>();
+        _lastSalePrices = new Dictionary<int, decimal>();
         var saleItems = (await _unitOfWork.InvoiceItems.FindAsync(i => i.ProductId != null)).ToList();
         foreach (var product in _allProducts)
         {
@@ -673,18 +773,19 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 .Where(i => i.ProductId == product.Id && i.UnitPrice > 0)
                 .OrderByDescending(i => i.Id)
                 .FirstOrDefault();
-            _suggestedPrices[product.Id] = lastSale?.UnitPrice ?? 0;
+            _lastSalePrices[product.Id] = lastSale?.UnitPrice ?? 0;
         }
     }
 
     private async Task LoadCatalogPricesAsync()
     {
         _defaultPricingTypeByProduct.Clear();
+        _catalogListPrices.Clear();
         var prices = await _productPriceService.GetByProductIdsAsync(_allProducts.Select(p => p.Id));
         foreach (var group in prices.GroupBy(p => p.ProductId))
         {
             var preferred = group.FirstOrDefault(p => p.PricingType?.IsDefault == true) ?? group.First();
-            _suggestedPrices[group.Key] = preferred.SalePrice;
+            _catalogListPrices[group.Key] = (preferred.SalePrice, preferred.SalePriceUsd);
             _defaultPricingTypeByProduct[group.Key] = preferred.PricingTypeId;
         }
     }
@@ -732,6 +833,60 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         CreditRemainingAmount = PaidAmount < GrandTotal ? GrandTotal - PaidAmount : 0;
         ShowChangeDue = ChangeAmount > 0;
         ShowCreditRemaining = CreditRemainingAmount > 0;
+        if (ShowCreditRemaining && CreditDueDate is null)
+            CreditDueDate = DateTime.Today.AddMonths(1);
+    }
+
+    private List<InvoiceItemRow> BuildCartProfitRows() =>
+        CartLines
+            .Where(l => l.ProductId > 0 && !string.IsNullOrWhiteSpace(l.ProductName) && l.Quantity != 0)
+            .Select(l => new InvoiceItemRow
+            {
+                ProductId = l.ProductId,
+                ItemName = l.ProductName,
+                Quantity = l.Quantity,
+                UnitPrice = l.UnitPrice,
+                DiscountAmount = ShowProductDiscount ? l.DiscountAmount : 0m,
+                PricingTypeId = l.PricingTypeId,
+                IsOfferGift = l.IsOfferGift
+            })
+            .ToList();
+
+    [RelayCommand]
+    private async Task CheckProfitAsync()
+    {
+        var rows = BuildCartProfitRows().Where(r => !r.IsOfferGift).ToList();
+        if (rows.Count == 0)
+        {
+            BeautifulMessageDialog.ShowWarning("أضف مواد إلى السلة أولاً ثم افحص الربح.");
+            return;
+        }
+
+        try
+        {
+            var vm = new InvoiceProfitCheckViewModel(
+                _unitOfWork,
+                _productPriceService,
+                _pricingEnabled,
+                ShowProductDiscount,
+                PosDocumentCurrency);
+            await vm.LoadAsync(rows, InvoiceDiscountType, InvoiceDiscountValue);
+
+            var owner = Application.Current.MainWindow;
+            var result = InvoiceProfitCheckDialog.Show(owner, vm);
+            if (result == true && ShowProductDiscount)
+            {
+                InvoiceDiscountType = vm.DiscountType;
+                InvoiceDiscountValue = vm.DiscountValue;
+                SelectedInvoiceDiscountOption = InvoiceDiscountTypeOptions.FirstOrDefault(o => o.Type == vm.DiscountType)
+                                               ?? InvoiceDiscountTypeOptions[0];
+                RecalcCartTotals();
+            }
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذر فحص ربح الفاتورة:\n{ex.Message}");
+        }
     }
 
     private void PersistPosDefaults()

@@ -41,6 +41,8 @@ public class CarDbContext : DbContext
         modelBuilder.ApplyConfiguration(new CarSaleContractConfiguration());
         modelBuilder.ApplyConfiguration(new CarContractPaymentConfiguration());
 
+        NonAccountingEntityModel.IgnoreSharedBranchProperties(modelBuilder);
+
         modelBuilder.Entity<SyncState>().HasKey(s => s.EntityType);
         modelBuilder.Entity<Core.Entities.CloudSyncSettings>().HasData(
             new Core.Entities.CloudSyncSettings { Id = Core.Entities.CloudSyncSettings.SingletonId });

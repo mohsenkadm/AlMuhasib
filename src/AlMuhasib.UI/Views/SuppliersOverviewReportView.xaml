@@ -99,7 +99,8 @@
                         <DataGridTextColumn Header="المستحق د.ع" Binding="{Binding OutstandingBalance, StringFormat=N0}" Width="110"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="OutstandingBalance"/>
                         <DataGridTextColumn Header="المستحق $" Binding="{Binding OutstandingBalanceUsd, StringFormat=N2}" Width="100"
-                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="OutstandingBalanceUsd"/>
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="OutstandingBalanceUsd"
+                                            Visibility="{Binding DataContext.ShowTotalOutstandingUsd, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     </DataGrid.Columns>
                 </DataGrid>
                         <controls:PaginationBar Grid.Row="2"/>

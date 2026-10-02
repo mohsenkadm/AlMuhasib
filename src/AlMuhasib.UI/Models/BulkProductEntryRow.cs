@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Text.Json;
 using AlMuhasib.Core.Enums;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -25,8 +26,6 @@ public partial class BulkProductEntryRow : ObservableObject
     [ObservableProperty] private string _discountTypeText = "بدون";
     [ObservableProperty] private decimal _discountValue;
     [ObservableProperty] private string _discountExpiresText = string.Empty;
-    [ObservableProperty] private decimal _salePrice;
-    [ObservableProperty] private decimal _purchasePrice;
     [ObservableProperty] private string _customField1 = string.Empty;
     [ObservableProperty] private string _customField2 = string.Empty;
     [ObservableProperty] private string _customField3 = string.Empty;
@@ -38,9 +37,52 @@ public partial class BulkProductEntryRow : ObservableObject
 
     [ObservableProperty] private string _rowStatus = string.Empty;
 
+    public ObservableCollection<MigrationWarehouseQtyCell> WarehouseQtys { get; } = [];
+    public ObservableCollection<MigrationProductPriceCell> ProductPrices { get; } = [];
+
     public bool HasName => !string.IsNullOrWhiteSpace(Name);
 
     public bool IsReadyToSave => HasName;
+
+    public bool HasOpeningQty => WarehouseQtys.Any(q => q.Quantity > 0);
+
+    public bool HasAnyPrice => ProductPrices.Any(p =>
+        p.SalePrice > 0 || p.SalePriceUsd > 0 || p.PurchasePrice > 0 || p.PurchasePriceUsd > 0);
+
+    public decimal ResolveOpeningUnitCostIqd()
+    {
+        var fromPurchase = ProductPrices.FirstOrDefault(p => p.PurchasePrice > 0)?.PurchasePrice ?? 0m;
+        return fromPurchase > 0 ? fromPurchase : 0m;
+    }
+
+    public void EnsureStructure(
+        IReadOnlyList<string> warehouseNames,
+        IReadOnlyList<string> pricingTypeNames)
+    {
+        var qtyByName = WarehouseQtys
+            .GroupBy(q => q.WarehouseName, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+        WarehouseQtys.Clear();
+        foreach (var wh in warehouseNames.Where(n => !string.IsNullOrWhiteSpace(n)))
+        {
+            if (qtyByName.TryGetValue(wh, out var existing))
+                WarehouseQtys.Add(existing);
+            else
+                WarehouseQtys.Add(new MigrationWarehouseQtyCell { WarehouseName = wh });
+        }
+
+        var priceByName = ProductPrices
+            .GroupBy(p => p.PricingTypeName, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+        ProductPrices.Clear();
+        foreach (var typeName in pricingTypeNames.Where(n => !string.IsNullOrWhiteSpace(n)))
+        {
+            if (priceByName.TryGetValue(typeName, out var existing))
+                ProductPrices.Add(existing);
+            else
+                ProductPrices.Add(new MigrationProductPriceCell { PricingTypeName = typeName });
+        }
+    }
 
     partial void OnNameChanged(string value)
     {

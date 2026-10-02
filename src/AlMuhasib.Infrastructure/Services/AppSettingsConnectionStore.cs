@@ -52,6 +52,9 @@ public sealed class AppSettingsConnectionStore : IAppSettingsConnectionStore
         if (string.IsNullOrWhiteSpace(connectionString))
             throw new ArgumentException("Connection string is required.", nameof(connectionString));
 
+        // Normalize / validate early so broken strings are not persisted.
+        var normalized = new SqlConnectionStringBuilder(connectionString.Trim()).ConnectionString;
+
         JsonObject root;
         if (File.Exists(AppSettingsPath))
         {
@@ -85,7 +88,7 @@ public sealed class AppSettingsConnectionStore : IAppSettingsConnectionStore
         }
 
         var connectionStrings = root["ConnectionStrings"] as JsonObject ?? new JsonObject();
-        connectionStrings["DefaultConnection"] = connectionString;
+        connectionStrings["DefaultConnection"] = normalized;
         root["ConnectionStrings"] = connectionStrings;
 
         var directory = Path.GetDirectoryName(AppSettingsPath);
@@ -93,5 +96,22 @@ public sealed class AppSettingsConnectionStore : IAppSettingsConnectionStore
             Directory.CreateDirectory(directory);
 
         File.WriteAllText(AppSettingsPath, root.ToJsonString(WriteOptions));
+    }
+
+    public string ReadDefaultConnection()
+    {
+        if (!File.Exists(AppSettingsPath))
+            return string.Empty;
+
+        try
+        {
+            var root = JsonNode.Parse(File.ReadAllText(AppSettingsPath)) as JsonObject;
+            return root?["ConnectionStrings"]?["DefaultConnection"]?.GetValue<string>()?.Trim()
+                   ?? string.Empty;
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 }

@@ -61,12 +61,15 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     private decimal? _customerOutstandingBalance;
 
     [ObservableProperty]
+    private decimal? _customerOutstandingBalanceUsd;
+
+    [ObservableProperty]
     private bool _isCustomerBalanceLoading;
 
     public bool ShowCustomerBalance => SelectedCustomer is not null;
 
     public bool HasCustomerOutstandingBalance =>
-        CustomerOutstandingBalance is > 0;
+        (CustomerOutstandingBalance is > 0) || (CustomerOutstandingBalanceUsd is > 0);
 
     public ObservableCollection<Customer> Customers { get; } = [];
     public ObservableCollection<Customer> FilteredCustomers { get; } = [];
@@ -120,8 +123,15 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     [
         new(DiscountType.None, "بدون خصم كلي"),
         new(DiscountType.Percentage, "نسبة مئوية (%)"),
-        new(DiscountType.FixedAmount, "قيمة ثابتة (د.ع)")
+        new(DiscountType.FixedAmount, "قيمة ثابتة")
     ];
+
+    public string InvoiceDiscountValueHint => InvoiceDiscountType switch
+    {
+        DiscountType.Percentage => "نسبة الخصم (%)",
+        DiscountType.FixedAmount => $"مبلغ الخصم ({CurrencyAmountSuffix})",
+        _ => "قيمة الخصم الكلي"
+    };
 
     [ObservableProperty]
     private DiscountTypeOption? _selectedInvoiceDiscountOption;
@@ -137,6 +147,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         var match = InvoiceDiscountTypeOptions.FirstOrDefault(o => o.Type == value);
         if (!Equals(SelectedInvoiceDiscountOption, match))
             SelectedInvoiceDiscountOption = match;
+        OnPropertyChanged(nameof(InvoiceDiscountValueHint));
         RecalculateTotals();
     }
 
@@ -176,8 +187,12 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     /// <summary>إخفاء العميل وطريقة الدفع في وضع التلف.</summary>
     public bool ShowCustomerAndPayment => !IsDamageMode;
 
+    /// <summary>
+    /// الصندوق يظهر للنقد دائماً، وللآجل أيضاً (دفعة مقدمة اختيارية) —
+    /// لا يُخفى عند اختيار الآجل حتى يبقى الحفظ ممكناً مع تصفية عملة الصندوق.
+    /// </summary>
     public bool ShowCashBox =>
-        !IsDamageMode && (IsCashPayment || (IsCreditPayment && CreditPaidAmount > 0m));
+        !IsDamageMode && (IsCashPayment || IsCreditPayment);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSave))]
@@ -213,14 +228,14 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     partial void OnCreditPaidAmountChanged(decimal value)
     {
         if (!IsCreditPayment) return;
-        var paid = Math.Clamp(value, 0m, GrandTotal);
-        if (paid != value)
+        // لا نقيّد بالمجموع أثناء الكتابة — التقييد عند إعادة الحساب/الحفظ فقط.
+        if (value < 0m)
         {
-            CreditPaidAmount = paid;
+            CreditPaidAmount = 0m;
             return;
         }
 
-        CreditRemainingAmount = Math.Max(0m, GrandTotal - paid);
+        CreditRemainingAmount = Math.Max(0m, GrandTotal - value);
         OnPropertyChanged(nameof(ShowCashBox));
     }
 
@@ -644,6 +659,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             warnings.Add("فاتورة تلف — سيتم إنقاص الكمية من المخزن عند الحفظ دون التأثير على الصندوق.");
         if (IsCreditPayment && SelectedCustomer?.MaxCreditLimit is > 0)
             warnings.Add($"حد ائتمان العميل: {SelectedCustomer.MaxCreditLimit:N0} د.ع — سيُفحص عند الحفظ.");
+
         if (!IsReturnMode && !IsDamageMode && Items.Any(i => i.ProductId is > 0 && i.Quantity > 0 && i.UnitPrice > 0))
             warnings.Add("F4 إضافة منتج · F5 فحص الربح · Ctrl+S حفظ · F7 حاسبة العملة · Esc إلغاء المسودة.");
         InvoiceWarningsBanner = string.Join("  |  ", warnings);
@@ -677,10 +693,32 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         OnPropertyChanged(nameof(CustomerBalanceText));
     }
 
-    public string CustomerBalanceText =>
-        CustomerOutstandingBalance is null
-            ? string.Empty
-            : $"رصيد العميل: {CustomerOutstandingBalance:N0} د.ع";
+    partial void OnCustomerOutstandingBalanceUsdChanged(decimal? value)
+    {
+        OnPropertyChanged(nameof(HasCustomerOutstandingBalance));
+        OnPropertyChanged(nameof(CustomerBalanceText));
+    }
+
+    public string CustomerBalanceText
+    {
+        get
+        {
+            if (CustomerOutstandingBalance is null && CustomerOutstandingBalanceUsd is null)
+                return string.Empty;
+
+            var iqd = CustomerOutstandingBalance ?? 0m;
+            var usd = ShowMultiCurrency ? (CustomerOutstandingBalanceUsd ?? 0m) : 0m;
+            if (iqd <= 0 && usd <= 0)
+                return "لا ذمم عليه";
+
+            var parts = new List<string>();
+            if (iqd > 0)
+                parts.Add($"رصيد: {iqd:N0} د.ع");
+            if (usd > 0)
+                parts.Add($"رصيد: {usd:N2} $");
+            return string.Join("  |  ", parts);
+        }
+    }
 
     private async Task RefreshCustomerBalanceAsync()
     {
@@ -692,6 +730,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         if (SelectedCustomer is null)
         {
             CustomerOutstandingBalance = null;
+            CustomerOutstandingBalanceUsd = null;
             IsCustomerBalanceLoading = false;
             OnPropertyChanged(nameof(ShowCustomerBalance));
             return;
@@ -707,11 +746,15 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 return;
 
             CustomerOutstandingBalance = statement.Balance;
+            CustomerOutstandingBalanceUsd = ShowMultiCurrency ? statement.BalanceUsd : null;
         }
         catch
         {
             if (!token.IsCancellationRequested)
+            {
                 CustomerOutstandingBalance = null;
+                CustomerOutstandingBalanceUsd = null;
+            }
         }
         finally
         {
@@ -731,6 +774,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
         SelectedCustomer = null;
         CustomerOutstandingBalance = null;
+        CustomerOutstandingBalanceUsd = null;
         IsCustomerBalanceLoading = false;
         OnPropertyChanged(nameof(ShowCustomerBalance));
         CustomerComboBoxFilter.Apply(Customers, FilteredCustomers, value);
@@ -776,11 +820,13 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
         try
         {
+            var profitCurrency = ShowMultiCurrency ? SelectedCurrency : AccountingCurrency.IQD;
             var vm = new InvoiceProfitCheckViewModel(
                 _unitOfWork,
                 _productPriceService,
                 ShowProductPricing,
-                ShowProductDiscount);
+                ShowProductDiscount,
+                profitCurrency);
             await vm.LoadAsync(productRows, InvoiceDiscountType, InvoiceDiscountValue);
 
             var owner = Application.Current.MainWindow;
@@ -1030,7 +1076,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             _invoiceService,
             InvoiceType.Sale,
             totalDiscount,
-            ShowTransportFee ? TransportFeeAmount : 0m);
+            ShowTransportFee ? TransportFeeAmount : 0m,
+            DocumentRoundingCurrency);
         _ = computedSub;
         _ = discount;
 
@@ -1197,10 +1244,11 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
         if (!IsReturnMode && !IsDamageMode)
         {
-            var belowCost = await _costGuard.FindBelowCostLinesAsync(validItems, ShowProductDiscount);
+            var belowCostCurrency = ShowMultiCurrency ? SelectedCurrency : AccountingCurrency.IQD;
+            var belowCost = await _costGuard.FindBelowCostLinesAsync(validItems, ShowProductDiscount, belowCostCurrency);
             if (belowCost.Count > 0)
             {
-                var msg = InvoiceCostGuard.FormatBelowCostMessage(belowCost);
+                var msg = InvoiceCostGuard.FormatBelowCostMessage(belowCost, belowCostCurrency);
                 if (!InvoiceValidationDialog.ShowWarningConfirm($"{msg}\n\nهل تريد المتابعة بالبيع؟"))
                     return;
             }
@@ -1373,12 +1421,12 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             _draftService.ClearDraft(DraftKey);
             _recentActivity.Record(
                 IsDamageMode ? "فاتورة تلف" : IsReturnMode ? "مرتجع مبيعات" : "فاتورة مبيعات",
-                $"{saved.InvoiceNumber} — {saved.NetAmount:N0} د.ع",
+                $"{saved.InvoiceNumber} — {saved.NetAmount:N0} {CurrencyAmountSuffix}",
                 IsDamageMode ? "DamageInvoice" : IsReturnMode ? "SalesReturn" : "SaleInvoice",
                 typeof(SalesInvoiceViewModel));
 
             BeautifulMessageDialog.ShowSuccess(
-                $"تم حفظ {(IsDamageMode ? "فاتورة التلف" : IsReturnMode ? "مرتجع المبيعات" : "الفاتورة")} بنجاح\nرقم الفاتورة: {saved.InvoiceNumber}\nالمبلغ الكلي: {saved.NetAmount:N0} د.ع\n\nيمكنك الطباعة أو الإرسال عبر واتساب.");
+                $"تم حفظ {(IsDamageMode ? "فاتورة التلف" : IsReturnMode ? "مرتجع المبيعات" : "الفاتورة")} بنجاح\nرقم الفاتورة: {saved.InvoiceNumber}\nالمبلغ الكلي: {saved.NetAmount:N0} {CurrencyAmountSuffix}\n\nيمكنك الطباعة أو الإرسال عبر واتساب.");
 
             PrintInvoice();
         }
@@ -1666,6 +1714,12 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     [RelayCommand]
     private void OpenCurrencyChange()
     {
+        if (DocumentRoundingCurrency == AccountingCurrency.USD)
+        {
+            BeautifulMessageDialog.ShowInfo("حاسبة فئات الدينار متاحة لفواتير الدينار فقط.");
+            return;
+        }
+
         IraqiCurrencyChangeDialog.ShowCalculator(GrandTotal);
     }
 
@@ -1772,7 +1826,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             return;
         }
 
-        PartyQuickDetailDialog.ShowCustomer(_partyQuickDetail, SelectedCustomer.Id);
+        PartyQuickDetailDialog.ShowCustomer(_partyQuickDetail, SelectedCustomer.Id, ShowMultiCurrency);
     }
 
     [RelayCommand]
@@ -1784,7 +1838,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             return;
         }
 
-        ProductQuickDetailDialog.Show(_productQuickDetail, row.ProductId.Value);
+        ProductQuickDetailDialog.Show(_productQuickDetail, row.ProductId.Value, ShowMultiCurrency);
     }
 
     [RelayCommand]

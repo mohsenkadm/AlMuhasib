@@ -101,6 +101,7 @@ public static class DependencyInjection
         services.AddScoped<IInstallmentService, InstallmentService>();
         services.AddScoped<IOpeningPartyBalanceService, OpeningPartyBalanceService>();
         services.AddScoped<ICashBankService, CashBankService>();
+        services.AddScoped<ICurrencyExchangeService, CurrencyExchangeService>();
         services.AddScoped<IExpenseService, ExpenseService>();
         services.AddScoped<IInvestorService, InvestorService>();
         services.AddScoped<IReportService, ReportService>();
@@ -155,6 +156,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, CarUnitOfWork>();
         services.AddScoped<IAuthService, CarAuthService>();
         services.AddScoped<IPrintBrandingService, PrintBrandingService>();
+        services.AddScoped<IBranchService, NonAccountingBranchService>();
         if (isBranchClient)
             services.AddSingleton<IDatabaseMigrationService, NoOpDatabaseMigrationService>();
         else
@@ -186,6 +188,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, HotelUnitOfWork>();
         services.AddScoped<IAuthService, HotelAuthService>();
         services.AddScoped<IPrintBrandingService, PrintBrandingService>();
+        services.AddScoped<IBranchService, NonAccountingBranchService>();
         if (isBranchClient)
             services.AddSingleton<IDatabaseMigrationService, NoOpDatabaseMigrationService>();
         else
@@ -238,6 +241,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, CarTradeUnitOfWork>();
         services.AddScoped<IAuthService, CarTradeAuthService>();
         services.AddScoped<IPrintBrandingService, PrintBrandingService>();
+        services.AddScoped<IBranchService, NonAccountingBranchService>();
         if (isBranchClient)
             services.AddSingleton<IDatabaseMigrationService, NoOpDatabaseMigrationService>();
         else
@@ -269,6 +273,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, RealEstateUnitOfWork>();
         services.AddScoped<IAuthService, RealEstateAuthService>();
         services.AddScoped<IPrintBrandingService, PrintBrandingService>();
+        services.AddScoped<IBranchService, NonAccountingBranchService>();
         if (isBranchClient)
             services.AddSingleton<IDatabaseMigrationService, NoOpDatabaseMigrationService>();
         else
@@ -303,6 +308,7 @@ public static class DependencyInjection
         services.AddScoped<IUnitOfWork, GoldUnitOfWork>();
         services.AddScoped<IAuthService, GoldAuthService>();
         services.AddScoped<IPrintBrandingService, PrintBrandingService>();
+        services.AddScoped<IBranchService, NonAccountingBranchService>();
         if (isBranchClient)
             services.AddSingleton<IDatabaseMigrationService, NoOpDatabaseMigrationService>();
         else

@@ -21,8 +21,15 @@ public class ProductQuickDetailResult
     public decimal? LastSalePrice { get; set; }
     public DateTime? LastSaleDate { get; set; }
 
+    public decimal? LastPurchasePriceUsd { get; set; }
+    public DateTime? LastPurchaseDateUsd { get; set; }
+    public decimal? LastSalePriceUsd { get; set; }
+    public DateTime? LastSaleDateUsd { get; set; }
+
     public decimal? CurrentSalePrice { get; set; }
     public decimal? CurrentPurchasePrice { get; set; }
+    public decimal? CurrentSalePriceUsd { get; set; }
+    public decimal? CurrentPurchasePriceUsd { get; set; }
 
     public int SaleDealCount { get; set; }
     public decimal TotalSoldQuantity { get; set; }

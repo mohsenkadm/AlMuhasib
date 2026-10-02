@@ -29,14 +29,15 @@ public class ProductService : IProductService
         var username = _currentUserService.Username;
         var name = product.Name.Trim();
         var barcode = string.IsNullOrWhiteSpace(product.Barcode) ? null : product.Barcode.Trim();
-        var branchId = _branchContext.RequireWriteBranchId();
+        // المنتجات مشتركة على الشركة — لا تُقيَّد بـ BranchId
+        _ = _branchContext.HasWriteBranchContext;
 
         Product? softDeleted = null;
         if (barcode is not null)
         {
             softDeleted = await context.Products
                 .IgnoreQueryFilters()
-                .Where(p => p.IsDeleted && p.Barcode == barcode && p.BranchId == branchId)
+                .Where(p => p.IsDeleted && p.Barcode == barcode)
                 .OrderByDescending(p => p.DeletedAt)
                 .FirstOrDefaultAsync();
         }
@@ -46,7 +47,7 @@ public class ProductService : IProductService
         {
             softDeleted = await context.Products
                 .IgnoreQueryFilters()
-                .Where(p => p.IsDeleted && p.Name == name && p.BranchId == branchId)
+                .Where(p => p.IsDeleted && p.Name == name)
                 .OrderByDescending(p => p.DeletedAt)
                 .FirstOrDefaultAsync();
         }

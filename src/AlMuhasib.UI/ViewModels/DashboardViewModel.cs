@@ -4,18 +4,19 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Threading;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
 using AlMuhasib.Core.Models.Ux;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Charts;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using MaterialDesignThemes.Wpf;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 
@@ -26,6 +27,7 @@ public partial class DashboardViewModel : ViewModelBase
     private readonly IDashboardService _dashboardService;
     private readonly ISmartAlertService _smartAlertService;
     private readonly MainWindowViewModel _mainWindow;
+    private readonly IFeatureFlagService _featureFlags;
     private bool _initialized;
     private List<DailySalesPoint>? _cachedSalesPoints;
     private List<ExpenseCategoryShare>? _cachedExpenseShares;
@@ -55,6 +57,13 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty]
     private string _displayDate = string.Empty;
 
+    // ── Multi-currency (USD disclosure) ────────────────────
+    [ObservableProperty]
+    private bool _showMultiCurrency;
+
+    /// <summary>يعرض حقول الدولار عند تفعيل العملات المتعددة.</summary>
+    public bool ShowUsdStats => ShowMultiCurrency;
+
     // ── Summary cards ──────────────────────────────────────
     [ObservableProperty]
     private decimal _todaySales;
@@ -62,7 +71,7 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty]
     private decimal _todaySalesUsd;
 
-    public bool ShowTodaySalesUsd => TodaySalesUsd != 0;
+    public string TodaySalesUsdText => FormatUsd(TodaySalesUsd);
 
     [ObservableProperty]
     private decimal _todayPurchases;
@@ -70,10 +79,15 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty]
     private decimal _todayPurchasesUsd;
 
-    public bool ShowTodayPurchasesUsd => TodayPurchasesUsd != 0;
+    public string TodayPurchasesUsdText => FormatUsd(TodayPurchasesUsd);
 
     [ObservableProperty]
     private decimal _netProfit;
+
+    [ObservableProperty]
+    private decimal _netProfitUsd;
+
+    public string NetProfitUsdText => FormatUsd(NetProfitUsd);
 
     [ObservableProperty]
     private decimal _netProfitSales;
@@ -93,6 +107,15 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty]
     private decimal _netProfitOpening;
 
+    [ObservableProperty]
+    private decimal _netProfitSalesUsd;
+
+    [ObservableProperty]
+    private decimal _netProfitPurchasesUsd;
+
+    [ObservableProperty]
+    private decimal _netProfitExpensesUsd;
+
     /// <summary>فواتير المشتريات + الرصيد الافتتاحي للمخزون (للعرض في تفاصيل المصدر).</summary>
     public decimal NetProfitPurchasesWithOpeningStock =>
         NetProfitPurchases + NetProfitOpeningStock;
@@ -106,6 +129,12 @@ public partial class DashboardViewModel : ViewModelBase
 
     [ObservableProperty]
     private int _overdueInstallmentsCount;
+
+    [ObservableProperty]
+    private int _overdueInstallmentsCountUsd;
+
+    public string OverdueInstallmentsUsdText =>
+        $"{OverdueInstallmentsCountUsd:N0} قسط $";
 
     [ObservableProperty]
     private decimal _investorBalance;
@@ -123,6 +152,11 @@ public partial class DashboardViewModel : ViewModelBase
     private decimal _unpaidInstallmentsBalance;
 
     [ObservableProperty]
+    private decimal _unpaidInstallmentsBalanceUsd;
+
+    public string UnpaidInstallmentsUsdText => FormatUsd(UnpaidInstallmentsBalanceUsd);
+
+    [ObservableProperty]
     private decimal _customerCreditBalance;
 
     [ObservableProperty]
@@ -135,6 +169,20 @@ public partial class DashboardViewModel : ViewModelBase
     private decimal _customerCreditUnappliedReceipts;
 
     [ObservableProperty]
+    private decimal _customerCreditBalanceUsd;
+
+    [ObservableProperty]
+    private decimal _customerCreditInvoiceRemainingUsd;
+
+    [ObservableProperty]
+    private decimal _customerCreditUnappliedDebtUsd;
+
+    [ObservableProperty]
+    private decimal _customerCreditUnappliedReceiptsUsd;
+
+    public string CustomerCreditUsdText => FormatUsd(CustomerCreditBalanceUsd);
+
+    [ObservableProperty]
     private decimal _supplierCreditBalance;
 
     [ObservableProperty]
@@ -144,10 +192,23 @@ public partial class DashboardViewModel : ViewModelBase
     private decimal _supplierCreditUnappliedPayments;
 
     [ObservableProperty]
+    private decimal _supplierCreditBalanceUsd;
+
+    [ObservableProperty]
+    private decimal _supplierCreditInvoiceRemainingUsd;
+
+    [ObservableProperty]
+    private decimal _supplierCreditUnappliedPaymentsUsd;
+
+    public string SupplierCreditUsdText => FormatUsd(SupplierCreditBalanceUsd);
+
+    [ObservableProperty]
     private decimal _totalCashBalance;
 
     [ObservableProperty]
     private decimal _totalCashBalanceUsd;
+
+    public string TotalCashBalanceUsdText => FormatUsd(TotalCashBalanceUsd);
 
     // ── Charts ─────────────────────────────────────────────
     [ObservableProperty]
@@ -175,8 +236,12 @@ public partial class DashboardViewModel : ViewModelBase
     [ObservableProperty]
     private decimal _bankBalanceUsd;
 
+    public string BankBalanceUsdText => FormatUsd(BankBalanceUsd);
+
     [ObservableProperty]
     private decimal _totalInventoryValue;
+
+    public ObservableCollection<InventoryValueBreakdownItem> InventoryBreakdown { get; } = [];
 
     // ── KPI sparkline values (last 14 days) ────────────────
     public ObservableCollection<decimal> TodaySalesChartValues { get; } = [];
@@ -215,18 +280,50 @@ public partial class DashboardViewModel : ViewModelBase
     private List<DailySalesPoint>? _cachedInventoryPoints;
 
     public DashboardViewModel(IDashboardService dashboardService, ISmartAlertService smartAlertService,
-        MainWindowViewModel mainWindow, ICurrentUserService currentUserService)
+        MainWindowViewModel mainWindow, ICurrentUserService currentUserService,
+        IUnitOfWork unitOfWork, IPricingTypeService pricingTypeService,
+        IFeatureFlagService featureFlags)
     {
         _dashboardService = dashboardService;
         _smartAlertService = smartAlertService;
         _mainWindow = mainWindow;
         _currentUserService = currentUserService;
+        _unitOfWork = unitOfWork;
+        _pricingTypeService = pricingTypeService;
+        _featureFlags = featureFlags;
         PageTitle = "لوحة التحكم";
         IsBusy = true;
         IsLoaded = false;
+        ShowMultiCurrency = _featureFlags.MultiCurrency;
+        _featureFlags.FlagsChanged += (_, _) =>
+            FeatureUiRefresh.Invoke(() =>
+            {
+                ShowMultiCurrency = _featureFlags.MultiCurrency;
+                NotifyUsdDisplayProperties();
+            });
         ApplyDashboardProfile();
         RefreshWelcomeHeader();
         ThemeChartRefresh.Register(RefreshChartsOnlyAsync);
+    }
+
+    partial void OnShowMultiCurrencyChanged(bool value) =>
+        OnPropertyChanged(nameof(ShowUsdStats));
+
+    private static string FormatUsd(decimal amount) =>
+        AccountingCurrencyHelper.Format(amount, AccountingCurrency.USD);
+
+    private void NotifyUsdDisplayProperties()
+    {
+        OnPropertyChanged(nameof(ShowUsdStats));
+        OnPropertyChanged(nameof(TodaySalesUsdText));
+        OnPropertyChanged(nameof(TodayPurchasesUsdText));
+        OnPropertyChanged(nameof(NetProfitUsdText));
+        OnPropertyChanged(nameof(OverdueInstallmentsUsdText));
+        OnPropertyChanged(nameof(UnpaidInstallmentsUsdText));
+        OnPropertyChanged(nameof(CustomerCreditUsdText));
+        OnPropertyChanged(nameof(SupplierCreditUsdText));
+        OnPropertyChanged(nameof(TotalCashBalanceUsdText));
+        OnPropertyChanged(nameof(BankBalanceUsdText));
     }
 
     private void RefreshWelcomeHeader()
@@ -258,64 +355,114 @@ public partial class DashboardViewModel : ViewModelBase
         await _mainWindow.OpenTabAsync(typeof(SalesInvoiceViewModel), "فاتورة مبيعات", PackIconKind.CashRegister);
 
     [RelayCommand]
+    private async Task OpenMigrationWizardAsync() =>
+        await _mainWindow.OpenTabAsync(
+            typeof(MigrationWizardViewModel),
+            "معالج النقل",
+            PackIconKind.DatabaseImport,
+            activateIfExists: true);
+
+    [RelayCommand]
     private void ShowNetProfitDetails()
     {
-        AmountBreakdownDialog.Show(new AmountBreakdownModel
+        var lines = new List<AmountBreakdownLine>
         {
-            Title = "تفاصيل الأرباح الصافية",
-            Subtitle = "معادلة لوحة التحكم (من بداية النشاط حتى الآن)",
-            Formula = "الصافي = صافي المبيعات − صافي المشتريات − الرصيد الافتتاحي للمخزون − المصاريف − التوزيعات + رصيد افتتاحي للأرباح",
-            ResultLabel = "الأرباح الصافية",
-            ResultAmount = NetProfit,
-            Lines =
+            new()
+            {
+                Operator = "+",
+                Label = "صافي المبيعات (د.ع)",
+                Amount = NetProfitSales,
+                Description = "فواتير البيع والأقساط − مرتجعات المبيعات"
+            },
+            new()
+            {
+                Operator = "−",
+                Label = "صافي المشتريات (د.ع)",
+                Amount = NetProfitPurchases,
+                Description = "فواتير المشتريات − مرتجعات المشتريات"
+            },
+            new()
+            {
+                Operator = "−",
+                Label = "رصيد افتتاحي للمخزون (د.ع)",
+                Amount = NetProfitOpeningStock,
+                Description = "قيمة أرصدة المنتجات الافتتاحية (الكمية × تكلفة الوحدة)"
+            },
+            new()
+            {
+                Operator = "−",
+                Label = "إجمالي المصاريف (د.ع)",
+                Amount = NetProfitExpenses
+            },
+            new()
+            {
+                Operator = "−",
+                Label = "توزيعات الأرباح (د.ع)",
+                Amount = NetProfitDistributions
+            },
+            new()
+            {
+                Operator = "+",
+                Label = "رصيد افتتاحي للأرباح (د.ع)",
+                Amount = NetProfitOpening
+            },
+            new()
+            {
+                Operator = "=",
+                Label = "الأرباح الصافية (د.ع)",
+                Amount = NetProfit,
+                IsResult = true
+            }
+        };
+
+        if (ShowUsdStats)
+        {
+            lines.AddRange(
             [
                 new AmountBreakdownLine
                 {
                     Operator = "+",
-                    Label = "صافي المبيعات",
-                    Amount = NetProfitSales,
-                    Description = "فواتير البيع والأقساط − مرتجعات المبيعات"
+                    Label = "صافي المبيعات ($)",
+                    Amount = NetProfitSalesUsd,
+                    Currency = AccountingCurrency.USD,
+                    Description = "فواتير البيع والأقساط بالدولار − المرتجعات"
                 },
                 new AmountBreakdownLine
                 {
                     Operator = "−",
-                    Label = "صافي المشتريات",
-                    Amount = NetProfitPurchases,
-                    Description = "فواتير المشتريات − مرتجعات المشتريات"
+                    Label = "صافي المشتريات ($)",
+                    Amount = NetProfitPurchasesUsd,
+                    Currency = AccountingCurrency.USD
                 },
                 new AmountBreakdownLine
                 {
                     Operator = "−",
-                    Label = "رصيد افتتاحي للمخزون",
-                    Amount = NetProfitOpeningStock,
-                    Description = "قيمة أرصدة المنتجات الافتتاحية (الكمية × تكلفة الوحدة)"
-                },
-                new AmountBreakdownLine
-                {
-                    Operator = "−",
-                    Label = "إجمالي المصاريف",
-                    Amount = NetProfitExpenses
-                },
-                new AmountBreakdownLine
-                {
-                    Operator = "−",
-                    Label = "توزيعات الأرباح",
-                    Amount = NetProfitDistributions
-                },
-                new AmountBreakdownLine
-                {
-                    Operator = "+",
-                    Label = "رصيد افتتاحي للأرباح",
-                    Amount = NetProfitOpening
+                    Label = "المصاريف ($)",
+                    Amount = NetProfitExpensesUsd,
+                    Currency = AccountingCurrency.USD
                 },
                 new AmountBreakdownLine
                 {
                     Operator = "=",
-                    Label = "الأرباح الصافية",
-                    Amount = NetProfit,
-                    IsResult = true
+                    Label = "الأرباح الصافية ($)",
+                    Amount = NetProfitUsd,
+                    Currency = AccountingCurrency.USD,
+                    IsResult = true,
+                    Description = "منفصلة عن الدينار — لا خلط عملات"
                 }
-            ],
+            ]);
+        }
+
+        AmountBreakdownDialog.Show(new AmountBreakdownModel
+        {
+            Title = "تفاصيل الأرباح الصافية",
+            Subtitle = "معادلة لوحة التحكم (من بداية النشاط حتى الآن)",
+            Formula = "الصافي د.ع = مبيعات − مشتريات − مخزون افتتاحي − مصاريف − توزيعات + افتتاحي أرباح",
+            ResultLabel = "الأرباح الصافية (د.ع)",
+            ResultAmount = NetProfit,
+            ResultAmountUsd = ShowUsdStats ? NetProfitUsd : null,
+            ResultLabelUsd = "بالدولار",
+            Lines = lines,
             Note = "فواتير المشتريات والرصيد الافتتاحي للمخزون يُخصمان معاً في الأرباح. اضغط أيقونة التفاصيل على بطاقة المشتريات لمعرفة مصدر المبلغ."
         });
     }
@@ -323,37 +470,53 @@ public partial class DashboardViewModel : ViewModelBase
     [RelayCommand]
     private void ShowPurchasesSourceDetails()
     {
+        var lines = new List<AmountBreakdownLine>
+        {
+            new()
+            {
+                Operator = "+",
+                Label = "فواتير المشتريات (د.ع)",
+                Amount = NetProfitPurchases,
+                Description = "مجموع فواتير المشتريات من بداية النشاط"
+            },
+            new()
+            {
+                Operator = "+",
+                Label = "رصيد افتتاحي للمخزون (د.ع)",
+                Amount = NetProfitOpeningStock,
+                Description = "قيمة أرصدة المنتجات الافتتاحية (الكمية × تكلفة الوحدة)"
+            },
+            new()
+            {
+                Operator = "=",
+                Label = "إجمالي تكلفة التوريد (د.ع)",
+                Amount = NetProfitPurchasesWithOpeningStock,
+                IsResult = true
+            }
+        };
+
+        if (ShowUsdStats)
+        {
+            lines.Add(new AmountBreakdownLine
+            {
+                Operator = "=",
+                Label = "فواتير المشتريات ($)",
+                Amount = NetProfitPurchasesUsd,
+                Currency = AccountingCurrency.USD,
+                Description = "إفصاح منفصل لمشتريات الدولار (بدون مخزون افتتاحي)"
+            });
+        }
+
         AmountBreakdownDialog.Show(new AmountBreakdownModel
         {
             Title = "تفاصيل مصدر المشتريات",
             Subtitle = "من أين جاء المبلغ المستخدم في معادلة الأرباح",
             Formula = "إجمالي تكلفة التوريد = فواتير المشتريات + الرصيد الافتتاحي للمخزون",
-            ResultLabel = "إجمالي تكلفة التوريد",
+            ResultLabel = "إجمالي تكلفة التوريد (د.ع)",
             ResultAmount = NetProfitPurchasesWithOpeningStock,
-            Lines =
-            [
-                new AmountBreakdownLine
-                {
-                    Operator = "+",
-                    Label = "فواتير المشتريات",
-                    Amount = NetProfitPurchases,
-                    Description = "مجموع فواتير المشتريات من بداية النشاط"
-                },
-                new AmountBreakdownLine
-                {
-                    Operator = "+",
-                    Label = "رصيد افتتاحي للمخزون",
-                    Amount = NetProfitOpeningStock,
-                    Description = "قيمة أرصدة المنتجات الافتتاحية (الكمية × تكلفة الوحدة)"
-                },
-                new AmountBreakdownLine
-                {
-                    Operator = "=",
-                    Label = "إجمالي تكلفة التوريد",
-                    Amount = NetProfitPurchasesWithOpeningStock,
-                    IsResult = true
-                }
-            ],
+            ResultAmountUsd = ShowUsdStats ? NetProfitPurchasesUsd : null,
+            ResultLabelUsd = "مشتريات $",
+            Lines = lines,
             Note = "بطاقة «المشتريات اليوم» تعرض فواتير اليوم فقط. الرصيد الافتتاحي يُحسب ضمن الأرباح الصافية وليس ضمن مشتريات اليوم."
         });
     }
@@ -361,44 +524,84 @@ public partial class DashboardViewModel : ViewModelBase
     [RelayCommand]
     private void ShowCustomerCreditDetails()
     {
+        var lines = new List<AmountBreakdownLine>
+        {
+            new()
+            {
+                Operator = "+",
+                Label = "متبقي فواتير آجل العملاء (د.ع)",
+                Amount = CustomerCreditInvoiceRemaining,
+                Description = "فواتير المبيعات والأقساط الآجلة غير المسددة"
+            },
+            new()
+            {
+                Operator = "−",
+                Label = "سندات قبض دين غير مطبّقة (د.ع)",
+                Amount = CustomerCreditUnappliedDebt,
+                Description = "سندات تسديد دين لم تُطبَّق بعد على الفواتير"
+            },
+            new()
+            {
+                Operator = "−",
+                Label = "سندات قبض غير مطبّقة (د.ع)",
+                Amount = CustomerCreditUnappliedReceipts,
+                Description = "سندات قبض عامة (بدون فاتورة/قسط) لم تُطبَّق على فواتير الآجل"
+            },
+            new()
+            {
+                Operator = "=",
+                Label = "رصيد الآجل للعملاء (د.ع)",
+                Amount = CustomerCreditBalance,
+                IsResult = true
+            }
+        };
+
+        if (ShowUsdStats)
+        {
+            lines.AddRange(
+            [
+                new AmountBreakdownLine
+                {
+                    Operator = "+",
+                    Label = "متبقي فواتير آجل ($)",
+                    Amount = CustomerCreditInvoiceRemainingUsd,
+                    Currency = AccountingCurrency.USD
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "−",
+                    Label = "سندات دين غير مطبّقة ($)",
+                    Amount = CustomerCreditUnappliedDebtUsd,
+                    Currency = AccountingCurrency.USD
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "−",
+                    Label = "سندات قبض غير مطبّقة ($)",
+                    Amount = CustomerCreditUnappliedReceiptsUsd,
+                    Currency = AccountingCurrency.USD
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "=",
+                    Label = "رصيد الآجل للعملاء ($)",
+                    Amount = CustomerCreditBalanceUsd,
+                    Currency = AccountingCurrency.USD,
+                    IsResult = true
+                }
+            ]);
+        }
+
         AmountBreakdownDialog.Show(new AmountBreakdownModel
         {
             Title = "تفاصيل رصيد الآجل للعملاء",
             Subtitle = "معادلة لوحة التحكم (من بداية النشاط حتى الآن)",
             Formula = "الرصيد = متبقي فواتير الآجل − سندات دين غير مطبّقة − سندات قبض غير مطبّقة",
-            ResultLabel = "رصيد الآجل للعملاء",
+            ResultLabel = "رصيد الآجل للعملاء (د.ع)",
             ResultAmount = CustomerCreditBalance,
-            Lines =
-            [
-                new AmountBreakdownLine
-                {
-                    Operator = "+",
-                    Label = "متبقي فواتير آجل العملاء",
-                    Amount = CustomerCreditInvoiceRemaining,
-                    Description = "فواتير المبيعات والأقساط الآجلة غير المسددة"
-                },
-                new AmountBreakdownLine
-                {
-                    Operator = "−",
-                    Label = "سندات قبض دين غير مطبّقة",
-                    Amount = CustomerCreditUnappliedDebt,
-                    Description = "سندات تسديد دين لم تُطبَّق بعد على الفواتير"
-                },
-                new AmountBreakdownLine
-                {
-                    Operator = "−",
-                    Label = "سندات قبض غير مطبّقة",
-                    Amount = CustomerCreditUnappliedReceipts,
-                    Description = "سندات قبض عامة (بدون فاتورة/قسط) لم تُطبَّق على فواتير الآجل"
-                },
-                new AmountBreakdownLine
-                {
-                    Operator = "=",
-                    Label = "رصيد الآجل للعملاء",
-                    Amount = CustomerCreditBalance,
-                    IsResult = true
-                }
-            ],
+            ResultAmountUsd = ShowUsdStats ? CustomerCreditBalanceUsd : null,
+            ResultLabelUsd = "بالدولار",
+            Lines = lines,
             Note = "يشمل فواتير المبيعات والأقساط فقط — فواتير مشتريات الموردين تظهر في بطاقة آجل الموردين."
         });
     }
@@ -406,38 +609,107 @@ public partial class DashboardViewModel : ViewModelBase
     [RelayCommand]
     private void ShowSupplierCreditDetails()
     {
+        var lines = new List<AmountBreakdownLine>
+        {
+            new()
+            {
+                Operator = "+",
+                Label = "متبقي فواتير مشتريات الآجل (د.ع)",
+                Amount = SupplierCreditInvoiceRemaining,
+                Description = "مجموع RemainingAmount لفواتير الشراء الآجلة غير المسددة"
+            },
+            new()
+            {
+                Operator = "−",
+                Label = "سندات صرف غير مطبّقة (د.ع)",
+                Amount = SupplierCreditUnappliedPayments,
+                Description = "سندات صرف لموردين لم تُطبَّق بعد على فواتير الشراء"
+            },
+            new()
+            {
+                Operator = "=",
+                Label = "رصيد الآجل للموردين (د.ع)",
+                Amount = SupplierCreditBalance,
+                IsResult = true
+            }
+        };
+
+        if (ShowUsdStats)
+        {
+            lines.AddRange(
+            [
+                new AmountBreakdownLine
+                {
+                    Operator = "+",
+                    Label = "متبقي فواتير مشتريات الآجل ($)",
+                    Amount = SupplierCreditInvoiceRemainingUsd,
+                    Currency = AccountingCurrency.USD
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "−",
+                    Label = "سندات صرف غير مطبّقة ($)",
+                    Amount = SupplierCreditUnappliedPaymentsUsd,
+                    Currency = AccountingCurrency.USD
+                },
+                new AmountBreakdownLine
+                {
+                    Operator = "=",
+                    Label = "رصيد الآجل للموردين ($)",
+                    Amount = SupplierCreditBalanceUsd,
+                    Currency = AccountingCurrency.USD,
+                    IsResult = true
+                }
+            ]);
+        }
+
         AmountBreakdownDialog.Show(new AmountBreakdownModel
         {
             Title = "تفاصيل رصيد الآجل للموردين",
             Subtitle = "معادلة لوحة التحكم (من بداية النشاط حتى الآن)",
             Formula = "الرصيد = متبقي فواتير مشتريات الآجل − سندات صرف غير مطبّقة",
-            ResultLabel = "رصيد الآجل للموردين",
+            ResultLabel = "رصيد الآجل للموردين (د.ع)",
             ResultAmount = SupplierCreditBalance,
+            ResultAmountUsd = ShowUsdStats ? SupplierCreditBalanceUsd : null,
+            ResultLabelUsd = "بالدولار",
+            Lines = lines,
+            Note = "سند الصرف المرتبط بمورد يُطبَّق تلقائياً على فواتير الشراء الآجلة الأقدم أولاً."
+        });
+    }
+
+    [RelayCommand]
+    private void ShowInventoryValueDetails()
+    {
+        AmountBreakdownDialog.Show(new AmountBreakdownModel
+        {
+            Title = "تفاصيل قيمة المخزون",
+            Subtitle = "كيف تُحسب القيمة الكلية للمخزون في لوحة التحكم",
+            Formula = "القيمة = Σ (كمية المنتج × متوسط تكلفة الوحدة بالدينار)",
+            ResultLabel = "إجمالي قيمة المخزون (د.ع)",
+            ResultAmount = TotalInventoryValue,
             Lines =
             [
                 new AmountBreakdownLine
                 {
-                    Operator = "+",
-                    Label = "متبقي فواتير مشتريات الآجل",
-                    Amount = SupplierCreditInvoiceRemaining,
-                    Description = "مجموع RemainingAmount لفواتير الشراء الآجلة غير المسددة"
-                },
-                new AmountBreakdownLine
-                {
-                    Operator = "−",
-                    Label = "سندات صرف غير مطبّقة",
-                    Amount = SupplierCreditUnappliedPayments,
-                    Description = "سندات صرف لموردين لم تُطبَّق بعد على فواتير الشراء"
-                },
-                new AmountBreakdownLine
-                {
                     Operator = "=",
-                    Label = "رصيد الآجل للموردين",
-                    Amount = SupplierCreditBalance,
-                    IsResult = true
+                    Label = "إجمالي قيمة المخزون",
+                    Amount = TotalInventoryValue,
+                    IsResult = true,
+                    Description = "متوسط التكلفة من المشتريات (ومشتريات الدولار تُحوَّل عبر سعر الصرف إلى دينار للتكلفة فقط)"
                 }
             ],
-            Note = "سند الصرف المرتبط بمورد يُطبَّق تلقائياً على فواتير الشراء الآجلة الأقدم أولاً."
+            EntitiesTitle = InventoryBreakdown.Count > 0
+                ? "أعلى المنتجات مساهمة في القيمة"
+                : null,
+            Entities = InventoryBreakdown
+                .Select(i => new AmountBreakdownEntityRow
+                {
+                    Name = i.ProductName,
+                    Subtitle = $"الكمية: {i.Quantity:N0} × متوسط التكلفة: {i.UnitCost:N0} د.ع",
+                    Amount = i.Value
+                })
+                .ToList(),
+            Note = "القيمة تُعرض بالدينار دائماً لأن تكلفة المخزون تُحوَّل إلى العملة الأساسية. لا يُخلط رصيد دولار منفصل هنا."
         });
     }
 
@@ -558,6 +830,7 @@ public partial class DashboardViewModel : ViewModelBase
             await dispatcher.InvokeAsync(() => BuildExpenseChart(_cachedExpenseShares ?? []), DispatcherPriority.Background);
             await dispatcher.InvokeAsync(() => ApplyKpiSparklines(data), DispatcherPriority.Background);
             await dispatcher.InvokeAsync(() => ApplyDashboardTables(data, alertSummary), DispatcherPriority.Background);
+            await RefreshSetupProgressAsync().ConfigureAwait(true);
 
             IsLoaded = true;
             _initialized = true;
@@ -593,35 +866,48 @@ public partial class DashboardViewModel : ViewModelBase
 
     private void ApplyDashboardScalars(DashboardData data)
     {
+        ShowMultiCurrency = _featureFlags.MultiCurrency;
         TodaySales = data.TodaySales;
         TodaySalesUsd = data.TodaySalesUsd;
         TodayPurchases = data.TodayPurchases;
         TodayPurchasesUsd = data.TodayPurchasesUsd;
-        OnPropertyChanged(nameof(ShowTodaySalesUsd));
-        OnPropertyChanged(nameof(ShowTodayPurchasesUsd));
         NetProfit = data.NetProfit;
+        NetProfitUsd = data.NetProfitUsd;
         NetProfitSales = data.NetProfitSales;
         NetProfitPurchases = data.NetProfitPurchases;
         NetProfitOpeningStock = data.NetProfitOpeningStock;
         NetProfitExpenses = data.NetProfitExpenses;
         NetProfitDistributions = data.NetProfitDistributions;
         NetProfitOpening = data.NetProfitOpening;
+        NetProfitSalesUsd = data.NetProfitSalesUsd;
+        NetProfitPurchasesUsd = data.NetProfitPurchasesUsd;
+        NetProfitExpensesUsd = data.NetProfitExpensesUsd;
         OnPropertyChanged(nameof(NetProfitPurchasesWithOpeningStock));
         OnPropertyChanged(nameof(ShowOpeningStockPurchasesHint));
         OnPropertyChanged(nameof(OpeningStockPurchasesHint));
         OverdueInstallmentsCount = data.OverdueInstallmentsCount;
+        OverdueInstallmentsCountUsd = data.OverdueInstallmentsCountUsd;
         InvestorBalance = data.InvestorBalance;
         InvestorOpeningTotal = data.InvestorOpeningTotal;
         InvestorDepositsTotal = data.InvestorDepositsTotal;
         InvestorWithdrawalsTotal = data.InvestorWithdrawalsTotal;
         UnpaidInstallmentsBalance = data.UnpaidInstallmentsBalance;
+        UnpaidInstallmentsBalanceUsd = data.UnpaidInstallmentsBalanceUsd;
         CustomerCreditBalance = data.CustomerCreditBalance;
         CustomerCreditInvoiceRemaining = data.CustomerCreditInvoiceRemaining;
         CustomerCreditUnappliedDebt = data.CustomerCreditUnappliedDebt;
         CustomerCreditUnappliedReceipts = data.CustomerCreditUnappliedReceipts;
+        CustomerCreditBalanceUsd = data.CustomerCreditBalanceUsd;
+        CustomerCreditInvoiceRemainingUsd = data.CustomerCreditInvoiceRemainingUsd;
+        CustomerCreditUnappliedDebtUsd = data.CustomerCreditUnappliedDebtUsd;
+        CustomerCreditUnappliedReceiptsUsd = data.CustomerCreditUnappliedReceiptsUsd;
         SupplierCreditBalance = data.SupplierCreditBalance;
         SupplierCreditInvoiceRemaining = data.SupplierCreditInvoiceRemaining;
         SupplierCreditUnappliedPayments = data.SupplierCreditUnappliedPayments;
+        SupplierCreditBalanceUsd = data.SupplierCreditBalanceUsd;
+        SupplierCreditInvoiceRemainingUsd = data.SupplierCreditInvoiceRemainingUsd;
+        SupplierCreditUnappliedPaymentsUsd = data.SupplierCreditUnappliedPaymentsUsd;
+        NotifyUsdDisplayProperties();
     }
 
     private void ApplyDashboardTables(DashboardData data, SmartAlertSummary alertSummary)
@@ -643,6 +929,11 @@ public partial class DashboardViewModel : ViewModelBase
             : data.BankBalance;
         BankBalanceUsd = data.BankBalanceUsd;
         TotalInventoryValue = data.TotalInventoryValue;
+        InventoryBreakdown.Clear();
+        foreach (var item in data.InventoryBreakdown)
+            InventoryBreakdown.Add(item);
+        OnPropertyChanged(nameof(TotalCashBalanceUsdText));
+        OnPropertyChanged(nameof(BankBalanceUsdText));
 
         SmartAlerts.Clear();
         foreach (var a in alertSummary.Alerts)
@@ -736,10 +1027,12 @@ public partial class DashboardViewModel : ViewModelBase
 
         var amounts = points.Select(p => p.Amount).ToArray();
         var labels = points.Select(p => p.Date.ToString("MM/dd")).ToArray();
+        var hasNegative = amounts.Any(a => a < 0);
 
-        SalesSeries = [ChartThemeConfig.Line(amounts, "المبيعات", 0)];
+        // أعمدة أوضح من الخط (تعمل حتى مع يوم مبيعات واحد وسط أيام صفر)
+        SalesSeries = [ChartThemeConfig.Column(amounts, "المبيعات", 0)];
         SalesXAxes = [ChartThemeConfig.CreateXAxis(labels, points.Count > 10 ? -35 : 0)];
-        SalesYAxes = [ChartThemeConfig.CreateYAxis()];
+        SalesYAxes = [ChartThemeConfig.CreateYAxis(forceNonNegative: !hasNegative)];
     }
 
     private void BuildExpenseChart(List<ExpenseCategoryShare> shares)

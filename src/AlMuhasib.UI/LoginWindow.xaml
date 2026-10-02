@@ -44,7 +44,7 @@
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
                                 <Setter TargetName="Icon" Property="Kind" Value="Eye"/>
-                                <Setter TargetName="Icon" Property="Foreground" Value="#1565C0"/>
+                                <Setter TargetName="Icon" Property="Foreground" Value="{DynamicResource HighlightBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -69,15 +69,15 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
-                                <Setter TargetName="Icon" Property="Foreground" Value="#1565C0"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
+                                <Setter TargetName="Icon" Property="Foreground" Value="{DynamicResource HighlightBrush}"/>
                             </Trigger>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
-                                <Setter TargetName="Icon" Property="Foreground" Value="#1565C0"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
+                                <Setter TargetName="Icon" Property="Foreground" Value="{DynamicResource HighlightBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#BBDEFB"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource HighlightLightBrush}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -87,9 +87,9 @@
 
         <Style x:Key="NumPadKeyButton" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
-            <Setter Property="BorderBrush" Value="#E3EDF7"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Foreground" Value="#1A237E"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
             <Setter Property="FontSize" Value="20"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Height" Value="50"/>
@@ -119,11 +119,11 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="KeyBd" Property="Background" Value="#F5FAFF"/>
+                                <Setter TargetName="KeyBd" Property="Background" Value="{DynamicResource SearchResultHoverBrush}"/>
                                 <Setter TargetName="KeyBd" Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="KeyBd" Property="Background" Value="#E3F2FD"/>
+                                <Setter TargetName="KeyBd" Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
                                 <Trigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
@@ -165,7 +165,7 @@
 
         <Style x:Key="NumPadActionButton" TargetType="Button" BasedOn="{StaticResource NumPadKeyButton}">
             <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
-            <Setter Property="Foreground" Value="#1565C0"/>
+            <Setter Property="Foreground" Value="{DynamicResource HighlightBrush}"/>
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
         </Style>
@@ -223,7 +223,7 @@
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="Card" CornerRadius="18" Padding="16,18"
                                 Background="{DynamicResource CardBrush}"
-                                BorderBrush="#E3EDF7" BorderThickness="1.5"
+                                BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1.5"
                                 RenderTransformOrigin="0.5,0.5">
                             <Border.RenderTransform>
                                 <ScaleTransform ScaleX="1" ScaleY="1"/>
@@ -236,7 +236,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
-                                <Setter TargetName="Card" Property="Background" Value="#F5FAFF"/>
+                                <Setter TargetName="Card" Property="Background" Value="{DynamicResource SearchResultHoverBrush}"/>
                                 <Trigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
@@ -302,7 +302,7 @@
                                    HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Grid>
                     <TextBlock Text="{Binding FullName}" FontSize="14" FontWeight="SemiBold"
-                               Foreground="#1A237E" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="120"/>
+                               Foreground="{DynamicResource TextPrimaryBrush}" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="120"/>
                     <TextBlock Text="{Binding RoleDisplay}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"
                                HorizontalAlignment="Center" Margin="0,4,0,0"/>
                 </StackPanel>
@@ -438,7 +438,7 @@
 
                                 <StackPanel VerticalAlignment="Center">
                                     <TextBlock Text="من يقوم بتسجيل الدخول؟"
-                                               FontSize="24" FontWeight="Bold" Foreground="#1A237E"/>
+                                               FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                                     <TextBlock Text="اختر المستخدم للمتابعة"
                                                FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,6,0,24"/>
 
@@ -485,11 +485,14 @@
                                 <StackPanel VerticalAlignment="Center" MaxWidth="420">
                                     <Button Command="{Binding BackToAdminSelectionCommand}"
                                             Style="{StaticResource FlatButton}" HorizontalAlignment="Right"
-                                            Margin="0,0,0,10" Padding="8,4">
+                                            Margin="0,0,0,10" Padding="8,4"
+                                            Foreground="{DynamicResource TextSecondaryBrush}">
                                         <StackPanel Orientation="Horizontal">
                                             <materialDesign:PackIcon Kind="ArrowRight" Width="18" Height="18"
-                                                                     VerticalAlignment="Center"/>
-                                            <TextBlock Text="اختيار مستخدم آخر" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                                                     VerticalAlignment="Center"
+                                                                     Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                            <TextBlock Text="اختيار مستخدم آخر" Margin="6,0,0,0" VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
                                         </StackPanel>
                                     </Button>
 
@@ -508,7 +511,7 @@
                                                        Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Grid>
                                         <TextBlock Text="{Binding SelectedAdmin.FullName}"
-                                                   FontSize="18" FontWeight="Bold" Foreground="#1A237E"
+                                                   FontSize="18" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"
                                                    HorizontalAlignment="Center"/>
                                         <TextBlock Text="أدخل كلمة المرور للمتابعة"
                                                    FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
@@ -557,7 +560,7 @@
                                     <Border x:Name="NumericPadPanel"
                                             Visibility="Collapsed" Opacity="0"
                                             Background="{DynamicResource PrimaryHueLightBrush}" CornerRadius="16"
-                                            BorderBrush="#D6E9FB" BorderThickness="1"
+                                            BorderBrush="{DynamicResource HighlightBorderBrush}" BorderThickness="1"
                                             Padding="10,12" Margin="0,0,0,8"
                                             FlowDirection="LeftToRight">
                                         <Border.RenderTransform>
@@ -621,29 +624,110 @@
                             </Grid>
 
                             <!-- Step 3: Branch selection (multi-branch users only) -->
-                            <Grid Visibility="{Binding IsSelectingBranch, Converter={StaticResource BoolToVis}}">
-                                <StackPanel VerticalAlignment="Center" MaxWidth="420">
-                                    <TextBlock Text="اختر الفرع" FontSize="22" FontWeight="Bold"
-                                               Foreground="#1A237E" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                                    <TextBlock Text="يجب اختيار فرع قبل الدخول إلى بيانات النظام"
-                                               FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
-                                               HorizontalAlignment="Center" TextWrapping="Wrap" Margin="0,0,0,16"/>
-                                    <ListBox ItemsSource="{Binding AvailableBranches}"
-                                             SelectedItem="{Binding SelectedBranch}"
-                                             MaxHeight="280" Margin="0,0,0,16">
-                                        <ListBox.ItemTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Margin="8,6">
-                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15"/>
-                                                    <TextBlock FontSize="12" Foreground="{DynamicResource HintForegroundBrush}">
-                                                        <Run Text="الرمز: "/><Run Text="{Binding Code}"/>
-                                                    </TextBlock>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </ListBox.ItemTemplate>
-                                    </ListBox>
-                                    <Button Command="{Binding ConfirmBranchCommand}"
-                                            Style="{StaticResource LoginPrimaryButton}" Content="متابعة"/>
+                            <Grid x:Name="BranchStepPanel" Opacity="0"
+                                  Visibility="{Binding IsSelectingBranch, Converter={StaticResource BoolToVis}}">
+                                <Grid.RenderTransform>
+                                    <TranslateTransform X="40"/>
+                                </Grid.RenderTransform>
+
+                                <StackPanel VerticalAlignment="Center" MaxWidth="440">
+                                    <Button Command="{Binding BackToPasswordCommand}"
+                                            Style="{StaticResource FlatButton}" HorizontalAlignment="Right"
+                                            Margin="0,0,0,10" Padding="8,4"
+                                            Foreground="{DynamicResource TextSecondaryBrush}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="ArrowRight" Width="18" Height="18"
+                                                                     VerticalAlignment="Center"
+                                                                     Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                            <TextBlock Text="رجوع" Margin="6,0,0,0" VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <StackPanel HorizontalAlignment="Center" Margin="0,0,0,18">
+                                        <Border Width="56" Height="56" CornerRadius="28" Margin="0,0,0,12"
+                                                Background="{DynamicResource PrimaryHueLightBrush}" HorizontalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="SourceBranch" Width="28" Height="28"
+                                                                     Foreground="{DynamicResource HighlightBrush}"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="اختر الفرع" FontSize="22" FontWeight="Bold"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="لديك صلاحية على أكثر من فرع — اختر فرع العمل لهذه الجلسة"
+                                                   FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   HorizontalAlignment="Center" TextWrapping="Wrap"
+                                                   TextAlignment="Center" Margin="0,6,0,0" MaxWidth="360"/>
+                                    </StackPanel>
+
+                                    <Border CornerRadius="16" Background="{DynamicResource CardBrush}"
+                                            BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                                            Padding="10" MaxHeight="300">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                                      HorizontalScrollBarVisibility="Disabled">
+                                            <ItemsControl ItemsSource="{Binding AvailableBranches}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Button Margin="0,0,0,8" Cursor="Hand"
+                                                                Command="{Binding DataContext.SelectBranchAndContinueCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding}">
+                                                            <Button.Style>
+                                                                <Style TargetType="Button">
+                                                                    <Setter Property="Background" Value="Transparent"/>
+                                                                    <Setter Property="BorderThickness" Value="0"/>
+                                                                    <Setter Property="Padding" Value="0"/>
+                                                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                                    <Setter Property="Template">
+                                                                        <Setter.Value>
+                                                                            <ControlTemplate TargetType="Button">
+                                                                                <Border x:Name="Card" CornerRadius="12" Padding="14,12"
+                                                                                        Background="{DynamicResource CardBrush}"
+                                                                                        BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1.5">
+                                                                                    <ContentPresenter/>
+                                                                                </Border>
+                                                                                <ControlTemplate.Triggers>
+                                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                                        <Setter TargetName="Card" Property="Background" Value="{DynamicResource SearchResultHoverBrush}"/>
+                                                                                        <Setter TargetName="Card" Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
+                                                                                    </Trigger>
+                                                                                    <Trigger Property="IsPressed" Value="True">
+                                                                                        <Setter TargetName="Card" Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
+                                                                                    </Trigger>
+                                                                                </ControlTemplate.Triggers>
+                                                                            </ControlTemplate>
+                                                                        </Setter.Value>
+                                                                    </Setter>
+                                                                </Style>
+                                                            </Button.Style>
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <Border Grid.Column="0" Width="40" Height="40" CornerRadius="10"
+                                                                        Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,12,0">
+                                                                    <materialDesign:PackIcon Kind="Store" Width="20" Height="20"
+                                                                                             Foreground="{DynamicResource HighlightBrush}"
+                                                                                             HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                </Border>
+                                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                                               FontSize="15" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                                    <TextBlock FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" Margin="0,2,0,0">
+                                                                        <Run Text="الرمز: "/><Run Text="{Binding Code}"/>
+                                                                    </TextBlock>
+                                                                </StackPanel>
+                                                                <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft"
+                                                                                         Width="20" Height="20"
+                                                                                         Foreground="#90CAF9"
+                                                                                         VerticalAlignment="Center"/>
+                                                            </Grid>
+                                                        </Button>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </ScrollViewer>
+                                    </Border>
                                 </StackPanel>
                             </Grid>
                         </Grid>

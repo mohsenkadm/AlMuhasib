@@ -21,6 +21,8 @@ public sealed class BackupSchedulerService
 
     public void Start() => _timer.Start();
 
+    public void Stop() => _timer.Stop();
+
     private async Task TryAutoBackupAsync()
     {
         var backup = _preferences.Current.Backup;

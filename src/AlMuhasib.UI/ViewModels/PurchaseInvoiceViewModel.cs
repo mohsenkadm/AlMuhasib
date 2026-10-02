@@ -65,14 +65,18 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
 
     public bool IsCreditPayment => !IsCashPayment;
 
-    /// <summary>الصندوق يظهر للنقدي، أو للآجل عند وجود دفعة مقدمة.</summary>
-    public bool ShowCashBox => IsCashPayment || (IsCreditPayment && CreditPaidAmount > 0m);
+    /// <summary>الصندوق يظهر للنقد وللآجل (دفعة مقدمة اختيارية) دون إخفائه عند اختيار الآجل.</summary>
+    public bool ShowCashBox => IsCashPayment || IsCreditPayment;
 
     [ObservableProperty]
     private decimal _creditPaidAmount;
 
     [ObservableProperty]
     private decimal _creditRemainingAmount;
+
+    /// <summary>تاريخ استحقاق التسديد — يظهر فقط عند اختيار الآجل.</summary>
+    [ObservableProperty]
+    private DateTime? _creditDueDate;
 
     [ObservableProperty]
     private CashBox? _selectedCashBox;
@@ -82,14 +86,13 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
     partial void OnCreditPaidAmountChanged(decimal value)
     {
         if (!IsCreditPayment) return;
-        var paid = Math.Clamp(value, 0m, GrandTotal);
-        if (paid != value)
+        if (value < 0m)
         {
-            CreditPaidAmount = paid;
+            CreditPaidAmount = 0m;
             return;
         }
 
-        CreditRemainingAmount = Math.Max(0m, GrandTotal - paid);
+        CreditRemainingAmount = Math.Max(0m, GrandTotal - value);
         OnPropertyChanged(nameof(ShowCashBox));
     }
 
@@ -99,11 +102,13 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         OnPropertyChanged(nameof(ShowCashBox));
         if (value)
         {
+            CreditDueDate = null;
             CreditPaidAmount = 0m;
             CreditRemainingAmount = 0m;
         }
         else
         {
+            CreditDueDate = DateTime.Today.AddMonths(1);
             CreditPaidAmount = 0m;
             CreditRemainingAmount = GrandTotal;
         }
@@ -326,6 +331,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
 
         IsCashPayment = invoice.PaymentMethod == PaymentMethod.Cash;
         CreditPaidAmount = IsCashPayment ? 0m : Math.Clamp(invoice.PaidAmount, 0m, invoice.NetAmount);
+        CreditDueDate = IsCashPayment ? null : (invoice.CreditDueDate ?? DateTime.Today.AddMonths(1));
 
         ApplyCurrencyFromDocument(invoice.Currency, invoice.FxRate);
 
@@ -340,7 +346,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                 ProductId = item.ProductId,
                 ItemName = item.ItemName,
                 Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice
+                UnitPrice = item.UnitPrice,
+                PricingTypeId = item.PricingTypeId
             };
             InvoiceCustomFieldsHelper.ApplyFromJson(row, item.CustomFieldsJson);
             WireItemRow(row);
@@ -593,7 +600,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             InvoiceType.Purchase,
             invoiceDiscountAmount: 0m,
             transportFeeAmount: ShowTransportFee ? TransportFeeAmount : 0m,
-            purchaseExpenseAmount: ShowPurchaseExpenses ? PurchaseExpenseAmount : 0m);
+            purchaseExpenseAmount: ShowPurchaseExpenses ? PurchaseExpenseAmount : 0m,
+            currency: DocumentRoundingCurrency);
 
         RoundingAmount = rounding;
         _isRecalculating = true;
@@ -654,6 +662,18 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         if (IsCreditPayment && CreditPaidAmount > GrandTotal)
         {
             InvoiceValidationDialog.ShowBlockingError("المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة");
+            return;
+        }
+
+        if (IsCreditPayment && CreditDueDate is null)
+        {
+            InvoiceValidationDialog.ShowBlockingError("يرجى تحديد تاريخ استحقاق التسديد للدفع الآجل");
+            return;
+        }
+
+        if (IsCreditPayment && CreditDueDate.HasValue && CreditDueDate.Value.Date <= InvoiceDate.Date)
+        {
+            InvoiceValidationDialog.ShowBlockingError("تاريخ الاستحقاق يجب أن يكون بعد تاريخ الفاتورة");
             return;
         }
 
@@ -764,6 +784,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
                     : 1m,
                 CashBoxId = ResolveCashBoxIdForSave(),
                 Date = InvoiceDate,
+                CreditDueDate = IsCreditPayment ? CreditDueDate : null,
                 PaidAmount = IsCreditPayment ? Math.Clamp(CreditPaidAmount, 0m, GrandTotal) : 0m,
                 TransportFeeAmount = ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m,
                 PurchaseExpenseAmount = ShowPurchaseExpenses && !AllocatePurchaseExpensesToProducts
@@ -886,7 +907,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             _draftService.ClearDraft(DraftKey);
 
             BeautifulMessageDialog.ShowSuccess(
-                $"تم حفظ {(IsReturnMode ? "مرتجع المشتريات" : "الفاتورة")} بنجاح\nرقم الفاتورة: {saved.InvoiceNumber}\nالمبلغ الكلي: {saved.NetAmount:N0} د.ع");
+                $"تم حفظ {(IsReturnMode ? "مرتجع المشتريات" : "الفاتورة")} بنجاح\nرقم الفاتورة: {saved.InvoiceNumber}\nالمبلغ الكلي: {saved.NetAmount:N0} {CurrencyAmountSuffix}");
 
             PrintInvoice();
         }
@@ -1079,9 +1100,10 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
     [RelayCommand]
     private async Task NewInvoice()
     {
+        // لا نخرج من وضع المرتجع — «جديد» داخل شاشة المرتجع يبقى مرتجعاً
+        var keepReturnMode = IsReturnMode;
+
         IsSaved = false;
-        IsReturnMode = false;
-        PageTitle = "فاتورة مشتريات";
         ClearEditingInvoiceId();
         _savedInvoice = null;
         _savedItems = [];
@@ -1092,6 +1114,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         PurchaseExpenseAmount = 0m;
         CreditPaidAmount = 0m;
         CreditRemainingAmount = 0m;
+        CreditDueDate = null;
         IsCashPayment = true;
         SupplierSearchText = string.Empty;
         SelectedSupplier = null;
@@ -1104,8 +1127,21 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
 
         await ReloadProductSearchCatalogAsync();
         RecalculateTotals();
-        InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Purchase);
-        ApplyDefaultSupplierIfAny();
+
+        if (keepReturnMode)
+        {
+            EnterReturnMode();
+            InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.PurchaseReturn);
+        }
+        else
+        {
+            IsReturnMode = false;
+            PageTitle = "فاتورة مشتريات";
+            InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Purchase);
+            ApplyDefaultSupplierIfAny();
+        }
+
+        RefreshFeatureVisibility();
     }
 
     private async Task ReloadProductSearchCatalogAsync()
@@ -1160,7 +1196,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             return;
         }
 
-        PartyQuickDetailDialog.ShowSupplier(_partyQuickDetail, SelectedSupplier.Id);
+        PartyQuickDetailDialog.ShowSupplier(_partyQuickDetail, SelectedSupplier.Id, ShowMultiCurrency);
     }
 
     [RelayCommand]
@@ -1172,7 +1208,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             return;
         }
 
-        ProductQuickDetailDialog.Show(_productQuickDetail, row.ProductId.Value);
+        ProductQuickDetailDialog.Show(_productQuickDetail, row.ProductId.Value, ShowMultiCurrency);
     }
 
     [RelayCommand]

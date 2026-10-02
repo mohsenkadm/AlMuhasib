@@ -45,7 +45,7 @@ public sealed class AuthController : ControllerBase
 
         await EnsureMainBranchAndAssignmentAsync(account, ct);
 
-        var branches = await LoadAllowedBranchesAsync(account.TenantId, account.Id, ct);
+        var branches = await LoadAllowedBranchesAsync(account.TenantId, account.Id, account.CreatedAt, ct);
         var canManageAll = false; // reserved for future account-level flags
         var canViewAll = canManageAll;
 
@@ -88,7 +88,7 @@ public sealed class AuthController : ControllerBase
         var account = await _db.TenantAccounts.Include(a => a.Tenant)
             .FirstAsync(a => a.Id == accountId && a.TenantId == tenantId, ct);
 
-        var branches = await LoadAllowedBranchesAsync(tenantId, accountId, ct);
+        var branches = await LoadAllowedBranchesAsync(tenantId, accountId, account.CreatedAt, ct);
         var allowedIds = branches.Select(b => b.BranchId).ToHashSet();
         var canViewAll = User.HasClaim("can_view_all_branches", "1")
                          || User.HasClaim("can_manage_all_branches", "1");
@@ -164,7 +164,7 @@ public sealed class AuthController : ControllerBase
             return StatusCode(403, new ApiErrorResponse { Code = license.ErrorCode!, Message = license.Message! });
 
         await EnsureMainBranchAndAssignmentAsync(account, ct);
-        var branches = await LoadAllowedBranchesAsync(account.TenantId, account.Id, ct);
+        var branches = await LoadAllowedBranchesAsync(account.TenantId, account.Id, account.CreatedAt, ct);
 
         var response = _tokenService.CreateTenantTokens(
             account,
@@ -292,7 +292,11 @@ public sealed class AuthController : ControllerBase
         }
     }
 
-    private async Task<List<BranchInfoDto>> LoadAllowedBranchesAsync(int tenantId, int accountId, CancellationToken ct)
+    private async Task<List<BranchInfoDto>> LoadAllowedBranchesAsync(
+        int tenantId,
+        int accountId,
+        DateTime accountCreatedAt,
+        CancellationToken ct)
     {
         var assigned = await _db.TenantAccountBranches.AsNoTracking()
             .Where(x => x.TenantId == tenantId && x.TenantAccountId == accountId)
@@ -314,8 +318,10 @@ public sealed class AuthController : ControllerBase
         if (assigned.Count > 0)
             return assigned;
 
-        // Single-branch heal only: if tenant has exactly one active branch and account has
-        // no assignments (legacy gap), auto-assign that branch once. Never escalate to all.
+        // Heal فقط للحسابات الجديدة (≤ 24 ساعة): لا يُعاد منح فرع بعد إلغاء تعيين حساب قديم.
+        if (accountCreatedAt < DateTime.UtcNow.AddHours(-24))
+            return assigned;
+
         var sole = await _db.Branches.AsNoTracking()
             .Where(b => b.TenantId == tenantId && b.IsActive && !b.IsDeleted)
             .OrderByDescending(b => b.IsMain)

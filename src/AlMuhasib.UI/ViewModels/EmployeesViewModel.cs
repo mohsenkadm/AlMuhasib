@@ -57,6 +57,8 @@ public partial class EmployeesViewModel : ViewModelBase
 
     private int? _editingId;
     private System.Timers.Timer? _debounceTimer;
+    private decimal _totalAdvancesIqd;
+    private decimal _totalAdvancesUsd;
 
     public string[] StatusFilters { get; } = ["الكل", "فعال", "غير فعال"];
 
@@ -82,7 +84,7 @@ public partial class EmployeesViewModel : ViewModelBase
         try
         {
             LoadPermissions(_currentUserService, "Employees");
-            await LoadAsync();
+            await LoadAsync(refreshTotals: true);
         }
         finally
         {
@@ -90,7 +92,7 @@ public partial class EmployeesViewModel : ViewModelBase
         }
     }
 
-    private async Task LoadAsync()
+    private async Task LoadAsync(bool refreshTotals = false)
     {
         var filter = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim();
         System.Linq.Expressions.Expression<Func<Employee, bool>>? searchPredicate = filter is null
@@ -121,46 +123,131 @@ public partial class EmployeesViewModel : ViewModelBase
 
         var (items, totalCount) = await _unitOfWork.Employees.GetPagedAsync(
             CurrentPage, PageSize, searchPredicate, q => q.OrderByDescending(e => e.CreatedAt));
+        var itemsList = items as IList<Employee> ?? items.ToList();
 
         TotalCount = totalCount;
         TotalPages = PaginationHelper.ComputeTotalPages(totalCount, PageSize);
         PaginationText = PaginationHelper.BuildPaginationText(totalCount, CurrentPage, PageSize);
 
-        var vouchers = await _unitOfWork.Vouchers.FindAsync(v => v.EmployeeId != null);
-        var voucherList = vouchers.ToList();
+        ActiveCount = await _unitOfWork.Employees.CountAsync(e => e.IsActive);
+        InactiveCount = await _unitOfWork.Employees.CountAsync(e => !e.IsActive);
+
+        // سندات الصفحة الحالية فقط — تجنّب تحميل كل السندات عند كل حفظ/تحديث
+        var pageIds = itemsList.Select(e => e.Id).ToList();
+        var pageVouchers = pageIds.Count == 0
+            ? []
+            : (await _unitOfWork.Vouchers.FindAsync(v =>
+                v.EmployeeId != null && pageIds.Contains(v.EmployeeId.Value))).ToList();
+        var vouchersByEmp = GroupVouchersByEmployee(pageVouchers);
 
         Employees.Clear();
-        foreach (var emp in items)
+        foreach (var emp in itemsList)
         {
-            var balance = ComputeEmployeeBalance(emp, voucherList);
+            var rows = vouchersByEmp.GetValueOrDefault(emp.Id);
+            var balance = EmployeeBalanceHelper.ComputeAdvanceBalances(
+                emp.OpeningBalance, emp.OpeningBalanceCurrency, rows ?? EmptyVoucherRows);
             Employees.Add(new EmployeeListRow(emp, balance));
         }
 
+        if (refreshTotals)
+            await RefreshAdvanceTotalsAsync();
+    }
+
+    private static readonly List<(AccountingCurrency Currency, VoucherType Type, decimal Amount)> EmptyVoucherRows = [];
+
+    private static Dictionary<int, List<(AccountingCurrency Currency, VoucherType Type, decimal Amount)>> GroupVouchersByEmployee(
+        IEnumerable<Voucher> vouchers) =>
+        vouchers
+            .Where(v => v.EmployeeId is not null)
+            .GroupBy(v => v.EmployeeId!.Value)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(v => (v.Currency, v.VoucherType, v.Amount)).ToList());
+
+    private async Task RefreshAdvanceTotalsAsync()
+    {
         var all = (await _unitOfWork.Employees.GetAllAsync()).ToList();
-        ActiveCount = all.Count(e => e.IsActive);
-        InactiveCount = all.Count(e => !e.IsActive);
+        if (all.Count == 0)
+        {
+            SetTotalAdvances(0, 0);
+            return;
+        }
+
+        var allVouchers = (await _unitOfWork.Vouchers.FindAsync(v => v.EmployeeId != null)).ToList();
+        var vouchersByEmp = GroupVouchersByEmployee(allVouchers);
 
         decimal totalIqd = 0;
         decimal totalUsd = 0;
         foreach (var emp in all)
         {
-            var bal = ComputeEmployeeBalance(emp, voucherList);
+            var rows = vouchersByEmp.GetValueOrDefault(emp.Id);
+            var bal = EmployeeBalanceHelper.ComputeAdvanceBalances(
+                emp.OpeningBalance, emp.OpeningBalanceCurrency, rows ?? EmptyVoucherRows);
             totalIqd += bal.Iqd;
             totalUsd += bal.Usd;
         }
 
+        SetTotalAdvances(totalIqd, totalUsd);
+    }
+
+    private void SetTotalAdvances(decimal totalIqd, decimal totalUsd)
+    {
+        _totalAdvancesIqd = totalIqd;
+        _totalAdvancesUsd = totalUsd;
         TotalAdvances = totalUsd == 0
             ? AccountingCurrencyHelper.Format(totalIqd, AccountingCurrency.IQD)
             : $"{AccountingCurrencyHelper.Format(totalIqd, AccountingCurrency.IQD)} | {AccountingCurrencyHelper.Format(totalUsd, AccountingCurrency.USD)}";
     }
 
-    private static DualCurrencyBalance ComputeEmployeeBalance(Employee emp, List<Voucher> voucherList)
+    private void AdjustTotalAdvances(DualCurrencyBalance? previous, DualCurrencyBalance next)
     {
-        var rows = voucherList
-            .Where(v => v.EmployeeId == emp.Id)
-            .Select(v => (v.Currency, v.VoucherType, v.Amount));
+        if (previous is not null)
+        {
+            _totalAdvancesIqd -= previous.Value.Iqd;
+            _totalAdvancesUsd -= previous.Value.Usd;
+        }
+
+        _totalAdvancesIqd += next.Iqd;
+        _totalAdvancesUsd += next.Usd;
+        SetTotalAdvances(_totalAdvancesIqd, _totalAdvancesUsd);
+    }
+
+    private async Task<DualCurrencyBalance> ComputeBalanceForEmployeeAsync(Employee emp)
+    {
+        var vouchers = (await _unitOfWork.Vouchers.FindAsync(v => v.EmployeeId == emp.Id)).ToList();
+        var rows = vouchers.Select(v => (v.Currency, v.VoucherType, v.Amount));
         return EmployeeBalanceHelper.ComputeAdvanceBalances(
             emp.OpeningBalance, emp.OpeningBalanceCurrency, rows);
+    }
+
+    private void UpsertEmployeeRow(Employee emp, DualCurrencyBalance balance)
+    {
+        var row = new EmployeeListRow(emp, balance);
+        for (var i = 0; i < Employees.Count; i++)
+        {
+            if (Employees[i].Id != emp.Id) continue;
+            Employees[i] = row;
+            if (SelectedEmployee?.Id == emp.Id)
+                SelectedEmployee = row;
+            return;
+        }
+
+        // موظف جديد: يظهر فوراً في الصفحة الأولى إن كان يطابق الفلتر
+        if (CurrentPage == 1 && MatchesCurrentFilter(emp))
+            Employees.Insert(0, row);
+    }
+
+    private bool MatchesCurrentFilter(Employee emp)
+    {
+        if (StatusFilter == "فعال" && !emp.IsActive) return false;
+        if (StatusFilter == "غير فعال" && emp.IsActive) return false;
+
+        if (string.IsNullOrWhiteSpace(SearchText)) return true;
+        var filter = SearchText.Trim();
+        return emp.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)
+               || (emp.Phone?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false)
+               || (emp.JobTitle?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false)
+               || (emp.Address?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false);
     }
 
     partial void OnSearchTextChanged(string value)
@@ -195,7 +282,7 @@ public partial class EmployeesViewModel : ViewModelBase
         CurrentPage = 1;
         SearchText = string.Empty;
         StatusFilter = "الكل";
-        await LoadAsync();
+        await LoadAsync(refreshTotals: true);
     }
 
     [RelayCommand]
@@ -262,17 +349,32 @@ public partial class EmployeesViewModel : ViewModelBase
         opening = AccountingCurrencyHelper.NormalizeAmount(opening, openingCurrency);
 
         DialogError = string.Empty;
+        if (IsBusy) return;
+        IsBusy = true;
         try
         {
+            DualCurrencyBalance? previousBalance = null;
+            bool? wasActive = null;
+            Employee saved;
+
             if (IsEditMode && _editingId.HasValue)
             {
                 var emp = await _unitOfWork.Employees.GetByIdAsync(_editingId.Value);
                 if (emp is null) return;
+
+                wasActive = emp.IsActive;
+                var oldRow = Employees.FirstOrDefault(r => r.Id == emp.Id);
+                if (oldRow is not null)
+                    previousBalance = new DualCurrencyBalance(oldRow.AdvanceBalanceIqd, oldRow.AdvanceBalanceUsd);
+
                 ApplyFields(emp, opening, openingCurrency);
                 emp.UpdatedAt = DateTime.UtcNow;
                 emp.UpdatedBy = _currentUserService.Username;
-                _unitOfWork.Employees.Update(emp);
+
+                // Update يحفظ بشكل متزامن — خارج خيط الواجهة لتفادي التجمد
+                await Task.Run(() => _unitOfWork.Employees.Update(emp));
                 await _unitOfWork.SaveChangesAsync();
+                saved = emp;
             }
             else
             {
@@ -280,14 +382,44 @@ public partial class EmployeesViewModel : ViewModelBase
                 ApplyFields(emp, opening, openingCurrency);
                 await _unitOfWork.Employees.AddAsync(emp);
                 await _unitOfWork.SaveChangesAsync();
+                saved = emp;
+                TotalCount++;
+                TotalPages = PaginationHelper.ComputeTotalPages(TotalCount, PageSize);
+                PaginationText = PaginationHelper.BuildPaginationText(TotalCount, CurrentPage, PageSize);
             }
 
             IsDialogOpen = false;
-            await LoadAsync();
+
+            if (wasActive is not null && wasActive.Value != saved.IsActive)
+            {
+                if (saved.IsActive) { ActiveCount++; InactiveCount = Math.Max(0, InactiveCount - 1); }
+                else { InactiveCount++; ActiveCount = Math.Max(0, ActiveCount - 1); }
+            }
+            else if (wasActive is null)
+            {
+                if (saved.IsActive) ActiveCount++;
+                else InactiveCount++;
+            }
+
+            // سندات هذا الموظف فقط + تحديث الصف محلياً (بدون إعادة تحميل الصفحة/كل السندات)
+            var balance = await ComputeBalanceForEmployeeAsync(saved);
+            UpsertEmployeeRow(saved, balance);
+            AdjustTotalAdvances(previousBalance, balance);
+
+            // إن أصبح لا يطابق فلتر الحالة الحالي أزِله من الجدول
+            if (!MatchesCurrentFilter(saved))
+            {
+                var stale = Employees.FirstOrDefault(r => r.Id == saved.Id);
+                if (stale is not null) Employees.Remove(stale);
+            }
         }
         catch (Exception ex)
         {
             DialogError = $"حدث خطأ: {ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 
@@ -318,13 +450,24 @@ public partial class EmployeesViewModel : ViewModelBase
     private async Task ExecuteDelete()
     {
         if (EmployeeToDelete?.Employee is null) return;
+        var row = EmployeeToDelete;
         try
         {
-            _unitOfWork.Employees.SoftDelete(EmployeeToDelete.Employee, _currentUserService.Username);
+            await Task.Run(() =>
+                _unitOfWork.Employees.SoftDelete(row.Employee, _currentUserService.Username));
             await _unitOfWork.SaveChangesAsync();
             IsDeleteDialogOpen = false;
             EmployeeToDelete = null;
-            await LoadAsync();
+
+            Employees.Remove(row);
+            if (row.IsActive) ActiveCount = Math.Max(0, ActiveCount - 1);
+            else InactiveCount = Math.Max(0, InactiveCount - 1);
+            AdjustTotalAdvances(
+                new DualCurrencyBalance(row.AdvanceBalanceIqd, row.AdvanceBalanceUsd),
+                default);
+            TotalCount = Math.Max(0, TotalCount - 1);
+            TotalPages = PaginationHelper.ComputeTotalPages(TotalCount, PageSize);
+            PaginationText = PaginationHelper.BuildPaginationText(TotalCount, CurrentPage, PageSize);
         }
         catch (Exception ex)
         {
@@ -420,6 +563,7 @@ public sealed class EmployeeListRow
     public string? Address => Employee.Address;
     public DateTime HireDate => Employee.HireDate;
     public bool IsActive => Employee.IsActive;
+    public string StatusDisplay => Employee.IsActive ? "فعال" : "غير فعال";
     public string? Notes => Employee.Notes;
     public decimal OpeningBalance => Employee.OpeningBalance;
     public AccountingCurrency OpeningBalanceCurrency => Employee.OpeningBalanceCurrency;

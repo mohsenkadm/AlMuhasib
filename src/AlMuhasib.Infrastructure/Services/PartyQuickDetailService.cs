@@ -64,6 +64,7 @@ public class PartyQuickDetailService : IPartyQuickDetailService
                 ? null
                 : $"{InvoiceTypeLabel(last.InvoiceType)} — {last.InvoiceNumber}",
             LastDealAmount = last?.NetAmount,
+            LastDealCurrency = last?.Currency ?? AccountingCurrency.IQD,
             Products = products,
             RecentTimeline = statement.Rows
                 .OrderByDescending(r => r.Date)
@@ -127,6 +128,7 @@ public class PartyQuickDetailService : IPartyQuickDetailService
                 ? null
                 : $"{InvoiceTypeLabel(last.InvoiceType)} — {last.InvoiceNumber}",
             LastDealAmount = last?.NetAmount,
+            LastDealCurrency = last?.Currency ?? AccountingCurrency.IQD,
             Products = products,
             RecentTimeline = statement.Rows
                 .OrderByDescending(r => r.Date)

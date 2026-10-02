@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Threading;
+using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.ViewModels.Hotel;
 using AlMuhasib.UI.ViewModels.Gold;
@@ -13,7 +14,6 @@ using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Modules;
 using AlMuhasib.UI.Services;
 using AlMuhasib.UI.Windows;
-using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Ux;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -32,6 +32,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly IServiceProvider _serviceProvider;
     private readonly SystemModuleRegistry _moduleRegistry;
     private readonly CurrentUserService _currentUserService;
+    private readonly IBranchContext _branchContext;
     private readonly IAuthService _authService;
     private readonly IBackupService _backupService;
     private readonly IInvestorRefreshService _investorRefresh;
@@ -72,6 +73,12 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private string _loggedInUsername = "المسؤول";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCurrentBranch))]
+    private string _currentBranchName = string.Empty;
+
+    public bool HasCurrentBranch => !string.IsNullOrWhiteSpace(CurrentBranchName);
 
     [ObservableProperty]
     private bool _isSidebarExpanded = true;
@@ -150,7 +157,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     public MainWindowViewModel(INavigationService navigationService, IServiceProvider serviceProvider,
         SystemModuleRegistry moduleRegistry,
-        CurrentUserService currentUserService, IAuthService authService,
+        CurrentUserService currentUserService,
+        IBranchContext branchContext,
+        IAuthService authService,
         IBackupService backupService, IInvestorRefreshService investorRefresh,
         IToastNotificationService toast,
         ISoundService sound,
@@ -178,6 +187,7 @@ public partial class MainWindowViewModel : ObservableObject
         _serviceProvider = serviceProvider;
         _moduleRegistry = moduleRegistry;
         _currentUserService = currentUserService;
+        _branchContext = branchContext;
         _authService = authService;
         _backupService = backupService;
         _investorRefresh = investorRefresh;
@@ -217,6 +227,7 @@ public partial class MainWindowViewModel : ObservableObject
         LoadWorkspaceProfile();
         _ = SyncMultiCurrencyFlagFromBusinessSettingsAsync();
         RefreshTrialBanner();
+        RefreshCurrentBranchDisplay();
         UpdateDateTime();
         StartClock();
         _ = RefreshRecentActivitiesAsync();
@@ -463,6 +474,17 @@ public partial class MainWindowViewModel : ObservableObject
             : string.Empty;
     }
 
+    public void RefreshCurrentBranchDisplay()
+    {
+        if (_branchContext.IsAllBranchesMode)
+        {
+            CurrentBranchName = "كل الفروع";
+            return;
+        }
+
+        CurrentBranchName = _branchContext.CurrentBranchName?.Trim() ?? string.Empty;
+    }
+
     [RelayCommand]
     private void OpenDesktopActivation()
     {
@@ -675,6 +697,8 @@ public partial class MainWindowViewModel : ObservableObject
 
     public void RefreshMenuVisibility()
     {
+        PruneFeatureGatedHiddenMenus();
+
         var hidden = _userPreferences.Current.HiddenMenuScreens;
         var flags = _userPreferences.Current.FeatureFlags;
 
@@ -693,7 +717,10 @@ public partial class MainWindowViewModel : ObservableObject
                     var childPermitted = child.ViewModelType == typeof(DeveloperSystemSwitchViewModel)
                         || _currentUserService.CanView(child.ScreenName);
                     var childFeatureOk = IsFeatureFlagVisible(child, flags);
-                    var childPrefOk = !IsCustomizableMenuItem(child) || !hidden.Contains(GetMenuPreferenceKey(child));
+                    // شاشات الميزات: العلم فقط. باقي الشاشات: تخصيص القائمة.
+                    var childPrefOk = IsControlledByFeatureFlag(child)
+                        || !IsCustomizableMenuItem(child)
+                        || !hidden.Contains(GetMenuPreferenceKey(child));
                     child.IsVisible = childPermitted && childFeatureOk && childPrefOk;
                 }
 
@@ -718,7 +745,9 @@ public partial class MainWindowViewModel : ObservableObject
 
             var permitted = _currentUserService.CanView(item.ScreenName);
             var featureOk = IsFeatureFlagVisible(item, flags);
-            var prefOk = !IsCustomizableMenuItem(item) || !hidden.Contains(GetMenuPreferenceKey(item));
+            var prefOk = IsControlledByFeatureFlag(item)
+                || !IsCustomizableMenuItem(item)
+                || !hidden.Contains(GetMenuPreferenceKey(item));
             item.IsVisible = permitted && featureOk && prefOk;
         }
 
@@ -1560,6 +1589,8 @@ public partial class MainWindowViewModel : ObservableObject
         IsExitBackupInProgress = false;
         IsExitConfirmed = true;
         StopClock();
+        if (Application.Current is AlMuhasib.UI.App app)
+            app.PrepareForShutdown();
         Application.Current.Shutdown();
     }
 

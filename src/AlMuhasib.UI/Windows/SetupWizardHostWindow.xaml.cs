@@ -22,6 +22,7 @@ public partial class SetupWizardHostWindow : Window
     private bool _mainServerConfigured;
     private bool _branchConnectionTested;
     private bool _standaloneConnectionVerified;
+    private bool _sharedConnectionVerified;
     private SqlServerInstanceInfo? _selectedSqlInstance;
 
     public ApplicationSystemType? SelectedSystem { get; private set; }
@@ -114,6 +115,9 @@ public partial class SetupWizardHostWindow : Window
     private void OnStandaloneSelected(object sender, MouseButtonEventArgs e) =>
         SelectDeployment(DeploymentMode.Standalone, StandaloneCard, "#E65100", "#FFF3E0");
 
+    private void OnSharedServerSelected(object sender, MouseButtonEventArgs e) =>
+        SelectDeployment(DeploymentMode.SharedServer, SharedServerCard, "#3949AB", "#E8EAF6");
+
     private void SelectDeployment(DeploymentMode mode, Border card, string accent, string bg)
     {
         SelectedDeploymentMode = mode;
@@ -122,6 +126,7 @@ public partial class SetupWizardHostWindow : Window
         ResetCard(MainServerCard);
         ResetCard(BranchClientCard);
         ResetCard(StandaloneCard);
+        ResetCard(SharedServerCard);
 
         card.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(accent)!);
         card.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(bg)!);
@@ -426,6 +431,13 @@ public partial class SetupWizardHostWindow : Window
                 return;
             }
 
+            if (SelectedDeploymentMode == DeploymentMode.SharedServer)
+            {
+                ShowStep(3, stepKind: Step3Kind.SharedServer);
+                ContinueButton.IsEnabled = _sharedConnectionVerified;
+                return;
+            }
+
             ShowStep(3, stepKind: Step3Kind.Standalone);
             ContinueButton.IsEnabled = false;
             await LoadLocalSqlServersAsync();
@@ -451,6 +463,11 @@ public partial class SetupWizardHostWindow : Window
             else if (SelectedDeploymentMode == DeploymentMode.Standalone)
             {
                 if (!TrySaveStandaloneSqlSelection())
+                    return;
+            }
+            else if (SelectedDeploymentMode == DeploymentMode.SharedServer)
+            {
+                if (!TrySaveSharedConnectionString())
                     return;
             }
 
@@ -499,6 +516,96 @@ public partial class SetupWizardHostWindow : Window
         }
     }
 
+    private void OnSharedConnectionStringChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_currentStep != 3 || SelectedDeploymentMode != DeploymentMode.SharedServer)
+            return;
+
+        _sharedConnectionVerified = false;
+        if (!string.IsNullOrWhiteSpace(SharedConnectionTestResultText.Text)
+            && !SharedConnectionTestResultText.Text.StartsWith("جاري", StringComparison.Ordinal))
+        {
+            SharedConnectionTestResultText.Text = "تغيّرت سلسلة الاتصال — يرجى إعادة اختبار الاتصال.";
+            SharedConnectionTestResultText.Foreground =
+                new SolidColorBrush((Color)ColorConverter.ConvertFromString("#EF6C00")!);
+        }
+
+        ContinueButton.IsEnabled = false;
+    }
+
+    private async void OnTestSharedConnectionClick(object sender, RoutedEventArgs e)
+    {
+        var connectionString = SharedConnectionStringText.Text?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            SharedConnectionTestResultText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#C62828")!);
+            SharedConnectionTestResultText.Text = "يرجى لصق سلسلة الاتصال.";
+            ContinueButton.IsEnabled = false;
+            return;
+        }
+
+        TestSharedConnectionButton.IsEnabled = false;
+        SharedConnectionTestResultText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#607D8B")!);
+        SharedConnectionTestResultText.Text = "جاري اختبار الاتصال...";
+
+        var result = await _sqlServerDiscovery.TestConnectionStringAsync(connectionString);
+        SharedConnectionTestResultText.Text = result.Message;
+        SharedConnectionTestResultText.Foreground = new SolidColorBrush(
+            (Color)ColorConverter.ConvertFromString(result.Success ? "#2E7D32" : "#C62828")!);
+
+        _sharedConnectionVerified = result.Success;
+        ContinueButton.IsEnabled = result.Success;
+        TestSharedConnectionButton.IsEnabled = true;
+    }
+
+    private bool TrySaveSharedConnectionString()
+    {
+        var connectionString = SharedConnectionStringText.Text?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            SharedConnectionTestResultText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#C62828")!);
+            SharedConnectionTestResultText.Text = "يرجى إدخال سلسلة الاتصال قبل المتابعة.";
+            return false;
+        }
+
+        if (!_sharedConnectionVerified)
+        {
+            SharedConnectionTestResultText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#C62828")!);
+            SharedConnectionTestResultText.Text = "يرجى اختبار الاتصال بنجاح قبل المتابعة.";
+            return false;
+        }
+
+        try
+        {
+            // Ensure Initial Catalog matches the selected system database name.
+            var databaseName = SelectedSystem switch
+            {
+                ApplicationSystemType.CarContracts => SystemConnectionStrings.CarContractsDatabase,
+                ApplicationSystemType.HotelManagement => SystemConnectionStrings.HotelsDatabase,
+                ApplicationSystemType.CarTrading => SystemConnectionStrings.CarTradingDatabase,
+                ApplicationSystemType.RealEstateContracts => SystemConnectionStrings.RealEstateContractsDatabase,
+                ApplicationSystemType.GoldShop => SystemConnectionStrings.GoldShopDatabase,
+                _ => SystemConnectionStrings.AccountingDatabase
+            };
+
+            var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(connectionString)
+            {
+                InitialCatalog = databaseName,
+                TrustServerCertificate = true,
+                MultipleActiveResultSets = true
+            };
+
+            _appSettingsStore.SaveDefaultConnection(builder.ConnectionString);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            SharedConnectionTestResultText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#C62828")!);
+            SharedConnectionTestResultText.Text = $"تعذر حفظ الإعدادات: {ex.Message}";
+            return false;
+        }
+    }
+
     private void FinishWizard()
     {
         if (SelectedDeploymentMode == DeploymentMode.MainServer)
@@ -523,7 +630,8 @@ public partial class SetupWizardHostWindow : Window
         None,
         Branch,
         Main,
-        Standalone
+        Standalone,
+        SharedServer
     }
 
     private void ShowStep(int step, Step3Kind stepKind = Step3Kind.None)
@@ -536,6 +644,7 @@ public partial class SetupWizardHostWindow : Window
             {
                 DeploymentMode.BranchClient => Step3Kind.Branch,
                 DeploymentMode.MainServer => Step3Kind.Main,
+                DeploymentMode.SharedServer => Step3Kind.SharedServer,
                 _ => Step3Kind.Standalone
             };
         }
@@ -545,6 +654,7 @@ public partial class SetupWizardHostWindow : Window
         Step3BranchPanel.Visibility = step == 3 && stepKind == Step3Kind.Branch ? Visibility.Visible : Visibility.Collapsed;
         Step3MainPanel.Visibility = step == 3 && stepKind == Step3Kind.Main ? Visibility.Visible : Visibility.Collapsed;
         Step3StandalonePanel.Visibility = step == 3 && stepKind == Step3Kind.Standalone ? Visibility.Visible : Visibility.Collapsed;
+        Step3SharedServerPanel.Visibility = step == 3 && stepKind == Step3Kind.SharedServer ? Visibility.Visible : Visibility.Collapsed;
 
         BackButton.Visibility = step > 1 ? Visibility.Visible : Visibility.Collapsed;
         Step3Connector.Visibility = step >= 3 ? Visibility.Visible : Visibility.Collapsed;
@@ -559,6 +669,7 @@ public partial class SetupWizardHostWindow : Window
             3 when stepKind == Step3Kind.Branch => "اربط هذه الحاسبة بالحاسبة الرئيسية",
             3 when stepKind == Step3Kind.Main => "هيّئ الحاسبة الرئيسية لاستقبال الفروع",
             3 when stepKind == Step3Kind.Standalone => "اختر سيرفر قاعدة البيانات على هذا الجهاز",
+            3 when stepKind == Step3Kind.SharedServer => "أدخل سلسلة الاتصال لسيرفر SQL المشترك",
             _ => string.Empty
         };
 
@@ -570,6 +681,7 @@ public partial class SetupWizardHostWindow : Window
             3 when stepKind == Step3Kind.Branch => _branchConnectionTested,
             3 when stepKind == Step3Kind.Main => _mainServerConfigured,
             3 when stepKind == Step3Kind.Standalone => _standaloneConnectionVerified,
+            3 when stepKind == Step3Kind.SharedServer => _sharedConnectionVerified,
             _ => false
         };
     }

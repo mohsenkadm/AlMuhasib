@@ -1,7 +1,7 @@
 namespace AlMuhasib.Core.Entities;
 
-/// <summary>أصناف المنتجات</summary>
-public class Category : BranchScopedEntity
+/// <summary>أصناف المنتجات — مشتركة على مستوى الشركة (كل الفروع).</summary>
+public class Category : BaseEntity
 {
     public string Name { get; set; } = string.Empty;
 

@@ -112,7 +112,8 @@ public partial class SalesInvoiceViewModel
                         ? "—"
                         : CustomerDisplayHelper.FormatDisplayName(invoice.Customer.Name, invoice.Customer.FileNumber),
                     Date = invoice.Date,
-                    NetAmount = invoice.NetAmount
+                    NetAmount = invoice.NetAmount,
+                    Currency = invoice.Currency
                 });
             }
         }
@@ -218,7 +219,8 @@ public partial class SalesInvoiceViewModel
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
                 DiscountAmount = item.DiscountAmount,
-                DiscountPercent = item.DiscountPercent
+                DiscountPercent = item.DiscountPercent,
+                PricingTypeId = item.PricingTypeId
             };
             InvoiceLineWarehouseHelper.BindRowWarehouse(row, SelectedWarehouse, Warehouses.ToList(), item.WarehouseId);
             ApplyActiveLabelsToRow(row);

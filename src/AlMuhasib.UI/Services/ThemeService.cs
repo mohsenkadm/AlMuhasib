@@ -84,6 +84,10 @@ public sealed class ThemeService
         SetBrush(res, "ContentBackground", isDark ? DarkBg : "#F5F7FA");
         SetBrush(res, "TopBarBackground", isDark ? DarkTopBar : "#FFFFFF");
         SetBrush(res, "AppTitleBarBackground", isDark ? DarkTopBar : "#FAFCFF");
+        SetBrush(res, "TitleBarBranchBadgeBackground", isDark ? "#1A3330" : "#E0F2F1");
+        SetBrush(res, "TitleBarBranchBadgeBorder", isDark ? "#2A9D8F" : "#26A69A");
+        SetBrush(res, "TitleBarBranchBadgeForeground", isDark ? "#80CBC4" : "#00695C");
+        SetBrush(res, "TitleBarBranchBadgeIcon", isDark ? "#4DB6AC" : "#00897B");
         SetBrush(res, "SubtleBorderBrush", isDark ? DarkBorder : "#E8EDF2");
         SetBrush(res, "TextSecondaryBrush", isDark ? DarkTextSecondary : "#757575");
         SetBrush(res, "TextPrimaryBrush", isDark ? DarkText : "#212121");

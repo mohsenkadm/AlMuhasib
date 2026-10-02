@@ -13,6 +13,9 @@ public static class CustomerBalanceHelper
     /// <summary>علامة تُضاف لملاحظات سند قبض الدين بعد تطبيقه على فواتير آجلة.</summary>
     public const string DebtReceiptAppliedMarker = "[CR-APPLIED]";
 
+    /// <summary>علامة تسديد عبر عملة مختلفة — مثال: [FX-SETTLE:IQD] عند دفع دولار لتسديد ذمة دينار.</summary>
+    public const string FxSettlePrefix = "[FX-SETTLE:";
+
     public static bool IsDebtReceiptApplied(string? notes)
         => !string.IsNullOrEmpty(notes) &&
            notes.Contains(DebtReceiptAppliedMarker, StringComparison.Ordinal);
@@ -34,6 +37,69 @@ public static class CustomerBalanceHelper
         return notes
             .Replace(DebtReceiptAppliedMarker, string.Empty, StringComparison.Ordinal)
             .Trim();
+    }
+
+    public static AccountingCurrency? GetFxSettlementCurrency(string? notes)
+    {
+        if (string.IsNullOrEmpty(notes))
+            return null;
+
+        var start = notes.IndexOf(FxSettlePrefix, StringComparison.Ordinal);
+        if (start < 0)
+            return null;
+
+        var valueStart = start + FxSettlePrefix.Length;
+        var end = notes.IndexOf(']', valueStart);
+        if (end < 0)
+            return null;
+
+        var code = notes[valueStart..end].Trim();
+        return code.Equals("USD", StringComparison.OrdinalIgnoreCase)
+            ? AccountingCurrency.USD
+            : code.Equals("IQD", StringComparison.OrdinalIgnoreCase)
+                ? AccountingCurrency.IQD
+                : null;
+    }
+
+    public static string MarkFxSettlement(string? notes, AccountingCurrency settlementCurrency)
+    {
+        notes = UnmarkFxSettlement(notes);
+        var marker = $"{FxSettlePrefix}{settlementCurrency}]";
+        return string.IsNullOrWhiteSpace(notes)
+            ? marker
+            : $"{notes.Trim()} {marker}";
+    }
+
+    public static string UnmarkFxSettlement(string? notes)
+    {
+        if (string.IsNullOrEmpty(notes))
+            return notes ?? string.Empty;
+
+        var start = notes.IndexOf(FxSettlePrefix, StringComparison.Ordinal);
+        if (start < 0)
+            return notes;
+
+        var end = notes.IndexOf(']', start);
+        if (end < 0)
+            return notes;
+
+        return (notes[..start] + notes[(end + 1)..]).Trim();
+    }
+
+    /// <summary>
+    /// مبلغ التطبيق على فواتير الذمة بعد التحويل إن اختلفت عملة السند عن عملة التسديد.
+    /// </summary>
+    public static decimal ResolveSettlementAmount(
+        decimal voucherAmount,
+        AccountingCurrency voucherCurrency,
+        AccountingCurrency settlementCurrency,
+        decimal fxRate)
+    {
+        if (voucherCurrency == settlementCurrency)
+            return AccountingCurrencyHelper.NormalizeAmount(voucherAmount, voucherCurrency);
+
+        return AccountingCurrencyHelper.Convert(
+            voucherAmount, voucherCurrency, settlementCurrency, fxRate);
     }
 
     /// <summary>

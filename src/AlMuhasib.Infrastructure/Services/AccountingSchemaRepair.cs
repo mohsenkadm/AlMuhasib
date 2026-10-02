@@ -67,6 +67,18 @@ public static class AccountingSchemaRepair
                 ALTER TABLE [dbo].[Invoices] ADD [RelatedInvoiceId] int NULL;
             """, cancellationToken);
 
+        await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.ProductPrices', N'U') IS NOT NULL
+            BEGIN
+                IF COL_LENGTH(N'dbo.ProductPrices', N'SalePriceUsd') IS NULL
+                    ALTER TABLE [dbo].[ProductPrices] ADD [SalePriceUsd] decimal(18,2) NOT NULL
+                        CONSTRAINT [DF_ProductPrices_SalePriceUsd] DEFAULT (0);
+                IF COL_LENGTH(N'dbo.ProductPrices', N'PurchasePriceUsd') IS NULL
+                    ALTER TABLE [dbo].[ProductPrices] ADD [PurchasePriceUsd] decimal(18,2) NOT NULL
+                        CONSTRAINT [DF_ProductPrices_PurchasePriceUsd] DEFAULT (0);
+            END
+            """, cancellationToken);
+
         // Multi-Branch safety net (idempotent): ensure Main branch + user links exist after migrate.
         await TryExecAsync(db, """
             IF OBJECT_ID(N'dbo.Branches', N'U') IS NOT NULL
@@ -78,6 +90,7 @@ public static class AccountingSchemaRepair
             END
             """, cancellationToken);
 
+        // اربط بالفرع الرئيسي فقط المستخدمين بلا أي ربط — لا تُعد إدراج MAIN لمن مربوط بفرع آخر.
         await TryExecAsync(db, """
             IF OBJECT_ID(N'dbo.UserBranches', N'U') IS NOT NULL
                AND OBJECT_ID(N'dbo.Branches', N'U') IS NOT NULL
@@ -89,7 +102,7 @@ public static class AccountingSchemaRepair
                 WHERE u.[IsDeleted] = 0
                   AND NOT EXISTS (
                       SELECT 1 FROM [dbo].[UserBranches] ub
-                      WHERE ub.[UserId] = u.[Id] AND ub.[BranchId] = b.[Id]);
+                      WHERE ub.[UserId] = u.[Id]);
             END
             """, cancellationToken);
     }

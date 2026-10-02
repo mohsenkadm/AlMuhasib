@@ -137,6 +137,35 @@
                                Foreground="{DynamicResource TextPrimaryBrush}" />
                 </StackPanel>
 
+                <!-- Current branch badge -->
+                <Border Grid.Column="2"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        CornerRadius="14"
+                        Padding="12,5"
+                        Margin="8,0"
+                        Background="{DynamicResource TitleBarBranchBadgeBackground}"
+                        BorderBrush="{DynamicResource TitleBarBranchBadgeBorder}"
+                        BorderThickness="1"
+                        Visibility="{Binding HasCurrentBranch, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        ToolTip="{Binding CurrentBranchName, StringFormat=الفرع الحالي: {0}}"
+                        WindowChrome.IsHitTestVisibleInChrome="False">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="StoreMarkerOutline"
+                                                 Width="15" Height="15"
+                                                 Foreground="{DynamicResource TitleBarBranchBadgeIcon}"
+                                                 VerticalAlignment="Center"
+                                                 Margin="0,0,6,0" />
+                        <TextBlock Text="{Binding CurrentBranchName}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TitleBarBranchBadgeForeground}"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"
+                                   MaxWidth="220" />
+                    </StackPanel>
+                </Border>
+
                 <!-- Animated date & time pills -->
                 <StackPanel Grid.Column="3"
                             Orientation="Horizontal"
@@ -1532,6 +1561,9 @@
                         <DataTemplate DataType="{x:Type vm:EmployeesViewModel}">
                             <views:EmployeesView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:BranchesViewModel}">
+                            <views:BranchesView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:EmployeeStatementViewModel}">
                             <views:EmployeeStatementView />
                         </DataTemplate>
@@ -1591,6 +1623,9 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:CashBankViewModel}">
                             <views:CashBankView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:CurrencyExchangeViewModel}">
+                            <views:CurrencyExchangeView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:WarehousesViewModel}">
                             <views:WarehousesView />
@@ -1795,6 +1830,9 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:TransfersReportViewModel}">
                             <views:TransfersReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:WarehouseTransfersReportViewModel}">
+                            <views:WarehouseTransfersReportView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:InventoryValuationReportViewModel}">
                             <views:InventoryValuationReportView />

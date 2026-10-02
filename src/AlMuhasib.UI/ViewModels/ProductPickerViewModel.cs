@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Services;
@@ -115,6 +116,22 @@ public partial class ProductPickerViewModel : ObservableObject
     [ObservableProperty]
     private bool _isPricingMode;
 
+    private AccountingCurrency _documentCurrency = AccountingCurrency.IQD;
+
+    /// <summary>عملة مستند الفاتورة — تُستخدم لاقتراح سعر القائمة دون تحويل FX.</summary>
+    public AccountingCurrency DocumentCurrency
+    {
+        get => _documentCurrency;
+        set
+        {
+            if (_documentCurrency == value)
+                return;
+            _documentCurrency = value;
+            _pricesByProduct.Clear();
+            _ = LoadPricesForDisplayedProductsAsync();
+        }
+    }
+
     public event Action? Confirmed;
     public event Action? Cancelled;
 
@@ -135,6 +152,7 @@ public partial class ProductPickerViewModel : ObservableObject
         _mode = mode;
         _quantities.Clear();
         _selectedPricingTypeIds.Clear();
+        _pricesByProduct.Clear();
         SearchText = string.Empty;
         BrowseHint = string.Empty;
         IsAllCategoriesSelected = false;
@@ -360,13 +378,8 @@ public partial class ProductPickerViewModel : ObservableObject
         var prices = await _productPriceService.GetByProductIdsAsync(missing);
         foreach (var group in prices.GroupBy(p => p.ProductId))
         {
-            var options = group.Select(p => new ProductPricingOption
-            {
-                PricingTypeId = p.PricingTypeId,
-                Name = p.PricingType?.Name ?? $"نوع {p.PricingTypeId}",
-                Price = _mode == InvoicePickerMode.Purchase ? p.PurchasePrice : p.SalePrice,
-                IsDefault = p.PricingType?.IsDefault == true
-            }).ToList();
+            var usePurchase = _mode == InvoicePickerMode.Purchase;
+            var options = InvoiceBulkPricingHelper.ToOptions(group, usePurchase, DocumentCurrency);
             _pricesByProduct[group.Key] = options;
         }
     }

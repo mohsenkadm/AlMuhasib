@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
@@ -22,7 +23,10 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
     private readonly IFeatureFlagService _featureFlags;
     private readonly MainWindowViewModel _mainWindow;
     private HashSet<string> _existingNames = new(StringComparer.OrdinalIgnoreCase);
-    private int? _defaultPricingTypeId;
+    private List<Warehouse> _warehouses = [];
+    private List<PricingType> _pricingTypes = [];
+    private List<string> _warehouseNames = [];
+    private List<string> _pricingTypeNames = [];
 
     public ObservableCollection<BulkProductEntryRow> Rows { get; } = [];
     public ObservableCollection<Category> Categories { get; } = [];
@@ -35,6 +39,7 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
     [ObservableProperty] private bool _showWeightFields;
     [ObservableProperty] private bool _showDiscountFields;
     [ObservableProperty] private bool _showPricingFields;
+    [ObservableProperty] private bool _showMultiCurrency;
     [ObservableProperty] private bool _showCarShowroomFields;
 
     [ObservableProperty] private bool _showCustomField1;
@@ -62,6 +67,9 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
 
     [ObservableProperty] private string _statusMessage = string.Empty;
 
+    /// <summary>يزيد عند تغيّر أعمدة المخازن/أنواع الأسعار لإعادة بناء الشبكة.</summary>
+    [ObservableProperty] private int _gridColumnsVersion;
+
     private List<(int Slot, string Label)> _enabledCustomSlots = [];
 
     public BulkProductsEntryViewModel(
@@ -85,6 +93,10 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
         EnsureBlankRows(8);
     }
 
+    public IReadOnlyList<string> GetWarehouseNames() => _warehouseNames;
+    public IReadOnlyList<string> GetPricingTypeNames() =>
+        ShowPricingFields ? _pricingTypeNames : Array.Empty<string>();
+
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, "Products");
@@ -100,6 +112,7 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
         ShowWeightFields = flags.MenuWeight;
         ShowDiscountFields = flags.ProductDiscountEnabled;
         ShowPricingFields = flags.ProductPricingEnabled;
+        ShowMultiCurrency = flags.MultiCurrency && flags.ProductPricingEnabled;
         ShowCarShowroomFields = flags.CarShowroom;
     }
 
@@ -120,13 +133,28 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
             .Where(n => !string.IsNullOrWhiteSpace(n))
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
+        _warehouses = (await _unitOfWork.Warehouses.GetAllAsync())
+            .OrderBy(w => w.Name)
+            .ToList();
+        _warehouseNames = _warehouses.Select(w => w.Name).ToList();
+
         if (ShowPricingFields)
         {
-            var pricingTypes = await _unitOfWork.PricingTypes.GetAllAsync();
-            _defaultPricingTypeId = pricingTypes
+            _pricingTypes = (await _unitOfWork.PricingTypes.GetAllAsync())
+                .Where(t => t.IsActive)
                 .OrderByDescending(t => t.IsDefault)
-                .FirstOrDefault()?.Id;
+                .ThenBy(t => t.Name)
+                .ToList();
+            _pricingTypeNames = _pricingTypes.Select(t => t.Name).ToList();
         }
+        else
+        {
+            _pricingTypes = [];
+            _pricingTypeNames = [];
+        }
+
+        SyncAllRowStructures();
+        GridColumnsVersion++;
 
         var enabled = await _customFieldSettings.GetEnabledDefinitionsAsync(CustomFieldEntityKind.Products);
         _enabledCustomSlots = enabled.Select(d => (d.Slot, d.DisplayLabel)).ToList();
@@ -154,6 +182,19 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
         }
     }
 
+    private void SyncAllRowStructures()
+    {
+        foreach (var row in Rows)
+            SyncRowStructure(row);
+    }
+
+    private void SyncRowStructure(BulkProductEntryRow row)
+    {
+        row.EnsureStructure(
+            _warehouseNames,
+            ShowPricingFields ? _pricingTypeNames : Array.Empty<string>());
+    }
+
     private void EnsureBlankRows(int count)
     {
         while (Rows.Count < count)
@@ -162,7 +203,8 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
 
     private void AddRowInternal(BulkProductEntryRow row)
     {
-        row.RowChanged += OnRowChanged;
+        // الاشتراك في RowChanged يتم عبر CollectionChanged عند الإضافة
+        SyncRowStructure(row);
         Rows.Add(row);
     }
 
@@ -171,7 +213,10 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
         if (e.NewItems is not null)
         {
             foreach (BulkProductEntryRow row in e.NewItems)
+            {
+                SyncRowStructure(row);
                 row.RowChanged += OnRowChanged;
+            }
         }
 
         if (e.OldItems is not null)
@@ -227,8 +272,8 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
         || !string.IsNullOrWhiteSpace(row.CarModel)
         || !string.IsNullOrWhiteSpace(row.PlateNumber)
         || row.Weight != 0
-        || row.SalePrice != 0
-        || row.PurchasePrice != 0;
+        || row.HasOpeningQty
+        || row.HasAnyPrice;
 
     [RelayCommand]
     private void AddEmptyRows()
@@ -282,6 +327,7 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
         StatusMessage = "جاري الحفظ...";
         var saved = 0;
         var errors = new List<string>();
+        var username = _currentUserService.Username;
 
         try
         {
@@ -294,7 +340,7 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
                 defaultCategory = new Category
                 {
                     Name = "عام",
-                    CreatedBy = _currentUserService.Username,
+                    CreatedBy = username,
                     CreatedAt = DateTime.UtcNow
                 };
                 await _unitOfWork.Categories.AddAsync(defaultCategory);
@@ -322,7 +368,7 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
                             category = new Category
                             {
                                 Name = catName,
-                                CreatedBy = _currentUserService.Username,
+                                CreatedBy = username,
                                 CreatedAt = DateTime.UtcNow
                             };
                             await _unitOfWork.Categories.AddAsync(category);
@@ -385,19 +431,63 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
                     await _productService.CreateAsync(product);
                     _existingNames.Add(product.Name);
 
-                    if (ShowPricingFields
-                        && _defaultPricingTypeId is int pricingTypeId
-                        && (row.SalePrice > 0 || row.PurchasePrice > 0))
+                    var unitCostIqd = row.ResolveOpeningUnitCostIqd();
+                    if (unitCostIqd > 0)
+                        unitCostIqd = AccountingCurrencyHelper.RoundIqd(unitCostIqd);
+
+                    foreach (var qtyCell in row.WarehouseQtys.Where(q => q.Quantity > 0))
                     {
-                        await _productPriceService.UpsertAsync(new ProductPrice
+                        var warehouse = _warehouses.FirstOrDefault(w =>
+                            string.Equals(w.Name, qtyCell.WarehouseName, StringComparison.OrdinalIgnoreCase));
+                        if (warehouse is null) continue;
+
+                        await _unitOfWork.WarehouseStocks.AddAsync(new WarehouseStock
                         {
+                            WarehouseId = warehouse.Id,
                             ProductId = product.Id,
-                            PricingTypeId = pricingTypeId,
-                            SalePrice = row.SalePrice,
-                            PurchasePrice = row.PurchasePrice
+                            Quantity = qtyCell.Quantity,
+                            OpeningQuantity = qtyCell.Quantity,
+                            UnitCost = unitCostIqd,
+                            CreatedBy = username,
+                            CreatedAt = DateTime.UtcNow
                         });
                     }
 
+                    if (ShowPricingFields)
+                    {
+                        foreach (var cell in row.ProductPrices.Where(p =>
+                                     p.SalePrice > 0 || p.SalePriceUsd > 0
+                                     || p.PurchasePrice > 0 || p.PurchasePriceUsd > 0))
+                        {
+                            var type = _pricingTypes.FirstOrDefault(t =>
+                                string.Equals(t.Name, cell.PricingTypeName, StringComparison.OrdinalIgnoreCase));
+                            if (type is null) continue;
+
+                            var saleIqd = cell.SalePrice > 0
+                                ? AccountingCurrencyHelper.RoundIqd(cell.SalePrice) : 0m;
+                            var saleUsd = ShowMultiCurrency && cell.SalePriceUsd > 0
+                                ? AccountingCurrencyHelper.RoundUsd(cell.SalePriceUsd) : 0m;
+                            var purchaseIqd = cell.PurchasePrice > 0
+                                ? AccountingCurrencyHelper.RoundIqd(cell.PurchasePrice) : 0m;
+                            var purchaseUsd = ShowMultiCurrency && cell.PurchasePriceUsd > 0
+                                ? AccountingCurrencyHelper.RoundUsd(cell.PurchasePriceUsd) : 0m;
+
+                            if (saleIqd <= 0 && saleUsd <= 0 && purchaseIqd <= 0 && purchaseUsd <= 0)
+                                continue;
+
+                            await _productPriceService.UpsertAsync(new ProductPrice
+                            {
+                                ProductId = product.Id,
+                                PricingTypeId = type.Id,
+                                SalePrice = saleIqd,
+                                SalePriceUsd = saleUsd,
+                                PurchasePrice = purchaseIqd,
+                                PurchasePriceUsd = purchaseUsd
+                            });
+                        }
+                    }
+
+                    await _unitOfWork.SaveChangesAsync();
                     saved++;
                     row.RowStatus = "تم الحفظ";
                 }
@@ -418,7 +508,6 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
             else
                 BeautifulMessageDialog.ShowSuccess(msg);
 
-            // أزل الصفوف المحفوظة وأبقِ الباقي
             var remaining = Rows.Where(r => r.RowStatus != "تم الحفظ").ToList();
             Rows.Clear();
             foreach (var r in remaining)

@@ -28,6 +28,7 @@ public sealed class SyncDataBundle
     public List<VoucherSyncDto> Vouchers { get; set; } = [];
     public List<ExpenseSyncDto> Expenses { get; set; } = [];
     public List<TransferSyncDto> Transfers { get; set; } = [];
+    public List<CurrencyExchangeSyncDto> CurrencyExchanges { get; set; } = [];
     public List<InvestorTransactionSyncDto> InvestorTransactions { get; set; } = [];
     public List<ProfitDistributionSyncDto> ProfitDistributions { get; set; } = [];
     public List<ProfitDistributionDetailSyncDto> ProfitDistributionDetails { get; set; } = [];

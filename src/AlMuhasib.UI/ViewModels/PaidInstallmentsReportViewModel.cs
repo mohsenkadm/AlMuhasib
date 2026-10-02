@@ -3,6 +3,7 @@ using System.Windows;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Charts;
@@ -14,10 +15,13 @@ namespace AlMuhasib.UI.ViewModels;
 
 public partial class PaidInstallmentsReportViewModel : ReportViewModelBase
 {
+    private readonly IFeatureFlagService _featureFlags;
+
     [ObservableProperty] private string _totalPaid = "0";
     [ObservableProperty] private string _paidCount = "0";
     [ObservableProperty] private string _maxPaid = "0";
     [ObservableProperty] private string _averagePaymentDays = "0";
+    [ObservableProperty] private bool _showMultiCurrency;
 
     [ObservableProperty] private int? _selectedCustomerId;
     [ObservableProperty] private int? _selectedCashBoxId;
@@ -33,9 +37,11 @@ public partial class PaidInstallmentsReportViewModel : ReportViewModelBase
     public ObservableCollection<PaidInstallmentRow> Rows { get; } = [];
 
     public PaidInstallmentsReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
-        IExportService exportService, ICurrentUserService currentUserService)
+        IExportService exportService, ICurrentUserService currentUserService,
+        IFeatureFlagService featureFlags)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
+        _featureFlags = featureFlags;
         PageTitle = "الأقساط المسددة";
         RegisterThemeChartReload(LoadDataAsync);
     }
@@ -43,6 +49,7 @@ public partial class PaidInstallmentsReportViewModel : ReportViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, "Reports");
+        ShowMultiCurrency = _featureFlags.MultiCurrency;
         foreach (var c in await _unitOfWork.Customers.GetAllAsync()) Customers.Add(c);
         foreach (var cb in await _unitOfWork.CashBoxes.GetAllAsync()) CashBoxes.Add(cb);
         await LoadDataAsync();
@@ -86,8 +93,12 @@ public partial class PaidInstallmentsReportViewModel : ReportViewModelBase
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "الأقساط_المسددة.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "العميل", "رقم الخطة", "المبلغ", "تاريخ الدفع", "الصندوق" };
-        var rows = _allRows.Select(r => new object[] { r.CustomerName, r.PlanNumber, r.Amount, r.PaymentDate.ToString("yyyy/MM/dd"), r.CashBoxName }).ToList();
+        var cols = ShowMultiCurrency
+            ? new[] { "العميل", "رقم الخطة", "المبلغ (د.ع)", "الأصل", "العملة", "تاريخ الدفع", "الصندوق" }
+            : new[] { "العميل", "رقم الخطة", "المبلغ", "تاريخ الدفع", "الصندوق" };
+        var rows = _allRows.Select(r => ShowMultiCurrency
+            ? new object[] { r.CustomerName, r.PlanNumber, r.Amount, r.OriginalAmount, r.CurrencyLabel, r.PaymentDate.ToString("yyyy/MM/dd"), r.CashBoxName }
+            : new object[] { r.CustomerName, r.PlanNumber, r.Amount, r.PaymentDate.ToString("yyyy/MM/dd"), r.CashBoxName }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "الأقساط المسددة", cols, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
@@ -95,8 +106,12 @@ public partial class PaidInstallmentsReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "العميل", "رقم الخطة", "المبلغ", "تاريخ الدفع", "الصندوق" };
-        var rows = _allRows.Select(r => new object[] { r.CustomerName, r.PlanNumber, r.Amount, r.PaymentDate.ToString("yyyy/MM/dd"), r.CashBoxName }).ToList();
+        var cols = ShowMultiCurrency
+            ? new[] { "العميل", "رقم الخطة", "المبلغ (د.ع)", "الأصل", "العملة", "تاريخ الدفع", "الصندوق" }
+            : new[] { "العميل", "رقم الخطة", "المبلغ", "تاريخ الدفع", "الصندوق" };
+        var rows = _allRows.Select(r => ShowMultiCurrency
+            ? new object[] { r.CustomerName, r.PlanNumber, r.Amount, r.OriginalAmount, r.CurrencyLabel, r.PaymentDate.ToString("yyyy/MM/dd"), r.CashBoxName }
+            : new object[] { r.CustomerName, r.PlanNumber, r.Amount, r.PaymentDate.ToString("yyyy/MM/dd"), r.CashBoxName }).ToList();
         _exportService.PrintTable("الأقساط المسددة", cols, rows);
     }
 }

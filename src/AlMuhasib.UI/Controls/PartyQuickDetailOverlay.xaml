@@ -105,8 +105,15 @@
                             <WrapPanel Margin="0,4,0,12">
                                 <Border Style="{StaticResource StatPill}" Background="{DynamicResource DashboardKpiRedLightBrush}">
                                     <StackPanel>
-                                        <TextBlock Text="المطلوب / الرصيد" FontSize="11" Foreground="#C62828"/>
+                                        <TextBlock Text="المطلوب د.ع" FontSize="11" Foreground="#C62828"/>
                                         <TextBlock Text="{Binding BalanceText}" FontSize="18" FontWeight="Bold" Foreground="#B71C1C"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource StatPill}" Background="#FFEBEE"
+                                        Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolVis}}">
+                                    <StackPanel>
+                                        <TextBlock Text="المطلوب $" FontSize="11" Foreground="#C62828"/>
+                                        <TextBlock Text="{Binding BalanceUsdText}" FontSize="18" FontWeight="Bold" Foreground="#B71C1C"/>
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource StatPill}" Background="{DynamicResource PrimaryHueLightBrush}">
@@ -117,8 +124,15 @@
                                 </Border>
                                 <Border Style="{StaticResource StatPill}" Background="{DynamicResource DashboardKpiGreenLightBrush}">
                                     <StackPanel>
-                                        <TextBlock Text="إجمالي التعاملات" FontSize="11" Foreground="#2E7D32"/>
+                                        <TextBlock Text="إجمالي د.ع" FontSize="11" Foreground="#2E7D32"/>
                                         <TextBlock Text="{Binding TotalDealAmountText}" FontSize="18" FontWeight="Bold" Foreground="#1B5E20"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource StatPill}" Background="#E8F5E9"
+                                        Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolVis}}">
+                                    <StackPanel>
+                                        <TextBlock Text="إجمالي $" FontSize="11" Foreground="#2E7D32"/>
+                                        <TextBlock Text="{Binding TotalDealAmountUsdText}" FontSize="18" FontWeight="Bold" Foreground="#1B5E20"/>
                                     </StackPanel>
                                 </Border>
                             </WrapPanel>

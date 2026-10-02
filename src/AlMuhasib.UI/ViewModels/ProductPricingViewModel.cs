@@ -4,6 +4,7 @@ using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -20,6 +21,7 @@ public partial class ProductPricingViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IFeatureFlagService _featureFlags;
 
     public ObservableCollection<ProductPriceEditRow> Rows { get; } = [];
     public ObservableCollection<Product> Products { get; } = [];
@@ -42,6 +44,7 @@ public partial class ProductPricingViewModel : ViewModelBase
     [ObservableProperty] private bool _hasUnsavedChanges;
     [ObservableProperty] private bool _isDeleteDialogOpen;
     [ObservableProperty] private ProductPriceEditRow? _rowToDelete;
+    [ObservableProperty] private bool _showMultiCurrency;
 
     private System.Timers.Timer? _debounceTimer;
     private readonly HashSet<int> _dirtyIds = [];
@@ -52,14 +55,19 @@ public partial class ProductPricingViewModel : ViewModelBase
         IPricingTypeService pricingTypeService,
         IUnitOfWork unitOfWork,
         IExportService exportService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IFeatureFlagService featureFlags)
     {
         _productPriceService = productPriceService;
         _pricingTypeService = pricingTypeService;
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _currentUserService = currentUserService;
+        _featureFlags = featureFlags;
         PageTitle = "تسعير منتجات";
+        ShowMultiCurrency = _featureFlags.MultiCurrency;
+        _featureFlags.FlagsChanged += (_, _) =>
+            FeatureUiRefresh.Invoke(() => ShowMultiCurrency = _featureFlags.MultiCurrency);
     }
 
     public override async Task InitializeAsync()
@@ -300,13 +308,23 @@ public partial class ProductPricingViewModel : ViewModelBase
             sheet.Cell(1, 1).Value = "اسم المنتج";
             sheet.Cell(1, 2).Value = "الباركود";
             sheet.Cell(1, 3).Value = "نوع التسعير";
-            sheet.Cell(1, 4).Value = "سعر البيع";
-            sheet.Cell(1, 5).Value = "سعر الشراء";
+            sheet.Cell(1, 4).Value = "سعر البيع د.ع";
+            sheet.Cell(1, 5).Value = "سعر الشراء د.ع";
+            if (ShowMultiCurrency)
+            {
+                sheet.Cell(1, 6).Value = "سعر البيع $";
+                sheet.Cell(1, 7).Value = "سعر الشراء $";
+            }
             sheet.Cell(2, 1).Value = "مثال منتج";
             sheet.Cell(2, 2).Value = "123456";
             sheet.Cell(2, 3).Value = "سعر مفرد";
             sheet.Cell(2, 4).Value = 10000;
             sheet.Cell(2, 5).Value = 8000;
+            if (ShowMultiCurrency)
+            {
+                sheet.Cell(2, 6).Value = 8;
+                sheet.Cell(2, 7).Value = 6;
+            }
             sheet.Columns().AdjustToContents();
             workbook.SaveAs(dialog.FileName);
             BeautifulMessageDialog.ShowSuccess("تم استخراج قالب Excel");
@@ -329,26 +347,43 @@ public partial class ProductPricingViewModel : ViewModelBase
                 ParseDecimal(MinSalePriceText), ParseDecimal(MaxSalePriceText),
                 ParseDecimal(MinPurchasePriceText), ParseDecimal(MaxPurchasePriceText));
 
-            var exportData = items.Select(p => new
-            {
-                المنتج = p.Product?.Name ?? "",
-                الباركود = p.Product?.Barcode ?? "",
-                نوع_التسعير = p.PricingType?.Name ?? "",
-                سعر_البيع = p.SalePrice,
-                سعر_الشراء = p.PurchasePrice
-            });
-
             var dialog = new SaveFileDialog
             {
                 Filter = "Excel Files (*.xlsx)|*.xlsx",
                 FileName = $"تسعير_منتجات_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
                 DefaultExt = ".xlsx"
             };
-            if (dialog.ShowDialog() == true)
+            if (dialog.ShowDialog() != true)
+                return;
+
+            if (ShowMultiCurrency)
             {
-                await _exportService.ExportToExcelFileAsync(exportData, dialog.FileName, "تسعير منتجات");
-                BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
+                var usdExport = items.Select(p => new
+                {
+                    المنتج = p.Product?.Name ?? "",
+                    الباركود = p.Product?.Barcode ?? "",
+                    نوع_التسعير = p.PricingType?.Name ?? "",
+                    سعر_البيع_د_ع = p.SalePrice,
+                    سعر_الشراء_د_ع = p.PurchasePrice,
+                    سعر_البيع_دولار = p.SalePriceUsd,
+                    سعر_الشراء_دولار = p.PurchasePriceUsd
+                });
+                await _exportService.ExportToExcelFileAsync(usdExport, dialog.FileName, "تسعير منتجات");
             }
+            else
+            {
+                var iqdExport = items.Select(p => new
+                {
+                    المنتج = p.Product?.Name ?? "",
+                    الباركود = p.Product?.Barcode ?? "",
+                    نوع_التسعير = p.PricingType?.Name ?? "",
+                    سعر_البيع = p.SalePrice,
+                    سعر_الشراء = p.PurchasePrice
+                });
+                await _exportService.ExportToExcelFileAsync(iqdExport, dialog.FileName, "تسعير منتجات");
+            }
+
+            BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
         }
         catch (Exception ex)
         {
@@ -366,15 +401,28 @@ public partial class ProductPricingViewModel : ViewModelBase
                 ParseDecimal(MinSalePriceText), ParseDecimal(MaxSalePriceText),
                 ParseDecimal(MinPurchasePriceText), ParseDecimal(MaxPurchasePriceText));
 
-            var columns = new[] { "المنتج", "الباركود", "نوع التسعير", "سعر البيع", "سعر الشراء" };
-            IList<object[]> rows = items.Select(p => new object[]
-            {
-                p.Product?.Name ?? "",
-                p.Product?.Barcode ?? "",
-                p.PricingType?.Name ?? "",
-                p.SalePrice,
-                p.PurchasePrice
-            }).ToList();
+            var columns = ShowMultiCurrency
+                ? new[] { "المنتج", "الباركود", "نوع التسعير", "بيع د.ع", "شراء د.ع", "بيع $", "شراء $" }
+                : new[] { "المنتج", "الباركود", "نوع التسعير", "سعر البيع", "سعر الشراء" };
+            IList<object[]> rows = ShowMultiCurrency
+                ? items.Select(p => new object[]
+                {
+                    p.Product?.Name ?? "",
+                    p.Product?.Barcode ?? "",
+                    p.PricingType?.Name ?? "",
+                    p.SalePrice,
+                    p.PurchasePrice,
+                    p.SalePriceUsd,
+                    p.PurchasePriceUsd
+                }).ToList()
+                : items.Select(p => new object[]
+                {
+                    p.Product?.Name ?? "",
+                    p.Product?.Barcode ?? "",
+                    p.PricingType?.Name ?? "",
+                    p.SalePrice,
+                    p.PurchasePrice
+                }).ToList();
             _exportService.PrintTable("قائمة تسعير المنتجات", columns, rows);
         }
         catch (Exception ex)
@@ -426,13 +474,21 @@ public partial class ProductPricingViewModel : ViewModelBase
 
                 var sale = excelRow.Cell(4).TryGetValue(out double saleVal) ? (decimal)saleVal : 0m;
                 var purchase = excelRow.Cell(5).TryGetValue(out double purchaseVal) ? (decimal)purchaseVal : 0m;
+                var saleUsd = ShowMultiCurrency && excelRow.Cell(6).TryGetValue(out double saleUsdVal)
+                    ? (decimal)saleUsdVal
+                    : 0m;
+                var purchaseUsd = ShowMultiCurrency && excelRow.Cell(7).TryGetValue(out double purchaseUsdVal)
+                    ? (decimal)purchaseUsdVal
+                    : 0m;
 
                 toSave.Add(new ProductPrice
                 {
                     ProductId = product.Id,
                     PricingTypeId = pricingType.Id,
                     SalePrice = sale,
-                    PurchasePrice = purchase
+                    PurchasePrice = purchase,
+                    SalePriceUsd = saleUsd,
+                    PurchasePriceUsd = purchaseUsd
                 });
             }
 

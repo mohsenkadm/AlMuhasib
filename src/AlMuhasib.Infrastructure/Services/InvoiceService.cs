@@ -125,7 +125,7 @@ public class InvoiceService : IInvoiceService
                 invoice.PurchaseExpenseAmount = 0m;
             decimal netAmount = subtotal - invoice.DiscountAmount;
 
-            decimal roundingAmount = CalculateRounding(netAmount, invoice.InvoiceType);
+            decimal roundingAmount = CalculateRounding(netAmount, invoice.InvoiceType, invoice.Currency);
             invoice.RoundingAmount = roundingAmount;
             invoice.RoundingType = invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.PurchaseReturn
                 ? RoundingType.RoundUp
@@ -147,11 +147,8 @@ public class InvoiceService : IInvoiceService
                 invoice.IsCreditPaid = true;
             }
 
-            // المرتجع لا يفتح ذمة جديدة: يُطبَّق على فواتير الآجل الأصلية (أو يبقى كرصيد دائن للمرتجع الآجل).
-            if (InvoiceReturnCreditHelper.IsCreditReturnType(invoice.InvoiceType))
-            {
-                // يُكمَل التطبيق بعد حفظ المعرّف — هنا نؤجّل تصفير المتبقي حتى بعد التوزيع
-            }
+            // المرتجع يُطبَّق على فواتير الآجل بعد الحفظ (انظر ApplyReturnCreditImpactAsync).
+            decimal? returnCashMovement = null;
 
             if (!preserveProvidedNumber || string.IsNullOrWhiteSpace(invoice.InvoiceNumber))
             {
@@ -173,7 +170,7 @@ public class InvoiceService : IInvoiceService
 
             if (InvoiceReturnCreditHelper.IsCreditReturnType(invoice.InvoiceType))
             {
-                await ApplyReturnCreditImpactAsync(context, invoice, username);
+                returnCashMovement = await ApplyReturnCreditImpactAsync(context, invoice, username);
                 await context.SaveChangesAsync();
             }
 
@@ -235,35 +232,39 @@ public class InvoiceService : IInvoiceService
                 await context.SaveChangesAsync();
             }
 
-            if (invoice.CashBoxId.HasValue &&
-                (invoice.PaymentMethod == PaymentMethod.Cash
-                 || (invoice.PaymentMethod == PaymentMethod.Credit && invoice.PaidAmount > 0)))
+            if (invoice.CashBoxId.HasValue)
             {
-                var cashBox = await context.CashBoxes.FindAsync(invoice.CashBoxId.Value);
-                if (cashBox is not null)
-                {
-                    var cashAmount = invoice.PaymentMethod == PaymentMethod.Credit
+                var cashAmount = returnCashMovement
+                    ?? (invoice.PaymentMethod == PaymentMethod.Credit
                         ? invoice.PaidAmount
-                        : invoice.NetAmount;
+                        : invoice.NetAmount);
 
-                    if (invoice.InvoiceType == InvoiceType.Purchase || invoice.InvoiceType == InvoiceType.SaleReturn)
-                        cashBox.Balance -= cashAmount; // شراء أو استرداد نقد للعميل
-                    else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
-                        cashBox.Balance += cashAmount; // استرداد نقد من المورد
-                    else
-                        cashBox.Balance += cashAmount;
-
-                    cashBox.UpdatedBy = username;
-                    cashBox.UpdatedAt = DateTime.UtcNow;
-                    await context.SaveChangesAsync();
-                }
-
-                // سند حركة للصندوق عند دفعة مقدمة على فاتورة آجلة (يظهر في تقرير حركة الصندوق)
-                if (invoice.PaymentMethod == PaymentMethod.Credit && invoice.PaidAmount > 0)
+                if (cashAmount > 0 &&
+                    (invoice.PaymentMethod == PaymentMethod.Cash
+                     || invoice.PaymentMethod == PaymentMethod.Credit))
                 {
-                    await AddCreditDownPaymentVoucherAsync(
-                        context, invoice, invoice.PaidAmount, invoice.CashBoxId.Value, username);
-                    await context.SaveChangesAsync();
+                    var cashBox = await context.CashBoxes.FindAsync(invoice.CashBoxId.Value);
+                    if (cashBox is not null)
+                    {
+                        if (invoice.InvoiceType == InvoiceType.Purchase || invoice.InvoiceType == InvoiceType.SaleReturn)
+                            cashBox.Balance -= cashAmount; // شراء أو استرداد نقد للعميل
+                        else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
+                            cashBox.Balance += cashAmount; // استرداد نقد من المورد (المتبقي غير المطبّق على الآجل)
+                        else
+                            cashBox.Balance += cashAmount;
+
+                        cashBox.UpdatedBy = username;
+                        cashBox.UpdatedAt = DateTime.UtcNow;
+                        await context.SaveChangesAsync();
+                    }
+
+                    // سند حركة للصندوق عند دفعة نقدية على فاتورة/مرتجع آجل
+                    if (invoice.PaymentMethod == PaymentMethod.Credit && cashAmount > 0)
+                    {
+                        await AddCreditDownPaymentVoucherAsync(
+                            context, invoice, cashAmount, invoice.CashBoxId.Value, username);
+                        await context.SaveChangesAsync();
+                    }
                 }
             }
 
@@ -368,8 +369,12 @@ public class InvoiceService : IInvoiceService
     private static Task<string> GenerateInvoiceNumberAsync(AppDbContext context, InvoiceType type)
         => InvoiceNumberHelper.GenerateNextAsync(context, type);
 
-    public decimal CalculateRounding(decimal netAmount, InvoiceType invoiceType)
+    public decimal CalculateRounding(decimal netAmount, InvoiceType invoiceType, AccountingCurrency currency = AccountingCurrency.IQD)
     {
+        // تقريب 250 د.ع خاص بالدينار النقدي فقط — لا يُطبَّق على الدولار.
+        if (currency == AccountingCurrency.USD)
+            return 0m;
+
         const decimal roundingStep = 250m;
         decimal remainder = netAmount % roundingStep;
         if (remainder == 0) return 0m;
@@ -646,7 +651,15 @@ public class InvoiceService : IInvoiceService
                 if (cashBox is not null)
                 {
                     decimal cashAmount;
-                    if (invoice.PaymentMethod == PaymentMethod.Credit)
+                    if (InvoiceReturnCreditHelper.IsCreditReturnType(invoice.InvoiceType))
+                    {
+                        cashAmount = InvoiceReturnCreditHelper.ResolveStoredReturnCashMovement(
+                            invoice.PaymentMethod,
+                            invoice.NetAmount,
+                            invoice.PaidAmount,
+                            invoice.Notes);
+                    }
+                    else if (invoice.PaymentMethod == PaymentMethod.Credit)
                     {
                         // عكس دفعة الإنشاء فقط — لا تُحسب سندات التسديد المستقلة هنا
                         var downPayment = reportOnlyDownPayments.Sum(v => v.Amount);
@@ -659,15 +672,18 @@ public class InvoiceService : IInvoiceService
                         cashAmount = invoice.NetAmount;
                     }
 
-                    if (invoice.InvoiceType == InvoiceType.Purchase || invoice.InvoiceType == InvoiceType.SaleReturn)
-                        cashBox.Balance += cashAmount;
-                    else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
-                        cashBox.Balance -= cashAmount;
-                    else
-                        cashBox.Balance -= cashAmount;
+                    if (cashAmount > 0)
+                    {
+                        if (invoice.InvoiceType == InvoiceType.Purchase || invoice.InvoiceType == InvoiceType.SaleReturn)
+                            cashBox.Balance += cashAmount;
+                        else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
+                            cashBox.Balance -= cashAmount;
+                        else
+                            cashBox.Balance -= cashAmount;
 
-                    cashBox.UpdatedBy = username;
-                    cashBox.UpdatedAt = DateTime.UtcNow;
+                        cashBox.UpdatedBy = username;
+                        cashBox.UpdatedAt = DateTime.UtcNow;
+                    }
                 }
             }
 
@@ -830,7 +846,15 @@ public class InvoiceService : IInvoiceService
                 if (cashBox is not null)
                 {
                     decimal cashAmount;
-                    if (invoice.PaymentMethod == PaymentMethod.Credit)
+                    if (InvoiceReturnCreditHelper.IsCreditReturnType(invoice.InvoiceType))
+                    {
+                        cashAmount = InvoiceReturnCreditHelper.ResolveStoredReturnCashMovement(
+                            invoice.PaymentMethod,
+                            invoice.NetAmount,
+                            invoice.PaidAmount,
+                            invoice.Notes);
+                    }
+                    else if (invoice.PaymentMethod == PaymentMethod.Credit)
                     {
                         var downPayment = reportOnlyDownPayments.Sum(v => v.Amount);
                         cashAmount = downPayment > 0
@@ -842,15 +866,18 @@ public class InvoiceService : IInvoiceService
                         cashAmount = invoice.NetAmount;
                     }
 
-                    if (invoice.InvoiceType == InvoiceType.Purchase || invoice.InvoiceType == InvoiceType.SaleReturn)
-                        cashBox.Balance -= cashAmount;
-                    else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
-                        cashBox.Balance += cashAmount;
-                    else
-                        cashBox.Balance += cashAmount;
+                    if (cashAmount > 0)
+                    {
+                        if (invoice.InvoiceType == InvoiceType.Purchase || invoice.InvoiceType == InvoiceType.SaleReturn)
+                            cashBox.Balance -= cashAmount;
+                        else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
+                            cashBox.Balance += cashAmount;
+                        else
+                            cashBox.Balance += cashAmount;
 
-                    cashBox.UpdatedBy = username;
-                    cashBox.UpdatedAt = DateTime.UtcNow;
+                        cashBox.UpdatedBy = username;
+                        cashBox.UpdatedAt = DateTime.UtcNow;
+                    }
                 }
             }
 
@@ -1046,27 +1073,41 @@ public class InvoiceService : IInvoiceService
 
     /// <summary>
     /// يطبّق مبلغ المرتجع على فواتير الآجل الأصلية (المرتبطة ثم FIFO)، ويترك المتبقي كرصيد دائن على المرتجع الآجل.
+    /// يُرجع مبلغ حركة الصندوق الصحيح (لا يُستخدم PaidAmount بعد التوزيع كبديل عنه).
     /// </summary>
-    private static async Task ApplyReturnCreditImpactAsync(
+    private static async Task<decimal> ApplyReturnCreditImpactAsync(
         AppDbContext context,
         Invoice returnInvoice,
         string username)
     {
         if (InvoiceReturnCreditHelper.IsReturnApplied(returnInvoice.Notes))
-            return;
+        {
+            return InvoiceReturnCreditHelper.ResolveStoredReturnCashMovement(
+                returnInvoice.PaymentMethod,
+                returnInvoice.NetAmount,
+                returnInvoice.PaidAmount,
+                returnInvoice.Notes);
+        }
 
         var originalType = InvoiceReturnCreditHelper.GetOriginalInvoiceType(returnInvoice.InvoiceType);
         if (originalType is null)
-            return;
+            return 0;
+
+        // قبل إعادة كتابة PaidAmount: الدفعة النقدية التي طلبها المستخدم على المرتجع الآجل
+        var requestedCashPortion = returnInvoice.PaymentMethod == PaymentMethod.Credit
+            ? Math.Clamp(returnInvoice.PaidAmount, 0m, returnInvoice.NetAmount)
+            : returnInvoice.NetAmount;
 
         var amountToApply = Math.Abs(returnInvoice.NetAmount);
         if (amountToApply <= 0)
         {
-            returnInvoice.RemainingAmount = 0;
-            returnInvoice.IsCreditPaid = true;
-            if (returnInvoice.PaymentMethod != PaymentMethod.Credit)
-                returnInvoice.PaidAmount = returnInvoice.NetAmount;
-            return;
+            var empty = InvoiceReturnCreditHelper.ResolveReturnSettlement(
+                returnInvoice.PaymentMethod, 0, 0, requestedCashPortion);
+            returnInvoice.PaidAmount = empty.PaidAmount;
+            returnInvoice.RemainingAmount = empty.RemainingAmount;
+            returnInvoice.IsCreditPaid = empty.IsCreditPaid;
+            returnInvoice.Notes = InvoiceReturnCreditHelper.MarkApplied(returnInvoice.Notes, []);
+            return empty.CashMovement;
         }
 
         IQueryable<Invoice> openQuery = context.Invoices
@@ -1094,6 +1135,29 @@ public class InvoiceService : IInvoiceService
             .Select(i => new { i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount })
             .ToListAsync();
 
+        // ضمان إدراج الفاتورة المرتبطة حتى لو تغيّر الترتيب/الفلتر
+        if (returnInvoice.RelatedInvoiceId is int relatedId
+            && relatedId > 0
+            && openInvoices.All(i => i.Id != relatedId))
+        {
+            var related = await context.Invoices
+                .Where(i => i.Id == relatedId &&
+                            i.InvoiceType == originalType &&
+                            i.PaymentMethod == PaymentMethod.Credit &&
+                            i.Currency == returnInvoice.Currency &&
+                            i.RemainingAmount > 0)
+                .Select(i => new { i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount, i.SupplierId, i.CustomerId })
+                .FirstOrDefaultAsync();
+            if (related is not null)
+            {
+                var partyOk = returnInvoice.InvoiceType == InvoiceType.PurchaseReturn
+                    ? related.SupplierId == returnInvoice.SupplierId
+                    : related.CustomerId == returnInvoice.CustomerId;
+                if (partyOk)
+                    openInvoices.Insert(0, new { related.Id, related.Date, related.NetAmount, related.PaidAmount, related.RemainingAmount });
+            }
+        }
+
         var updates = InvoiceReturnCreditHelper.AllocateReturnToCreditInvoices(
             openInvoices.Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount)),
             amountToApply,
@@ -1120,26 +1184,19 @@ public class InvoiceService : IInvoiceService
             }
         }
 
-        var leftover = Math.Max(0, amountToApply - appliedTotal);
+        var settlement = InvoiceReturnCreditHelper.ResolveReturnSettlement(
+            returnInvoice.PaymentMethod,
+            returnInvoice.NetAmount,
+            appliedTotal,
+            requestedCashPortion);
 
-        if (returnInvoice.PaymentMethod == PaymentMethod.Cash)
-        {
-            // المرتجع النقدي: لا ذمة على وثيقة المرتجع؛ ما لم يُطبَّق على آجل يبقى فقط أثر الصندوق.
-            returnInvoice.PaidAmount = returnInvoice.NetAmount;
-            returnInvoice.RemainingAmount = 0;
-            returnInvoice.IsCreditPaid = true;
-        }
-        else
-        {
-            // مرتجع آجل: المتبقي بعد تخفيض الفواتير الأصلية = رصيد دائن (يُخصم من ذمم الطرف).
-            returnInvoice.PaidAmount = returnInvoice.NetAmount - leftover;
-            returnInvoice.RemainingAmount = leftover;
-            returnInvoice.IsCreditPaid = leftover <= 0;
-        }
-
+        returnInvoice.PaidAmount = settlement.PaidAmount;
+        returnInvoice.RemainingAmount = settlement.RemainingAmount;
+        returnInvoice.IsCreditPaid = settlement.IsCreditPaid;
         returnInvoice.Notes = InvoiceReturnCreditHelper.MarkApplied(returnInvoice.Notes, allocationMarks);
         returnInvoice.UpdatedBy = username;
         returnInvoice.UpdatedAt = DateTime.UtcNow;
+        return settlement.CashMovement;
     }
 
     private static async Task ReverseReturnCreditImpactAsync(
@@ -1192,42 +1249,9 @@ public class InvoiceService : IInvoiceService
         return $"{before} {after}".Trim();
     }
 
-    /// <summary>إصلاح مرتجعات قديمة لم تُطبَّق على فواتير الآجل.</summary>
-    public async Task<int> RepairUnappliedReturnCreditsAsync(CancellationToken cancellationToken = default)
-    {
-        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
-        var returns = await context.Invoices
-            .Where(i => (i.InvoiceType == InvoiceType.SaleReturn || i.InvoiceType == InvoiceType.PurchaseReturn) &&
-                        (i.Notes == null || !i.Notes.Contains(InvoiceReturnCreditHelper.AppliedMarkerPrefix)))
-            .OrderBy(i => i.Date)
-            .ThenBy(i => i.Id)
-            .ToListAsync(cancellationToken);
-
-        if (returns.Count == 0)
-            return 0;
-
-        var username = _currentUserService.Username;
-        var repaired = 0;
-        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
-        try
-        {
-            foreach (var ret in returns)
-            {
-                await ApplyReturnCreditImpactAsync(context, ret, username);
-                repaired++;
-            }
-
-            await context.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            throw;
-        }
-
-        return repaired;
-    }
+    /// <summary>لم يعد يُعاد تطبيق المرتجعات تلقائياً — التطبيق يتم عند الحفظ فقط.</summary>
+    public Task<int> RepairUnappliedReturnCreditsAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult(0);
 
     private async Task AddCreditDownPaymentVoucherAsync(
         AppDbContext context,
@@ -1261,6 +1285,28 @@ public class InvoiceService : IInvoiceService
                 Date = date,
                 Notes = SupplierBalanceHelper.MarkPaymentApplied(
                     notesOverride ?? $"دفعة مقدمة فاتورة مشتريات آجلة {invoice.InvoiceNumber}"),
+                CreatedBy = username,
+                CreatedAt = DateTime.UtcNow
+            });
+            return;
+        }
+
+        if (invoice.InvoiceType == InvoiceType.PurchaseReturn && invoice.SupplierId.HasValue)
+        {
+            var voucherNumber = await GetNextReceiptVoucherNumberAsync(context);
+            await context.Vouchers.AddAsync(new Voucher
+            {
+                VoucherNumber = voucherNumber,
+                VoucherType = VoucherType.Receipt,
+                Amount = amount,
+                Currency = invoice.Currency,
+                FxRate = AccountingCurrencyRules.RequireFxRateOrThrow(invoice.Currency, invoice.FxRate, "سند استرداد مرتجع مشتريات"),
+                SupplierId = invoice.SupplierId,
+                InvoiceId = invoice.Id,
+                CashBoxId = cashBoxId,
+                Date = date,
+                Notes = SupplierBalanceHelper.MarkPaymentApplied(
+                    notesOverride ?? $"استرداد نقدي مرتجع مشتريات {invoice.InvoiceNumber}"),
                 CreatedBy = username,
                 CreatedAt = DateTime.UtcNow
             });
@@ -1301,7 +1347,8 @@ public class InvoiceService : IInvoiceService
             return false;
 
         return voucher.Notes.Contains("دفعة مقدمة", StringComparison.Ordinal)
-               || voucher.Notes.Contains("استرداد دفعة", StringComparison.Ordinal);
+               || voucher.Notes.Contains("استرداد دفعة", StringComparison.Ordinal)
+               || voucher.Notes.Contains("استرداد نقدي مرتجع", StringComparison.Ordinal);
     }
 
     /// <summary>عكس أثر سند مرتبط على الصندوق/المصرف عند حذف الفاتورة (سندات حرّكت النقد فعلياً).</summary>
@@ -1438,6 +1485,23 @@ public class InvoiceService : IInvoiceService
             nextNum = parsed + 1;
 
         return $"PAY{nextNum:D6}";
+    }
+
+    private async Task<string> GetNextReceiptVoucherNumberAsync(AppDbContext context)
+    {
+        var branchId = _branchContext.RequireWriteBranchId();
+        var lastVoucher = await context.Vouchers
+            .IgnoreQueryFilters()
+            .Where(v => v.BranchId == branchId && v.VoucherType == VoucherType.Receipt)
+            .OrderByDescending(v => v.Id)
+            .FirstOrDefaultAsync();
+
+        var nextNum = 1;
+        if (lastVoucher?.VoucherNumber is { Length: > 3 } number &&
+            int.TryParse(number.AsSpan(3), out var parsed))
+            nextNum = parsed + 1;
+
+        return $"RCV{nextNum:D6}";
     }
 
     /// <summary>

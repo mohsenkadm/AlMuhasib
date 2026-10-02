@@ -367,11 +367,15 @@ public sealed class ReportsController : TenantApiControllerBase
     }
 
     [HttpGet("daily-sales")]
-    public async Task<IActionResult> DailySales([FromQuery] ReportFilterRequest filter, [FromQuery] PaymentMethod? paymentMethod, CancellationToken ct)
+    public async Task<IActionResult> DailySales(
+        [FromQuery] ReportFilterRequest filter,
+        [FromQuery] PaymentMethod? paymentMethod,
+        [FromQuery] ReportCurrencyScope currencyScope = ReportCurrencyScope.Iqd,
+        CancellationToken ct = default)
     {
         EnsureTenant();
         var f = await ResolveFilterAsync(filter, ct);
-        return Ok(await _reports.GetDailySalesReportAsync(f.From, f.To, f.WarehouseId, paymentMethod));
+        return Ok(await _reports.GetDailySalesReportAsync(f.From, f.To, f.WarehouseId, paymentMethod, currencyScope));
     }
 
     [HttpGet("sales-by-warehouse-user")]
@@ -417,11 +421,14 @@ public sealed class ReportsController : TenantApiControllerBase
     }
 
     [HttpGet("customer-collections")]
-    public async Task<IActionResult> CustomerCollections([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    public async Task<IActionResult> CustomerCollections(
+        [FromQuery] ReportFilterRequest filter,
+        [FromQuery] ReportCurrencyScope currencyScope = ReportCurrencyScope.Iqd,
+        CancellationToken ct = default)
     {
         EnsureTenant();
         var f = await ResolveFilterAsync(filter, ct);
-        return Ok(await _reports.GetCustomerCollectionsReportAsync(f.From, f.To, f.CustomerId, f.CashBoxId));
+        return Ok(await _reports.GetCustomerCollectionsReportAsync(f.From, f.To, f.CustomerId, f.CashBoxId, currencyScope));
     }
 
     [HttpGet("overdue-customers")]
@@ -497,11 +504,14 @@ public sealed class ReportsController : TenantApiControllerBase
     }
 
     [HttpGet("cogs")]
-    public async Task<IActionResult> Cogs([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    public async Task<IActionResult> Cogs(
+        [FromQuery] ReportFilterRequest filter,
+        [FromQuery] ReportCurrencyScope currencyScope = ReportCurrencyScope.Iqd,
+        CancellationToken ct = default)
     {
         EnsureTenant();
         var f = await ResolveFilterAsync(filter, ct);
-        return Ok(await _reports.GetCogsReportAsync(f.From, f.To, f.WarehouseId));
+        return Ok(await _reports.GetCogsReportAsync(f.From, f.To, f.WarehouseId, currencyScope));
     }
 
     [HttpGet("financial-position-summary")]
@@ -513,11 +523,14 @@ public sealed class ReportsController : TenantApiControllerBase
     }
 
     [HttpGet("profit-and-loss")]
-    public async Task<IActionResult> ProfitAndLoss([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    public async Task<IActionResult> ProfitAndLoss(
+        [FromQuery] ReportFilterRequest filter,
+        [FromQuery] ReportCurrencyScope currencyScope = ReportCurrencyScope.Iqd,
+        CancellationToken ct = default)
     {
         EnsureTenant();
         var f = await ResolveFilterAsync(filter, ct);
-        return Ok(await _reports.GetProfitAndLossReportAsync(f.From, f.To));
+        return Ok(await _reports.GetProfitAndLossReportAsync(f.From, f.To, currencyScope));
     }
 
     [HttpGet("statement-of-financial-position")]

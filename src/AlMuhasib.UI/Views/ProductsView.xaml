@@ -1281,12 +1281,20 @@
                                   DisplayMemberPath="Name"
                                   Style="{StaticResource MaterialDesignFilledComboBox}"
                                   Margin="0,0,0,12"/>
-                        <TextBox materialDesign:HintAssist.Hint="سعر البيع"
+                        <TextBox materialDesign:HintAssist.Hint="سعر البيع د.ع"
                                  Text="{Binding EditSalePrice, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
-                        <TextBox materialDesign:HintAssist.Hint="سعر الشراء"
+                        <TextBox materialDesign:HintAssist.Hint="سعر البيع $"
+                                 Text="{Binding EditSalePriceUsd, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"
+                                 Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolToVis}}"/>
+                        <TextBox materialDesign:HintAssist.Hint="سعر الشراء د.ع"
                                  Text="{Binding EditPurchasePrice, UpdateSourceTrigger=PropertyChanged}"
                                  Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                        <TextBox materialDesign:HintAssist.Hint="سعر الشراء $"
+                                 Text="{Binding EditPurchasePriceUsd, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"
+                                 Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolToVis}}"/>
                         <TextBlock Text="{Binding PriceEditError}" Foreground="#C62828" Margin="0,0,0,12" TextWrapping="Wrap"/>
                         <StackPanel Orientation="Horizontal">
                             <Button Content="حفظ" Command="{Binding SaveProductPriceCommand}"
@@ -1410,14 +1418,28 @@
                                         <ColumnDefinition Width="12"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBox Grid.Column="0"
-                                             materialDesign:HintAssist.Hint="سعر البيع"
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBox Grid.Row="0" Grid.Column="0"
+                                             materialDesign:HintAssist.Hint="سعر البيع د.ع"
                                              Text="{Binding EditSalePrice, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource FilledTextBox}"/>
-                                    <TextBox Grid.Column="2"
-                                             materialDesign:HintAssist.Hint="سعر الشراء"
+                                             Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
+                                    <TextBox Grid.Row="0" Grid.Column="2"
+                                             materialDesign:HintAssist.Hint="سعر الشراء د.ع"
                                              Text="{Binding EditPurchasePrice, UpdateSourceTrigger=PropertyChanged}"
-                                             Style="{StaticResource FilledTextBox}"/>
+                                             Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
+                                    <TextBox Grid.Row="1" Grid.Column="0"
+                                             materialDesign:HintAssist.Hint="سعر البيع $"
+                                             Text="{Binding EditSalePriceUsd, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FilledTextBox}"
+                                             Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolToVis}}"/>
+                                    <TextBox Grid.Row="1" Grid.Column="2"
+                                             materialDesign:HintAssist.Hint="سعر الشراء $"
+                                             Text="{Binding EditPurchasePriceUsd, UpdateSourceTrigger=PropertyChanged}"
+                                             Style="{StaticResource FilledTextBox}"
+                                             Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolToVis}}"/>
                                 </Grid>
                                 <TextBlock Text="{Binding PriceEditError}" Foreground="#C62828"
                                            Margin="0,0,0,10" TextWrapping="Wrap"/>

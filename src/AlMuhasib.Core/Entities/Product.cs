@@ -2,8 +2,8 @@ using AlMuhasib.Core.Enums;
 
 namespace AlMuhasib.Core.Entities;
 
-/// <summary>المنتجات</summary>
-public class Product : BranchScopedEntity
+/// <summary>المنتجات — مشتركة على مستوى الشركة (كل الفروع).</summary>
+public class Product : BaseEntity
 {
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }

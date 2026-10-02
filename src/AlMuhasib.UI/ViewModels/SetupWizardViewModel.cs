@@ -1,11 +1,13 @@
 using System.Collections.ObjectModel;
-using System.Windows;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
+using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using AlMuhasib.UI.Controls;
 using MaterialDesignThemes.Wpf;
 
 namespace AlMuhasib.UI.ViewModels;
@@ -14,12 +16,28 @@ public partial class SetupWizardViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly MainWindowViewModel _mainWindow;
+    private readonly IBusinessSettingsService _businessSettingsService;
+    private readonly IExchangeRateService _exchangeRateService;
+    private readonly IUserPreferencesService _preferences;
+    private readonly IFeatureFlagService _featureFlags;
 
-    public SetupWizardViewModel(IUnitOfWork unitOfWork, MainWindowViewModel mainWindow)
+    public SetupWizardViewModel(
+        IUnitOfWork unitOfWork,
+        MainWindowViewModel mainWindow,
+        IBusinessSettingsService businessSettingsService,
+        IExchangeRateService exchangeRateService,
+        IUserPreferencesService preferences,
+        IFeatureFlagService featureFlags)
     {
         _unitOfWork = unitOfWork;
         _mainWindow = mainWindow;
+        _businessSettingsService = businessSettingsService;
+        _exchangeRateService = exchangeRateService;
+        _preferences = preferences;
+        _featureFlags = featureFlags;
         PageTitle = "إعداد النظام";
+
+        SelectedCashBoxCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
 
         ExpenseTypes.Add(new ExpenseTypeRow { Name = "إيجار" });
         ExpenseTypes.Add(new ExpenseTypeRow { Name = "كهرباء" });
@@ -77,8 +95,8 @@ public partial class SetupWizardViewModel : ViewModelBase
 
     public string StepTitle => CurrentStep switch
     {
-        0 => "١ - رأس المال والأرباح الافتتاحية",
-        1 => "٢ - إنشاء القاصات",
+        0 => "١ - العملات ورأس المال والأرباح الافتتاحية",
+        1 => "٢ - إنشاء القاصات (دينار / دولار)",
         2 => "٣ - أرصدة المستثمرين الافتتاحية",
         3 => "٤ - إنشاء المخازن",
         4 => "٥ - الأرصدة الافتتاحية للمنتجات",
@@ -86,25 +104,122 @@ public partial class SetupWizardViewModel : ViewModelBase
         _ => ""
     };
 
+    // ── العملات المتعددة (مثل أنظمة المحاسبة الشائعة) ──
+    [ObservableProperty] private bool _enableMultiCurrency;
+    [ObservableProperty] private decimal _initialUsdToIqd;
+    [ObservableProperty] private string _capitalTotalInIqdDisplay = "0 د.ع";
+
+    public ObservableCollection<CurrencyOption> CurrencyOptions { get; } = new(CurrencyOption.All);
+
+    partial void OnEnableMultiCurrencyChanged(bool value)
+    {
+        RefreshCapitalTotalDisplay();
+        if (value)
+            EnsureSuggestedDualCashBoxes();
+        OnPropertyChanged(nameof(ShowUsdFields));
+    }
+
+    partial void OnInitialUsdToIqdChanged(decimal value) => RefreshCapitalTotalDisplay();
+
+    public bool ShowUsdFields => EnableMultiCurrency;
+
     // STEP 0: CAPITAL
     [ObservableProperty] private decimal _capitalAmount;
+    [ObservableProperty] private decimal _capitalAmountUsd;
     [ObservableProperty] private DateTime _capitalDate = DateTime.Today;
     [ObservableProperty] private string _capitalNotes = string.Empty;
     [ObservableProperty] private decimal _profitOpeningBalance;
+    [ObservableProperty] private decimal _profitOpeningBalanceUsd;
+
+    partial void OnCapitalAmountChanged(decimal value) => RefreshCapitalTotalDisplay();
+    partial void OnCapitalAmountUsdChanged(decimal value) => RefreshCapitalTotalDisplay();
+    partial void OnProfitOpeningBalanceChanged(decimal value) => RefreshCapitalTotalDisplay();
+    partial void OnProfitOpeningBalanceUsdChanged(decimal value) => RefreshCapitalTotalDisplay();
+
+    private void RefreshCapitalTotalDisplay()
+    {
+        var total = ComputeCapitalInBaseIqd();
+        var profit = ComputeProfitOpeningInBaseIqd();
+        CapitalTotalInIqdDisplay = profit != 0
+            ? $"رأس المال المعادل: {AccountingCurrencyHelper.Format(total, AccountingCurrency.IQD)} — الأرباح الافتتاحية المعادلة: {AccountingCurrencyHelper.Format(profit, AccountingCurrency.IQD)}"
+            : $"رأس المال المعادل بالدينار (العملة الأساسية): {AccountingCurrencyHelper.Format(total, AccountingCurrency.IQD)}";
+    }
+
+    private decimal ComputeCapitalInBaseIqd()
+    {
+        var iqd = AccountingCurrencyHelper.RoundIqd(CapitalAmount);
+        if (!EnableMultiCurrency || CapitalAmountUsd <= 0)
+            return iqd;
+
+        if (InitialUsdToIqd <= 0)
+            return iqd;
+
+        return iqd + AccountingCurrencyHelper.ToBaseIqd(
+            AccountingCurrencyHelper.RoundUsd(CapitalAmountUsd),
+            AccountingCurrency.USD,
+            InitialUsdToIqd);
+    }
+
+    private decimal ComputeProfitOpeningInBaseIqd()
+    {
+        var iqd = AccountingCurrencyHelper.RoundIqd(ProfitOpeningBalance);
+        if (!EnableMultiCurrency || ProfitOpeningBalanceUsd == 0)
+            return iqd;
+
+        if (InitialUsdToIqd <= 0)
+            return iqd;
+
+        return iqd + AccountingCurrencyHelper.ToBaseIqd(
+            AccountingCurrencyHelper.RoundUsd(ProfitOpeningBalanceUsd),
+            AccountingCurrency.USD,
+            InitialUsdToIqd);
+    }
 
     // STEP 1: CASH BOXES
     public ObservableCollection<CashBoxRow> CashBoxes { get; } = [];
     [ObservableProperty] private string _newCashBoxName = string.Empty;
     [ObservableProperty] private decimal _newCashBoxBalance;
+    [ObservableProperty] private CurrencyOption? _selectedCashBoxCurrencyOption;
+
+    private void EnsureSuggestedDualCashBoxes()
+    {
+        if (CashBoxes.Count > 0) return;
+
+        CashBoxes.Add(new CashBoxRow
+        {
+            Name = "قاصة دينار",
+            Balance = 0,
+            Currency = AccountingCurrency.IQD
+        });
+        CashBoxes.Add(new CashBoxRow
+        {
+            Name = "قاصة دولار",
+            Balance = 0,
+            Currency = AccountingCurrency.USD
+        });
+    }
 
     [RelayCommand]
     private void AddCashBox()
     {
         var name = NewCashBoxName?.Trim();
         if (string.IsNullOrEmpty(name)) return;
-        CashBoxes.Add(new CashBoxRow { Name = name, Balance = NewCashBoxBalance });
+
+        var currency = EnableMultiCurrency
+            ? (SelectedCashBoxCurrencyOption?.Currency ?? AccountingCurrency.IQD)
+            : AccountingCurrency.IQD;
+
+        var balance = AccountingCurrencyHelper.NormalizeAmount(NewCashBoxBalance, currency);
+
+        CashBoxes.Add(new CashBoxRow
+        {
+            Name = name,
+            Balance = balance,
+            Currency = currency
+        });
         NewCashBoxName = string.Empty;
         NewCashBoxBalance = 0;
+        SelectedCashBoxCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
     }
 
     [RelayCommand]
@@ -136,7 +251,7 @@ public partial class SetupWizardViewModel : ViewModelBase
             Name = name,
             Phone = NewInvestorPhone?.Trim() ?? string.Empty,
             ProfitPercentage = NewInvestorProfitPercentage,
-            OpeningBalance = NewInvestorOpeningBalance
+            OpeningBalance = AccountingCurrencyHelper.RoundIqd(NewInvestorOpeningBalance)
         });
         NewInvestorName = string.Empty;
         NewInvestorPhone = string.Empty;
@@ -243,7 +358,7 @@ public partial class SetupWizardViewModel : ViewModelBase
         {
             ProductName = name,
             Quantity = NewProductQuantity,
-            UnitCost = unitCost
+            UnitCost = AccountingCurrencyHelper.RoundIqd(unitCost)
         });
         NewProductName = string.Empty;
         NewProductQuantity = 0;
@@ -280,16 +395,42 @@ public partial class SetupWizardViewModel : ViewModelBase
     [RelayCommand]
     private void NextStep()
     {
-        if (CurrentStep == 0 && CapitalAmount <= 0)
+        if (CurrentStep == 0)
         {
-            BeautifulMessageDialog.ShowWarning("يرجى إدخال مبلغ رأس المال");
-            return;
+            if (EnableMultiCurrency && InitialUsdToIqd <= 0)
+            {
+                BeautifulMessageDialog.ShowWarning("عند تفعيل الدولار يجب إدخال سعر الصرف الافتتاحي (كم دينار يساوي دولار واحد)");
+                return;
+            }
+
+            var capitalBase = ComputeCapitalInBaseIqd();
+            if (capitalBase <= 0 && CapitalAmountUsd <= 0)
+            {
+                BeautifulMessageDialog.ShowWarning("يرجى إدخال مبلغ رأس المال بالدينار أو بالدولار");
+                return;
+            }
+
+            if (EnableMultiCurrency && CapitalAmountUsd > 0 && InitialUsdToIqd <= 0)
+            {
+                BeautifulMessageDialog.ShowWarning("أدخل سعر الصرف لتحويل رأس المال بالدولار إلى الدينار (العملة الأساسية)");
+                return;
+            }
         }
+
         if (CurrentStep == 1 && CashBoxes.Count == 0)
         {
             BeautifulMessageDialog.ShowWarning("يرجى إضافة قاصة واحدة على الأقل");
             return;
         }
+
+        if (CurrentStep == 1 && EnableMultiCurrency &&
+            CashBoxes.Any(c => c.Currency == AccountingCurrency.USD) &&
+            InitialUsdToIqd <= 0)
+        {
+            BeautifulMessageDialog.ShowWarning("يوجد قاصة بالدولار — ارجع للخطوة الأولى وأدخل سعر الصرف الافتتاحي");
+            return;
+        }
+
         if (CurrentStep == 2 && OpeningInvestorItems.Count > 0 &&
             OpeningInvestorItems.Any(i => string.IsNullOrWhiteSpace(i.Name)))
         {
@@ -328,36 +469,52 @@ public partial class SetupWizardViewModel : ViewModelBase
             return;
         }
 
+        if (EnableMultiCurrency && InitialUsdToIqd <= 0)
+        {
+            BeautifulMessageDialog.ShowWarning("سعر الصرف الافتتاحي مطلوب عند تفعيل الدولار");
+            return;
+        }
+
         try
         {
             IsBusy = true;
+
+            // 1) تفعيل تعدد العملات + سعر الصرف قبل قيود الأرصدة (مثل إعداد الشركة في الأنظمة المعروفة)
+            await PersistCurrencySettingsAsync();
+
             await _unitOfWork.BeginTransactionAsync();
+
+            var capitalInBase = ComputeCapitalInBaseIqd();
+            var capitalNotes = BuildCapitalNotes();
 
             await _unitOfWork.CapitalEntries.AddAsync(new CapitalEntry
             {
-                Amount = CapitalAmount,
+                Amount = capitalInBase,
                 Date = CapitalDate,
                 Type = CapitalEntryType.Initial,
-                Notes = string.IsNullOrWhiteSpace(CapitalNotes) ? "رأس المال الأولي" : CapitalNotes
+                Notes = capitalNotes
             });
 
-            if (ProfitOpeningBalance != 0)
+            var profitInBase = ComputeProfitOpeningInBaseIqd();
+            if (profitInBase != 0)
             {
                 await _unitOfWork.CapitalEntries.AddAsync(new CapitalEntry
                 {
-                    Amount = ProfitOpeningBalance,
+                    Amount = profitInBase,
                     Date = CapitalDate,
                     Type = CapitalEntryType.ProfitOpeningBalance,
-                    Notes = "الرصيد الافتتاحي للأرباح"
+                    Notes = BuildProfitOpeningNotes()
                 });
             }
 
             foreach (var cb in CashBoxes)
             {
+                var currency = EnableMultiCurrency ? cb.Currency : AccountingCurrency.IQD;
                 await _unitOfWork.CashBoxes.AddAsync(new CashBox
                 {
                     Name = cb.Name,
-                    Balance = cb.Balance
+                    Balance = AccountingCurrencyHelper.NormalizeAmount(cb.Balance, currency),
+                    Currency = currency
                 });
             }
 
@@ -443,6 +600,7 @@ public partial class SetupWizardViewModel : ViewModelBase
             await _unitOfWork.SaveChangesAsync();
             await _unitOfWork.CommitTransactionAsync();
 
+            _mainWindow.RefreshMenuVisibility();
             SetupCompleted?.Invoke();
         }
         catch (Exception ex)
@@ -452,12 +610,67 @@ public partial class SetupWizardViewModel : ViewModelBase
         }
         finally { IsBusy = false; }
     }
+
+    private async Task PersistCurrencySettingsAsync()
+    {
+        var settings = await _businessSettingsService.GetOrCreateAsync();
+        await _businessSettingsService.SaveAsync(
+            settings.ProductPricingEnabled,
+            settings.UpdateProductPriceOnPurchase,
+            settings.PeriodLockEnabled,
+            settings.LockedThroughDate,
+            EnableMultiCurrency);
+
+        _preferences.Update(p => p.FeatureFlags.MultiCurrency = EnableMultiCurrency);
+        _featureFlags.NotifyFlagsChanged();
+
+        if (EnableMultiCurrency && InitialUsdToIqd > 0)
+        {
+            await _exchangeRateService.SaveAsync(new ExchangeRate
+            {
+                RateDate = CapitalDate.Date,
+                UsdToIqd = AccountingCurrencyHelper.RoundIqd(InitialUsdToIqd),
+                Notes = "سعر الصرف الافتتاحي — معالج إعداد النظام"
+            });
+        }
+    }
+
+    private string BuildCapitalNotes()
+    {
+        if (!string.IsNullOrWhiteSpace(CapitalNotes))
+            return CapitalNotes.Trim();
+
+        if (!EnableMultiCurrency || CapitalAmountUsd <= 0)
+            return "رأس المال الأولي";
+
+        return $"رأس المال الأولي — دينار: {AccountingCurrencyHelper.Format(CapitalAmount, AccountingCurrency.IQD)} + دولار: {AccountingCurrencyHelper.Format(CapitalAmountUsd, AccountingCurrency.USD)} @ {InitialUsdToIqd:N0}";
+    }
+
+    private string BuildProfitOpeningNotes()
+    {
+        if (!EnableMultiCurrency || ProfitOpeningBalanceUsd == 0)
+            return "الرصيد الافتتاحي للأرباح";
+
+        return $"الرصيد الافتتاحي للأرباح — دينار: {AccountingCurrencyHelper.Format(ProfitOpeningBalance, AccountingCurrency.IQD)} + دولار: {AccountingCurrencyHelper.Format(ProfitOpeningBalanceUsd, AccountingCurrency.USD)} @ {InitialUsdToIqd:N0}";
+    }
 }
 
 public partial class CashBoxRow : ObservableObject
 {
     [ObservableProperty] private string _name = string.Empty;
     [ObservableProperty] private decimal _balance;
+    [ObservableProperty] private AccountingCurrency _currency = AccountingCurrency.IQD;
+
+    public string CurrencyDisplay => AccountingCurrencyHelper.GetDisplayName(Currency);
+    public string BalanceDisplay => AccountingCurrencyHelper.Format(Balance, Currency);
+
+    partial void OnCurrencyChanged(AccountingCurrency value)
+    {
+        OnPropertyChanged(nameof(CurrencyDisplay));
+        OnPropertyChanged(nameof(BalanceDisplay));
+    }
+
+    partial void OnBalanceChanged(decimal value) => OnPropertyChanged(nameof(BalanceDisplay));
 }
 
 public partial class WarehouseRow : ObservableObject

@@ -180,16 +180,21 @@ public static class ChartThemeConfig
         Padding = new LiveChartsCore.Drawing.Padding(4, 8, 4, 0)
     };
 
-    /// <summary>Creates a styled Y-axis with IQD currency formatter.</summary>
-    public static Axis CreateYAxis(string? suffix = "د.ع") => new()
+    /// <summary>Creates a styled Y-axis with currency formatter.</summary>
+    public static Axis CreateYAxis(string? suffix = "د.ع", bool forceNonNegative = true)
     {
-        Labeler = v => FormatAmount(v, suffix),
-        TextSize = LabelSize,
-        LabelsPaint = CreateLabelPaint(),
-        SeparatorsPaint = CreateGridPaint(),
-        MinLimit = 0,
-        Padding = new LiveChartsCore.Drawing.Padding(0, 0, 8, 0)
-    };
+        var axis = new Axis
+        {
+            Labeler = v => FormatAmount(v, suffix),
+            TextSize = LabelSize,
+            LabelsPaint = CreateLabelPaint(),
+            SeparatorsPaint = CreateGridPaint(),
+            Padding = new LiveChartsCore.Drawing.Padding(0, 0, 8, 0)
+        };
+        if (forceNonNegative)
+            axis.MinLimit = 0;
+        return axis;
+    }
 
     // ── Series factories ────────────────────────────────────
 

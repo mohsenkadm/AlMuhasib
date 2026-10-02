@@ -26,6 +26,7 @@ public enum SyncEntityType
     Voucher,
     Expense,
     Transfer,
+    CurrencyExchange,
     InvestorTransaction,
     ProfitDistribution,
     ProfitDistributionDetail,

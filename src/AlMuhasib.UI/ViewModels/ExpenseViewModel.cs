@@ -390,6 +390,7 @@ public partial class ExpenseViewModel : PagedViewModelBase
         {
             LoadPermissions(_currentUserService, "Expenses");
 
+            await _expenseService.EnsureDefaultExpenseTypesAsync();
             await LoadExpenseTypesAsync();
             await LoadCashBoxesAsync();
             await LoadExpensesAsync();

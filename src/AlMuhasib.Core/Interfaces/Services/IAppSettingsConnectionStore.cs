@@ -25,6 +25,11 @@ public interface IAppSettingsConnectionStore
     void SaveDefaultConnection(string connectionString);
 
     /// <summary>
+    /// Reads the current DefaultConnection from appsettings.json (empty if missing).
+    /// </summary>
+    string ReadDefaultConnection();
+
+    /// <summary>
     /// Saves the selected instance as DefaultConnection.
     /// </summary>
     void SaveSelectedInstance(SqlServerInstanceInfo instance, string databaseName = "AlMuhasibDb");

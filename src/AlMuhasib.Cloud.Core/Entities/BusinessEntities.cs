@@ -39,7 +39,9 @@ public class CloudProductPrice : CloudBaseEntity
     public int ProductId { get; set; }
     public int PricingTypeId { get; set; }
     public decimal SalePrice { get; set; }
+    public decimal SalePriceUsd { get; set; }
     public decimal PurchasePrice { get; set; }
+    public decimal PurchasePriceUsd { get; set; }
     public CloudProduct Product { get; set; } = null!;
     public CloudPricingType PricingType { get; set; } = null!;
 }
@@ -329,6 +331,22 @@ public class CloudCustomerAttachment : CloudBaseEntity
     public string FilePath { get; set; } = string.Empty;
     public string? Description { get; set; }
     public byte[]? FileData { get; set; }
+}
+
+/// <summary>عملية صيرفة على السحابة — مرآة Desktop CurrencyExchange.</summary>
+public class CloudCurrencyExchange : CloudBaseEntity
+{
+    public int FromCashBoxId { get; set; }
+    public int ToCashBoxId { get; set; }
+    public AccountingCurrency FromCurrency { get; set; }
+    public AccountingCurrency ToCurrency { get; set; }
+    public decimal FromAmount { get; set; }
+    public decimal ToAmount { get; set; }
+    public decimal FxRate { get; set; }
+    public DateTime Date { get; set; }
+    public string? Notes { get; set; }
+    public CloudCashBox FromCashBox { get; set; } = null!;
+    public CloudCashBox ToCashBox { get; set; } = null!;
 }
 
 // Hotel sync entities

@@ -456,7 +456,7 @@ public partial class SalesInvoiceViewModel
         }
 
         var prices = await _productPriceService.GetByProductIdAsync(productId);
-        var options = InvoiceBulkPricingHelper.ToOptions(prices, usePurchasePrice: false);
+        var options = InvoiceBulkPricingHelper.ToOptions(prices, usePurchasePrice: false, SelectedCurrency);
 
         row.AvailablePricingOptions.Clear();
         foreach (var option in options)
@@ -478,8 +478,8 @@ public partial class SalesInvoiceViewModel
         if (preferred is null)
             return;
 
-        var keepExistingPrice = row.PricingTypeId == preferred.PricingTypeId && row.UnitPrice > 0;
-        if (keepExistingPrice)
+        // عند فتح فاتورة محفوظة: أبقِ سعر البند المخزّن ولا تستبدله بسعر قائمة المنتجات
+        if (row.UnitPrice > 0)
             row.SetSelectedPricingOptionWithoutPrice(preferred);
         else
             row.SelectedPricingOption = preferred;

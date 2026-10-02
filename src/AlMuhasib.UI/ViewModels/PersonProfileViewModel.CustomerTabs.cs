@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Charts;
 using AlMuhasib.UI.Controls;
@@ -16,6 +17,11 @@ public partial class PersonProfileViewModel
     [ObservableProperty] private string _profitCost = "0";
     [ObservableProperty] private string _profitNet = "0";
     [ObservableProperty] private string _profitMargin = "0%";
+    [ObservableProperty] private string _profitSalesUsd = "0";
+    [ObservableProperty] private string _profitCostUsd = "0";
+    [ObservableProperty] private string _profitNetUsd = "0";
+    [ObservableProperty] private string _profitMarginUsd = "0%";
+    [ObservableProperty] private string _outstandingBalanceUsd = "—";
     [ObservableProperty] private string _customerTabSearch = string.Empty;
     [ObservableProperty] private int _customerSelectedTab;
 
@@ -96,6 +102,9 @@ public partial class PersonProfileViewModel
         {
             ProfitSales = ProfitCost = ProfitNet = "0";
             ProfitMargin = "0%";
+            ProfitSalesUsd = ProfitCostUsd = ProfitNetUsd = FormatCurrency(0, AccountingCurrency.USD);
+            ProfitMarginUsd = "0%";
+            OutstandingBalanceUsd = "—";
             ApplyCustomerTabFilters();
             return;
         }
@@ -104,6 +113,11 @@ public partial class PersonProfileViewModel
         ProfitCost = FormatCurrency(insights.CostAmount);
         ProfitNet = FormatCurrency(insights.NetProfit);
         ProfitMargin = $"{insights.MarginPercent:N2}%";
+        ProfitSalesUsd = FormatCurrency(insights.SalesAmountUsd, AccountingCurrency.USD);
+        ProfitCostUsd = FormatCurrency(insights.CostAmountUsd, AccountingCurrency.USD);
+        ProfitNetUsd = FormatCurrency(insights.NetProfitUsd, AccountingCurrency.USD);
+        ProfitMarginUsd = $"{insights.MarginPercentUsd:N2}%";
+        OutstandingBalanceUsd = FormatCurrency(insights.OutstandingBalanceUsd, AccountingCurrency.USD);
 
         foreach (var p in insights.Products) ProductRows.Add(p);
         foreach (var a in insights.AgingDetails) AgingDetailRows.Add(a);

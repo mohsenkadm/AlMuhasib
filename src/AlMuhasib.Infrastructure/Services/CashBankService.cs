@@ -1063,17 +1063,50 @@ public class CashBankService : ICashBankService
         await context.InvestorTransactions.AddAsync(tx);
     }
 
+    private static AccountingCurrency ResolveSettlementCurrency(Voucher voucher)
+    {
+        var fromNotes = CustomerBalanceHelper.GetFxSettlementCurrency(voucher.Notes);
+        if (fromNotes.HasValue)
+            return fromNotes.Value;
+
+        return voucher.SettlementCurrency ?? voucher.Currency;
+    }
+
+    private static decimal ResolveApplyAmount(Voucher voucher, AccountingCurrency settlementCurrency)
+    {
+        if (settlementCurrency == voucher.Currency)
+            return voucher.Amount;
+
+        if (voucher.FxRate <= 0)
+            throw new InvalidOperationException(
+                "سعر الصرف مطلوب لتسديد ذمة بعملة مختلفة عن عملة السند.");
+
+        return CustomerBalanceHelper.ResolveSettlementAmount(
+            voucher.Amount, voucher.Currency, settlementCurrency, voucher.FxRate);
+    }
+
+    private static void MarkVoucherApplied(Voucher voucher, AccountingCurrency settlementCurrency)
+    {
+        if (settlementCurrency != voucher.Currency)
+            voucher.Notes = CustomerBalanceHelper.MarkFxSettlement(voucher.Notes, settlementCurrency);
+
+        voucher.Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(voucher.Notes);
+    }
+
     private static async Task ApplyDebtReceiptToCreditInvoicesAsync(
         AppDbContext context, Voucher voucher, string username)
     {
         if (CustomerBalanceHelper.IsDebtReceiptApplied(voucher.Notes) || !voucher.CustomerId.HasValue)
             return;
 
+        var settlementCurrency = ResolveSettlementCurrency(voucher);
+        var applyAmount = ResolveApplyAmount(voucher, settlementCurrency);
+
         var creditInvoices = await context.Invoices
             .Where(i => i.CustomerId == voucher.CustomerId.Value &&
                         (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
                         i.PaymentMethod == PaymentMethod.Credit &&
-                        i.Currency == voucher.Currency &&
+                        i.Currency == settlementCurrency &&
                         i.RemainingAmount > 0)
             .OrderBy(i => i.Date)
             .ThenBy(i => i.Id)
@@ -1082,7 +1115,7 @@ public class CashBankService : ICashBankService
         var snapshot = creditInvoices
             .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount, i.Currency))
             .ToList();
-        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount, voucher.Currency);
+        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, applyAmount, settlementCurrency);
         foreach (var u in updates)
         {
             var inv = creditInvoices.First(i => i.Id == u.Id);
@@ -1093,7 +1126,7 @@ public class CashBankService : ICashBankService
             inv.UpdatedBy = username;
         }
 
-        voucher.Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(voucher.Notes);
+        MarkVoucherApplied(voucher, settlementCurrency);
     }
 
     private static async Task ApplyPaymentToPurchaseInvoicesAsync(
@@ -1102,11 +1135,14 @@ public class CashBankService : ICashBankService
         if (CustomerBalanceHelper.IsDebtReceiptApplied(voucher.Notes) || !voucher.SupplierId.HasValue)
             return;
 
+        var settlementCurrency = ResolveSettlementCurrency(voucher);
+        var applyAmount = ResolveApplyAmount(voucher, settlementCurrency);
+
         var creditInvoices = await context.Invoices
             .Where(i => i.SupplierId == voucher.SupplierId.Value &&
                         i.InvoiceType == InvoiceType.Purchase &&
                         i.PaymentMethod == PaymentMethod.Credit &&
-                        i.Currency == voucher.Currency &&
+                        i.Currency == settlementCurrency &&
                         i.RemainingAmount > 0)
             .OrderBy(i => i.Date)
             .ThenBy(i => i.Id)
@@ -1115,7 +1151,7 @@ public class CashBankService : ICashBankService
         var snapshot = creditInvoices
             .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount, i.Currency))
             .ToList();
-        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, voucher.Amount, voucher.Currency);
+        var updates = CustomerBalanceHelper.AllocateToCreditInvoices(snapshot, applyAmount, settlementCurrency);
         foreach (var u in updates)
         {
             var inv = creditInvoices.First(i => i.Id == u.Id);
@@ -1126,7 +1162,7 @@ public class CashBankService : ICashBankService
             inv.UpdatedBy = username;
         }
 
-        voucher.Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(voucher.Notes);
+        MarkVoucherApplied(voucher, settlementCurrency);
     }
 
     private static async Task ApplyAmountToPurchaseCreditInvoiceAsync(
@@ -1141,13 +1177,16 @@ public class CashBankService : ICashBankService
         if (voucher.SupplierId.HasValue && invoice.SupplierId != voucher.SupplierId)
             throw new InvalidOperationException("الفاتورة لا تخص المورد المحدد");
 
-        AccountingCurrencyRules.EnsureSameCurrency(
-            voucher.Currency, invoice.Currency, "السند", "الفاتورة");
+        voucher.SettlementCurrency ??= invoice.Currency;
+        var settlementCurrency = ResolveSettlementCurrency(voucher);
+        if (settlementCurrency != invoice.Currency)
+            throw new InvalidOperationException("عملة التسديد يجب أن تطابق عملة الفاتورة المرتبطة");
 
         if (invoice.RemainingAmount <= 0)
             throw new InvalidOperationException("الفاتورة مسددة بالكامل");
 
-        var apply = Math.Min(voucher.Amount, invoice.RemainingAmount);
+        var applyAmount = ResolveApplyAmount(voucher, settlementCurrency);
+        var apply = Math.Min(applyAmount, invoice.RemainingAmount);
         invoice.PaidAmount += apply;
         invoice.RemainingAmount = Math.Max(0, invoice.NetAmount - invoice.PaidAmount);
         invoice.IsCreditPaid = invoice.RemainingAmount <= 0;
@@ -1155,7 +1194,7 @@ public class CashBankService : ICashBankService
         invoice.UpdatedBy = username;
 
         voucher.SupplierId ??= invoice.SupplierId;
-        voucher.Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(voucher.Notes);
+        MarkVoucherApplied(voucher, settlementCurrency);
     }
 
     private static async Task ApplyAmountToCreditInvoiceAsync(
@@ -1170,13 +1209,16 @@ public class CashBankService : ICashBankService
         if (voucher.CustomerId.HasValue && invoice.CustomerId != voucher.CustomerId)
             throw new InvalidOperationException("الفاتورة لا تخص العميل المحدد");
 
-        AccountingCurrencyRules.EnsureSameCurrency(
-            voucher.Currency, invoice.Currency, "السند", "الفاتورة");
+        voucher.SettlementCurrency ??= invoice.Currency;
+        var settlementCurrency = ResolveSettlementCurrency(voucher);
+        if (settlementCurrency != invoice.Currency)
+            throw new InvalidOperationException("عملة التسديد يجب أن تطابق عملة الفاتورة المرتبطة");
 
         if (invoice.RemainingAmount <= 0)
             throw new InvalidOperationException("الفاتورة مسددة بالكامل");
 
-        var apply = Math.Min(voucher.Amount, invoice.RemainingAmount);
+        var applyAmount = ResolveApplyAmount(voucher, settlementCurrency);
+        var apply = Math.Min(applyAmount, invoice.RemainingAmount);
         invoice.PaidAmount += apply;
         invoice.RemainingAmount = Math.Max(0, invoice.NetAmount - invoice.PaidAmount);
         invoice.IsCreditPaid = invoice.RemainingAmount <= 0;
@@ -1184,7 +1226,7 @@ public class CashBankService : ICashBankService
         invoice.UpdatedBy = username;
 
         voucher.CustomerId ??= invoice.CustomerId;
-        voucher.Notes = CustomerBalanceHelper.MarkDebtReceiptApplied(voucher.Notes);
+        MarkVoucherApplied(voucher, settlementCurrency);
     }
 
     private static async Task ApplyAmountToInstallmentAsync(
@@ -1207,15 +1249,19 @@ public class CashBankService : ICashBankService
                 .FirstOrDefaultAsync();
             if (invoiceCurrency is not null)
             {
-                AccountingCurrencyRules.EnsureSameCurrency(
-                    voucher.Currency, invoiceCurrency.Value, "السند", "فاتورة القسط");
+                voucher.SettlementCurrency ??= invoiceCurrency.Value;
+                var settlementCurrency = ResolveSettlementCurrency(voucher);
+                if (settlementCurrency != invoiceCurrency.Value)
+                    throw new InvalidOperationException("عملة التسديد يجب أن تطابق عملة فاتورة القسط");
             }
         }
 
         if (installment.RemainingAmount <= 0)
             throw new InvalidOperationException("القسط مسدد بالكامل");
 
-        var apply = Math.Min(voucher.Amount, installment.RemainingAmount);
+        var settlement = ResolveSettlementCurrency(voucher);
+        var applyAmount = ResolveApplyAmount(voucher, settlement);
+        var apply = Math.Min(applyAmount, installment.RemainingAmount);
         installment.PaidAmount += apply;
         installment.RemainingAmount = installment.Amount - installment.PaidAmount;
         installment.CashBoxId = voucher.CashBoxId;
@@ -1228,9 +1274,10 @@ public class CashBankService : ICashBankService
 
         voucher.CustomerId ??= installment.InstallmentPlan?.CustomerId;
         voucher.InvoiceId ??= installment.InstallmentPlan?.InvoiceId;
+        MarkVoucherApplied(voucher, settlement);
 
         if (adjustCash)
-            await AdjustCashBoxBalance(context, voucher.CashBoxId, apply, username);
+            await AdjustCashBoxBalance(context, voucher.CashBoxId, voucher.Amount, username);
     }
 
     private static async Task ReverseCreditInvoiceApplicationAsync(
@@ -1239,17 +1286,21 @@ public class CashBankService : ICashBankService
         var invoice = await context.Invoices.FirstOrDefaultAsync(i => i.Id == voucher.InvoiceId);
         if (invoice is null) return;
 
-        var reverse = Math.Min(voucher.Amount, invoice.PaidAmount);
+        var settlementCurrency = ResolveSettlementCurrency(voucher);
+        var reverseAmount = ResolveApplyAmount(voucher, settlementCurrency);
+        var reverse = Math.Min(reverseAmount, invoice.PaidAmount);
         invoice.PaidAmount = Math.Max(0, invoice.PaidAmount - reverse);
         invoice.RemainingAmount = Math.Max(0, invoice.NetAmount - invoice.PaidAmount);
         invoice.IsCreditPaid = invoice.RemainingAmount <= 0;
         invoice.UpdatedAt = DateTime.UtcNow;
         invoice.UpdatedBy = username;
-        voucher.Notes = CustomerBalanceHelper.UnmarkDebtReceiptApplied(voucher.Notes);
+        voucher.Notes = CustomerBalanceHelper.UnmarkDebtReceiptApplied(
+            CustomerBalanceHelper.UnmarkFxSettlement(voucher.Notes));
     }
 
     /// <summary>
-    /// عكس تطبيق FIFO لسند قبض/دين بدون InvoiceId — يعيد PaidAmount/Remaining على فواتير العميل بنفس العملة.
+    /// عكس تطبيق FIFO لسند قبض/دين بدون InvoiceId — يعيد PaidAmount/Remaining على فواتير العميل
+    /// بعملة التسديد (نفس عملة السند أو العملة المحوّلة عبر [FX-SETTLE]).
     /// </summary>
     private static async Task ReverseFifoCustomerApplicationAsync(
         AppDbContext context, Voucher voucher, string username)
@@ -1257,11 +1308,14 @@ public class CashBankService : ICashBankService
         if (!voucher.CustomerId.HasValue)
             return;
 
+        var settlementCurrency = ResolveSettlementCurrency(voucher);
+        var reverseAmount = ResolveApplyAmount(voucher, settlementCurrency);
+
         var creditInvoices = await context.Invoices
             .Where(i => i.CustomerId == voucher.CustomerId.Value &&
                         (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
                         i.PaymentMethod == PaymentMethod.Credit &&
-                        i.Currency == voucher.Currency &&
+                        i.Currency == settlementCurrency &&
                         i.PaidAmount > 0)
             .OrderByDescending(i => i.Date)
             .ThenByDescending(i => i.Id)
@@ -1271,7 +1325,7 @@ public class CashBankService : ICashBankService
             .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount, i.Currency))
             .ToList();
         var updates = CustomerBalanceHelper.DeallocateFromCreditInvoices(
-            snapshot, voucher.Amount, voucher.Currency);
+            snapshot, reverseAmount, settlementCurrency);
 
         foreach (var u in updates)
         {
@@ -1283,11 +1337,13 @@ public class CashBankService : ICashBankService
             inv.UpdatedBy = username;
         }
 
-        voucher.Notes = CustomerBalanceHelper.UnmarkDebtReceiptApplied(voucher.Notes);
+        voucher.Notes = CustomerBalanceHelper.UnmarkDebtReceiptApplied(
+            CustomerBalanceHelper.UnmarkFxSettlement(voucher.Notes));
     }
 
     /// <summary>
-    /// عكس تطبيق FIFO لسند صرف بدون InvoiceId — يعيد PaidAmount/Remaining على فواتير المورد بنفس العملة.
+    /// عكس تطبيق FIFO لسند صرف بدون InvoiceId — يعيد PaidAmount/Remaining على فواتير المورد
+    /// بعملة التسديد (نفس عملة السند أو العملة المحوّلة عبر [FX-SETTLE]).
     /// </summary>
     private static async Task ReverseFifoSupplierApplicationAsync(
         AppDbContext context, Voucher voucher, string username)
@@ -1295,11 +1351,14 @@ public class CashBankService : ICashBankService
         if (!voucher.SupplierId.HasValue)
             return;
 
+        var settlementCurrency = ResolveSettlementCurrency(voucher);
+        var reverseAmount = ResolveApplyAmount(voucher, settlementCurrency);
+
         var creditInvoices = await context.Invoices
             .Where(i => i.SupplierId == voucher.SupplierId.Value &&
                         i.InvoiceType == InvoiceType.Purchase &&
                         i.PaymentMethod == PaymentMethod.Credit &&
-                        i.Currency == voucher.Currency &&
+                        i.Currency == settlementCurrency &&
                         i.PaidAmount > 0)
             .OrderByDescending(i => i.Date)
             .ThenByDescending(i => i.Id)
@@ -1309,7 +1368,7 @@ public class CashBankService : ICashBankService
             .Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount, i.Currency))
             .ToList();
         var updates = CustomerBalanceHelper.DeallocateFromCreditInvoices(
-            snapshot, voucher.Amount, voucher.Currency);
+            snapshot, reverseAmount, settlementCurrency);
 
         foreach (var u in updates)
         {
@@ -1321,7 +1380,8 @@ public class CashBankService : ICashBankService
             inv.UpdatedBy = username;
         }
 
-        voucher.Notes = CustomerBalanceHelper.UnmarkDebtReceiptApplied(voucher.Notes);
+        voucher.Notes = CustomerBalanceHelper.UnmarkDebtReceiptApplied(
+            CustomerBalanceHelper.UnmarkFxSettlement(voucher.Notes));
     }
 
     private static async Task ReverseInstallmentApplicationAsync(
@@ -1330,7 +1390,9 @@ public class CashBankService : ICashBankService
         var installment = await context.Installments.FirstOrDefaultAsync(i => i.Id == voucher.InstallmentId);
         if (installment is null) return;
 
-        var reverse = Math.Min(voucher.Amount, installment.PaidAmount);
+        var settlementCurrency = ResolveSettlementCurrency(voucher);
+        var reverseAmount = ResolveApplyAmount(voucher, settlementCurrency);
+        var reverse = Math.Min(reverseAmount, installment.PaidAmount);
         installment.PaidAmount = Math.Max(0, installment.PaidAmount - reverse);
         installment.RemainingAmount = installment.Amount - installment.PaidAmount;
         installment.UpdatedBy = username;
@@ -1340,6 +1402,9 @@ public class CashBankService : ICashBankService
             : InstallmentStatus.PartiallyPaid;
         if (installment.PaidAmount <= 0)
             installment.PaymentDate = null;
+
+        voucher.Notes = CustomerBalanceHelper.UnmarkDebtReceiptApplied(
+            CustomerBalanceHelper.UnmarkFxSettlement(voucher.Notes));
     }
 
     public async Task SetVoucherReconciledAsync(int voucherId, bool isReconciled)
@@ -1494,6 +1559,33 @@ public class CashBankService : ICashBankService
                 Reference = $"TRF-{t.Id:D4}",
                 SourceType = "Transfer",
                 SourceId = t.Id,
+                CanReverse = true
+            });
+        }
+
+        // صيرفة (تحويل عملات بين قاصات)
+        var exchanges = await context.CurrencyExchanges.AsNoTracking()
+            .Where(e => e.FromCashBoxId == cashBoxId || e.ToCashBoxId == cashBoxId)
+            .Where(e => !fromDate.HasValue || e.Date >= fromDate.Value)
+            .Where(e => !toExclusive.HasValue || e.Date < toExclusive.Value)
+            .ToListAsync();
+
+        foreach (var x in exchanges)
+        {
+            bool incoming = x.ToCashBoxId == cashBoxId;
+            rows.Add(new AccountStatementEntry
+            {
+                Date = x.Date,
+                Type = "صيرفة",
+                Description = x.Notes ??
+                    (incoming
+                        ? $"صيرفة واردة @ {x.FxRate:N0}"
+                        : $"صيرفة صادرة @ {x.FxRate:N0}"),
+                Credit = incoming ? x.ToAmount : 0,
+                Debit = incoming ? 0 : x.FromAmount,
+                Reference = $"FX-{x.Id:D4}",
+                SourceType = "CurrencyExchange",
+                SourceId = x.Id,
                 CanReverse = true
             });
         }

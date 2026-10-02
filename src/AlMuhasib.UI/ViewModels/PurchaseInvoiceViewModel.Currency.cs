@@ -3,6 +3,7 @@ using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -18,7 +19,14 @@ public partial class PurchaseInvoiceViewModel
     [ObservableProperty] private bool _showFxRateInput;
     [ObservableProperty] private AccountingCurrency _selectedCurrency = AccountingCurrency.IQD;
     [ObservableProperty] private decimal _fxRate = 1m;
+    [ObservableProperty] private string _currencyAmountSuffix = AccountingCurrencyHelper.IqdLabel;
     [ObservableProperty] private CurrencyOption? _selectedCurrencyOption;
+
+    public string CreditPaidAmountHint => $"المبلغ المدفوع ({CurrencyAmountSuffix})";
+    public string CreditRemainingAmountHint => $"المتبقي ({CurrencyAmountSuffix})";
+
+    private AccountingCurrency DocumentRoundingCurrency =>
+        ShowMultiCurrency ? SelectedCurrency : AccountingCurrency.IQD;
 
     public ObservableCollection<CurrencyOption> CurrencyOptions { get; } = new(CurrencyOption.All);
 
@@ -39,7 +47,10 @@ public partial class PurchaseInvoiceViewModel
             SelectedCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
         }
 
+        CurrencyAmountSuffix = AccountingCurrencyHelper.GetLabel(SelectedCurrency);
         ShowFxRateInput = ShowMultiCurrency && SelectedCurrency == AccountingCurrency.USD;
+        NotifyCurrencyHintsChanged();
+        SyncDocumentCurrencyToHelpers();
         ApplyCashBoxCurrencyFilter();
     }
 
@@ -47,10 +58,51 @@ public partial class PurchaseInvoiceViewModel
     {
         if (value is null) return;
         SelectedCurrency = value.Currency;
+        CurrencyAmountSuffix = AccountingCurrencyHelper.GetLabel(SelectedCurrency);
         ShowFxRateInput = ShowMultiCurrency && SelectedCurrency == AccountingCurrency.USD;
-        if (!_suppressFxRateRefresh)
-            _ = RefreshFxRateForSelectedCurrencyAsync();
+        NotifyCurrencyHintsChanged();
+        SyncDocumentCurrencyToHelpers();
         ApplyCashBoxCurrencyFilter();
+        if (!_suppressFxRateRefresh)
+            _ = OnDocumentCurrencyChangedAsync();
+    }
+
+    partial void OnSelectedCurrencyChanged(AccountingCurrency value)
+    {
+        CurrencyAmountSuffix = AccountingCurrencyHelper.GetLabel(value);
+        ShowFxRateInput = ShowMultiCurrency && value == AccountingCurrency.USD;
+        NotifyCurrencyHintsChanged();
+        SyncDocumentCurrencyToHelpers();
+        RecalculateTotals();
+        if (SelectedCurrencyOption?.Currency != value)
+            SelectedCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == value);
+    }
+
+    partial void OnCurrencyAmountSuffixChanged(string value) => NotifyCurrencyHintsChanged();
+
+    private void NotifyCurrencyHintsChanged()
+    {
+        OnPropertyChanged(nameof(CreditPaidAmountHint));
+        OnPropertyChanged(nameof(CreditRemainingAmountHint));
+    }
+
+    private void SyncDocumentCurrencyToHelpers()
+    {
+        ProductPicker.DocumentCurrency = SelectedCurrency;
+        QuickSearchCatalog.DocumentCurrency = SelectedCurrency;
+    }
+
+    private async Task OnDocumentCurrencyChangedAsync()
+    {
+        try
+        {
+            await RefreshFxRateForSelectedCurrencyAsync();
+            await RequoteLinesForCurrencyAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[PurchaseCurrency] {ex.Message}");
+        }
     }
 
     private async Task RefreshFxRateForSelectedCurrencyAsync()
@@ -73,6 +125,56 @@ public partial class PurchaseInvoiceViewModel
         }
     }
 
+    private async Task RequoteLinesForCurrencyAsync()
+    {
+        if (!ShowMultiCurrency || _productPriceService is null)
+            return;
+
+        foreach (var row in Items)
+        {
+            if (row.ProductId is not int productId || productId <= 0)
+                continue;
+
+            var prices = await _productPriceService.GetByProductIdAsync(productId);
+            if (ShowProductPricing)
+            {
+                var options = InvoiceBulkPricingHelper.ToOptions(prices, usePurchasePrice: true, SelectedCurrency);
+                row.AvailablePricingOptions.Clear();
+                foreach (var option in options)
+                    row.AvailablePricingOptions.Add(option);
+
+                var preferred = InvoiceBulkPricingHelper.ResolvePreferredOption(
+                    options,
+                    row.PricingTypeId,
+                    SelectedBulkPricingType?.Id);
+
+                if (preferred is not null)
+                {
+                    row.SelectedPricingOption = preferred;
+                    continue;
+                }
+
+                row.UnitPrice = 0m;
+                row.SetSelectedPricingOptionWithoutPrice(null);
+                row.PricingTypeId = null;
+                row.PricingTypeName = string.Empty;
+                continue;
+            }
+
+            if (prices.Count > 0)
+            {
+                var preferred = prices.FirstOrDefault(p => p.PricingType?.IsDefault == true) ?? prices[0];
+                row.UnitPrice = ProductListPriceHelper.ResolveListPrice(preferred, SelectedCurrency, isPurchase: true);
+            }
+            else
+            {
+                row.UnitPrice = 0m;
+            }
+        }
+
+        RecalculateTotals();
+    }
+
     private void ApplyCurrencyFromDocument(AccountingCurrency currency, decimal fxRate)
     {
         _suppressFxRateRefresh = true;
@@ -83,7 +185,10 @@ public partial class PurchaseInvoiceViewModel
             FxRate = currency == AccountingCurrency.IQD
                 ? 1m
                 : (fxRate > 0 ? fxRate : 0m);
+            CurrencyAmountSuffix = AccountingCurrencyHelper.GetLabel(currency);
             ShowFxRateInput = ShowMultiCurrency && currency == AccountingCurrency.USD;
+            NotifyCurrencyHintsChanged();
+            SyncDocumentCurrencyToHelpers();
             ApplyCashBoxCurrencyFilter();
         }
         finally

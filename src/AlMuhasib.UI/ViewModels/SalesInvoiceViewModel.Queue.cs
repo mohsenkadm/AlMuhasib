@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
@@ -41,7 +42,8 @@ public partial class SalesInvoiceViewModel
             queueName,
             BuildDraft(),
             Items.Count(i => !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity > 0),
-            GrandTotal);
+            GrandTotal,
+            ShowMultiCurrency ? SelectedCurrency : AccountingCurrency.IQD);
         BeautifulMessageDialog.ShowSuccess("تمت إضافة الفاتورة إلى قائمة الانتظار.");
         _ = NewInvoice();
     }

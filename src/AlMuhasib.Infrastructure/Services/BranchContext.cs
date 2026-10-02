@@ -30,7 +30,10 @@ public sealed class BranchContext : IBranchContext
     {
         if (branchId <= 0)
             throw new InvalidOperationException("Invalid branch id.");
-        if (_allowed.Count > 0 && !_allowed.Contains(branchId) && !CanManageAllBranches)
+
+        // لا يُسمح بدخول فرع غير موجود في قائمة المسموح — حتى لو ManageAll
+        // (ManageAll يفعّل وضع «كل الفروع» للقراءة عبر SetAllBranchesMode فقط).
+        if (_allowed.Count > 0 && !_allowed.Contains(branchId))
             throw new UnauthorizedAccessException("لا تملك صلاحية الدخول إلى هذا الفرع.");
 
         CurrentBranchId = branchId;
@@ -70,5 +73,5 @@ public sealed class BranchContext : IBranchContext
     }
 
     public bool IsBranchAllowed(int branchId) =>
-        branchId > 0 && (_allowed.Contains(branchId) || CanManageAllBranches);
+        branchId > 0 && _allowed.Contains(branchId);
 }

@@ -393,6 +393,27 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
     private decimal _distributableProfits;
 
     [ObservableProperty]
+    private decimal _periodSales;
+
+    [ObservableProperty]
+    private decimal _periodCogs;
+
+    [ObservableProperty]
+    private decimal _periodExpenses;
+
+    [ObservableProperty]
+    private decimal _periodGrossProfit;
+
+    [ObservableProperty]
+    private decimal _periodNetProfit;
+
+    [ObservableProperty]
+    private decimal _periodAlreadyDistributed;
+
+    [ObservableProperty]
+    private string _profitPeriodLabel = string.Empty;
+
+    [ObservableProperty]
     private decimal _totalToDistribute;
 
     [ObservableProperty]
@@ -403,6 +424,20 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
 
     public ObservableCollection<ProfitPreviewItem> ProfitPreviews { get; } = [];
 
+    partial void OnDistributionDateChanged(DateTime value) => _ = ReloadDistributableProfitsAsync();
+
+    private void ApplyProfitBreakdown(DistributableProfitBreakdown breakdown)
+    {
+        PeriodSales = breakdown.Sales;
+        PeriodCogs = breakdown.CostOfGoodsSold;
+        PeriodExpenses = breakdown.Expenses;
+        PeriodGrossProfit = breakdown.GrossProfit;
+        PeriodNetProfit = breakdown.NetProfit;
+        PeriodAlreadyDistributed = breakdown.AlreadyDistributedInPeriod;
+        DistributableProfits = breakdown.DistributableAmount;
+        ProfitPeriodLabel = breakdown.PeriodFrom.ToString("yyyy/MM");
+    }
+
     [RelayCommand]
     private async Task PreviewDistributionAsync()
     {
@@ -410,14 +445,12 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
         {
             IsBusy = true;
 
-            if (DistributableProfits <= 0)
-            {
-                DistributableProfits = await _investorService.GetDistributableProfitsAsync();
-            }
+            var breakdown = await _investorService.GetDistributableProfitsAsync(DistributionDate);
+            ApplyProfitBreakdown(breakdown);
 
             if (DistributableProfits <= 0)
             {
-                BeautifulMessageDialog.ShowWarning("لا توجد أرباح متاحة للتوزيع");
+                BeautifulMessageDialog.ShowWarning("لا توجد أرباح متاحة للتوزيع في الشهر المحدد");
                 return;
             }
 
@@ -452,7 +485,8 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
         try
         {
             IsBusy = true;
-            DistributableProfits = await _investorService.GetDistributableProfitsAsync();
+            var breakdown = await _investorService.GetDistributableProfitsAsync(DistributionDate);
+            ApplyProfitBreakdown(breakdown);
         }
         catch (Exception ex)
         {
@@ -510,7 +544,7 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
             ProfitPreviews.Clear();
             IsPreviewReady = false;
             TotalToDistribute = 0;
-            DistributableProfits = await _investorService.GetDistributableProfitsAsync();
+            ApplyProfitBreakdown(await _investorService.GetDistributableProfitsAsync(DistributionDate));
 
             await RefreshInvestorsAsync();
             await LoadCashBoxesAsync();
@@ -649,7 +683,7 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
             await LoadCashBoxesAsync();
             await LoadRecentDepositsAsync();
             await LoadRecentWithdrawalsAsync();
-            DistributableProfits = await _investorService.GetDistributableProfitsAsync();
+            ApplyProfitBreakdown(await _investorService.GetDistributableProfitsAsync(DistributionDate));
             if (StatementInvestor is not null)
                 await LoadStatementAsync();
         }

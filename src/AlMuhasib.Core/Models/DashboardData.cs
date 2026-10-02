@@ -12,7 +12,11 @@ public class DashboardData
     /// <summary>مشتريات اليوم بالدولار — إفصاح منفصل.</summary>
     public decimal TodayPurchasesUsd { get; set; }
     public decimal NetProfit { get; set; }
+    /// <summary>الأرباح الصافية بالدولار — إفصاح منفصل (مبيعات − مشتريات − مصاريف USD).</summary>
+    public decimal NetProfitUsd { get; set; }
     public int OverdueInstallmentsCount { get; set; }
+    /// <summary>عدد الأقساط المتأخرة بعملة الدولار.</summary>
+    public int OverdueInstallmentsCountUsd { get; set; }
 
     /// <summary>مكونات معادلة الأرباح الصافية في لوحة التحكم.</summary>
     public decimal NetProfitSales { get; set; }
@@ -22,6 +26,10 @@ public class DashboardData
     public decimal NetProfitExpenses { get; set; }
     public decimal NetProfitDistributions { get; set; }
     public decimal NetProfitOpening { get; set; }
+
+    public decimal NetProfitSalesUsd { get; set; }
+    public decimal NetProfitPurchasesUsd { get; set; }
+    public decimal NetProfitExpensesUsd { get; set; }
 
     // Charts
     public List<DailySalesPoint> SalesLast30Days { get; set; } = [];
@@ -37,14 +45,22 @@ public class DashboardData
     public decimal InvestorDepositsTotal { get; set; }
     public decimal InvestorWithdrawalsTotal { get; set; }
     public decimal UnpaidInstallmentsBalance { get; set; }
+    public decimal UnpaidInstallmentsBalanceUsd { get; set; }
     public decimal CustomerCreditBalance { get; set; }
     public decimal CustomerCreditInvoiceRemaining { get; set; }
     public decimal CustomerCreditUnappliedDebt { get; set; }
     public decimal CustomerCreditUnappliedReceipts { get; set; }
+    public decimal CustomerCreditBalanceUsd { get; set; }
+    public decimal CustomerCreditInvoiceRemainingUsd { get; set; }
+    public decimal CustomerCreditUnappliedDebtUsd { get; set; }
+    public decimal CustomerCreditUnappliedReceiptsUsd { get; set; }
 
     public decimal SupplierCreditBalance { get; set; }
     public decimal SupplierCreditInvoiceRemaining { get; set; }
     public decimal SupplierCreditUnappliedPayments { get; set; }
+    public decimal SupplierCreditBalanceUsd { get; set; }
+    public decimal SupplierCreditInvoiceRemainingUsd { get; set; }
+    public decimal SupplierCreditUnappliedPaymentsUsd { get; set; }
 
     // Bottom row
     public List<CashBoxSummary> CashBoxes { get; set; } = [];
@@ -54,6 +70,8 @@ public class DashboardData
     public decimal BankBalanceIqd { get; set; }
     public decimal BankBalanceUsd { get; set; }
     public decimal TotalInventoryValue { get; set; }
+    /// <summary>أعلى بنود المخزون مساهمة في القيمة الكلية (للتفاصيل).</summary>
+    public List<InventoryValueBreakdownItem> InventoryBreakdown { get; set; } = [];
 
     // KPI mini-chart trends (last 14 days) + period-over-period %
     public List<DailySalesPoint> PurchasesLast14Days { get; set; } = [];
@@ -117,4 +135,13 @@ public class CashBoxSummary
     public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public string CurrencyLabel { get; set; } = "د.ع";
     public string DisplayName => $"{Name} ({CurrencyLabel})";
+}
+
+/// <summary>بند منتج ضمن تفصيل قيمة المخزون في لوحة التحكم.</summary>
+public class InventoryValueBreakdownItem
+{
+    public string ProductName { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+    public decimal UnitCost { get; set; }
+    public decimal Value { get; set; }
 }

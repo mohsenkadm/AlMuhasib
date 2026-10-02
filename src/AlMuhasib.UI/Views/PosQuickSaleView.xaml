@@ -23,6 +23,9 @@
     <UserControl.Resources>
         
                 <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="فحص الربح" Command="{Binding CheckProfitCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="ChartLine" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
             <MenuItem Header="الدفع" Command="{Binding OpenPaymentDialogCommand}">
                 <MenuItem.Icon><materialDesign:PackIcon Kind="Cash" Width="16" Height="16"/></MenuItem.Icon>
             </MenuItem>
@@ -283,9 +286,12 @@
                                             </materialDesign:PackIcon>
                                         </Button>
                                         <Grid Grid.Row="1" Margin="10,0,10,10" IsHitTestVisible="False">
-                                            <TextBlock Text="{Binding Price, StringFormat='{}{0:N0} د.ع'}"
-                                                       FontWeight="Bold" FontSize="14" Foreground="#1565C0"
-                                                       VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                            <TextBlock FontWeight="Bold" FontSize="14" Foreground="#1565C0"
+                                                       VerticalAlignment="Center" HorizontalAlignment="Right">
+                                                <Run Text="{Binding Price, StringFormat=N0, Mode=OneWay}"/>
+                                                <Run Text=" "/>
+                                                <Run Text="{Binding DataContext.CurrencyAmountSuffix, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"/>
+                                            </TextBlock>
                                             <Border HorizontalAlignment="Left" VerticalAlignment="Center"
                                                     Width="30" Height="30" CornerRadius="8" Background="#1565C0">
                                                 <materialDesign:PackIcon Kind="Plus" Width="18" Height="18" Foreground="White"
@@ -515,8 +521,11 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="المجموع الفرعي" Foreground="#607D8B" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1" Text="{Binding SubTotal, StringFormat='{}{0:N0} د.ع'}"
-                                           FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="1" FontWeight="SemiBold" VerticalAlignment="Center">
+                                    <Run Text="{Binding SubTotal, StringFormat=N0, Mode=OneWay}"/>
+                                    <Run Text=" "/>
+                                    <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                </TextBlock>
                             </Grid>
 
                             <Grid Margin="0,10,0,2"
@@ -543,7 +552,7 @@
                                           materialDesign:TextFieldAssist.HasLeadingIcon="False"/>
                                 <TextBox Grid.Column="2"
                                          Text="{Binding InvoiceDiscountValue, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="قيمة"
+                                         materialDesign:HintAssist.Hint="{Binding InvoiceDiscountValueHint}"
                                          Style="{StaticResource MaterialDesignFilledTextBox}"
                                          Height="40"
                                          MinHeight="40"
@@ -551,10 +560,13 @@
                                          VerticalContentAlignment="Center"
                                          Padding="8,0"/>
                                 <TextBlock Grid.Column="3"
-                                           Text="{Binding InvoiceDiscountAmount, StringFormat='{}{0:N0}'}"
                                            FontWeight="SemiBold" Foreground="#2E7D32" FontSize="13"
                                            VerticalAlignment="Center"
-                                           ToolTip="مبلغ الخصم"/>
+                                           ToolTip="مبلغ الخصم">
+                                    <Run Text="{Binding InvoiceDiscountAmount, StringFormat=N0, Mode=OneWay}"/>
+                                    <Run Text=" "/>
+                                    <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                </TextBlock>
                             </Grid>
 
                             <loyalty:LoyaltyPanel Margin="0,8,0,0" IsCompact="True" DataContext="{Binding}"/>
@@ -566,8 +578,11 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="الإجمالي" FontSize="16" FontWeight="Bold"
                                            Foreground="#0D47A1" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1" Text="{Binding GrandTotal, StringFormat='{}{0:N0} د.ع'}"
-                                           FontSize="24" FontWeight="Bold" Foreground="#1565C0"/>
+                                <TextBlock Grid.Column="1" FontSize="24" FontWeight="Bold" Foreground="#1565C0">
+                                    <Run Text="{Binding GrandTotal, StringFormat=N0, Mode=OneWay}"/>
+                                    <Run Text=" "/>
+                                    <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                </TextBlock>
                             </Grid>
                         </StackPanel>
                     </Border>
@@ -666,8 +681,11 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="المبلغ الكامل" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="14"/>
-                                <TextBlock Grid.Column="1" Text="{Binding GrandTotal, StringFormat='{}{0:N0} د.ع'}"
-                                           FontSize="26" FontWeight="Bold" Foreground="#1565C0"/>
+                                <TextBlock Grid.Column="1" FontSize="26" FontWeight="Bold" Foreground="#1565C0">
+                                    <Run Text="{Binding GrandTotal, StringFormat=N0, Mode=OneWay}"/>
+                                    <Run Text=" "/>
+                                    <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                </TextBlock>
                             </Grid>
                         </Border>
 
@@ -679,8 +697,8 @@
                                   Style="{StaticResource FilledComboBox}"
                                   Margin="0,0,0,12"/>
 
-                        <TextBox Text="{Binding PaidAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
-                                 materialDesign:HintAssist.Hint="المبلغ المدفوع"
+                        <TextBox Text="{Binding PaidAmount, UpdateSourceTrigger=LostFocus}"
+                                 materialDesign:HintAssist.Hint="{Binding PaidAmountHint}"
                                  materialDesign:HintAssist.IsFloating="True"
                                  Style="{StaticResource FilledTextBox}"
                                  Margin="0,0,0,8"
@@ -707,8 +725,11 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="الباقي للزبون" VerticalAlignment="Center" Foreground="#2E7D32" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Column="1" Text="{Binding ChangeAmount, StringFormat='{}{0:N0} د.ع'}"
-                                           FontWeight="Bold" FontSize="18" Foreground="#1B5E20"/>
+                                <TextBlock Grid.Column="1" FontWeight="Bold" FontSize="18" Foreground="#1B5E20">
+                                    <Run Text="{Binding ChangeAmount, StringFormat=N0, Mode=OneWay}"/>
+                                    <Run Text=" "/>
+                                    <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                </TextBlock>
                             </Grid>
                         </Border>
 
@@ -721,9 +742,19 @@
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="المتبقي آجل" VerticalAlignment="Center" Foreground="#F57F17" FontWeight="SemiBold"/>
-                                    <TextBlock Grid.Column="1" Text="{Binding CreditRemainingAmount, StringFormat='{}{0:N0} د.ع'}"
-                                               FontWeight="Bold" FontSize="18" Foreground="#E65100"/>
+                                    <TextBlock Grid.Column="1" FontWeight="Bold" FontSize="18" Foreground="#E65100">
+                                        <Run Text="{Binding CreditRemainingAmount, StringFormat=N0, Mode=OneWay}"/>
+                                        <Run Text=" "/>
+                                        <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                    </TextBlock>
                                 </Grid>
+                                <DatePicker SelectedDate="{Binding CreditDueDate}"
+                                            materialDesign:HintAssist.Hint="تاريخ استحقاق التسديد"
+                                            materialDesign:HintAssist.IsFloating="True"
+                                            Style="{StaticResource FilledDatePicker}"
+                                            Margin="0,10,0,0"
+                                            FontSize="13"
+                                            Foreground="#C62828"/>
                                 <TextBlock Text="سيُسجَّل كفاتورة آجلة — يلزم اختيار عميل" FontSize="11"
                                            Foreground="#F9A825" Margin="0,6,0,0" TextWrapping="Wrap"/>
                             </StackPanel>

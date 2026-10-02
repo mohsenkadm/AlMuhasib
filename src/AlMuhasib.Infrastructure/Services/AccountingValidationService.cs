@@ -268,7 +268,15 @@ public class AccountingValidationService : IAccountingValidationService
                         !v.InvoiceId.HasValue &&
                         (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
-        var expectedIqd = SupplierBalanceHelper.ComputeOutstandingPayables(creditRemainingIqd, unappliedIqd);
+        var returnCreditsIqd = await context.Invoices
+            .Where(i => i.SupplierId == supplierId &&
+                        i.InvoiceType == InvoiceType.PurchaseReturn &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.IQD &&
+                        i.RemainingAmount > 0)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var expectedIqd = SupplierBalanceHelper.ComputeOutstandingPayables(
+            creditRemainingIqd, unappliedIqd + returnCreditsIqd);
 
         var creditRemainingUsd = await context.Invoices
             .Where(i => i.SupplierId == supplierId &&
@@ -283,7 +291,15 @@ public class AccountingValidationService : IAccountingValidationService
                         !v.InvoiceId.HasValue &&
                         (v.Notes == null || !v.Notes.Contains(SupplierBalanceHelper.PaymentAppliedMarker)))
             .SumAsync(v => (decimal?)v.Amount) ?? 0;
-        var expectedUsd = SupplierBalanceHelper.ComputeOutstandingPayables(creditRemainingUsd, unappliedUsd);
+        var returnCreditsUsd = await context.Invoices
+            .Where(i => i.SupplierId == supplierId &&
+                        i.InvoiceType == InvoiceType.PurchaseReturn &&
+                        i.PaymentMethod == PaymentMethod.Credit &&
+                        i.Currency == AccountingCurrency.USD &&
+                        i.RemainingAmount > 0)
+            .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+        var expectedUsd = SupplierBalanceHelper.ComputeOutstandingPayables(
+            creditRemainingUsd, unappliedUsd + returnCreditsUsd);
 
         return new ValidationResult
         {

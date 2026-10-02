@@ -15,20 +15,40 @@
                        Visibility="{Binding HasScopeNote, Converter={StaticResource BoolToVis}}"/>
             <UniformGrid Columns="4">
                 <StackPanel Margin="4,0">
-                    <TextBlock Text="عدد السجلات" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <TextBlock Text="عدد السجلات (د.ع)" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
                     <TextBlock Text="{Binding Count, StringFormat={}{0:N0}}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
                 </StackPanel>
                 <StackPanel Margin="4,0">
                     <TextBlock Text="إجمالي المبالغ" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                    <TextBlock Text="{Binding TotalAmount, StringFormat={}{0:N0} د.ع}" FontSize="16" FontWeight="Bold" Foreground="#1565C0"/>
+                    <TextBlock Text="{Binding TotalAmountText}" FontSize="16" FontWeight="Bold" Foreground="#1565C0"/>
                 </StackPanel>
                 <StackPanel Margin="4,0">
                     <TextBlock Text="المسدد" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                    <TextBlock Text="{Binding PaidAmount, StringFormat={}{0:N0} د.ع}" FontSize="16" FontWeight="Bold" Foreground="#2E7D32"/>
+                    <TextBlock Text="{Binding PaidAmountText}" FontSize="16" FontWeight="Bold" Foreground="#2E7D32"/>
                 </StackPanel>
                 <StackPanel Margin="4,0">
                     <TextBlock Text="المتبقي" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                    <TextBlock Text="{Binding RemainingAmount, StringFormat={}{0:N0} د.ع}" FontSize="16" FontWeight="Bold" Foreground="#C62828"/>
+                    <TextBlock Text="{Binding RemainingAmountText}" FontSize="16" FontWeight="Bold" Foreground="#C62828"/>
+                </StackPanel>
+            </UniformGrid>
+
+            <UniformGrid Columns="4" Margin="0,10,0,0"
+                         Visibility="{Binding ShowUsdSection, Converter={StaticResource BoolToVis}}">
+                <StackPanel Margin="4,0">
+                    <TextBlock Text="عدد السجلات ($)" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <TextBlock Text="{Binding CountUsd, StringFormat={}{0:N0}}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                </StackPanel>
+                <StackPanel Margin="4,0">
+                    <TextBlock Text="إجمالي المبالغ $" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <TextBlock Text="{Binding TotalAmountUsdText}" FontSize="16" FontWeight="Bold" Foreground="#00695C"/>
+                </StackPanel>
+                <StackPanel Margin="4,0">
+                    <TextBlock Text="المسدد $" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <TextBlock Text="{Binding PaidAmountUsdText}" FontSize="16" FontWeight="Bold" Foreground="#2E7D32"/>
+                </StackPanel>
+                <StackPanel Margin="4,0">
+                    <TextBlock Text="المتبقي $" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <TextBlock Text="{Binding RemainingAmountUsdText}" FontSize="16" FontWeight="Bold" Foreground="#C62828"/>
                 </StackPanel>
             </UniformGrid>
         </StackPanel>

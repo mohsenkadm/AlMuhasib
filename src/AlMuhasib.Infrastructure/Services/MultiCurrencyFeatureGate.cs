@@ -10,7 +10,12 @@ public static class MultiCurrencyFeatureGate
 {
     public static async Task<bool> IsEnabledAsync(AppDbContext context, CancellationToken ct = default)
     {
+        // إعدادات الشركة موحّدة عبر الفروع — لا تعتمد على فلتر فرع الجلسة
+        // وإلا تظهر الواجهة ON (من GetOrCreate بـ Bypass) بينما الحفظ يرفض USD.
         return await context.BusinessSettings.AsNoTracking()
+                   .IgnoreQueryFilters()
+                   .Where(s => !s.IsDeleted)
+                   .OrderBy(s => s.Id)
                    .Select(s => (bool?)s.MultiCurrencyEnabled)
                    .FirstOrDefaultAsync(ct)
                ?? false;

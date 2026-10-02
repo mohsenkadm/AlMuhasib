@@ -3,6 +3,7 @@ using System.Windows;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using AlMuhasib.UI.Charts;
@@ -14,10 +15,13 @@ namespace AlMuhasib.UI.ViewModels;
 
 public partial class UnpaidInstallmentsReportViewModel : ReportViewModelBase
 {
+    private readonly IFeatureFlagService _featureFlags;
+
     [ObservableProperty] private string _totalUnpaid = "0";
     [ObservableProperty] private string _unpaidCount = "0";
     [ObservableProperty] private string _customerCount = "0";
     [ObservableProperty] private string _oldestOverdueDays = "0";
+    [ObservableProperty] private bool _showMultiCurrency;
 
     [ObservableProperty] private int? _selectedCustomerId;
     public ObservableCollection<Customer> Customers { get; } = [];
@@ -29,9 +33,11 @@ public partial class UnpaidInstallmentsReportViewModel : ReportViewModelBase
 
     public UnpaidInstallmentsReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService,
-        IInvoiceService invoiceService, IInstallmentService installmentService)
+        IInvoiceService invoiceService, IInstallmentService installmentService,
+        IFeatureFlagService featureFlags)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
+        _featureFlags = featureFlags;
         PageTitle = "الأقساط غير المسددة";
         InitReportActionServices(invoiceService, installmentService);
         RegisterThemeChartReload(LoadDataAsync);
@@ -40,6 +46,7 @@ public partial class UnpaidInstallmentsReportViewModel : ReportViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, "Reports");
+        ShowMultiCurrency = _featureFlags.MultiCurrency;
         foreach (var c in await _unitOfWork.Customers.GetAllAsync()) Customers.Add(c);
         await LoadBulkPayCashBoxesAsync();
         await LoadDataAsync();
@@ -81,8 +88,12 @@ public partial class UnpaidInstallmentsReportViewModel : ReportViewModelBase
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "الأقساط_غير_المسددة.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "العميل", "رقم الخطة", "تاريخ الاستحقاق", "المبلغ", "المتبقي", "أيام التأخير" };
-        var rows = _allRows.Select(r => new object[] { r.CustomerName, r.PlanNumber, r.DueDate.ToString("yyyy/MM/dd"), r.Amount, r.RemainingAmount, r.OverdueDays }).ToList();
+        var cols = ShowMultiCurrency
+            ? new[] { "العميل", "رقم الخطة", "تاريخ الاستحقاق", "المتبقي (د.ع)", "الأصل", "العملة", "أيام التأخير" }
+            : new[] { "العميل", "رقم الخطة", "تاريخ الاستحقاق", "المبلغ", "المتبقي", "أيام التأخير" };
+        var rows = _allRows.Select(r => ShowMultiCurrency
+            ? new object[] { r.CustomerName, r.PlanNumber, r.DueDate.ToString("yyyy/MM/dd"), r.RemainingAmount, r.OriginalRemainingAmount, r.CurrencyLabel, r.OverdueDays }
+            : new object[] { r.CustomerName, r.PlanNumber, r.DueDate.ToString("yyyy/MM/dd"), r.Amount, r.RemainingAmount, r.OverdueDays }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "الأقساط غير المسددة", cols, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
@@ -90,8 +101,12 @@ public partial class UnpaidInstallmentsReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "العميل", "رقم الخطة", "تاريخ الاستحقاق", "المبلغ", "المتبقي", "أيام التأخير" };
-        var rows = _allRows.Select(r => new object[] { r.CustomerName, r.PlanNumber, r.DueDate.ToString("yyyy/MM/dd"), r.Amount, r.RemainingAmount, r.OverdueDays }).ToList();
+        var cols = ShowMultiCurrency
+            ? new[] { "العميل", "رقم الخطة", "تاريخ الاستحقاق", "المتبقي (د.ع)", "الأصل", "العملة", "أيام التأخير" }
+            : new[] { "العميل", "رقم الخطة", "تاريخ الاستحقاق", "المبلغ", "المتبقي", "أيام التأخير" };
+        var rows = _allRows.Select(r => ShowMultiCurrency
+            ? new object[] { r.CustomerName, r.PlanNumber, r.DueDate.ToString("yyyy/MM/dd"), r.RemainingAmount, r.OriginalRemainingAmount, r.CurrencyLabel, r.OverdueDays }
+            : new object[] { r.CustomerName, r.PlanNumber, r.DueDate.ToString("yyyy/MM/dd"), r.Amount, r.RemainingAmount, r.OverdueDays }).ToList();
         _exportService.PrintTable("الأقساط غير المسددة", cols, rows);
     }
 }

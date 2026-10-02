@@ -64,6 +64,11 @@ public partial class MainWindow : Window
     private void PromptIdleReLogin()
     {
         if (_isSessionLocked) return;
+
+        // لا تعرض قفل الجلسة على نافذة أُغلقت أو لم تعد صالحة كمالك (Owner).
+        if (!CanSetAsOwner(this))
+            return;
+
         _isSessionLocked = true;
         _idleTimer?.Stop();
 
@@ -73,30 +78,78 @@ public partial class MainWindow : Window
 
         IsEnabled = false;
 
-        while (true)
+        try
         {
-            var login = app.Services.GetRequiredService<LoginWindow>();
-            login.IsSessionLockMode = true;
-            login.Owner = this;
-            login.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-
-            var ok = login.ShowDialog() == true;
-            if (!ok)
+            while (true)
             {
-                Application.Current.Shutdown();
-                return;
-            }
+                if (!CanSetAsOwner(this))
+                {
+                    Application.Current.Shutdown();
+                    return;
+                }
 
-            var mainVm = app.Services.GetRequiredService<MainWindowViewModel>();
-            mainVm.LoggedInUsername = currentUser.Username;
-            _ = mainVm.ApplyPermissionsAsync();
-            TouchActivity();
-            break;
+                var login = app.Services.GetRequiredService<LoginWindow>();
+                login.IsSessionLockMode = true;
+                TrySetOwner(login, this);
+
+                var ok = login.ShowDialog() == true;
+                if (!ok)
+                {
+                    Application.Current.Shutdown();
+                    return;
+                }
+
+                var mainVm = app.Services.GetRequiredService<MainWindowViewModel>();
+                mainVm.LoggedInUsername = currentUser.Username;
+                mainVm.RefreshCurrentBranchDisplay();
+                _ = mainVm.ApplyPermissionsAsync();
+                TouchActivity();
+                break;
+            }
+        }
+        finally
+        {
+            if (CanSetAsOwner(this))
+                IsEnabled = true;
+            _isSessionLocked = false;
+            if (CanSetAsOwner(this))
+                _idleTimer?.Start();
+        }
+    }
+
+    private static bool CanSetAsOwner(Window? window)
+    {
+        if (window is null) return false;
+        try
+        {
+            // نافذة مغلقة تفشل عند تعيينها Owner وتُطلق InvalidOperationException.
+            return window.IsLoaded
+                   && PresentationSource.FromVisual(window) is not null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static void TrySetOwner(Window dialog, Window? owner)
+    {
+        if (!CanSetAsOwner(owner))
+        {
+            dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            return;
         }
 
-        IsEnabled = true;
-        _isSessionLocked = false;
-        _idleTimer?.Start();
+        try
+        {
+            dialog.Owner = owner;
+            dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+        }
+        catch (InvalidOperationException)
+        {
+            dialog.Owner = null;
+            dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        }
     }
 
     private void OnPreviewKeyDown(object sender, KeyEventArgs e)

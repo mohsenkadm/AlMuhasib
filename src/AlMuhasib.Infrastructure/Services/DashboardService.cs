@@ -12,23 +12,17 @@ public class DashboardService : IDashboardService
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
     private readonly ICurrentUserService _currentUserService;
-    private readonly IInvoiceService _invoiceService;
-    private static int _returnCreditRepairOnce;
 
     public DashboardService(
         IDbContextFactory<AppDbContext> contextFactory,
-        ICurrentUserService currentUserService,
-        IInvoiceService invoiceService)
+        ICurrentUserService currentUserService)
     {
         _contextFactory = contextFactory;
         _currentUserService = currentUserService;
-        _invoiceService = invoiceService;
     }
 
     public async Task<DashboardData> GetDashboardDataAsync()
     {
-        var shouldRepairReturns = Interlocked.Exchange(ref _returnCreditRepairOnce, 1) == 0;
-
         await using var context = await _contextFactory.CreateDbContextAsync();
 
         var today = DateTime.Today;
@@ -93,6 +87,20 @@ public class DashboardService : IDashboardService
             data.NetProfitDistributions = distributedProfits;
             data.NetProfitOpening = profitOpening;
             data.NetProfit = totalSales - totalPurchases - openingStockValue - totalExpenses - distributedProfits + profitOpening;
+
+            // أرباح الدولار منفصلة — لا خلط مع الدينار (المخزون الافتتاحي والتوزيعات بالدينار فقط)
+            var totalSalesUsd = await InvoiceSignedSums.SumSignedNetAsync(
+                InvoiceFilters.ForProfitAndSalesTotals(
+                    context.Invoices, context.InstallmentPlans, AccountingCurrency.USD));
+            var totalPurchasesUsd = await InvoiceSignedSums.SumSignedNetAsync(
+                InvoiceFilters.ForPurchasesTotals(context.Invoices, AccountingCurrency.USD));
+            var totalExpensesUsd = await context.Expenses
+                .Where(e => e.Currency == AccountingCurrency.USD)
+                .SumAsync(e => (decimal?)e.Amount) ?? 0;
+            data.NetProfitSalesUsd = totalSalesUsd;
+            data.NetProfitPurchasesUsd = totalPurchasesUsd;
+            data.NetProfitExpensesUsd = totalExpensesUsd;
+            data.NetProfitUsd = totalSalesUsd - totalPurchasesUsd - totalExpensesUsd;
         }
         catch (Exception ex)
         {
@@ -105,6 +113,10 @@ public class DashboardService : IDashboardService
                 .CountAsync(i => i.Status != InstallmentStatus.Paid
                                  && i.DueDate < today
                                  && i.InstallmentPlan.Invoice.Currency == AccountingCurrency.IQD);
+            data.OverdueInstallmentsCountUsd = await context.Installments
+                .CountAsync(i => i.Status != InstallmentStatus.Paid
+                                 && i.DueDate < today
+                                 && i.InstallmentPlan.Invoice.Currency == AccountingCurrency.USD);
         }
         catch (Exception ex)
         {
@@ -136,6 +148,10 @@ public class DashboardService : IDashboardService
             data.UnpaidInstallmentsBalance = await context.Installments
                 .Where(i => i.Status != InstallmentStatus.Paid &&
                             i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.IQD)
+                .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+            data.UnpaidInstallmentsBalanceUsd = await context.Installments
+                .Where(i => i.Status != InstallmentStatus.Paid &&
+                            i.InstallmentPlan!.Invoice!.Currency == AccountingCurrency.USD)
                 .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
         }
         catch (Exception ex)
@@ -173,6 +189,35 @@ public class DashboardService : IDashboardService
             data.CustomerCreditUnappliedDebt = unappliedDebt;
             data.CustomerCreditUnappliedReceipts = unappliedReceipts + returnCreditNotes;
             data.CustomerCreditBalance = Math.Max(0, creditRemaining - unappliedDebt - unappliedReceipts - returnCreditNotes);
+
+            var creditRemainingUsd = await context.Invoices
+                .Where(i => (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
+                            i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid &&
+                            i.Currency == AccountingCurrency.USD)
+                .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+            var returnCreditNotesUsd = await context.Invoices
+                .Where(i => i.InvoiceType == InvoiceType.SaleReturn &&
+                            i.PaymentMethod == PaymentMethod.Credit &&
+                            i.Currency == AccountingCurrency.USD &&
+                            i.RemainingAmount > 0)
+                .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+            var unappliedDebtUsd = await context.Vouchers
+                .Where(v => v.VoucherType == VoucherType.DebtReceipt &&
+                            v.Currency == AccountingCurrency.USD &&
+                            (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+                .SumAsync(v => (decimal?)v.Amount) ?? 0;
+            var unappliedReceiptsUsd = await context.Vouchers
+                .Where(v => v.VoucherType == VoucherType.Receipt &&
+                            v.Currency == AccountingCurrency.USD &&
+                            !v.InvoiceId.HasValue &&
+                            !v.InstallmentId.HasValue &&
+                            (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+                .SumAsync(v => (decimal?)v.Amount) ?? 0;
+            data.CustomerCreditInvoiceRemainingUsd = creditRemainingUsd;
+            data.CustomerCreditUnappliedDebtUsd = unappliedDebtUsd;
+            data.CustomerCreditUnappliedReceiptsUsd = unappliedReceiptsUsd + returnCreditNotesUsd;
+            data.CustomerCreditBalanceUsd = Math.Max(0,
+                creditRemainingUsd - unappliedDebtUsd - unappliedReceiptsUsd - returnCreditNotesUsd);
         }
         catch (Exception ex)
         {
@@ -203,17 +248,42 @@ public class DashboardService : IDashboardService
             data.SupplierCreditInvoiceRemaining = supplierRemaining;
             data.SupplierCreditUnappliedPayments = unappliedPayments + returnCreditNotes;
             data.SupplierCreditBalance = Math.Max(0, supplierRemaining - unappliedPayments - returnCreditNotes);
+
+            var supplierRemainingUsd = await context.Invoices
+                .Where(i => i.InvoiceType == InvoiceType.Purchase &&
+                            i.PaymentMethod == PaymentMethod.Credit && !i.IsCreditPaid &&
+                            i.Currency == AccountingCurrency.USD)
+                .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+            var returnCreditNotesUsd = await context.Invoices
+                .Where(i => i.InvoiceType == InvoiceType.PurchaseReturn &&
+                            i.PaymentMethod == PaymentMethod.Credit &&
+                            i.Currency == AccountingCurrency.USD &&
+                            i.RemainingAmount > 0)
+                .SumAsync(i => (decimal?)i.RemainingAmount) ?? 0;
+            var unappliedPaymentsUsd = await context.Vouchers
+                .Where(v => v.VoucherType == VoucherType.Payment &&
+                            v.SupplierId != null &&
+                            v.Currency == AccountingCurrency.USD &&
+                            !v.InvoiceId.HasValue &&
+                            (v.Notes == null || !v.Notes.Contains(CustomerBalanceHelper.DebtReceiptAppliedMarker)))
+                .SumAsync(v => (decimal?)v.Amount) ?? 0;
+            data.SupplierCreditInvoiceRemainingUsd = supplierRemainingUsd;
+            data.SupplierCreditUnappliedPaymentsUsd = unappliedPaymentsUsd + returnCreditNotesUsd;
+            data.SupplierCreditBalanceUsd = Math.Max(0,
+                supplierRemainingUsd - unappliedPaymentsUsd - returnCreditNotesUsd);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Dashboard SupplierCreditBalance error: {ex.Message}");
         }
 
-        // ── Sales last 30 days ─────────────────────────────────
+        // ── Sales last 30 days (شاملة اليوم) ─────────────────
         try
         {
+            // 30 يوماً تنتهي اليوم: من today-29 حتى today (كان Range من today-30 يستبعد اليوم)
+            var salesFrom = today.AddDays(-29);
             var salesRaw = await InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans)
-                .Where(i => i.Date >= thirtyDaysAgo && i.Date < tomorrow)
+                .Where(i => i.Date >= salesFrom && i.Date < tomorrow)
                 .Select(i => new { i.Date, i.InvoiceType, i.NetAmount })
                 .ToListAsync();
 
@@ -229,7 +299,7 @@ public class DashboardService : IDashboardService
             data.SalesLast30Days = Enumerable.Range(0, 30)
                 .Select(offset =>
                 {
-                    var d = thirtyDaysAgo.AddDays(offset);
+                    var d = salesFrom.AddDays(offset);
                     var match = salesByDay.FirstOrDefault(s => s.Date == d);
                     return new DailySalesPoint { Date = d, Amount = match?.Amount ?? 0 };
                 })
@@ -422,15 +492,37 @@ public class DashboardService : IDashboardService
                     .Where(ws => productIds.Contains(ws.ProductId))
                     .ToListAsync();
                 var purchasesByProduct = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
+                var productNames = await context.Products.AsNoTracking()
+                    .Where(p => productIds.Contains(p.Id))
+                    .Select(p => new { p.Id, p.Name })
+                    .ToDictionaryAsync(p => p.Id, p => p.Name);
 
-                data.TotalInventoryValue = stockValues.Sum(s =>
+                var breakdown = new List<InventoryValueBreakdownItem>();
+                decimal total = 0;
+                foreach (var s in stockValues)
                 {
                     var avg = ProductCostHelper.ComputeAverageUnitCostForProduct(
                         purchasesByProduct.GetValueOrDefault(s.ProductId) ?? [],
                         allStocks,
                         s.ProductId);
-                    return s.TotalQty * avg;
-                });
+                    var value = Math.Round(s.TotalQty * avg, 0, MidpointRounding.AwayFromZero);
+                    total += value;
+                    productNames.TryGetValue(s.ProductId, out var name);
+                    breakdown.Add(new InventoryValueBreakdownItem
+                    {
+                        ProductName = string.IsNullOrWhiteSpace(name) ? $"منتج #{s.ProductId}" : name,
+                        Quantity = s.TotalQty,
+                        UnitCost = avg,
+                        Value = value
+                    });
+                }
+
+                data.TotalInventoryValue = total;
+                data.InventoryBreakdown = breakdown
+                    .Where(b => b.Value > 0 || b.Quantity > 0)
+                    .OrderByDescending(b => b.Value)
+                    .Take(15)
+                    .ToList();
             }
         }
         catch (Exception ex)
@@ -446,26 +538,6 @@ public class DashboardService : IDashboardService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"Dashboard KPI trends error: {ex.Message}");
-        }
-
-        // Repair return credits in the background after a short delay so menu/flyout
-        // clicks are not blocked by a long SQLite write lock right after login.
-        if (shouldRepairReturns)
-        {
-            var invoiceService = _invoiceService;
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(8));
-                    await invoiceService.RepairUnappliedReturnCreditsAsync();
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Dashboard return-credit repair error: {ex.Message}");
-                    Interlocked.Exchange(ref _returnCreditRepairOnce, 0);
-                }
-            });
         }
 
         return data;

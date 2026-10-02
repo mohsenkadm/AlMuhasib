@@ -77,11 +77,18 @@ public partial class SuppliersOverviewReportViewModel : ReportViewModelBase
         };
         if (dlg.ShowDialog() != true) return;
 
-        var cols = new[] { "المورد", "الهاتف", "فواتير", "المشتريات", "المدفوع", "المستحق د.ع", "المستحق $" };
-        var rows = _allRows.Select(r => new object[]
-        {
-            r.SupplierName, r.Phone, r.InvoiceCount, r.PurchaseAmount, r.PaidAmount, r.OutstandingBalance, r.OutstandingBalanceUsd
-        }).ToList();
+        var cols = ShowTotalOutstandingUsd
+            ? new[] { "المورد", "الهاتف", "فواتير", "المشتريات", "المدفوع", "المستحق د.ع", "المستحق $" }
+            : new[] { "المورد", "الهاتف", "فواتير", "المشتريات", "المدفوع", "المستحق د.ع" };
+        var rows = ShowTotalOutstandingUsd
+            ? _allRows.Select(r => new object[]
+            {
+                r.SupplierName, r.Phone, r.InvoiceCount, r.PurchaseAmount, r.PaidAmount, r.OutstandingBalance, r.OutstandingBalanceUsd
+            }).ToList()
+            : _allRows.Select(r => new object[]
+            {
+                r.SupplierName, r.Phone, r.InvoiceCount, r.PurchaseAmount, r.PaidAmount, r.OutstandingBalance
+            }).ToList();
         _exportService.ExportToExcel(dlg.FileName, "ملخص الموردين", cols, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
@@ -89,11 +96,18 @@ public partial class SuppliersOverviewReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "المورد", "الهاتف", "فواتير", "المشتريات", "المدفوع", "المستحق د.ع", "المستحق $" };
-        var rows = _allRows.Select(r => new object[]
-        {
-            r.SupplierName, r.Phone, r.InvoiceCount, r.PurchaseAmount, r.PaidAmount, r.OutstandingBalance, r.OutstandingBalanceUsd
-        }).ToList();
+        var cols = ShowTotalOutstandingUsd
+            ? new[] { "المورد", "الهاتف", "فواتير", "المشتريات", "المدفوع", "المستحق د.ع", "المستحق $" }
+            : new[] { "المورد", "الهاتف", "فواتير", "المشتريات", "المدفوع", "المستحق د.ع" };
+        var rows = ShowTotalOutstandingUsd
+            ? _allRows.Select(r => new object[]
+            {
+                r.SupplierName, r.Phone, r.InvoiceCount, r.PurchaseAmount, r.PaidAmount, r.OutstandingBalance, r.OutstandingBalanceUsd
+            }).ToList()
+            : _allRows.Select(r => new object[]
+            {
+                r.SupplierName, r.Phone, r.InvoiceCount, r.PurchaseAmount, r.PaidAmount, r.OutstandingBalance
+            }).ToList();
         _exportService.PrintTable("ملخص الموردين", cols, rows);
     }
 }

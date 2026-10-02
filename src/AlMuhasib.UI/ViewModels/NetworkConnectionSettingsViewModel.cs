@@ -17,6 +17,8 @@ public partial class NetworkConnectionSettingsViewModel : ViewModelBase
     private readonly ISystemProfileService _systemProfile;
     private readonly INetworkConnectionService _networkConnectionService;
     private readonly IMainServerHostingService _mainServerHostingService;
+    private readonly IAppSettingsConnectionStore _appSettingsConnectionStore;
+    private readonly ISqlServerInstanceDiscoveryService _sqlServerDiscovery;
     private readonly ICurrentUserService _currentUserService;
 
     [ObservableProperty] private string _deploymentModeText = string.Empty;
@@ -38,8 +40,10 @@ public partial class NetworkConnectionSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _isSearching;
     [ObservableProperty] private bool _isBranchClient;
     [ObservableProperty] private bool _isMainServer;
+    [ObservableProperty] private bool _isSharedServer;
     [ObservableProperty] private bool _showMainServerSettings;
     [ObservableProperty] private bool _isAdmin;
+    [ObservableProperty] private string _sharedConnectionString = string.Empty;
 
     public ObservableCollection<DiscoveredMainServer> DiscoveredServers { get; } = [];
 
@@ -49,11 +53,15 @@ public partial class NetworkConnectionSettingsViewModel : ViewModelBase
         ISystemProfileService systemProfile,
         INetworkConnectionService networkConnectionService,
         IMainServerHostingService mainServerHostingService,
+        IAppSettingsConnectionStore appSettingsConnectionStore,
+        ISqlServerInstanceDiscoveryService sqlServerDiscovery,
         ICurrentUserService currentUserService)
     {
         _systemProfile = systemProfile;
         _networkConnectionService = networkConnectionService;
         _mainServerHostingService = mainServerHostingService;
+        _appSettingsConnectionStore = appSettingsConnectionStore;
+        _sqlServerDiscovery = sqlServerDiscovery;
         _currentUserService = currentUserService;
         PageTitle = "ربط الحاسبات";
         IsAdmin = currentUserService.IsAdmin;
@@ -73,15 +81,20 @@ public partial class NetworkConnectionSettingsViewModel : ViewModelBase
     {
         IsBranchClient = _systemProfile.IsBranchClient;
         IsMainServer = _systemProfile.IsMainServer;
+        IsSharedServer = _systemProfile.IsSharedServer;
         ShowMainServerSettings = IsMainServer || _systemProfile.IsStandalone;
         DeploymentModeText = _systemProfile.DeploymentMode switch
         {
             DeploymentMode.MainServer => "حاسبة رئيسية",
             DeploymentMode.BranchClient => "حاسبة فرعية",
+            DeploymentMode.SharedServer => "سيرفر مشترك",
             _ => "حاسبة مستقلة"
         };
 
         BranchDisplayName = _systemProfile.Current.BranchDisplayName ?? string.Empty;
+
+        if (IsSharedServer)
+            SharedConnectionString = _appSettingsConnectionStore.ReadDefaultConnection();
 
         if (IsBranchClient && _networkConnectionService.Current is { } profile)
         {
@@ -148,6 +161,16 @@ public partial class NetworkConnectionSettingsViewModel : ViewModelBase
     [RelayCommand]
     private async Task TestConnectionAsync()
     {
+        if (IsSharedServer)
+        {
+            var sharedResult = await _sqlServerDiscovery.TestConnectionStringAsync(SharedConnectionString);
+            IsConnectionOk = sharedResult.Success;
+            ConnectionStatusText = sharedResult.Success ? "متصل" : "غير متصل";
+            LatencyMs = sharedResult.LatencyMs;
+            StatusMessage = sharedResult.Message;
+            return;
+        }
+
         if (!IsBranchClient)
             return;
 
@@ -158,6 +181,46 @@ public partial class NetworkConnectionSettingsViewModel : ViewModelBase
         ConnectionStatusText = result.Success ? "متصل" : "غير متصل";
         LatencyMs = result.LatencyMs;
         StatusMessage = result.Message;
+    }
+
+    [RelayCommand]
+    private async Task SaveSharedServerSettingsAsync()
+    {
+        if (!IsSharedServer || !IsAdmin)
+            return;
+
+        var test = await _sqlServerDiscovery.TestConnectionStringAsync(SharedConnectionString);
+        if (!test.Success)
+        {
+            StatusMessage = test.Message;
+            IsConnectionOk = false;
+            ConnectionStatusText = "غير متصل";
+            return;
+        }
+
+        try
+        {
+            var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(SharedConnectionString.Trim())
+            {
+                InitialCatalog = _systemProfile.ActiveDatabaseName,
+                TrustServerCertificate = true,
+                MultipleActiveResultSets = true
+            };
+
+            _appSettingsConnectionStore.SaveDefaultConnection(builder.ConnectionString);
+            SharedConnectionString = builder.ConnectionString;
+            _systemProfile.UpdateDeploymentMode(DeploymentMode.SharedServer);
+            IsConnectionOk = true;
+            ConnectionStatusText = "متصل";
+            LatencyMs = test.LatencyMs;
+            StatusMessage = "تم حفظ سلسلة الاتصال. أعد تشغيل التطبيق لتطبيق الاتصال.";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"تعذر الحفظ: {ex.Message}";
+            IsConnectionOk = false;
+            ConnectionStatusText = "غير متصل";
+        }
     }
 
     [RelayCommand]

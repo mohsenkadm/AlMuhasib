@@ -112,14 +112,28 @@
                                 </Border>
                                 <Border Style="{StaticResource StatPill}" Background="{DynamicResource PrimaryHueLightBrush}">
                                     <StackPanel>
-                                        <TextBlock Text="سعر البيع الحالي" FontSize="11" Foreground="#1565C0"/>
+                                        <TextBlock Text="سعر البيع د.ع" FontSize="11" Foreground="#1565C0"/>
                                         <TextBlock Text="{Binding CurrentSalePriceText}" FontSize="18" FontWeight="Bold" Foreground="#0D47A1"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource StatPill}" Background="#E3F2FD"
+                                        Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolVis}}">
+                                    <StackPanel>
+                                        <TextBlock Text="سعر البيع $" FontSize="11" Foreground="#0277BD"/>
+                                        <TextBlock Text="{Binding CurrentSalePriceUsdText}" FontSize="18" FontWeight="Bold" Foreground="#01579B"/>
                                     </StackPanel>
                                 </Border>
                                 <Border Style="{StaticResource StatPill}" Background="{DynamicResource PrimaryHueLightBrush}">
                                     <StackPanel>
-                                        <TextBlock Text="سعر الشراء الحالي" FontSize="11" Foreground="#6A1B9A"/>
+                                        <TextBlock Text="سعر الشراء د.ع" FontSize="11" Foreground="#6A1B9A"/>
                                         <TextBlock Text="{Binding CurrentPurchasePriceText}" FontSize="18" FontWeight="Bold" Foreground="#4A148C"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Style="{StaticResource StatPill}" Background="#F3E5F5"
+                                        Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolVis}}">
+                                    <StackPanel>
+                                        <TextBlock Text="سعر الشراء $" FontSize="11" Foreground="#7B1FA2"/>
+                                        <TextBlock Text="{Binding CurrentPurchasePriceUsdText}" FontSize="18" FontWeight="Bold" Foreground="#4A148C"/>
                                     </StackPanel>
                                 </Border>
                             </WrapPanel>
@@ -127,14 +141,30 @@
                             <UniformGrid Columns="2" Margin="0,0,0,14">
                                 <Border Background="{DynamicResource DashboardKpiOrangeLightBrush}" CornerRadius="12" Padding="14,12" Margin="0,0,8,0">
                                     <StackPanel>
-                                        <TextBlock Text="آخر سعر شراء" FontSize="11" Foreground="#EF6C00"/>
+                                        <TextBlock Text="آخر سعر شراء د.ع" FontSize="11" Foreground="#EF6C00"/>
                                         <TextBlock Text="{Binding LastPurchaseText}" FontWeight="SemiBold" Foreground="#E65100" TextWrapping="Wrap" Margin="0,4,0,0"/>
                                     </StackPanel>
                                 </Border>
                                 <Border Background="{DynamicResource DashboardIconBadgeCyanBrush}" CornerRadius="12" Padding="14,12" Margin="8,0,0,0">
                                     <StackPanel>
-                                        <TextBlock Text="آخر سعر بيع" FontSize="11" Foreground="#00838F"/>
+                                        <TextBlock Text="آخر سعر بيع د.ع" FontSize="11" Foreground="#00838F"/>
                                         <TextBlock Text="{Binding LastSaleText}" FontWeight="SemiBold" Foreground="#006064" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </UniformGrid>
+
+                            <UniformGrid Columns="2" Margin="0,0,0,14"
+                                         Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolVis}}">
+                                <Border Background="#FFF3E0" CornerRadius="12" Padding="14,12" Margin="0,0,8,0">
+                                    <StackPanel>
+                                        <TextBlock Text="آخر سعر شراء $" FontSize="11" Foreground="#EF6C00"/>
+                                        <TextBlock Text="{Binding LastPurchaseUsdText}" FontWeight="SemiBold" Foreground="#E65100" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="#E0F7FA" CornerRadius="12" Padding="14,12" Margin="8,0,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="آخر سعر بيع $" FontSize="11" Foreground="#00838F"/>
+                                        <TextBlock Text="{Binding LastSaleUsdText}" FontWeight="SemiBold" Foreground="#006064" TextWrapping="Wrap" Margin="0,4,0,0"/>
                                     </StackPanel>
                                 </Border>
                             </UniformGrid>

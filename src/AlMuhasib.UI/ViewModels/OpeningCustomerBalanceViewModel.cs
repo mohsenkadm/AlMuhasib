@@ -24,6 +24,7 @@ public partial class OpeningCustomerBalanceViewModel : ViewModelBase
     private readonly IOpeningCustomerBalanceExcelService _excelService;
     private readonly IExportService _exportService;
     private readonly IFeatureFlagService _featureFlags;
+    private readonly IExchangeRateService _exchangeRateService;
     private System.Timers.Timer? _debounceTimer;
     private int? _editingInvoiceId;
 
@@ -99,7 +100,8 @@ public partial class OpeningCustomerBalanceViewModel : ViewModelBase
         ICurrentUserService currentUserService,
         IOpeningCustomerBalanceExcelService excelService,
         IExportService exportService,
-        IFeatureFlagService featureFlags)
+        IFeatureFlagService featureFlags,
+        IExchangeRateService exchangeRateService)
     {
         _featureFlags = featureFlags;
         _balanceService = balanceService;
@@ -107,6 +109,7 @@ public partial class OpeningCustomerBalanceViewModel : ViewModelBase
         _currentUserService = currentUserService;
         _excelService = excelService;
         _exportService = exportService;
+        _exchangeRateService = exchangeRateService;
         PageTitle = "أرصدة العملاء الافتتاحية";
     }
 
@@ -423,6 +426,11 @@ public partial class OpeningCustomerBalanceViewModel : ViewModelBase
             var currency = ShowMultiCurrency
                 ? (SelectedCurrencyOption?.Currency ?? AccountingCurrency.IQD)
                 : AccountingCurrency.IQD;
+            if (currency == AccountingCurrency.USD && FxRate <= 0)
+            {
+                DialogError = "أدخل سعر الصرف (دولار→دينار) قبل حفظ رصيد بالدولار";
+                return;
+            }
             var request = new OpeningPartyBalanceRequest
             {
                 PartyId = SelectedCustomer?.Id,
@@ -472,6 +480,22 @@ public partial class OpeningCustomerBalanceViewModel : ViewModelBase
         ShowFxRateInput = ShowMultiCurrency && value?.Currency == AccountingCurrency.USD;
         if (value?.Currency == AccountingCurrency.IQD)
             FxRate = 1m;
+        else if (value?.Currency == AccountingCurrency.USD && FxRate <= 1m)
+            _ = LoadDefaultFxRateAsync();
+    }
+
+    private async Task LoadDefaultFxRateAsync()
+    {
+        try
+        {
+            var rate = await _exchangeRateService.GetUsdToIqdForDateOrLatestAsync(BalanceDate.Date);
+            if (rate > 0)
+                FxRate = rate;
+        }
+        catch
+        {
+            // best-effort
+        }
     }
 
     [RelayCommand]
@@ -723,19 +747,34 @@ public partial class OpeningCustomerBalanceViewModel : ViewModelBase
         {
             await Task.Yield();
 
-            var requests = validRows.Select(r => new OpeningPartyBalanceRequest
+            var requests = new List<OpeningPartyBalanceRequest>();
+            decimal fallbackFx = 0m;
+            if (ShowMultiCurrency && validRows.Any(r => r.AmountUsd > 0 || r.Currency == AccountingCurrency.USD))
             {
-                PartyName = r.PartyName,
-                Phone = r.Phone,
-                FileNumber = r.FileNumber,
-                Amount = r.Amount,
-                Date = r.Date,
-                Notes = r.Notes,
-                Currency = r.Currency,
-                FxRate = r.Currency == AccountingCurrency.IQD ? 1m : r.FxRate
-            }).ToList();
+                fallbackFx = await _exchangeRateService.GetUsdToIqdForDateOrLatestAsync(DateTime.Today);
+                if (fallbackFx <= 0)
+                {
+                    BeautifulMessageDialog.ShowWarning(
+                        "أدخل سعر صرف الدولار أولاً (من أسعار الصرف) قبل استيراد أرصدة بالدولار");
+                    return;
+                }
+            }
 
-            ImportStatusMessage = $"جاري استيراد {requests.Count} سطر إلى النظام...";
+            foreach (var r in validRows)
+            {
+                if (!r.HasAnyBalance)
+                    continue;
+                requests.AddRange(OpeningPartyBalanceImportExpander.Expand(r, fallbackFx));
+            }
+
+            if (requests.Count == 0)
+            {
+                ImportStatusMessage = "لا توجد أرصدة للاستيراد — أدخل رصيد دينار أو دولار";
+                BeautifulMessageDialog.ShowWarning(ImportStatusMessage);
+                return;
+            }
+
+            ImportStatusMessage = $"جاري استيراد {requests.Count} رصيد آجل إلى النظام...";
             var result = await Task.Run(async () =>
                 await _balanceService.CreateCustomerOpeningBalancesBatchAsync(requests).ConfigureAwait(false)).ConfigureAwait(true);
 

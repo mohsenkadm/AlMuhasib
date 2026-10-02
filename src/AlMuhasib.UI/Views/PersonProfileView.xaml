@@ -368,10 +368,10 @@
                         </Grid>
                     </Border>
 
-                    <!-- Stats -->
-                    <UniformGrid Columns="4" Margin="0,0,0,16">
+                    <!-- Stats IQD -->
+                    <UniformGrid Columns="4" Margin="0,0,0,12">
                         <controls:AnimatedStatCard
-                            Title="إجمالي المدين"
+                            Title="إجمالي المدين د.ع"
                             TextValue="{Binding TotalDebit}"
                             Icon="CashPlus"
                             IconBackground="{DynamicResource DashboardKpiRedLightBrush}"
@@ -379,7 +379,7 @@
                             ValueForeground="#C62828"
                             Margin="0,0,10,0"/>
                         <controls:AnimatedStatCard
-                            Title="إجمالي الدائن"
+                            Title="إجمالي الدائن د.ع"
                             TextValue="{Binding TotalCredit}"
                             Icon="CashMinus"
                             IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
@@ -387,7 +387,7 @@
                             ValueForeground="#2E7D32"
                             Margin="0,0,10,0"/>
                         <controls:AnimatedStatCard
-                            Title="الرصيد"
+                            Title="الرصيد د.ع"
                             TextValue="{Binding Balance}"
                             Icon="ScaleBalance"
                             IconBackground="{DynamicResource AccentLightBrush}"
@@ -401,6 +401,34 @@
                             IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
                             IconForeground="{DynamicResource DashboardKpiBlueBrush}"
                             ValueForeground="{DynamicResource DashboardKpiBlueBrush}"/>
+                    </UniformGrid>
+
+                    <!-- Stats USD -->
+                    <UniformGrid Columns="3" Margin="0,0,0,16"
+                                 Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolToVis}}">
+                        <controls:AnimatedStatCard
+                            Title="إجمالي المدين $"
+                            TextValue="{Binding TotalDebitUsd}"
+                            Icon="CurrencyUsd"
+                            IconBackground="{DynamicResource DashboardKpiRedLightBrush}"
+                            IconForeground="#C62828"
+                            ValueForeground="#C62828"
+                            Margin="0,0,10,0"/>
+                        <controls:AnimatedStatCard
+                            Title="إجمالي الدائن $"
+                            TextValue="{Binding TotalCreditUsd}"
+                            Icon="CurrencyUsd"
+                            IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
+                            IconForeground="#2E7D32"
+                            ValueForeground="#2E7D32"
+                            Margin="0,0,10,0"/>
+                        <controls:AnimatedStatCard
+                            Title="الرصيد $"
+                            TextValue="{Binding BalanceUsd}"
+                            Icon="CurrencyUsd"
+                            IconBackground="{DynamicResource AccentLightBrush}"
+                            IconForeground="{DynamicResource AccentBrush}"
+                            ValueForeground="{DynamicResource AccentBrush}"/>
                     </UniformGrid>
 
                     <!-- Customer extras -->
@@ -500,15 +528,30 @@
                                 <TabItem Header="الأرباح">
                                     <StackPanel Margin="0,12,0,0">
                                         <UniformGrid Columns="4" Margin="0,0,0,12">
-                                            <controls:AnimatedStatCard Title="المبيعات" TextValue="{Binding ProfitSales}" Icon="CashRegister"
+                                            <controls:AnimatedStatCard Title="المبيعات د.ع" TextValue="{Binding ProfitSales}" Icon="CashRegister"
                                                                        IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0" Margin="0,0,8,0"/>
-                                            <controls:AnimatedStatCard Title="التكلفة" TextValue="{Binding ProfitCost}" Icon="PackageVariant"
+                                            <controls:AnimatedStatCard Title="التكلفة د.ع" TextValue="{Binding ProfitCost}" Icon="PackageVariant"
                                                                        IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00" Margin="0,0,8,0"/>
-                                            <controls:AnimatedStatCard Title="صافي الربح" TextValue="{Binding ProfitNet}" Icon="ChartLine"
+                                            <controls:AnimatedStatCard Title="صافي الربح د.ع" TextValue="{Binding ProfitNet}" Icon="ChartLine"
                                                                        IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32" Margin="0,0,8,0"/>
                                             <controls:AnimatedStatCard Title="هامش الربح" TextValue="{Binding ProfitMargin}" Icon="Percent"
                                                                        IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
                                         </UniformGrid>
+                                        <UniformGrid Columns="4" Margin="0,0,0,12"
+                                                     Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolToVis}}">
+                                            <controls:AnimatedStatCard Title="المبيعات $" TextValue="{Binding ProfitSalesUsd}" Icon="CurrencyUsd"
+                                                                       IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0" Margin="0,0,8,0"/>
+                                            <controls:AnimatedStatCard Title="التكلفة $" TextValue="{Binding ProfitCostUsd}" Icon="CurrencyUsd"
+                                                                       IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00" Margin="0,0,8,0"/>
+                                            <controls:AnimatedStatCard Title="صافي الربح $" TextValue="{Binding ProfitNetUsd}" Icon="CurrencyUsd"
+                                                                       IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32" Margin="0,0,8,0"/>
+                                            <controls:AnimatedStatCard Title="هامش $" TextValue="{Binding ProfitMarginUsd}" Icon="Percent"
+                                                                       IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#7B1FA2" ValueForeground="#7B1FA2"/>
+                                        </UniformGrid>
+                                        <TextBlock Text="{Binding OutstandingBalanceUsd, StringFormat=المستحق بالدولار: {0}}"
+                                                   FontSize="13" FontWeight="SemiBold" Margin="0,0,0,12"
+                                                   Foreground="{DynamicResource AccentBrush}"
+                                                   Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolToVis}}"/>
                                         <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="8" MinHeight="220">
                                             <lvc:CartesianChart Series="{Binding ProfitChartSeries}"
                                                                 XAxes="{Binding ProfitChartXAxes}"

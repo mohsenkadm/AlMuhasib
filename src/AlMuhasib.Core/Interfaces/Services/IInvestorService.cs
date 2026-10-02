@@ -27,7 +27,10 @@ public interface IInvestorService
     Task<IEnumerable<InvestorTransaction>> GetRecentWithdrawalsAsync(int count = 20);
 
     // ── Profit Distribution ──
-    Task<decimal> GetDistributableProfitsAsync();
+    /// <summary>
+    /// الربح الحقيقي للشهر: مبيعات − تكلفة البضاعة المباعة − المصاريف (− توزيعات نفس الشهر).
+    /// </summary>
+    Task<DistributableProfitBreakdown> GetDistributableProfitsAsync(DateTime periodDate);
     Task<decimal> GetEligibleDepositAsync(int investorId, DateTime distributionDate, int eligibilityDays = 15);
     Task<IEnumerable<ProfitPreviewItem>> PreviewProfitDistributionAsync(DateTime distributionDate, decimal totalDistributableProfits, int eligibilityDays = 15);
     Task DistributeProfitsAsync(DateTime distributionDate, int cashBoxId,
@@ -38,7 +41,7 @@ public interface IInvestorService
     Task<decimal> GetTotalProfitsEarnedAsync(int investorId);
 }
 
-/// <summary>Preview row for profit distribution</summary>
+/// <summary>معاينة صف توزيع الأرباح</summary>
 public class ProfitPreviewItem
 {
     public int InvestorId { get; set; }
@@ -49,6 +52,26 @@ public class ProfitPreviewItem
     public decimal ProfitPercentage { get; set; }
     public decimal ProfitAmount { get; set; }
     public bool IsIncluded { get; set; } = true;
+}
+
+/// <summary>تفصيل الربح الحقيقي لشهر التوزيع.</summary>
+public class DistributableProfitBreakdown
+{
+    public DateTime PeriodFrom { get; set; }
+    public DateTime PeriodToExclusive { get; set; }
+    public decimal Sales { get; set; }
+    public decimal CostOfGoodsSold { get; set; }
+    public decimal Expenses { get; set; }
+    public decimal AlreadyDistributedInPeriod { get; set; }
+
+    /// <summary>مبيعات − تكلفة البضاعة = إجمالي الربح</summary>
+    public decimal GrossProfit => Sales - CostOfGoodsSold;
+
+    /// <summary>إجمالي الربح − المصاريف = الربح الحقيقي</summary>
+    public decimal NetProfit => GrossProfit - Expenses;
+
+    /// <summary>الربح المتاح للتوزيع بعد خصم ما وُزّع في نفس الشهر</summary>
+    public decimal DistributableAmount => Math.Max(0, NetProfit - AlreadyDistributedInPeriod);
 }
 
 public class InvestorOpeningBalanceItem

@@ -253,4 +253,43 @@ public class CustomerBalanceHelperTests
         Assert.False(CustomerBalanceHelper.IsDebtReceiptApplied(unmarked));
         Assert.Equal("سند", unmarked);
     }
+
+    [Fact]
+    public void FxSettlementMarker_RoundTripsCurrency()
+    {
+        var notes = CustomerBalanceHelper.MarkFxSettlement("دفعة", AccountingCurrency.IQD);
+        Assert.Equal(AccountingCurrency.IQD, CustomerBalanceHelper.GetFxSettlementCurrency(notes));
+
+        notes = CustomerBalanceHelper.MarkFxSettlement(notes, AccountingCurrency.USD);
+        Assert.Equal(AccountingCurrency.USD, CustomerBalanceHelper.GetFxSettlementCurrency(notes));
+        Assert.DoesNotContain("[FX-SETTLE:IQD]", notes);
+
+        notes = CustomerBalanceHelper.UnmarkFxSettlement(notes);
+        Assert.Null(CustomerBalanceHelper.GetFxSettlementCurrency(notes));
+        Assert.Equal("دفعة", notes);
+    }
+
+    [Fact]
+    public void ResolveSettlementAmount_ConvertsUsdPaymentToIqdDebt()
+    {
+        var applied = CustomerBalanceHelper.ResolveSettlementAmount(
+            voucherAmount: 100,
+            voucherCurrency: AccountingCurrency.USD,
+            settlementCurrency: AccountingCurrency.IQD,
+            fxRate: 1500);
+
+        Assert.Equal(150000, applied);
+    }
+
+    [Fact]
+    public void ResolveSettlementAmount_ConvertsIqdPaymentToUsdDebt()
+    {
+        var applied = CustomerBalanceHelper.ResolveSettlementAmount(
+            voucherAmount: 150000,
+            voucherCurrency: AccountingCurrency.IQD,
+            settlementCurrency: AccountingCurrency.USD,
+            fxRate: 1500);
+
+        Assert.Equal(100m, applied);
+    }
 }

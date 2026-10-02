@@ -1,3 +1,5 @@
+using AlMuhasib.Core.Enums;
+
 namespace AlMuhasib.Core.Interfaces.Services;
 
 public interface IPartyQuickDetailService
@@ -30,6 +32,7 @@ public class PartyQuickDetailResult
     public DateTime? LastDealDate { get; set; }
     public string? LastDealDescription { get; set; }
     public decimal? LastDealAmount { get; set; }
+    public AccountingCurrency LastDealCurrency { get; set; } = AccountingCurrency.IQD;
 
     public List<PartyQuickProductRow> Products { get; set; } = [];
     public List<PartyQuickTimelineRow> RecentTimeline { get; set; } = [];

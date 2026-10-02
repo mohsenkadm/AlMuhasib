@@ -1,3 +1,5 @@
+using AlMuhasib.Core.Enums;
+
 namespace AlMuhasib.Core.Interfaces.Services;
 
 public enum PersonPartyType
@@ -62,6 +64,9 @@ public class PersonProfileResult
     public decimal TotalDebit { get; set; }
     public decimal TotalCredit { get; set; }
     public decimal Balance { get; set; }
+    public decimal TotalDebitUsd { get; set; }
+    public decimal TotalCreditUsd { get; set; }
+    public decimal BalanceUsd { get; set; }
     public int TransactionCount { get; set; }
 
     public List<PersonTimelineItem> Timeline { get; set; } = [];
@@ -77,6 +82,10 @@ public class CustomerProfileInsights
     public decimal CostAmount { get; set; }
     public decimal NetProfit { get; set; }
     public decimal MarginPercent { get; set; }
+    public decimal SalesAmountUsd { get; set; }
+    public decimal CostAmountUsd { get; set; }
+    public decimal NetProfitUsd { get; set; }
+    public decimal MarginPercentUsd { get; set; }
     public int InvoiceCount { get; set; }
     public decimal OutstandingBalance { get; set; }
     public decimal OutstandingBalanceUsd { get; set; }
@@ -156,6 +165,7 @@ public class PersonTimelineItem
     public decimal Debit { get; set; }
     public decimal Credit { get; set; }
     public decimal RunningBalance { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
 }
 
 public class PersonProfileSection

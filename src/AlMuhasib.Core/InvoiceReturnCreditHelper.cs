@@ -133,4 +133,51 @@ public static class InvoiceReturnCreditHelper
         InvoiceType.PurchaseReturn => InvoiceType.Purchase,
         _ => null
     };
+
+    /// <summary>
+    /// بعد توزيع المرتجع على فواتير الآجل المفتوحة:
+    /// نقدي → حركة الصندوق = المتبقي غير المطبّق فقط (يمنع ازدواج تخفيض الذمم + كامل المبلغ نقداً).
+    /// آجل → حركة الصندوق = أقل من (دفعة نقدية مطلوبة، المتبقي)؛ وما تبقّى رصيد دائن على وثيقة المرتجع.
+    /// </summary>
+    /// <remarks>
+    /// محاسبياً عند وجود ذمة آجلة مفتوحة لنفس المورد/العميل:
+    /// المرتجع (نقدي أو آجل) يخفض الذمة أولاً. النقد يتحرك فقط للمتبقي بعد التطبيق.
+    /// مثال: شراء آجل 390 ثم مرتجع 13 → المتبقي 377 (وليس 390 أو 403).
+    /// </remarks>
+    public static (decimal CashMovement, decimal PaidAmount, decimal RemainingAmount, bool IsCreditPaid)
+        ResolveReturnSettlement(
+            PaymentMethod paymentMethod,
+            decimal netAmount,
+            decimal appliedToOpenCredit,
+            decimal requestedCashPortion)
+    {
+        var net = Math.Abs(netAmount);
+        var leftover = Math.Max(0, net - Math.Max(0, appliedToOpenCredit));
+
+        if (paymentMethod == PaymentMethod.Cash)
+            return (leftover, net, 0m, true);
+
+        var cash = Math.Min(Math.Clamp(requestedCashPortion, 0m, net), leftover);
+        var remaining = leftover - cash;
+        return (cash, cash, remaining, remaining <= 0);
+    }
+
+    /// <summary>
+    /// يستنتج مبلغ حركة الصندوق المحفوظة لمرتجع عند الحذف/الاسترجاع.
+    /// النقدي: المتبقي بعد مبالغ [RET-APPLIED]. الآجل: PaidAmount (الدفعة النقدية الفعلية).
+    /// </summary>
+    public static decimal ResolveStoredReturnCashMovement(
+        PaymentMethod paymentMethod,
+        decimal netAmount,
+        decimal paidAmount,
+        string? notes)
+    {
+        if (paymentMethod == PaymentMethod.Cash)
+        {
+            var applied = ParseAllocations(notes).Sum(a => a.Amount);
+            return Math.Max(0, Math.Abs(netAmount) - applied);
+        }
+
+        return Math.Max(0, paidAmount);
+    }
 }

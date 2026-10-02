@@ -1,3 +1,4 @@
+using AlMuhasib.Core.Entities;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using AlMuhasib.UI.ViewModels;
@@ -131,6 +132,7 @@ public static class AccountingMenuBuilder
                     ("السندات", PackIconKind.FileDocumentOutline, typeof(VouchersViewModel), "Vouchers"),
                     ("المصاريف", PackIconKind.CashMinus, typeof(ExpenseViewModel), "Expenses"),
                     ("القاصات والمصرف", PackIconKind.Bank, typeof(CashBankViewModel), "CashAndBank"),
+                    ("صيرفة", PackIconKind.CurrencyUsd, typeof(CurrencyExchangeViewModel), "CurrencyExchange"),
                     ("رأس المال", PackIconKind.Cash, typeof(CapitalAdjustmentViewModel), "Capital"),
                 ]),
             FlyoutGroup(
@@ -163,6 +165,7 @@ public static class AccountingMenuBuilder
             [
                 ("سجل العمليات", PackIconKind.History, typeof(AuditLogViewModel), "AuditLog"),
                 ("المستخدمون", PackIconKind.AccountMultiple, typeof(UsersViewModel), "Users"),
+                ("الفروع", PackIconKind.SourceBranch, typeof(BranchesViewModel), BranchPermissionScreens.Branches),
                 ("الصلاحيات", PackIconKind.ShieldKey, typeof(PermissionsViewModel), "Permissions"),
                 ("معالج النقل", PackIconKind.DatabaseImport, typeof(MigrationWizardViewModel), "DataImport"),
                 ("إعدادات الميزات", PackIconKind.TuneVariant, typeof(BusinessFeaturesSettingsViewModel), "BusinessFeatures"),

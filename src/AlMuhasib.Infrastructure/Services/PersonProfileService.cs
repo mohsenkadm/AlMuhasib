@@ -1,3 +1,4 @@
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Helpers;
@@ -142,8 +143,11 @@ public class PersonProfileService : IPersonProfileService
             TotalDebit = statement.TotalDebit,
             TotalCredit = statement.TotalCredit,
             Balance = statement.Balance,
+            TotalDebitUsd = statement.TotalDebitUsd,
+            TotalCreditUsd = statement.TotalCreditUsd,
+            BalanceUsd = statement.BalanceUsd,
             TransactionCount = statement.TransactionCount,
-            Timeline = statement.Rows.Select(r => MapTimeline(r.Date, r.Description, r.Debit, r.Credit, r.RunningBalance)).ToList()
+            Timeline = statement.Rows.Select(r => MapTimeline(r.Date, r.Description, r.Debit, r.Credit, r.RunningBalance, r.Currency)).ToList()
         };
 
         var invoices = await context.Invoices.AsNoTracking()
@@ -248,15 +252,51 @@ public class PersonProfileService : IPersonProfileService
         List<Voucher> vouchers,
         InstallmentDetailResult installmentDetail)
     {
+        // أقساط كشف التفاصيل لا تحمل عملة منفصلة هنا — تُحسب ضمن الدينار (مصدر الرصيد المعتمد هو كشف الحساب).
+        var unpaidInstallmentIqd = installmentDetail.Rows
+            .Where(r => r.RemainingAmount > 0)
+            .Sum(r => r.RemainingAmount);
+
         var insights = new CustomerProfileInsights
         {
-            InvoiceCount = invoices.Count,
-            OutstandingBalance = invoices
-                .Where(i => i.Currency == AccountingCurrency.IQD)
-                .Sum(i => i.RemainingAmount),
-            OutstandingBalanceUsd = invoices
-                .Where(i => i.Currency == AccountingCurrency.USD)
-                .Sum(i => i.RemainingAmount),
+            InvoiceCount = invoices.Count(i =>
+                i.InvoiceType is InvoiceType.Sale or InvoiceType.Installment),
+            OutstandingBalance = CustomerBalanceHelper.ComputeOutstandingBalance(
+                invoices.Where(i => i.Currency == AccountingCurrency.IQD &&
+                                    (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
+                                    i.PaymentMethod == PaymentMethod.Credit)
+                    .Sum(i => Math.Max(0, i.RemainingAmount)),
+                unpaidInstallmentIqd,
+                vouchers.Where(v => v.Currency == AccountingCurrency.IQD &&
+                                    v.VoucherType == VoucherType.DebtReceipt &&
+                                    !CustomerBalanceHelper.IsDebtReceiptApplied(v.Notes))
+                    .Sum(v => v.Amount),
+                vouchers.Where(v => v.Currency == AccountingCurrency.IQD &&
+                                    v.VoucherType == VoucherType.Receipt &&
+                                    !CustomerBalanceHelper.IsDebtReceiptApplied(v.Notes))
+                    .Sum(v => v.Amount)
+                + invoices.Where(i => i.Currency == AccountingCurrency.IQD &&
+                                      i.InvoiceType == InvoiceType.SaleReturn &&
+                                      i.PaymentMethod == PaymentMethod.Credit)
+                    .Sum(i => Math.Max(0, i.RemainingAmount))),
+            OutstandingBalanceUsd = CustomerBalanceHelper.ComputeOutstandingBalance(
+                invoices.Where(i => i.Currency == AccountingCurrency.USD &&
+                                    (i.InvoiceType == InvoiceType.Sale || i.InvoiceType == InvoiceType.Installment) &&
+                                    i.PaymentMethod == PaymentMethod.Credit)
+                    .Sum(i => Math.Max(0, i.RemainingAmount)),
+                unpaidInstallmentRemaining: 0,
+                vouchers.Where(v => v.Currency == AccountingCurrency.USD &&
+                                    v.VoucherType == VoucherType.DebtReceipt &&
+                                    !CustomerBalanceHelper.IsDebtReceiptApplied(v.Notes))
+                    .Sum(v => v.Amount),
+                vouchers.Where(v => v.Currency == AccountingCurrency.USD &&
+                                    v.VoucherType == VoucherType.Receipt &&
+                                    !CustomerBalanceHelper.IsDebtReceiptApplied(v.Notes))
+                    .Sum(v => v.Amount)
+                + invoices.Where(i => i.Currency == AccountingCurrency.USD &&
+                                      i.InvoiceType == InvoiceType.SaleReturn &&
+                                      i.PaymentMethod == PaymentMethod.Credit)
+                    .Sum(i => Math.Max(0, i.RemainingAmount))),
             FinancialTransactions = vouchers.Select(v => new CustomerFinancialTxnRow
             {
                 Date = v.Date,
@@ -267,18 +307,27 @@ public class PersonProfileService : IPersonProfileService
             }).ToList()
         };
 
-        var invoiceIds = invoices
+        var invoiceIdsIqd = invoices
             .Where(i => i.Currency == AccountingCurrency.IQD)
             .Select(i => i.Id)
             .ToList();
+        var invoiceIdsUsd = invoices
+            .Where(i => i.Currency == AccountingCurrency.USD)
+            .Select(i => i.Id)
+            .ToList();
+        var allInvoiceIds = invoiceIdsIqd.Concat(invoiceIdsUsd).Distinct().ToList();
+
         List<InvoiceItem> items;
-        if (invoiceIds.Count == 0)
+        if (allInvoiceIds.Count == 0)
             items = [];
         else
             items = await context.InvoiceItems.AsNoTracking()
                 .Include(ii => ii.Invoice)
-                .Where(ii => invoiceIds.Contains(ii.InvoiceId))
+                .Where(ii => allInvoiceIds.Contains(ii.InvoiceId))
                 .ToListAsync();
+
+        var itemsIqd = items.Where(i => i.Invoice?.Currency != AccountingCurrency.USD).ToList();
+        var itemsUsd = items.Where(i => i.Invoice?.Currency == AccountingCurrency.USD).ToList();
 
         var productIds = items.Where(i => i.ProductId != null).Select(i => i.ProductId!.Value).Distinct().ToList();
         var stocks = productIds.Count > 0
@@ -292,26 +341,43 @@ public class PersonProfileService : IPersonProfileService
             pid => ProductCostHelper.ComputeAverageUnitCostForProduct(
                 purchasesByProduct.GetValueOrDefault(pid) ?? [], stocks, pid));
 
-        decimal sales = 0, cost = 0;
-        var monthly = new Dictionary<(int Y, int M), (decimal Sales, decimal Cost)>();
-        foreach (var item in items)
+        static (decimal Sales, decimal Cost, Dictionary<(int Y, int M), (decimal Sales, decimal Cost)> Monthly)
+            AggregateProfit(IEnumerable<InvoiceItem> lineItems, Dictionary<int, decimal> avgCost)
         {
-            var lineSales = item.TotalPrice;
-            var unitCost = item.ProductId is int pid && avgCostByProduct.TryGetValue(pid, out var c) ? c : 0m;
-            var lineCost = unitCost * item.Quantity;
-            sales += lineSales;
-            cost += lineCost;
-            var d = item.Invoice?.Date ?? DateTime.Today;
-            var key = (d.Year, d.Month);
-            if (!monthly.TryGetValue(key, out var cur)) cur = (0, 0);
-            monthly[key] = (cur.Sales + lineSales, cur.Cost + lineCost);
+            decimal sales = 0, cost = 0;
+            var monthly = new Dictionary<(int Y, int M), (decimal Sales, decimal Cost)>();
+            foreach (var item in lineItems)
+            {
+                var lineSales = item.TotalPrice;
+                var unitCost = item.ProductId is int pid && avgCost.TryGetValue(pid, out var c) ? c : 0m;
+                var lineCost = unitCost * item.Quantity;
+                sales += lineSales;
+                cost += lineCost;
+                var d = item.Invoice?.Date ?? DateTime.Today;
+                var key = (d.Year, d.Month);
+                if (!monthly.TryGetValue(key, out var cur)) cur = (0, 0);
+                monthly[key] = (cur.Sales + lineSales, cur.Cost + lineCost);
+            }
+
+            return (sales, cost, monthly);
         }
 
-        insights.SalesAmount = sales;
-        insights.CostAmount = cost;
-        insights.NetProfit = sales - cost;
-        insights.MarginPercent = sales > 0 ? Math.Round((sales - cost) / sales * 100m, 2) : 0;
-        insights.ProfitByMonth = monthly
+        var iqdAgg = AggregateProfit(itemsIqd, avgCostByProduct);
+        var usdAgg = AggregateProfit(itemsUsd, avgCostByProduct);
+
+        insights.SalesAmount = iqdAgg.Sales;
+        insights.CostAmount = iqdAgg.Cost;
+        insights.NetProfit = iqdAgg.Sales - iqdAgg.Cost;
+        insights.MarginPercent = iqdAgg.Sales > 0
+            ? Math.Round((iqdAgg.Sales - iqdAgg.Cost) / iqdAgg.Sales * 100m, 2)
+            : 0;
+        insights.SalesAmountUsd = usdAgg.Sales;
+        insights.CostAmountUsd = usdAgg.Cost;
+        insights.NetProfitUsd = usdAgg.Sales - usdAgg.Cost;
+        insights.MarginPercentUsd = usdAgg.Sales > 0
+            ? Math.Round((usdAgg.Sales - usdAgg.Cost) / usdAgg.Sales * 100m, 2)
+            : 0;
+        insights.ProfitByMonth = iqdAgg.Monthly
             .OrderBy(kv => kv.Key.Y).ThenBy(kv => kv.Key.M)
             .Select(kv => new CustomerProfitMonthPoint
             {
@@ -417,8 +483,11 @@ public class PersonProfileService : IPersonProfileService
             TotalDebit = statement.TotalDebit,
             TotalCredit = statement.TotalCredit,
             Balance = statement.Balance,
+            TotalDebitUsd = statement.Rows.Where(r => r.Currency == AccountingCurrency.USD).Sum(r => r.Debit),
+            TotalCreditUsd = statement.Rows.Where(r => r.Currency == AccountingCurrency.USD).Sum(r => r.Credit),
+            BalanceUsd = statement.BalanceUsd,
             TransactionCount = statement.Rows.Count,
-            Timeline = statement.Rows.Select(r => MapTimeline(r.Date, r.Description, r.Debit, r.Credit, r.RunningBalance)).ToList()
+            Timeline = statement.Rows.Select(r => MapTimeline(r.Date, r.Description, r.Debit, r.Credit, r.RunningBalance, r.Currency)).ToList()
         };
 
         var invoices = await context.Invoices.AsNoTracking()
@@ -566,7 +635,13 @@ public class PersonProfileService : IPersonProfileService
         return result;
     }
 
-    private static PersonTimelineItem MapTimeline(DateTime date, string description, decimal debit, decimal credit, decimal runningBalance)
+    private static PersonTimelineItem MapTimeline(
+        DateTime date,
+        string description,
+        decimal debit,
+        decimal credit,
+        decimal runningBalance,
+        AccountingCurrency currency = AccountingCurrency.IQD)
     {
         var (category, label) = ClassifyTimeline(description);
         return new PersonTimelineItem
@@ -577,7 +652,8 @@ public class PersonProfileService : IPersonProfileService
             Description = description,
             Debit = debit,
             Credit = credit,
-            RunningBalance = runningBalance
+            RunningBalance = runningBalance,
+            Currency = currency
         };
     }
 

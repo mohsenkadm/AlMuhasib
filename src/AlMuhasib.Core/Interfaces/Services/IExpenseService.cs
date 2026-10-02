@@ -7,6 +7,7 @@ public interface IExpenseService
 {
     // ── ExpenseType CRUD ──
     Task<IEnumerable<ExpenseType>> GetAllExpenseTypesAsync();
+    Task EnsureDefaultExpenseTypesAsync();
     Task<ExpenseType> AddExpenseTypeAsync(string name);
     Task UpdateExpenseTypeAsync(int id, string name);
     Task DeleteExpenseTypeAsync(int id);

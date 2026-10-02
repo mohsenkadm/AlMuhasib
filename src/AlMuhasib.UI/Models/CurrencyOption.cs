@@ -14,13 +14,13 @@ public sealed class CurrencyOption
         new()
         {
             Currency = AccountingCurrency.IQD,
-            DisplayName = AccountingCurrencyHelper.GetDisplayName(AccountingCurrency.IQD),
+            DisplayName = "دينار (د.ع)",
             Label = AccountingCurrencyHelper.IqdLabel
         },
         new()
         {
             Currency = AccountingCurrency.USD,
-            DisplayName = AccountingCurrencyHelper.GetDisplayName(AccountingCurrency.USD),
+            DisplayName = "دولار ($)",
             Label = AccountingCurrencyHelper.UsdLabel
         }
     ];

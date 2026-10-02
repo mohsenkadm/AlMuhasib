@@ -103,7 +103,8 @@ public partial class InstallmentInvoiceViewModel
                         ? "—"
                         : CustomerDisplayHelper.FormatDisplayName(invoice.Customer.Name, invoice.Customer.FileNumber),
                     Date = invoice.Date,
-                    NetAmount = invoice.NetAmount
+                    NetAmount = invoice.NetAmount,
+                    Currency = invoice.Currency
                 });
             }
         }
@@ -206,7 +207,8 @@ public partial class InstallmentInvoiceViewModel
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
                 DiscountAmount = item.DiscountAmount,
-                DiscountPercent = item.DiscountPercent
+                DiscountPercent = item.DiscountPercent,
+                PricingTypeId = item.PricingTypeId
             };
             InvoiceLineWarehouseHelper.BindRowWarehouse(row, SelectedWarehouse, Warehouses.ToList(), item.WarehouseId);
             InvoiceCustomFieldsHelper.ApplyFromJson(row, item.CustomFieldsJson);

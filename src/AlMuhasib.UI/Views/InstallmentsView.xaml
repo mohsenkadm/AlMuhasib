@@ -10,11 +10,14 @@
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:enums="clr-namespace:AlMuhasib.Core.Enums;assembly=AlMuhasib.Core"
              mc:Ignorable="d"
+             x:Name="Root"
              d:DataContext="{d:DesignInstance Type=vm:InstallmentsViewModel}"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft">
 
     <UserControl.Resources>
+        <converters:AmountWithCurrencyMultiConverter x:Key="AmtCur"/>
+        <converters:CurrencyLabelMultiConverter x:Key="CurLabel"/>
         
         <ContextMenu x:Key="PageActionsMenu">
             <MenuItem Header="بحث الخطط" Command="{Binding PlansSearchCommand}">
@@ -129,7 +132,7 @@
                             </Border>
                             <TextBlock Text="المبلغ الكلي" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <TextBlock Text="{Binding SummaryTotalAmount, StringFormat='{}{0:N0}'}" FontSize="18" FontWeight="Bold" Foreground="#1A237E"/>
+                        <TextBlock Text="{Binding SummaryTotalAmountText}" FontSize="16" FontWeight="Bold" Foreground="#1A237E" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
 
@@ -143,7 +146,7 @@
                             </Border>
                             <TextBlock Text="المبلغ المسدد" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <TextBlock Text="{Binding SummaryPaidAmount, StringFormat='{}{0:N0}'}" FontSize="18" FontWeight="Bold" Foreground="#2E7D32"/>
+                        <TextBlock Text="{Binding SummaryPaidAmountText}" FontSize="16" FontWeight="Bold" Foreground="#2E7D32" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
 
@@ -157,7 +160,7 @@
                             </Border>
                             <TextBlock Text="المبلغ المتبقي" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <TextBlock Text="{Binding SummaryRemainingAmount, StringFormat='{}{0:N0}'}" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource HighlightBrush}"/>
+                        <TextBlock Text="{Binding SummaryRemainingAmountText}" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource HighlightBrush}" TextWrapping="Wrap"/>
                     </StackPanel>
                 </Border>
 
@@ -212,8 +215,7 @@
                         <Run Text="تسديد جماعي — محدد: " />
                         <Run Text="{Binding BulkSelectedCount, Mode=OneWay}" FontWeight="Bold" />
                         <Run Text=" قسط | الإجمالي: " />
-                        <Run Text="{Binding BulkSelectedTotalRemaining, Mode=OneWay, StringFormat={}{0:N0}}" FontWeight="Bold" />
-                        <Run Text=" د.ع" />
+                        <Run Text="{Binding BulkSelectedTotalRemainingText, Mode=OneWay}" FontWeight="Bold" />
                     </TextBlock>
                     <TextBlock Text="{Binding BulkPayMessage}"
                                FontSize="12"
@@ -225,7 +227,7 @@
                 <ComboBox Grid.Column="1"
                           ItemsSource="{Binding PaymentCashBoxes}"
                           SelectedItem="{Binding PaymentCashBox}"
-                          DisplayMemberPath="Name"
+                          DisplayMemberPath="DisplayNameWithCurrency"
                           materialDesign:HintAssist.Hint="الصندوق"
                           materialDesign:HintAssist.IsFloating="True"
                           Style="{StaticResource FilledComboBox}"
@@ -395,8 +397,31 @@
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="المبلغ الكلي" Binding="{Binding TotalAmount, StringFormat='{}{0:N0} د.ع'}" Width="140"
+                                <DataGridTextColumn Header="العملة" Width="70"
+                                                    Visibility="{Binding DataContext.ShowMultiCurrency, ElementName=Root, Converter={StaticResource BoolToVis}}"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Invoice.Currency">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource CurLabel}">
+                                            <Binding Path="Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+                                    <DataGridTextColumn.ElementStyle>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="HorizontalAlignment" Value="Center" />
+                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                        </Style>
+                                    </DataGridTextColumn.ElementStyle>
+                                </DataGridTextColumn>
+                                <DataGridTextColumn Header="المبلغ الكلي" Width="140"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="TotalAmount"/>
+                                            <Binding Path="Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="FontWeight" Value="SemiBold" />
@@ -412,16 +437,30 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="قيمة القسط" Binding="{Binding InstallmentAmount, StringFormat='{}{0:N0} د.ع'}" Width="130"
+                                <DataGridTextColumn Header="قيمة القسط" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentAmount">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="InstallmentAmount"/>
+                                            <Binding Path="Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="نسبة الشركة" Binding="{Binding CompanyFeeAmount, StringFormat='{}{0:N0} د.ع'}" Width="130"
+                                <DataGridTextColumn Header="نسبة الشركة" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CompanyFeeAmount">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="CompanyFeeAmount"/>
+                                            <Binding Path="Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
@@ -581,8 +620,16 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="العميل" Binding="{Binding InstallmentPlan.Customer.Name}" Width="*"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentPlan.Customer.Name" />
-                                <DataGridTextColumn Header="العملة" Binding="{Binding InstallmentPlan.Invoice.Currency}" Width="70"
-                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentPlan.Invoice.Currency" />
+                                <DataGridTextColumn Header="العملة" Width="70"
+                                                    Visibility="{Binding DataContext.ShowMultiCurrency, ElementName=Root, Converter={StaticResource BoolToVis}}"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentPlan.Invoice.Currency">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource CurLabel}">
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+                                </DataGridTextColumn>
                                 <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate">
                                     <DataGridTextColumn.ElementStyle>
@@ -593,25 +640,45 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N2}" Width="120"
+                                <DataGridTextColumn Header="المبلغ" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="Amount"/>
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat='{}{0:N0} د.ع'}" Width="120"
-                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount">
-                                    <DataGridTextColumn.ElementStyle>
+                                <DataGridTextColumn Header="المدفوع" Width="120">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="PaidAmount"/>
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+<DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                <DataGridTextColumn Header="المتبقي" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount">
-                                    <DataGridTextColumn.ElementStyle>
+<DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="RemainingAmount"/>
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+<DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                             <Setter Property="Foreground" Value="#C62828" />
@@ -740,8 +807,16 @@
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="رقم الفاتورة" Binding="{Binding Invoice.InvoiceNumber}" Width="140"
                                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Invoice.InvoiceNumber" />
-                                        <DataGridTextColumn Header="المبلغ الكلي" Binding="{Binding TotalAmount, StringFormat='{}{0:N0} د.ع'}" Width="130"
-                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount" />
+                                        <DataGridTextColumn Header="المبلغ الكلي" Width="130"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="TotalAmount"/>
+                                            <Binding Path="Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+                                        </DataGridTextColumn>
                                         <DataGridTextColumn Header="عدد الأقساط" Binding="{Binding NumberOfInstallments}" Width="90"
                                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="NumberOfInstallments" />
                                         <DataGridTextColumn Header="رقم الإضبارة" Binding="{Binding FileNumber}" Width="120"
@@ -798,13 +873,36 @@
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="120"
                                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate" />
-                                        <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}" Width="120"
-                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount" />
-                                        <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat='{}{0:N0} د.ع'}" Width="120"
-                                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount" />
-                                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat='{}{0:N0} د.ع'}" Width="120"
+                                        <DataGridTextColumn Header="المبلغ" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
+<DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="Amount"/>
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+</DataGridTextColumn>
+                                        <DataGridTextColumn Header="المدفوع" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount">
+<DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="PaidAmount"/>
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+</DataGridTextColumn>
+                                        <DataGridTextColumn Header="المتبقي" Width="120"
                                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount">
-                                            <DataGridTextColumn.ElementStyle>
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="RemainingAmount"/>
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+                                    <DataGridTextColumn.ElementStyle>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="FontWeight" Value="Bold" />
                                                     <Setter Property="Foreground" Value="#C62828" />
@@ -852,7 +950,7 @@
                                 <ComboBox Grid.Column="1"
                                           ItemsSource="{Binding PaymentCashBoxes}"
                                           SelectedItem="{Binding PaymentCashBox}"
-                                          DisplayMemberPath="Name"
+                                          DisplayMemberPath="DisplayNameWithCurrency"
                                           materialDesign:HintAssist.Hint="الصندوق"
                                           materialDesign:HintAssist.IsFloating="True"
                                           materialDesign:ComboBoxAssist.ShowSelectedItem="True"
@@ -1079,26 +1177,47 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}" Width="130"
+                                <DataGridTextColumn Header="المبلغ" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
-                                    <DataGridTextColumn.ElementStyle>
+<DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="Amount"/>
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+<DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat='{}{0:N0} د.ع'}" Width="130"
+                                <DataGridTextColumn Header="المدفوع" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount">
-                                    <DataGridTextColumn.ElementStyle>
+<DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="PaidAmount"/>
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+<DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                             <Setter Property="Foreground" Value="#2E7D32" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat='{}{0:N0} د.ع'}" Width="130"
+                                <DataGridTextColumn Header="المتبقي" Width="130"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount">
-                                    <DataGridTextColumn.ElementStyle>
+<DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="RemainingAmount"/>
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+<DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                             <Setter Property="FontWeight" Value="Bold" />
@@ -1257,8 +1376,16 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="العميل" Binding="{Binding InstallmentPlan.Customer.Name}" Width="*"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentPlan.Customer.Name" />
-                                <DataGridTextColumn Header="العملة" Binding="{Binding InstallmentPlan.Invoice.Currency}" Width="70"
-                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentPlan.Invoice.Currency" />
+                                <DataGridTextColumn Header="العملة" Width="70"
+                                                    Visibility="{Binding DataContext.ShowMultiCurrency, ElementName=Root, Converter={StaticResource BoolToVis}}"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InstallmentPlan.Invoice.Currency">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource CurLabel}">
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
+                                </DataGridTextColumn>
                                 <DataGridTextColumn Header="تاريخ الاستحقاق" Binding="{Binding DueDate, StringFormat=yyyy/MM/dd}" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DueDate">
                                     <DataGridTextColumn.ElementStyle>
@@ -1267,16 +1394,30 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N2}" Width="120"
+                                <DataGridTextColumn Header="المبلغ" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="Amount"/>
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat=N2}" Width="120"
+                                <DataGridTextColumn Header="المدفوع" Width="120"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="PaidAmount"/>
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
@@ -1465,9 +1606,15 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat='{}{0:N0} د.ع'}"
-                                                    Width="150" MinWidth="140"
+                                <DataGridTextColumn Header="المبلغ" Width="150" MinWidth="140"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="Amount"/>
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
@@ -1475,9 +1622,15 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat='{}{0:N0} د.ع'}"
-                                                    Width="150" MinWidth="140"
+                                <DataGridTextColumn Header="المدفوع" Width="150" MinWidth="140"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="PaidAmount"/>
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />
@@ -1485,9 +1638,15 @@
                                         </Style>
                                     </DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat='{}{0:N0} د.ع'}"
-                                                    Width="150" MinWidth="140"
+                                <DataGridTextColumn Header="المتبقي" Width="150" MinWidth="140"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount">
+                                    <DataGridTextColumn.Binding>
+                                        <MultiBinding Converter="{StaticResource AmtCur}">
+                                            <Binding Path="RemainingAmount"/>
+                                            <Binding Path="InstallmentPlan.Invoice.Currency"/>
+                                            <Binding Path="DataContext.ShowMultiCurrency" ElementName="Root"/>
+                                        </MultiBinding>
+                                    </DataGridTextColumn.Binding>
                                     <DataGridTextColumn.ElementStyle>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="HorizontalAlignment" Value="Center" />

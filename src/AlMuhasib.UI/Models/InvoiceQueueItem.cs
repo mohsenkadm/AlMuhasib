@@ -1,3 +1,6 @@
+using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
+
 namespace AlMuhasib.UI.Models;
 
 public enum InvoiceQueueKind
@@ -15,9 +18,12 @@ public sealed class InvoiceQueueItem
     public DateTime SavedAt { get; set; } = DateTime.Now;
     public int LineCount { get; set; }
     public decimal TotalAmount { get; set; }
+    /// <summary>عملة فاتورة الانتظار (افتراضي دينار للتوافق مع السجلات القديمة).</summary>
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
 
     public string SavedAtText => SavedAt.ToString("yyyy/MM/dd HH:mm");
     public string LineCountText => $"{LineCount:N0} بند";
-    public string TotalAmountText => $"{TotalAmount:N0} د.ع";
+    public string TotalAmountText => AccountingCurrencyHelper.Format(TotalAmount, Currency);
+    public string CurrencyText => AccountingCurrencyHelper.GetDisplayName(Currency);
     public string SummaryText => $"{SavedAtText}  •  {LineCountText}  •  {TotalAmountText}";
 }

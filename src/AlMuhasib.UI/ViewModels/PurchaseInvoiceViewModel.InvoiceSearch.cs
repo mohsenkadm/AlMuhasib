@@ -100,7 +100,8 @@ public partial class PurchaseInvoiceViewModel
                     InvoiceNumber = invoice.InvoiceNumber,
                     PartyName = invoice.Supplier?.Name ?? "—",
                     Date = invoice.Date,
-                    NetAmount = invoice.NetAmount
+                    NetAmount = invoice.NetAmount,
+                    Currency = invoice.Currency
                 });
             }
         }
@@ -172,6 +173,7 @@ public partial class PurchaseInvoiceViewModel
             SelectedCashBox = CashBoxes.FirstOrDefault(c => c.Id == invoice.CashBoxId);
 
         CreditPaidAmount = IsCashPayment ? 0m : Math.Clamp(invoice.PaidAmount, 0m, invoice.NetAmount);
+        CreditDueDate = IsCashPayment ? null : (invoice.CreditDueDate ?? DateTime.Today.AddMonths(1));
         CreditRemainingAmount = IsCashPayment
             ? 0m
             : Math.Max(0m, invoice.NetAmount - CreditPaidAmount);
@@ -187,7 +189,8 @@ public partial class PurchaseInvoiceViewModel
                 ProductId = item.ProductId,
                 ItemName = item.ItemName,
                 Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice
+                UnitPrice = item.UnitPrice,
+                PricingTypeId = item.PricingTypeId
             };
             InvoiceLineWarehouseHelper.BindRowWarehouse(row, SelectedWarehouse, Warehouses.ToList(), item.WarehouseId);
             InvoiceCustomFieldsHelper.ApplyFromJson(row, item.CustomFieldsJson);

@@ -144,6 +144,56 @@ public sealed class SqlServerInstanceDiscoveryService : ISqlServerInstanceDiscov
         }
     }
 
+    public async Task<NetworkConnectionTestResult> TestConnectionStringAsync(
+        string connectionString,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(connectionString))
+            return NetworkConnectionTestResult.Fail("يرجى إدخال سلسلة الاتصال.");
+
+        SqlConnectionStringBuilder builder;
+        try
+        {
+            builder = new SqlConnectionStringBuilder(connectionString.Trim())
+            {
+                TrustServerCertificate = true,
+                ConnectTimeout = 15
+            };
+        }
+        catch (Exception ex)
+        {
+            return NetworkConnectionTestResult.Fail($"سلسلة الاتصال غير صالحة: {ex.Message}");
+        }
+
+        if (string.IsNullOrWhiteSpace(builder.DataSource))
+            return NetworkConnectionTestResult.Fail("سلسلة الاتصال يجب أن تحتوي على Data Source / Server.");
+
+        var sw = Stopwatch.StartNew();
+        try
+        {
+            await using var connection = new SqlConnection(builder.ConnectionString);
+            await connection.OpenAsync(cancellationToken);
+            sw.Stop();
+
+            return NetworkConnectionTestResult.Ok(
+                $"تم الاتصال بنجاح بـ {builder.DataSource}" +
+                (string.IsNullOrWhiteSpace(builder.InitialCatalog)
+                    ? string.Empty
+                    : $" / {builder.InitialCatalog}") +
+                $" (إصدار {connection.ServerVersion}).",
+                (int)sw.ElapsedMilliseconds,
+                connection.ServerVersion);
+        }
+        catch (SqlException ex)
+        {
+            return NetworkConnectionTestResult.Fail($"تعذر الاتصال: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            return NetworkConnectionTestResult.Fail($"تعذر الاتصال: {ex.Message}");
+        }
+    }
+
     private static IEnumerable<SqlServerInstanceInfo> DiscoverLocalDbInstances()
     {
         var instances = new List<SqlServerInstanceInfo>();

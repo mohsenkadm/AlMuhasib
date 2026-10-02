@@ -168,7 +168,7 @@
                                 <DataGridTemplateColumn Header="الكمية الجديدة" Width="140">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBox Text="{Binding NewQuantity, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                            <TextBox Text="{Binding NewQuantity, UpdateSourceTrigger=LostFocus, StringFormat=N0}"
                                                      Style="{StaticResource NumericCellTextBox}"
                                                      FontSize="14"
                                                      FontWeight="Bold"

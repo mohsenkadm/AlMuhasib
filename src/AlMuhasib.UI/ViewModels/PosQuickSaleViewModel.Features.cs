@@ -117,7 +117,7 @@ public partial class PosQuickSaleViewModel
 
     private async Task AddOrIncrementProductAsync(Product product)
     {
-        var price = _suggestedPrices.GetValueOrDefault(product.Id);
+        var price = ResolveSuggestedPrice(product.Id);
         int? pricingTypeId = _defaultPricingTypeByProduct.TryGetValue(product.Id, out var tid) ? tid : null;
         if (price <= 0)
         {

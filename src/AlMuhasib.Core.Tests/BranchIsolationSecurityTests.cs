@@ -11,6 +11,7 @@ namespace AlMuhasib.Core.Tests;
 /// <summary>
 /// Security-focused isolation tests: BranchId must be stamped from context and
 /// cross-branch mutations must be denied even when entity Id is known.
+/// Catalog entities (Category/Product/…) are shared company-wide — isolation uses Warehouse.
 /// </summary>
 public class BranchIsolationSecurityTests
 {
@@ -22,7 +23,7 @@ public class BranchIsolationSecurityTests
         return new AppDbContext(options, currentUserService: null, branchContext: branchContext);
     }
 
-    private static Category Cat(string name, int branchId) => new()
+    private static Warehouse Wh(string name, int branchId) => new()
     {
         Name = name,
         BranchId = branchId,
@@ -30,23 +31,59 @@ public class BranchIsolationSecurityTests
         RowVersion = new byte[] { 1 }
     };
 
+    private static Category Cat(string name) => new()
+    {
+        Name = name,
+        CreatedBy = "test",
+        RowVersion = new byte[] { 1 }
+    };
+
     [Fact]
-    public async Task New_entity_gets_BranchId_from_context()
+    public async Task New_warehouse_gets_BranchId_from_context()
     {
         var ctx = new BranchContext();
         ctx.SetAllowedBranches([10], false, false);
         ctx.SetCurrentBranch(10, "Baghdad", "BGW");
 
         await using var db = CreateDb(ctx);
-        db.Categories.Add(new Category { Name = "Cat A", CreatedBy = "test", RowVersion = new byte[] { 1 } });
+        db.Warehouses.Add(new Warehouse { Name = "مخزن أ", CreatedBy = "test", RowVersion = new byte[] { 1 } });
         await db.SaveChangesAsync();
 
-        var cat = await db.Categories.IgnoreQueryFilters().SingleAsync();
-        Assert.Equal(10, cat.BranchId);
+        var wh = await db.Warehouses.IgnoreQueryFilters().SingleAsync();
+        Assert.Equal(10, wh.BranchId);
     }
 
     [Fact]
-    public async Task Cross_branch_mutation_is_denied()
+    public async Task Shared_catalog_entities_have_no_BranchId_filter()
+    {
+        var ctx = new BranchContext();
+        ctx.SetAllowedBranches([1], false, false);
+        ctx.SetCurrentBranch(1, "Main", "MAIN");
+
+        await using var db = CreateDb(ctx);
+        db.Categories.Add(Cat("عام"));
+        db.Products.Add(new Product
+        {
+            Name = "منتج",
+            Category = db.Categories.Local.First(),
+            CreatedBy = "test",
+            RowVersion = new byte[] { 1 }
+        });
+        await db.SaveChangesAsync();
+
+        // Categories/Products are not IBranchEntity — visible without branch match
+        Assert.Single(await db.Categories.ToListAsync());
+        Assert.Single(await db.Products.ToListAsync());
+        Assert.False(typeof(IBranchEntity).IsAssignableFrom(typeof(Category)));
+        Assert.False(typeof(IBranchEntity).IsAssignableFrom(typeof(Product)));
+        Assert.False(typeof(IBranchEntity).IsAssignableFrom(typeof(PricingType)));
+        Assert.False(typeof(IBranchEntity).IsAssignableFrom(typeof(ProductPrice)));
+        Assert.True(typeof(IBranchEntity).IsAssignableFrom(typeof(Warehouse)));
+        Assert.True(typeof(IBranchEntity).IsAssignableFrom(typeof(WarehouseStock)));
+    }
+
+    [Fact]
+    public async Task Cross_branch_warehouse_mutation_is_denied()
     {
         var ctx = new BranchContext();
         ctx.SetAllowedBranches([1, 2], false, false);
@@ -54,11 +91,11 @@ public class BranchIsolationSecurityTests
 
         await using var db = CreateDb(ctx);
         db.BypassBranchFilter = true;
-        db.Categories.Add(Cat("Other", 2));
+        db.Warehouses.Add(Wh("Other", 2));
         await db.SaveChangesAsync();
         db.BypassBranchFilter = false;
 
-        var entity = await db.Categories.IgnoreQueryFilters().SingleAsync(c => c.BranchId == 2);
+        var entity = await db.Warehouses.IgnoreQueryFilters().SingleAsync(c => c.BranchId == 2);
         entity.Name = "Hacked";
         db.Entry(entity).State = EntityState.Modified;
 
@@ -66,7 +103,7 @@ public class BranchIsolationSecurityTests
     }
 
     [Fact]
-    public async Task Query_filter_hides_other_branch_rows()
+    public async Task Query_filter_hides_other_branch_warehouses()
     {
         var ctx = new BranchContext();
         ctx.SetAllowedBranches([1, 2], false, false);
@@ -74,11 +111,11 @@ public class BranchIsolationSecurityTests
 
         await using var db = CreateDb(ctx);
         db.BypassBranchFilter = true;
-        db.Categories.AddRange(Cat("B1", 1), Cat("B2", 2));
+        db.Warehouses.AddRange(Wh("B1", 1), Wh("B2", 2));
         await db.SaveChangesAsync();
         db.BypassBranchFilter = false;
 
-        var visible = await db.Categories.ToListAsync();
+        var visible = await db.Warehouses.ToListAsync();
         Assert.Single(visible);
         Assert.Equal("B1", visible[0].Name);
     }
@@ -92,11 +129,11 @@ public class BranchIsolationSecurityTests
 
         await using var db = CreateDb(ctx);
         db.BypassBranchFilter = true;
-        db.Categories.Add(Cat("Legacy", 1));
+        db.Warehouses.Add(Wh("Legacy", 1));
         await db.SaveChangesAsync();
         db.BypassBranchFilter = false;
 
-        var rows = await db.Categories.ToListAsync();
+        var rows = await db.Warehouses.ToListAsync();
         Assert.Single(rows);
         Assert.Equal(1, rows[0].BranchId);
     }
@@ -110,11 +147,11 @@ public class BranchIsolationSecurityTests
 
         await using var db = CreateDb(ctx);
         db.BypassBranchFilter = true;
-        db.Categories.AddRange(Cat("A", 1), Cat("B", 2), Cat("Secret", 3));
+        db.Warehouses.AddRange(Wh("A", 1), Wh("B", 2), Wh("Secret", 3));
         await db.SaveChangesAsync();
         db.BypassBranchFilter = false;
 
-        var visible = await db.Categories.OrderBy(c => c.BranchId).Select(c => c.Name).ToListAsync();
+        var visible = await db.Warehouses.OrderBy(c => c.BranchId).Select(c => c.Name).ToListAsync();
         Assert.Equal(new[] { "A", "B" }, visible);
         Assert.DoesNotContain("Secret", visible);
     }
@@ -123,45 +160,43 @@ public class BranchIsolationSecurityTests
     public async Task No_branch_bound_fail_closed_returns_empty()
     {
         var ctx = new BranchContext();
-        // Allowed set but no current branch / not all-branches
         ctx.SetAllowedBranches([1, 2], false, false);
 
         await using var db = CreateDb(ctx);
         db.BypassBranchFilter = true;
-        db.Categories.Add(Cat("A", 1));
+        db.Warehouses.Add(Wh("A", 1));
         await db.SaveChangesAsync();
         db.BypassBranchFilter = false;
 
-        var visible = await db.Categories.ToListAsync();
+        var visible = await db.Warehouses.ToListAsync();
         Assert.Empty(visible);
     }
 
     [Fact]
     public async Task FindAsync_must_not_be_trusted_for_branch_isolation_use_LINQ()
     {
-        // Documents EF FindAsync bypass of query filters — callers must use filtered LINQ.
         var ctx = new BranchContext();
         ctx.SetAllowedBranches([1], false, false);
         ctx.SetCurrentBranch(1, "Main", "MAIN");
 
         await using var db = CreateDb(ctx);
         db.BypassBranchFilter = true;
-        db.Categories.AddRange(Cat("Mine", 1), Cat("Other", 2));
+        db.Warehouses.AddRange(Wh("Mine", 1), Wh("Other", 2));
         await db.SaveChangesAsync();
         db.BypassBranchFilter = false;
 
-        var otherId = await db.Categories.IgnoreQueryFilters()
+        var otherId = await db.Warehouses.IgnoreQueryFilters()
             .Where(c => c.BranchId == 2).Select(c => c.Id).SingleAsync();
 
-        var viaFind = await db.Categories.FindAsync(otherId);
-        Assert.NotNull(viaFind); // FindAsync ignores filters — known EF behavior
+        var viaFind = await db.Warehouses.FindAsync(otherId);
+        Assert.NotNull(viaFind);
 
-        var viaLinq = await db.Categories.FirstOrDefaultAsync(c => c.Id == otherId);
-        Assert.Null(viaLinq); // Correct isolation path
+        var viaLinq = await db.Warehouses.FirstOrDefaultAsync(c => c.Id == otherId);
+        Assert.Null(viaLinq);
     }
 
     [Fact]
-    public async Task Repository_GetByIdAsync_respects_branch_filter()
+    public async Task Repository_GetByIdAsync_respects_branch_filter_for_warehouses()
     {
         var ctx = new BranchContext();
         ctx.SetAllowedBranches([1], false, false);
@@ -169,16 +204,16 @@ public class BranchIsolationSecurityTests
 
         await using var db = CreateDb(ctx);
         db.BypassBranchFilter = true;
-        db.Categories.AddRange(Cat("Mine", 1), Cat("Other", 2));
+        db.Warehouses.AddRange(Wh("Mine", 1), Wh("Other", 2));
         await db.SaveChangesAsync();
         db.BypassBranchFilter = false;
 
-        var otherId = await db.Categories.IgnoreQueryFilters()
+        var otherId = await db.Warehouses.IgnoreQueryFilters()
             .Where(c => c.BranchId == 2).Select(c => c.Id).SingleAsync();
-        var mineId = await db.Categories.Where(c => c.BranchId == 1).Select(c => c.Id).SingleAsync();
+        var mineId = await db.Warehouses.Where(c => c.BranchId == 1).Select(c => c.Id).SingleAsync();
 
         var factory = new TestDbContextFactory(db, ctx);
-        var repo = new Repository<Category>(factory, () => db, ctx);
+        var repo = new Repository<Warehouse>(factory, () => db, ctx);
 
         Assert.NotNull(await repo.GetByIdAsync(mineId));
         Assert.Null(await repo.GetByIdAsync(otherId));
@@ -193,7 +228,7 @@ public class BranchIsolationSecurityTests
 
         await using var db = CreateDb(ctx);
         db.BypassBranchFilter = true;
-        db.Categories.Add(new Category
+        db.Warehouses.Add(new Warehouse
         {
             Name = "SharedName",
             BranchId = 2,
@@ -207,9 +242,9 @@ public class BranchIsolationSecurityTests
         db.BypassBranchFilter = false;
 
         var factory = new TestDbContextFactory(db, ctx);
-        var repo = new Repository<Category>(factory, () => db, ctx);
+        var repo = new Repository<Warehouse>(factory, () => db, ctx);
         var found = await repo.FindSoftDeletedFirstAsync(c => c.Name == "SharedName");
-        Assert.Null(found); // must not revive branch-2 row while writing on branch 1
+        Assert.Null(found);
     }
 
     [Fact]
@@ -221,12 +256,73 @@ public class BranchIsolationSecurityTests
 
         await using var db = CreateDb(ctx);
         db.BypassBranchFilter = true;
-        db.Categories.AddRange(Cat("Legacy1", 1), Cat("Legacy2", 1));
+        db.Warehouses.AddRange(Wh("Legacy1", 1), Wh("Legacy2", 1));
         await db.SaveChangesAsync();
         db.BypassBranchFilter = false;
 
-        var rows = await db.Categories.OrderBy(c => c.Name).Select(c => c.Name).ToListAsync();
+        var rows = await db.Warehouses.OrderBy(c => c.Name).Select(c => c.Name).ToListAsync();
         Assert.Equal(new[] { "Legacy1", "Legacy2" }, rows);
+    }
+
+    [Fact]
+    public async Task Cross_branch_stock_transfer_updates_destination_BranchId()
+    {
+        var ctx = new BranchContext();
+        ctx.SetAllowedBranches([1, 2], true, true);
+        ctx.SetCurrentBranch(1, "Main", "MAIN");
+
+        var dbName = Guid.NewGuid().ToString();
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(dbName)
+            .Options;
+
+        await using (var seed = new AppDbContext(options, null, ctx))
+        {
+            seed.BypassBranchFilter = true;
+            var cat = Cat("عام");
+            seed.Categories.Add(cat);
+            await seed.SaveChangesAsync();
+            var product = new Product
+            {
+                Name = "P1",
+                CategoryId = cat.Id,
+                CreatedBy = "test",
+                RowVersion = new byte[] { 1 }
+            };
+            seed.Products.Add(product);
+            seed.Warehouses.AddRange(Wh("From", 1), Wh("To", 2));
+            await seed.SaveChangesAsync();
+            seed.WarehouseStocks.Add(new WarehouseStock
+            {
+                WarehouseId = seed.Warehouses.Local.First(w => w.Name == "From").Id,
+                ProductId = product.Id,
+                Quantity = 10,
+                BranchId = 1,
+                CreatedBy = "test",
+                RowVersion = new byte[] { 1 }
+            });
+            await seed.SaveChangesAsync();
+        }
+
+        var factory = new SharedDbContextFactory(options, ctx);
+        var service = new WarehouseTransferService(factory);
+        await using var db = factory.CreateDbContext();
+        db.BypassBranchFilter = true;
+        var fromId = await db.Warehouses.Where(w => w.Name == "From").Select(w => w.Id).SingleAsync();
+        var toId = await db.Warehouses.Where(w => w.Name == "To").Select(w => w.Id).SingleAsync();
+        var productId = await db.Products.Select(p => p.Id).SingleAsync();
+
+        await service.CreateTransferAsync(
+            new WarehouseTransfer { FromWarehouseId = fromId, ToWarehouseId = toId, Date = DateTime.Now },
+            [new WarehouseTransferItem { ProductId = productId, Quantity = 4 }]);
+
+        await using var verify = factory.CreateDbContext();
+        verify.BypassBranchFilter = true;
+        var fromStock = await verify.WarehouseStocks.SingleAsync(s => s.WarehouseId == fromId);
+        var toStock = await verify.WarehouseStocks.SingleAsync(s => s.WarehouseId == toId);
+        Assert.Equal(6, fromStock.Quantity);
+        Assert.Equal(4, toStock.Quantity);
+        Assert.Equal(2, toStock.BranchId);
     }
 
     private sealed class TestDbContextFactory : IDbContextFactory<AppDbContext>
@@ -241,5 +337,19 @@ public class BranchIsolationSecurityTests
         }
 
         public AppDbContext CreateDbContext() => _db;
+    }
+
+    private sealed class SharedDbContextFactory : IDbContextFactory<AppDbContext>
+    {
+        private readonly DbContextOptions<AppDbContext> _options;
+        private readonly IBranchContext _branchContext;
+
+        public SharedDbContextFactory(DbContextOptions<AppDbContext> options, IBranchContext branchContext)
+        {
+            _options = options;
+            _branchContext = branchContext;
+        }
+
+        public AppDbContext CreateDbContext() => new(_options, null, _branchContext);
     }
 }

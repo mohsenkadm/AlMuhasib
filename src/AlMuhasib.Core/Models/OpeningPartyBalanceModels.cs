@@ -102,10 +102,12 @@ public class OpeningPartyBalanceImportRow
     public string? Phone { get; set; }
     public string? FileNumber { get; set; }
     public decimal Amount { get; set; }
+    /// <summary>رصيد دولار مستقل عند القالب المزدوج — صفر يعني غير مستخدم.</summary>
+    public decimal AmountUsd { get; set; }
     public DateTime Date { get; set; } = DateTime.Today;
     public string? Notes { get; set; }
 
-    /// <summary>عملة السطر — فارغ/غير معروف يُعامل كدينار.</summary>
+    /// <summary>عملة السطر — فارغ/غير معروف يُعامل كدينار (توافق القالب القديم).</summary>
     public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
 
     /// <summary>سعر الصرف عند Currency=USD — مطلوب وصالح (&gt;0).</summary>
@@ -114,6 +116,79 @@ public class OpeningPartyBalanceImportRow
     public List<string> Errors { get; set; } = [];
     public bool IsValid => Errors.Count == 0;
     public string ErrorsText => Errors.Count == 0 ? "—" : string.Join(" | ", Errors);
+    public bool HasAnyBalance => Amount > 0 || AmountUsd > 0;
+}
+
+/// <summary>يبني طلبات إنشاء الرصيد الافتتاحي من صف الاستيراد (دينار و/أو دولار كآجل).</summary>
+public static class OpeningPartyBalanceImportExpander
+{
+    public static IReadOnlyList<OpeningPartyBalanceRequest> Expand(
+        OpeningPartyBalanceImportRow row,
+        decimal fallbackUsdFxRate)
+    {
+        if (row is null) return Array.Empty<OpeningPartyBalanceRequest>();
+        var name = row.PartyName?.Trim() ?? string.Empty;
+        if (name.Length == 0) return Array.Empty<OpeningPartyBalanceRequest>();
+
+        var list = new List<OpeningPartyBalanceRequest>(2);
+
+        // قالب مزدوج: عمود دولار مستقل
+        if (row.AmountUsd > 0)
+        {
+            if (row.Amount > 0)
+            {
+                list.Add(new OpeningPartyBalanceRequest
+                {
+                    PartyName = name,
+                    Phone = row.Phone,
+                    FileNumber = row.FileNumber,
+                    Amount = row.Amount,
+                    Date = row.Date,
+                    Notes = row.Notes,
+                    Currency = AccountingCurrency.IQD,
+                    FxRate = 1m
+                });
+            }
+
+            var fx = row.Currency == AccountingCurrency.USD && row.FxRate > 0
+                ? row.FxRate
+                : fallbackUsdFxRate;
+            list.Add(new OpeningPartyBalanceRequest
+            {
+                PartyName = name,
+                Phone = row.Phone,
+                FileNumber = row.FileNumber,
+                Amount = row.AmountUsd,
+                Date = row.Date,
+                Notes = row.Notes,
+                Currency = AccountingCurrency.USD,
+                FxRate = fx
+            });
+            return list;
+        }
+
+        // مبلغ واحد (دينار أو دولار حسب Currency)
+        if (row.Amount > 0)
+        {
+            var currency = row.Currency;
+            var fx = currency == AccountingCurrency.USD
+                ? (row.FxRate > 0 ? row.FxRate : fallbackUsdFxRate)
+                : 1m;
+            list.Add(new OpeningPartyBalanceRequest
+            {
+                PartyName = name,
+                Phone = row.Phone,
+                FileNumber = row.FileNumber,
+                Amount = row.Amount,
+                Date = row.Date,
+                Notes = row.Notes,
+                Currency = currency,
+                FxRate = fx
+            });
+        }
+
+        return list;
+    }
 }
 
 public class OpeningPartyBalanceBatchResult

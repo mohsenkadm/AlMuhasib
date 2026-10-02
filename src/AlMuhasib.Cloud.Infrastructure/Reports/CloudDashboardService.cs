@@ -32,7 +32,6 @@ public sealed class CloudDashboardService : ICloudDashboardService
         var tenantId = RequireTenantId();
         var today = DateTime.Today;
         var tomorrow = today.AddDays(1);
-        var thirtyDaysAgo = today.AddDays(-30);
         var data = new DashboardData();
 
         data.TodaySales = await CloudInvoiceFilters.SumSignedNetAsync(
@@ -136,9 +135,10 @@ public sealed class CloudDashboardService : ICloudDashboardService
         data.SupplierCreditUnappliedPayments = unappliedPayments + supplierReturnCredits;
         data.SupplierCreditBalance = Math.Max(0, supplierRemaining - unappliedPayments - supplierReturnCredits);
 
+        var salesFrom = today.AddDays(-29);
         var salesRaw = await CloudInvoiceFilters.ForProfitAndSalesTotals(
                 _db.Invoices.ForTenant(tenantId), _db.InstallmentPlans.ForTenant(tenantId))
-            .Where(i => i.Date >= thirtyDaysAgo && i.Date < tomorrow)
+            .Where(i => i.Date >= salesFrom && i.Date < tomorrow)
             .Select(i => new { i.Date, i.InvoiceType, i.NetAmount })
             .ToListAsync(ct);
 
@@ -154,7 +154,7 @@ public sealed class CloudDashboardService : ICloudDashboardService
         data.SalesLast30Days = Enumerable.Range(0, 30)
             .Select(offset =>
             {
-                var d = thirtyDaysAgo.AddDays(offset);
+                var d = salesFrom.AddDays(offset);
                 var match = salesByDay.FirstOrDefault(s => s.Date == d);
                 return new DailySalesPoint { Date = d, Amount = match?.Amount ?? 0 };
             })

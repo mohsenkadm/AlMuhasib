@@ -61,6 +61,17 @@ public partial class AnimatedStatCard : UserControl
         DependencyProperty.Register(nameof(Suffix), typeof(string), typeof(AnimatedStatCard), new PropertyMetadata(null));
     public string? Suffix { get => (string?)GetValue(SuffixProperty); set => SetValue(SuffixProperty, value); }
 
+    // ── Secondary USD value ──
+    public static readonly DependencyProperty SecondaryValueProperty =
+        DependencyProperty.Register(nameof(SecondaryValue), typeof(string), typeof(AnimatedStatCard),
+            new PropertyMetadata(null));
+    public string? SecondaryValue { get => (string?)GetValue(SecondaryValueProperty); set => SetValue(SecondaryValueProperty, value); }
+
+    public static readonly DependencyProperty ShowSecondaryValueProperty =
+        DependencyProperty.Register(nameof(ShowSecondaryValue), typeof(bool), typeof(AnimatedStatCard),
+            new PropertyMetadata(false));
+    public bool ShowSecondaryValue { get => (bool)GetValue(ShowSecondaryValueProperty); set => SetValue(ShowSecondaryValueProperty, value); }
+
     // ── Hint (short explanation under the title) ──
     public static readonly DependencyProperty HintProperty =
         DependencyProperty.Register(nameof(Hint), typeof(string), typeof(AnimatedStatCard), new PropertyMetadata(null));

@@ -15,6 +15,13 @@ public class Voucher : BranchScopedEntity
     /// <summary>سعر الصرف وقت الحفظ (دولار→دينار).</summary>
     public decimal FxRate { get; set; } = 1m;
 
+    /// <summary>
+    /// عملة الذمة المراد تسديدها عند الدفع بعملة مختلفة (غير محفوظة — تُرمَّز في Notes كـ [FX-SETTLE:...]).
+    /// إن كانت null تُستخدم عملة السند.
+    /// </summary>
+    [NotMapped]
+    public AccountingCurrency? SettlementCurrency { get; set; }
+
     public decimal Amount { get; set; }
     public decimal BankFees { get; set; }
     public int? CustomerId { get; set; }

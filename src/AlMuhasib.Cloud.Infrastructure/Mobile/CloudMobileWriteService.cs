@@ -214,6 +214,11 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         var existing = await _db.BusinessSettings.IgnoreQueryFilters()
             .FirstOrDefaultAsync(s => s.TenantId == tenantId && s.BranchId == writeBranchId && !s.IsDeleted, ct);
 
+        var nextMultiCurrency = request.MultiCurrencyEnabled ?? existing?.MultiCurrencyEnabled ?? false;
+        var currentMultiCurrency = existing?.MultiCurrencyEnabled ?? false;
+        if (nextMultiCurrency != currentMultiCurrency)
+            await EnsureTenantOwnerCanChangeMultiCurrencyAsync(tenantId, ct);
+
         var syncId = existing?.SyncId ?? ProductPricingSyncIds.BusinessSettings;
         var now = DateTime.UtcNow;
         var dto = new BusinessSettingsSyncDto
@@ -225,7 +230,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             LockedThroughDate = request.PeriodLockEnabled == false
                 ? null
                 : request.LockedThroughDate ?? existing?.LockedThroughDate,
-            MultiCurrencyEnabled = request.MultiCurrencyEnabled ?? existing?.MultiCurrencyEnabled ?? false,
+            MultiCurrencyEnabled = nextMultiCurrency,
             CreatedAt = existing?.CreatedAt ?? now,
             CreatedBy = existing?.CreatedBy ?? username,
             UpdatedAt = now,
@@ -254,6 +259,24 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             LockedThroughDate = saved.LockedThroughDate,
             MultiCurrencyEnabled = saved.MultiCurrencyEnabled
         };
+    }
+
+    /// <summary>حساب المالك = أقدم حساب نشط للمستأجر.</summary>
+    private async Task EnsureTenantOwnerCanChangeMultiCurrencyAsync(int tenantId, CancellationToken ct)
+    {
+        var accountId = _tenantContext.TenantAccountId;
+        if (accountId is not > 0)
+            throw new UnauthorizedAccessException("يجب تسجيل الدخول لتغيير إعداد تعدد العملات.");
+
+        var ownerId = await _db.TenantAccounts.AsNoTracking()
+            .Where(a => a.TenantId == tenantId && a.IsActive)
+            .OrderBy(a => a.CreatedAt)
+            .ThenBy(a => a.Id)
+            .Select(a => (int?)a.Id)
+            .FirstOrDefaultAsync(ct);
+
+        if (ownerId is null || ownerId.Value != accountId.Value)
+            throw new UnauthorizedAccessException("تغيير تعدد العملات مسموح لحساب المالك فقط.");
     }
 
     public async Task<MobileWriteResponse> CreateInvoiceAsync(int tenantId, CreateInvoiceRequest request, string username, CancellationToken ct = default)
@@ -314,7 +337,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
 
         decimal subtotal = items.Sum(i => i.Quantity * i.UnitPrice - i.DiscountAmount);
         decimal netBeforeRounding = subtotal - request.DiscountAmount;
-        decimal rounding = CalculateRounding(netBeforeRounding, request.InvoiceType);
+        decimal rounding = CalculateRounding(netBeforeRounding, request.InvoiceType, request.Currency);
         decimal netAmount = netBeforeRounding + rounding;
 
         var isCredit = request.PaymentMethod == PaymentMethod.Credit;
@@ -1434,7 +1457,21 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             }
         }
 
-        if (invoice.PaymentMethod == PaymentMethod.Cash && invoice.CashBoxId.HasValue)
+        if (invoice.InvoiceType == InvoiceType.Purchase)
+            await ApplyPurchasePriceUpdatesAsync(tenantId, invoice, username, ct);
+
+        decimal? returnCashMovement = null;
+        if (invoice.InvoiceType is InvoiceType.SaleReturn or InvoiceType.PurchaseReturn)
+            returnCashMovement = await ApplyReturnCreditImpactCloudAsync(tenantId, invoice, username, ct);
+
+        var cashAmount = returnCashMovement
+            ?? (invoice.PaymentMethod == PaymentMethod.Cash
+                ? invoice.NetAmount
+                : invoice.PaymentMethod == PaymentMethod.Credit
+                    ? Math.Max(0, invoice.PaidAmount)
+                    : 0m);
+
+        if (cashAmount > 0 && invoice.CashBoxId.HasValue)
         {
             var cashBox = await _db.CashBoxes.FirstOrDefaultAsync(
                 c => c.TenantId == tenantId && c.Id == invoice.CashBoxId.Value, ct);
@@ -1442,49 +1479,57 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             {
                 AccountingCurrencyRules.EnsureSameCurrency(
                     invoice.Currency, cashBox.Currency, "الفاتورة", "القاصة");
+
                 if (invoice.InvoiceType == InvoiceType.Purchase)
-                    cashBox.Balance -= invoice.NetAmount;
+                    cashBox.Balance -= cashAmount;
                 else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
-                    cashBox.Balance += invoice.NetAmount;
+                    cashBox.Balance += cashAmount;
+                else if (invoice.InvoiceType == InvoiceType.SaleReturn)
+                    cashBox.Balance -= cashAmount;
                 else
-                    cashBox.Balance += invoice.NetAmount;
+                    cashBox.Balance += cashAmount;
 
                 cashBox.UpdatedBy = username;
                 cashBox.UpdatedAt = DateTime.UtcNow;
             }
         }
 
-        if (invoice.InvoiceType == InvoiceType.Purchase)
-            await ApplyPurchasePriceUpdatesAsync(tenantId, invoice, username, ct);
-
-        if (invoice.InvoiceType is InvoiceType.SaleReturn or InvoiceType.PurchaseReturn)
-            await ApplyReturnCreditImpactCloudAsync(tenantId, invoice, username, ct);
-
         await _db.SaveChangesAsync(ct);
     }
 
-    private async Task ApplyReturnCreditImpactCloudAsync(
+    private async Task<decimal> ApplyReturnCreditImpactCloudAsync(
         int tenantId,
         CloudInvoice returnInvoice,
         string username,
         CancellationToken ct)
     {
         if (InvoiceReturnCreditHelper.IsReturnApplied(returnInvoice.Notes))
-            return;
+        {
+            return InvoiceReturnCreditHelper.ResolveStoredReturnCashMovement(
+                returnInvoice.PaymentMethod,
+                returnInvoice.NetAmount,
+                returnInvoice.PaidAmount,
+                returnInvoice.Notes);
+        }
 
         var originalType = InvoiceReturnCreditHelper.GetOriginalInvoiceType(returnInvoice.InvoiceType);
         if (originalType is null)
-            return;
+            return 0;
+
+        var requestedCashPortion = returnInvoice.PaymentMethod == PaymentMethod.Credit
+            ? Math.Clamp(returnInvoice.PaidAmount, 0m, returnInvoice.NetAmount)
+            : returnInvoice.NetAmount;
 
         var amountToApply = Math.Abs(returnInvoice.NetAmount);
         if (amountToApply <= 0)
         {
-            returnInvoice.RemainingAmount = 0;
-            returnInvoice.IsCreditPaid = true;
-            if (returnInvoice.PaymentMethod != PaymentMethod.Credit)
-                returnInvoice.PaidAmount = returnInvoice.NetAmount;
+            var empty = InvoiceReturnCreditHelper.ResolveReturnSettlement(
+                returnInvoice.PaymentMethod, 0, 0, requestedCashPortion);
+            returnInvoice.PaidAmount = empty.PaidAmount;
+            returnInvoice.RemainingAmount = empty.RemainingAmount;
+            returnInvoice.IsCreditPaid = empty.IsCreditPaid;
             returnInvoice.Notes = InvoiceReturnCreditHelper.MarkApplied(returnInvoice.Notes, []);
-            return;
+            return empty.CashMovement;
         }
 
         var openQuery = _db.Invoices.Where(i =>
@@ -1498,13 +1543,13 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         if (returnInvoice.InvoiceType == InvoiceType.PurchaseReturn)
         {
             if (!returnInvoice.SupplierId.HasValue)
-                return;
+                return 0;
             openQuery = openQuery.Where(i => i.SupplierId == returnInvoice.SupplierId);
         }
         else
         {
             if (!returnInvoice.CustomerId.HasValue)
-                return;
+                return 0;
             openQuery = openQuery.Where(i => i.CustomerId == returnInvoice.CustomerId);
         }
 
@@ -1513,6 +1558,30 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             .ThenBy(i => i.Id)
             .Select(i => new { i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount })
             .ToListAsync(ct);
+
+        if (returnInvoice.RelatedInvoiceId is int relatedId
+            && relatedId > 0
+            && openInvoices.All(i => i.Id != relatedId))
+        {
+            var related = await _db.Invoices
+                .Where(i => i.TenantId == tenantId &&
+                            i.Id == relatedId &&
+                            i.InvoiceType == originalType &&
+                            i.PaymentMethod == PaymentMethod.Credit &&
+                            i.Currency == returnInvoice.Currency &&
+                            i.RemainingAmount > 0 &&
+                            !i.IsDeleted)
+                .Select(i => new { i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount, i.SupplierId, i.CustomerId })
+                .FirstOrDefaultAsync(ct);
+            if (related is not null)
+            {
+                var partyOk = returnInvoice.InvoiceType == InvoiceType.PurchaseReturn
+                    ? related.SupplierId == returnInvoice.SupplierId
+                    : related.CustomerId == returnInvoice.CustomerId;
+                if (partyOk)
+                    openInvoices.Insert(0, new { related.Id, related.Date, related.NetAmount, related.PaidAmount, related.RemainingAmount });
+            }
+        }
 
         var updates = InvoiceReturnCreditHelper.AllocateReturnToCreditInvoices(
             openInvoices.Select(i => (i.Id, i.Date, i.NetAmount, i.PaidAmount, i.RemainingAmount)),
@@ -1542,23 +1611,19 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             }
         }
 
-        var leftover = Math.Max(0, amountToApply - appliedTotal);
-        if (returnInvoice.PaymentMethod == PaymentMethod.Cash)
-        {
-            returnInvoice.PaidAmount = returnInvoice.NetAmount;
-            returnInvoice.RemainingAmount = 0;
-            returnInvoice.IsCreditPaid = true;
-        }
-        else
-        {
-            returnInvoice.PaidAmount = returnInvoice.NetAmount - leftover;
-            returnInvoice.RemainingAmount = leftover;
-            returnInvoice.IsCreditPaid = leftover <= 0;
-        }
+        var settlement = InvoiceReturnCreditHelper.ResolveReturnSettlement(
+            returnInvoice.PaymentMethod,
+            returnInvoice.NetAmount,
+            appliedTotal,
+            requestedCashPortion);
 
+        returnInvoice.PaidAmount = settlement.PaidAmount;
+        returnInvoice.RemainingAmount = settlement.RemainingAmount;
+        returnInvoice.IsCreditPaid = settlement.IsCreditPaid;
         returnInvoice.Notes = InvoiceReturnCreditHelper.MarkApplied(returnInvoice.Notes, allocationMarks);
         returnInvoice.UpdatedBy = username;
         returnInvoice.UpdatedAt = DateTime.UtcNow;
+        return settlement.CashMovement;
     }
 
     private async Task ApplyPurchasePriceUpdatesAsync(int tenantId, CloudInvoice invoice, string username, CancellationToken ct)
@@ -1909,8 +1974,11 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         await _db.SaveChangesAsync(ct);
     }
 
-    private static decimal CalculateRounding(decimal netAmount, InvoiceType invoiceType)
+    private static decimal CalculateRounding(decimal netAmount, InvoiceType invoiceType, AccountingCurrency currency = AccountingCurrency.IQD)
     {
+        if (currency == AccountingCurrency.USD)
+            return 0m;
+
         const decimal roundingStep = 250m;
         var remainder = netAmount % roundingStep;
         if (remainder == 0) return 0m;

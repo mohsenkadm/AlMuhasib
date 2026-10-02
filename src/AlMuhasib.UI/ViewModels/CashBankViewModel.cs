@@ -17,6 +17,7 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class CashBankViewModel : ViewModelBase
 {
     private readonly ICashBankService _cashBankService;
+    private readonly ICurrencyExchangeService _currencyExchangeService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
@@ -25,6 +26,7 @@ public partial class CashBankViewModel : ViewModelBase
 
     public CashBankViewModel(
         ICashBankService cashBankService,
+        ICurrencyExchangeService currencyExchangeService,
         IUnitOfWork unitOfWork,
         IExportService exportService,
         ICurrentUserService currentUserService,
@@ -32,6 +34,7 @@ public partial class CashBankViewModel : ViewModelBase
         IFeatureFlagService featureFlags)
     {
         _cashBankService = cashBankService;
+        _currencyExchangeService = currencyExchangeService;
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _currentUserService = currentUserService;
@@ -1086,6 +1089,28 @@ public partial class CashBankViewModel : ViewModelBase
         {
             await ReverseTransferAsync(Transfers.FirstOrDefault(t => t.Id == transferId)
                 ?? new TransferDisplayItem { Id = transferId, Amount = row.Credit + row.Debit, FromName = "?", ToName = "?" });
+            return;
+        }
+
+        if (row.SourceType == "CurrencyExchange" && row.SourceId is int exchangeId)
+        {
+            if (!BeautifulMessageDialog.ShowConfirm(
+                    $"التراجع عن عملية الصيرفة {row.Reference}؟",
+                    "تراجع صيرفة"))
+                return;
+
+            try
+            {
+                await _currencyExchangeService.ReverseAsync(exchangeId);
+                await LoadCashBoxesAsync();
+                if (SelectedCashBox is not null)
+                    await LoadCashBoxTransactionsAsync(SelectedCashBox.Id);
+                BeautifulMessageDialog.ShowSuccess("تم التراجع عن الصيرفة");
+            }
+            catch (Exception ex)
+            {
+                BeautifulMessageDialog.ShowError(ex.Message);
+            }
         }
     }
 

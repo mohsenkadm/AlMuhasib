@@ -25,6 +25,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     private readonly ICurrentUserService _currentUserService;
     private readonly IReportService _reportService;
     private readonly IExchangeRateService _exchangeRateService;
+    private readonly IUserPreferencesService _userPreferences;
     private CancellationTokenSource? _customerBalanceCts;
     private CancellationTokenSource? _supplierBalanceCts;
 
@@ -35,7 +36,8 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         IWhatsAppShareService whatsAppShare,
         ICurrentUserService currentUserService,
         IReportService reportService,
-        IExchangeRateService exchangeRateService)
+        IExchangeRateService exchangeRateService,
+        IUserPreferencesService userPreferences)
     {
         _cashBankService = cashBankService;
         _unitOfWork = unitOfWork;
@@ -44,6 +46,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         _currentUserService = currentUserService;
         _reportService = reportService;
         _exchangeRateService = exchangeRateService;
+        _userPreferences = userPreferences;
         PageTitle = "السندات";
     }
 
@@ -92,14 +95,29 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         ShowCustomerPickerField && SelectedCustomer is not null;
 
     public bool HasCustomerOutstandingBalance =>
-        CustomerOutstandingBalance is > 0;
+        (CustomerOutstandingBalance is > 0) || (CustomerOutstandingBalanceUsd is > 0);
 
-    public string CustomerBalanceText =>
-        CustomerOutstandingBalance is null
-            ? string.Empty
-            : CustomerOutstandingBalance > 0
-                ? $"عليه لنا: {CustomerOutstandingBalance:N0} د.ع"
-                : "لا ذمم عليه";
+    public string CustomerBalanceText
+    {
+        get
+        {
+            if (CustomerOutstandingBalance is null && CustomerOutstandingBalanceUsd is null)
+                return string.Empty;
+
+            var iqd = CustomerOutstandingBalance ?? 0;
+            var usd = CustomerOutstandingBalanceUsd ?? 0;
+            if (iqd <= 0 && usd <= 0)
+                return "لا ذمم عليه";
+
+            var parts = new List<string>();
+            if (iqd > 0) parts.Add($"عليه لنا: {iqd:N0} د.ع");
+            if (usd > 0) parts.Add($"عليه لنا: {usd:N2} $");
+            return string.Join("  |  ", parts);
+        }
+    }
+
+    [ObservableProperty]
+    private decimal? _customerOutstandingBalanceUsd;
 
     [ObservableProperty]
     private Supplier? _selectedSupplier;
@@ -111,20 +129,35 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     private decimal? _supplierOutstandingBalance;
 
     [ObservableProperty]
+    private decimal? _supplierOutstandingBalanceUsd;
+
+    [ObservableProperty]
     private bool _isSupplierBalanceLoading;
 
     public bool ShowSupplierBalance =>
         ShowSupplierField && SelectedSupplier is not null;
 
     public bool HasSupplierOutstandingBalance =>
-        SupplierOutstandingBalance is > 0;
+        (SupplierOutstandingBalance is > 0) || (SupplierOutstandingBalanceUsd is > 0);
 
-    public string SupplierBalanceText =>
-        SupplierOutstandingBalance is null
-            ? string.Empty
-            : SupplierOutstandingBalance > 0
-                ? $"علينا له: {SupplierOutstandingBalance:N0} د.ع"
-                : "لا ذمم علينا";
+    public string SupplierBalanceText
+    {
+        get
+        {
+            if (SupplierOutstandingBalance is null && SupplierOutstandingBalanceUsd is null)
+                return string.Empty;
+
+            var iqd = SupplierOutstandingBalance ?? 0;
+            var usd = SupplierOutstandingBalanceUsd ?? 0;
+            if (iqd <= 0 && usd <= 0)
+                return "لا ذمم علينا";
+
+            var parts = new List<string>();
+            if (iqd > 0) parts.Add($"علينا له: {iqd:N0} د.ع");
+            if (usd > 0) parts.Add($"علينا له: {usd:N2} $");
+            return string.Join("  |  ", parts);
+        }
+    }
 
     [ObservableProperty]
     private Investor? _selectedInvestor;
@@ -263,6 +296,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         {
             LoadPermissions(_currentUserService, "Vouchers");
             SelectedFilterTypeOption ??= FilterTypeOptions[0];
+            InitializeCreateFormFeatures();
 
             await LoadLookupsAsync();
 
@@ -270,10 +304,17 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             {
                 SelectedVoucherType = PendingInitialType.Value;
                 PendingInitialType = null;
+                UpdateFieldVisibility(SelectedVoucherType);
+                await GenerateVoucherNumberAsync();
+                await RefreshFxRateAsync();
+                IsCreateDialogOpen = true;
+            }
+            else
+            {
+                UpdateFieldVisibility(SelectedVoucherType);
+                await GenerateVoucherNumberAsync();
             }
 
-            UpdateFieldVisibility(SelectedVoucherType);
-            await GenerateVoucherNumberAsync();
             await LoadVouchersAsync();
         }
         finally
@@ -285,9 +326,14 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     private async Task LoadLookupsAsync()
     {
         var cashBoxes = await _cashBankService.GetAllCashBoxesAsync();
+        _allCashBoxes.Clear();
         CashBoxes.Clear();
         foreach (var cb in cashBoxes)
+        {
+            _allCashBoxes.Add(cb);
             CashBoxes.Add(cb);
+        }
+        ApplyCashBoxCurrencyFilter();
 
         var banks = await _cashBankService.GetAllBankAccountsAsync();
         BankAccounts.Clear();
@@ -316,9 +362,6 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             Employees.Add(e);
             FilteredEmployees.Add(e);
         }
-
-        if (CashBoxes.Count > 0)
-            SelectedCashBox = CashBoxes[0];
     }
 
     public async Task RefreshInvestorsAsync()
@@ -465,6 +508,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     {
         if (value is not null)
             EmployeeSearchText = value.Name;
+        _ = RefreshEmployeeBalanceAsync();
     }
 
     private void RefreshDocumentLinkVisibility()
@@ -536,10 +580,22 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         OnPropertyChanged(nameof(CustomerBalanceText));
     }
 
+    partial void OnCustomerOutstandingBalanceUsdChanged(decimal? value)
+    {
+        OnPropertyChanged(nameof(HasCustomerOutstandingBalance));
+        OnPropertyChanged(nameof(CustomerBalanceText));
+    }
+
     partial void OnIsCustomerBalanceLoadingChanged(bool value) =>
         OnPropertyChanged(nameof(ShowCustomerBalance));
 
     partial void OnSupplierOutstandingBalanceChanged(decimal? value)
+    {
+        OnPropertyChanged(nameof(HasSupplierOutstandingBalance));
+        OnPropertyChanged(nameof(SupplierBalanceText));
+    }
+
+    partial void OnSupplierOutstandingBalanceUsdChanged(decimal? value)
     {
         OnPropertyChanged(nameof(HasSupplierOutstandingBalance));
         OnPropertyChanged(nameof(SupplierBalanceText));
@@ -568,6 +624,9 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         }
 
         IsCustomerBalanceLoading = true;
+        IsPartyBalanceLoading = true;
+        ShowPartyBalancePanel = true;
+        PartyBalanceTitle = "رصيد العميل";
         OnPropertyChanged(nameof(ShowCustomerBalance));
 
         try
@@ -577,11 +636,17 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
                 return;
 
             CustomerOutstandingBalance = statement.Balance;
+            CustomerOutstandingBalanceUsd = statement.BalanceUsd;
+            SetPartyBalances(statement.Balance, statement.BalanceUsd, "رصيد العميل");
         }
         catch
         {
             if (!token.IsCancellationRequested)
+            {
                 CustomerOutstandingBalance = null;
+                CustomerOutstandingBalanceUsd = null;
+                ClearPartyBalances();
+            }
         }
         finally
         {
@@ -607,6 +672,9 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         }
 
         IsSupplierBalanceLoading = true;
+        IsPartyBalanceLoading = true;
+        ShowPartyBalancePanel = true;
+        PartyBalanceTitle = "رصيد المورد";
         OnPropertyChanged(nameof(ShowSupplierBalance));
 
         try
@@ -616,11 +684,17 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
                 return;
 
             SupplierOutstandingBalance = statement.Balance;
+            SupplierOutstandingBalanceUsd = statement.BalanceUsd;
+            SetPartyBalances(statement.Balance, statement.BalanceUsd, "رصيد المورد");
         }
         catch
         {
             if (!token.IsCancellationRequested)
+            {
                 SupplierOutstandingBalance = null;
+                SupplierOutstandingBalanceUsd = null;
+                ClearPartyBalances();
+            }
         }
         finally
         {
@@ -636,16 +710,22 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     {
         _customerBalanceCts?.Cancel();
         CustomerOutstandingBalance = null;
+        CustomerOutstandingBalanceUsd = null;
         IsCustomerBalanceLoading = false;
         OnPropertyChanged(nameof(ShowCustomerBalance));
+        if (!ShowSupplierField && !ShowEmployeeField && !ShowInvestorField)
+            ClearPartyBalances();
     }
 
     private void ClearSupplierBalance()
     {
         _supplierBalanceCts?.Cancel();
         SupplierOutstandingBalance = null;
+        SupplierOutstandingBalanceUsd = null;
         IsSupplierBalanceLoading = false;
         OnPropertyChanged(nameof(ShowSupplierBalance));
+        if (!ShowCustomerPickerField && !ShowEmployeeField && !ShowInvestorField)
+            ClearPartyBalances();
     }
 
     partial void OnSelectedInvestorChanged(Investor? value)
@@ -654,6 +734,11 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             InvestorSearchText = value.Name;
         OnPropertyChanged(nameof(ShowInvestorBalance));
         OnPropertyChanged(nameof(InvestorBalanceText));
+
+        if (value is not null)
+            SetPartyBalances(value.TotalDeposit, 0, "رصيد إيداع المستثمر");
+        else if (!ShowCustomerPickerField && !ShowSupplierField && !ShowEmployeeField)
+            ClearPartyBalances();
     }
 
     partial void OnShowInvestorFieldChanged(bool value)
@@ -738,13 +823,12 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         _suppressDocumentLinkMutualClear = false;
     }
 
-    partial void OnAmountChanged(decimal value) => UpdateNetAmountText();
-    partial void OnBankFeesChanged(decimal value) => UpdateNetAmountText();
+    // OnAmountChanged / OnBankFeesChanged → VouchersViewModel.CreateForm.cs
 
     private void UpdateNetAmountText()
     {
         if (ShowBankFeesField && BankFees > 0)
-            NetAmountText = $"صافي المبلغ: {(Amount - BankFees):N0}";
+            NetAmountText = $"صافي المبلغ: {FormatAmountForCurrency(Amount - BankFees, SelectedCurrency)} {CurrencyAmountSuffix}";
         else
             NetAmountText = string.Empty;
     }
@@ -818,13 +902,26 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
         try
         {
             var currency = SelectedCashBox.Currency;
-            var fxRate = 1m;
-            if (currency == AccountingCurrency.USD)
+            if (ShowMultiCurrency && currency != SelectedCurrency)
             {
-                fxRate = await _exchangeRateService.GetUsdToIqdForDateOrLatestAsync(VoucherDate);
+                BeautifulMessageDialog.ShowWarning("عملة القاصة يجب أن تطابق عملة السند المحددة");
+                return;
+            }
+
+            var settlementCurrency = ShowSettlementCurrencyPicker
+                ? SettlementCurrency
+                : currency;
+
+            var needsFx = currency == AccountingCurrency.USD || settlementCurrency != currency;
+            var fxRate = 1m;
+            if (needsFx)
+            {
+                fxRate = FxRate > 0
+                    ? FxRate
+                    : await _exchangeRateService.GetUsdToIqdForDateOrLatestAsync(VoucherDate);
                 if (fxRate <= 0)
                 {
-                    BeautifulMessageDialog.ShowWarning("سعر الصرف مطلوب للمستندات بالدولار. سجّل سعر الصرف اليومي أولاً.");
+                    BeautifulMessageDialog.ShowWarning("سعر الصرف مطلوب للمستندات بالدولار أو للتسديد عبر عملتين. سجّل سعر الصرف اليومي أولاً.");
                     return;
                 }
             }
@@ -835,6 +932,7 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
                 VoucherType = SelectedVoucherType,
                 Currency = currency,
                 FxRate = fxRate,
+                SettlementCurrency = settlementCurrency,
                 Amount = Amount,
                 BankFees = BankFees,
                 CashBoxId = SelectedCashBox.Id,
@@ -851,32 +949,13 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
 
             await _cashBankService.CreateVoucherAsync(voucher);
 
-            BeautifulMessageDialog.ShowSuccess($"تم إنشاء {GetVoucherTypeName(SelectedVoucherType)} رقم {VoucherNumber} بنجاح");
+            BeautifulMessageDialog.ShowSuccess($"تم إنشاء {GetVoucherTypeName(SelectedVoucherType)} رقم {voucher.VoucherNumber} بنجاح");
 
-            // Reset form
-            Amount = 0;
-            BankFees = 0;
-            Notes = string.Empty;
-            SelectedCustomer = null;
-            CustomerSearchText = string.Empty;
-            SelectedSupplier = null;
-            SupplierSearchText = string.Empty;
-            SelectedEmployee = null;
-            EmployeeSearchText = string.Empty;
-            SelectedInvestor = null;
-            InvestorSearchText = string.Empty;
-            CustomerComboBoxFilter.Apply(Customers, FilteredCustomers, null);
-            SupplierComboBoxFilter.Apply(Suppliers, FilteredSuppliers, null);
-            InvestorComboBoxFilter.Apply(Investors, FilteredInvestors, null);
-            FilteredEmployees.Clear();
-            foreach (var e in Employees)
-                FilteredEmployees.Add(e);
-            SelectedBankAccount = null;
-            ClearDocumentLinks();
-            VoucherDate = DateTime.Now;
+            IsCreateDialogOpen = false;
+            ResetCreateFormFields(keepType: true);
             await GenerateVoucherNumberAsync();
             await LoadVouchersAsync();
-            await LoadLookupsAsync(); // Refresh balances
+            await LoadLookupsAsync();
         }
         catch (Exception ex)
         {

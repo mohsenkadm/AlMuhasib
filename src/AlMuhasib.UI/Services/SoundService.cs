@@ -4,7 +4,7 @@ using AlMuhasib.Core.Interfaces.Services;
 
 namespace AlMuhasib.UI.Services;
 
-public sealed class SoundService : ISoundService
+public sealed class SoundService : ISoundService, IDisposable
 {
     private static readonly IReadOnlyDictionary<SoundEffect, string> EffectFiles = new Dictionary<SoundEffect, string>
     {
@@ -26,6 +26,7 @@ public sealed class SoundService : ISoundService
     private readonly IUserPreferencesService _preferences;
     private readonly string _soundsDirectory;
     private readonly Dictionary<SoundEffect, MediaPlayer> _players = [];
+    private bool _disposed;
 
     public SoundService(IUserPreferencesService preferences)
     {
@@ -41,7 +42,7 @@ public sealed class SoundService : ISoundService
 
     public void Play(SoundEffect effect)
     {
-        if (!IsEnabled)
+        if (_disposed || !IsEnabled)
             return;
 
         if (!_players.TryGetValue(effect, out var player))
@@ -74,5 +75,27 @@ public sealed class SoundService : ISoundService
             player.Open(new Uri(path, UriKind.Absolute));
             _players[effect] = player;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        foreach (var player in _players.Values)
+        {
+            try
+            {
+                player.Stop();
+                player.Close();
+            }
+            catch
+            {
+                // ignore during shutdown
+            }
+        }
+
+        _players.Clear();
     }
 }

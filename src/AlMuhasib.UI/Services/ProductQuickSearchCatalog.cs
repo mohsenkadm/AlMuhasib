@@ -1,5 +1,6 @@
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Services;
@@ -22,10 +23,11 @@ public sealed class ProductQuickSearchCatalog
     private readonly IProductPriceService? _productPriceService;
     private readonly Dictionary<int, List<WarehouseStockChip>> _stocksByProduct = new();
     private readonly Dictionary<int, decimal> _suggestedPrices = new();
-    private readonly Dictionary<int, decimal> _catalogPrices = new();
+    private readonly Dictionary<int, (decimal Iqd, decimal Usd)> _catalogListPrices = new();
     private List<Product> _products = [];
     private bool _pricingEnabled;
     private InvoicePickerMode _mode;
+    private AccountingCurrency _documentCurrency = AccountingCurrency.IQD;
     private bool _stockLoaded;
     private readonly SemaphoreSlim _stockLock = new(1, 1);
 
@@ -33,6 +35,13 @@ public sealed class ProductQuickSearchCatalog
     {
         _unitOfWork = unitOfWork;
         _productPriceService = productPriceService;
+    }
+
+    /// <summary>عملة مستند الفاتورة لاختيار سعر القائمة (دينار أو دولار).</summary>
+    public AccountingCurrency DocumentCurrency
+    {
+        get => _documentCurrency;
+        set => _documentCurrency = value;
     }
 
     public Task LoadAsync(
@@ -45,7 +54,7 @@ public sealed class ProductQuickSearchCatalog
         _pricingEnabled = pricingEnabled;
         _stocksByProduct.Clear();
         _suggestedPrices.Clear();
-        _catalogPrices.Clear();
+        _catalogListPrices.Clear();
         _stockLoaded = false;
         return Task.CompletedTask;
     }
@@ -88,7 +97,7 @@ public sealed class ProductQuickSearchCatalog
             suggestion.Price = price;
             suggestion.HasPrice = price > 0;
             suggestion.PriceLabel = price > 0
-                ? $"السعر: {price:N0}"
+                ? $"السعر: {AccountingCurrencyHelper.Format(price, DocumentCurrency)}"
                 : (_pricingEnabled ? "بدون سعر" : "لا يوجد سعر سابق");
 
             results.Add(suggestion);
@@ -107,7 +116,7 @@ public sealed class ProductQuickSearchCatalog
     public async Task EnsurePriceLoadedAsync(int productId)
     {
         if (_suggestedPrices.ContainsKey(productId)
-            && (!_pricingEnabled || _catalogPrices.ContainsKey(productId) || _productPriceService is null))
+            && (!_pricingEnabled || _catalogListPrices.ContainsKey(productId) || _productPriceService is null))
             return;
 
         await EnsureSuggestedPricesLoadedAsync([productId]);
@@ -115,8 +124,16 @@ public sealed class ProductQuickSearchCatalog
 
     private decimal ResolvePrice(int productId)
     {
-        if (_pricingEnabled && _catalogPrices.TryGetValue(productId, out var catalog) && catalog > 0)
-            return catalog;
+        if (_pricingEnabled && _catalogListPrices.TryGetValue(productId, out var catalog))
+        {
+            var list = ProductListPriceHelper.ResolveListPrice(catalog.Iqd, catalog.Usd, DocumentCurrency);
+            if (list > 0 || DocumentCurrency == AccountingCurrency.USD)
+                return list;
+        }
+
+        if (DocumentCurrency == AccountingCurrency.USD)
+            return 0m;
+
         return _suggestedPrices.GetValueOrDefault(productId);
     }
 
@@ -217,19 +234,21 @@ public sealed class ProductQuickSearchCatalog
 
     private async Task EnsureCatalogPricesLoadedAsync(IReadOnlyCollection<int> productIds)
     {
-        var missing = productIds.Where(id => !_catalogPrices.ContainsKey(id)).ToList();
+        var missing = productIds.Where(id => !_catalogListPrices.ContainsKey(id)).ToList();
         if (missing.Count == 0 || _productPriceService is null)
             return;
 
         var prices = await _productPriceService.GetByProductIdsAsync(missing);
+        var usePurchase = _mode == InvoicePickerMode.Purchase;
         foreach (var group in prices.GroupBy(p => p.ProductId))
         {
             var preferred = group.FirstOrDefault(p => p.PricingType?.IsDefault == true) ?? group.First();
-            var price = _mode == InvoicePickerMode.Purchase ? preferred.PurchasePrice : preferred.SalePrice;
-            _catalogPrices[group.Key] = price;
+            _catalogListPrices[group.Key] = usePurchase
+                ? (preferred.PurchasePrice, preferred.PurchasePriceUsd)
+                : (preferred.SalePrice, preferred.SalePriceUsd);
         }
 
-        foreach (var productId in missing.Where(id => !_catalogPrices.ContainsKey(id)))
-            _catalogPrices[productId] = 0;
+        foreach (var productId in missing.Where(id => !_catalogListPrices.ContainsKey(id)))
+            _catalogListPrices[productId] = (0m, 0m);
     }
 }

@@ -70,6 +70,21 @@ public sealed class BranchService : IBranchService
         };
         db.Branches.Add(branch);
         await db.SaveChangesAsync(ct);
+
+        // ربط منشئ الفرع تلقائياً حتى يعمل معالج النقل وكتابة رأس المال دون إعادة تسجيل دخول
+        if (_currentUser.UserId is int userId and > 0
+            && !await db.UserBranches.AnyAsync(ub => ub.UserId == userId && ub.BranchId == branch.Id, ct))
+        {
+            db.UserBranches.Add(new UserBranch
+            {
+                UserId = userId,
+                BranchId = branch.Id,
+                IsDefault = false,
+                CreatedAt = DateTime.UtcNow
+            });
+            await db.SaveChangesAsync(ct);
+        }
+
         return branch;
     }
 
@@ -110,21 +125,15 @@ public sealed class BranchService : IBranchService
 
     public async Task<IReadOnlyList<Branch>> GetBranchesForUserAsync(int userId, CancellationToken ct = default)
     {
+        // للدخول: الربط اليدوي فقط. صلاحية «كل الفروع» تُوسَّع في LoginViewModel عبر GetActiveAsync.
+        var branches = (await GetAssignedBranchesForUserAsync(userId, ct)).ToList();
+        if (branches.Count > 0)
+            return branches;
+
         await using var db = await CreateBypassAsync(ct);
         var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId, ct);
         if (user is null)
             return [];
-
-        // Admin with ManageAllBranches sees all active branches (assignment still used as default).
-        var branches = await db.UserBranches.AsNoTracking()
-            .Where(ub => ub.UserId == userId)
-            .Join(db.Branches.Where(b => b.IsActive), ub => ub.BranchId, b => b.Id, (_, b) => b)
-            .OrderByDescending(b => b.IsMain)
-            .ThenBy(b => b.Name)
-            .ToListAsync(ct);
-
-        if (branches.Count > 0)
-            return branches;
 
         // Single-branch heal only (legacy gap). Multi-branch with empty assignments stays empty.
         var sole = await db.Branches.AsNoTracking()
@@ -147,6 +156,17 @@ public sealed class BranchService : IBranchService
         await db.SaveChangesAsync(ct);
         branches.Add(only);
         return branches;
+    }
+
+    public async Task<IReadOnlyList<Branch>> GetAssignedBranchesForUserAsync(int userId, CancellationToken ct = default)
+    {
+        await using var db = await CreateBypassAsync(ct);
+        return await db.UserBranches.AsNoTracking()
+            .Where(ub => ub.UserId == userId)
+            .Join(db.Branches.Where(b => b.IsActive && !b.IsDeleted), ub => ub.BranchId, b => b.Id, (_, b) => b)
+            .OrderByDescending(b => b.IsMain)
+            .ThenBy(b => b.Name)
+            .ToListAsync(ct);
     }
 
     public async Task<int?> GetDefaultBranchIdForUserAsync(int userId, CancellationToken ct = default)
