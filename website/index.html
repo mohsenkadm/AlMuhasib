@@ -8,16 +8,40 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="icon" type="image/png" href="assets/qayd-logo.png"/>
+  <link rel="apple-touch-icon" href="assets/qayd-logo.png"/>
   <link rel="stylesheet" href="css/styles.css"/>
 </head>
 <body>
+  <!-- Splash screen -->
+  <div class="splash" id="splash" role="presentation" aria-hidden="true">
+    <div class="splash-bg" aria-hidden="true">
+      <span class="splash-orb splash-orb-1"></span>
+      <span class="splash-orb splash-orb-2"></span>
+      <span class="splash-grid"></span>
+    </div>
+    <div class="splash-center">
+      <div class="splash-logo-wrap">
+        <span class="splash-ring splash-ring-1"></span>
+        <span class="splash-ring splash-ring-2"></span>
+        <span class="splash-halo"></span>
+        <span class="splash-orbit"><i></i></span>
+        <img class="splash-logo" src="assets/qayd-logo.png" alt="" width="128" height="128" decoding="async"/>
+      </div>
+      <div class="splash-brand" data-i18n="hero.title">قيد</div>
+      <div class="splash-tagline" data-i18n="splash.tagline">منصة أعمال متكاملة</div>
+      <div class="splash-progress" aria-hidden="true"><span></span></div>
+    </div>
+  </div>
+  <script>document.documentElement.classList.add('splash-active');</script>
+
   <div class="bg-mesh" aria-hidden="true"></div>
   <div class="bg-grid" aria-hidden="true"></div>
 
   <header class="site-header">
     <div class="container header-inner">
       <a href="#top" class="logo">
-        <span class="logo-mark">ق</span>
+        <span class="logo-mark"><img src="assets/qayd-logo.png" alt="" width="40" height="40" decoding="async"/></span>
         <span class="logo-text" data-i18n="hero.title">قيد</span>
       </a>
       <button class="nav-toggle" aria-label="Menu" aria-expanded="false">☰</button>
@@ -49,7 +73,7 @@
       <div class="container hero-grid">
         <div class="hero-content">
           <div class="hero-logo-mark hero-seq" style="--seq:0">
-            <span class="logo-mark hero-logo-q">ق</span>
+            <span class="logo-mark hero-logo-q"><img src="assets/qayd-logo.png" alt="قيد" width="52" height="52" decoding="async"/></span>
           </div>
           <p class="hero-eyebrow hero-seq" style="--seq:1" data-i18n="hero.badge">جديد: تعدد العملات دينار/دولار + الفروع المتعددة</p>
           <h1 class="hero-brand hero-seq" style="--seq:2"><span data-i18n="hero.title">قيد</span></h1>
@@ -424,6 +448,7 @@
   <script src="js/screenshots.js"></script>
   <script src="js/systems.js"></script>
   <script src="js/iraq-map.js"></script>
+  <script src="js/splash.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

@@ -26,6 +26,7 @@ window.LOCALES = {
         warehouses: "المخازن", "opening-stock": "الأرصدة الافتتاحية"
       }
     },
+    splash: { tagline: "منصة أعمال متكاملة" },
     hero: {
       badge: "جديد: تعدد العملات دينار/دولار + الفروع المتعددة",
       title: "قيد",
@@ -529,6 +530,7 @@ window.LOCALES = {
         warehouses: "Warehouses", "opening-stock": "Opening stock"
       }
     },
+    splash: { tagline: "All-in-one business platform" },
     hero: {
       badge: "New: IQD/USD multi-currency + multi-branch",
       title: "Qayd",
