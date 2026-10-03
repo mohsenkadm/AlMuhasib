@@ -179,8 +179,11 @@ public class InvoiceService : IInvoiceService
             }
             else
             {
+                // عند الاستبدال (تعديل) يجب الإبقاء على نفس الرقم — لا تُحتسب الفواتير المحذوفة ناعماً.
                 var requested = invoice.InvoiceNumber.Trim();
-                var taken = await context.Invoices.AnyAsync(i => i.InvoiceNumber == requested);
+                var taken = await context.Invoices
+                    .IgnoreQueryFilters()
+                    .AnyAsync(i => i.InvoiceNumber == requested && !i.IsDeleted);
                 invoice.InvoiceNumber = taken
                     ? await GenerateInvoiceNumberAsync(context, invoice.InvoiceType)
                     : requested;
@@ -345,6 +348,7 @@ public class InvoiceService : IInvoiceService
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.Invoices
             .Include(i => i.Items)
+                .ThenInclude(item => item.Product)
             .Include(i => i.Customer)
             .Include(i => i.Supplier)
             .Include(i => i.Driver)

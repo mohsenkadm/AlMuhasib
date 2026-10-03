@@ -4,6 +4,7 @@ using System.Globalization;
 using System.IO;
 using System.Windows;
 using System.Windows.Threading;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.ViewModels.Hotel;
@@ -366,7 +367,24 @@ public partial class MainWindowViewModel : ObservableObject
 
     private async Task EditSalesInvoiceAsync(int invoiceId)
     {
-        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(SalesInvoiceViewModel));
+        var invoice = await ResolveInvoiceTypeAsync(invoiceId);
+        var isReturn = invoice == InvoiceType.SaleReturn;
+        var isDamage = invoice == InvoiceType.Damage;
+        var title = isDamage ? "فاتورة تلف" : isReturn ? "مرتجع مبيعات" : "فاتورة مبيعات";
+        var icon = isDamage ? PackIconKind.DeleteAlert : isReturn ? PackIconKind.KeyboardReturn : PackIconKind.CashRegister;
+        var screen = isDamage
+            ? ScreenPermissionRegistry.DamageInvoice
+            : isReturn
+                ? ScreenPermissionRegistry.SalesReturn
+                : "SaleInvoice";
+
+        // فضّل تبويباً بنفس وضع الشاشة (مبيعات / مرتجع / تلف) إن وُجد
+        var existing = OpenTabs.FirstOrDefault(t =>
+            t.ViewModelType == typeof(SalesInvoiceViewModel)
+            && t.ViewModel is SalesInvoiceViewModel svm
+            && svm.IsReturnMode == isReturn
+            && svm.IsDamageMode == isDamage);
+
         if (existing?.ViewModel is SalesInvoiceViewModel salesVm)
         {
             ActivateTab(existing);
@@ -376,17 +394,36 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (OpenTabs.Count >= MaxOpenTabs)
         {
-            _toast.ShowWarning($"الحد الأقصى {MaxOpenTabs} تبويبات. أغلِق تبويباً لفتح فاتورة المبيعات.");
+            _toast.ShowWarning($"الحد الأقصى {MaxOpenTabs} تبويبات. أغلِق تبويباً لفتح {title}.");
             return;
         }
 
+        // LoadInvoiceForEditAsync يضبط وضع المرتجع/التلف — لا تضبط Pending*Mode هنا حتى لا تُستبدل عملية التعديل.
         InvoiceNavigationBridge.PendingSalesEditInvoiceId = invoiceId;
-        await OpenTabAsync(typeof(SalesInvoiceViewModel), "فاتورة مبيعات", PackIconKind.CashRegister, activateIfExists: false);
+
+        await OpenTabAsync(
+            typeof(SalesInvoiceViewModel),
+            title,
+            icon,
+            activateIfExists: false,
+            permissionScreenName: screen);
     }
 
     private async Task EditPurchaseInvoiceAsync(int invoiceId)
     {
-        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(PurchaseInvoiceViewModel));
+        var invoice = await ResolveInvoiceTypeAsync(invoiceId);
+        var isReturn = invoice == InvoiceType.PurchaseReturn;
+        var title = isReturn ? "مرتجع مشتريات" : "فاتورة مشتريات";
+        var icon = isReturn ? PackIconKind.KeyboardReturn : PackIconKind.CartArrowDown;
+        var screen = isReturn
+            ? ScreenPermissionRegistry.PurchaseReturn
+            : "PurchaseInvoice";
+
+        var existing = OpenTabs.FirstOrDefault(t =>
+            t.ViewModelType == typeof(PurchaseInvoiceViewModel)
+            && t.ViewModel is PurchaseInvoiceViewModel pvm
+            && pvm.IsReturnMode == isReturn);
+
         if (existing?.ViewModel is PurchaseInvoiceViewModel purchaseVm)
         {
             ActivateTab(existing);
@@ -396,12 +433,32 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (OpenTabs.Count >= MaxOpenTabs)
         {
-            _toast.ShowWarning($"الحد الأقصى {MaxOpenTabs} تبويبات. أغلِق تبويباً لفتح فاتورة المشتريات.");
+            _toast.ShowWarning($"الحد الأقصى {MaxOpenTabs} تبويبات. أغلِق تبويباً لفتح {title}.");
             return;
         }
 
         InvoiceNavigationBridge.PendingPurchaseEditInvoiceId = invoiceId;
-        await OpenTabAsync(typeof(PurchaseInvoiceViewModel), "فاتورة مشتريات", PackIconKind.CartArrowDown, activateIfExists: false);
+
+        await OpenTabAsync(
+            typeof(PurchaseInvoiceViewModel),
+            title,
+            icon,
+            activateIfExists: false,
+            permissionScreenName: screen);
+    }
+
+    private async Task<InvoiceType?> ResolveInvoiceTypeAsync(int invoiceId)
+    {
+        try
+        {
+            var invoiceService = _serviceProvider.GetRequiredService<IInvoiceService>();
+            var inv = await invoiceService.GetByIdWithDetailsAsync(invoiceId);
+            return inv?.InvoiceType;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private Type ActiveDashboardType => _moduleRegistry.ActiveModule.DashboardViewModelType;

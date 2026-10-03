@@ -13,6 +13,7 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class InstallmentInvoiceViewModel
 {
     private int? _editingInvoiceId;
+    private readonly Dictionary<(int ProductId, int WarehouseId), decimal> _editingStockCredits = new();
     private DispatcherTimer? _invoiceSearchTimer;
     private CancellationTokenSource? _invoiceSearchCts;
 
@@ -144,11 +145,13 @@ public partial class InstallmentInvoiceViewModel
             return;
 
         _editingInvoiceId = invoiceId;
+        CaptureEditingStockCredits(invoice);
         IsSaved = false;
         _savedInvoice = null;
         _savedItems = [];
         _savedPlan = null;
         ErrorMessage = string.Empty;
+        PageTitle = "تعديل فاتورة أقساط";
 
         InvoiceNumber = invoice.InvoiceNumber;
         InvoiceDate = invoice.Date;
@@ -226,5 +229,23 @@ public partial class InstallmentInvoiceViewModel
         _draftService.ClearDraft(DraftKey);
     }
 
-    private void ClearEditingInvoiceId() => _editingInvoiceId = null;
+    private void ClearEditingInvoiceId()
+    {
+        _editingInvoiceId = null;
+        _editingStockCredits.Clear();
+    }
+
+    private void CaptureEditingStockCredits(Core.Entities.Invoice invoice)
+    {
+        _editingStockCredits.Clear();
+        foreach (var group in invoice.Items
+                     .Where(i => i.ProductId is > 0)
+                     .GroupBy(i => (ProductId: i.ProductId!.Value, WarehouseId: i.WarehouseId ?? invoice.WarehouseId)))
+        {
+            _editingStockCredits[group.Key] = group.Sum(i => Math.Abs(i.Quantity));
+        }
+    }
+
+    private decimal GetEditingStockCredit(int productId, int warehouseId) =>
+        _editingStockCredits.TryGetValue((productId, warehouseId), out var qty) ? qty : 0m;
 }

@@ -522,17 +522,30 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         try
         {
             await LoadRowUnitsAsync(row);
-            if (row.ProductId is int productId)
-                await LoadRowPricingOptionsAsync(row, productId);
+            var productId = row.ProductId!.Value;
+            await LoadRowPricingOptionsAsync(row, productId);
 
-            var stocks = await _unitOfWork.WarehouseStocks.FindAsync(s => s.ProductId == row.ProductId.Value);
+            var stocks = await _unitOfWork.WarehouseStocks.FindAsync(s => s.ProductId == productId);
             var warehouses = await _unitOfWork.Warehouses.GetAllAsync();
             var warehouseDict = warehouses.ToDictionary(w => w.Id, w => w.Name);
 
             var lines = stocks
-                .Where(s => s.Quantity != 0)
-                .Select(s => $"{warehouseDict.GetValueOrDefault(s.WarehouseId, "مخزن")}: {s.Quantity:N0}")
+                .Select(s =>
+                {
+                    var qty = s.Quantity + GetEditingStockCredit(productId, s.WarehouseId);
+                    return qty != 0
+                        ? $"{warehouseDict.GetValueOrDefault(s.WarehouseId, "مخزن")}: {qty:N0}"
+                        : null;
+                })
+                .Where(s => s is not null)
+                .Cast<string>()
                 .ToList();
+
+            foreach (var credit in _editingStockCredits.Where(c => c.Key.ProductId == productId))
+            {
+                if (stocks.Any(s => s.WarehouseId == credit.Key.WarehouseId)) continue;
+                lines.Add($"{warehouseDict.GetValueOrDefault(credit.Key.WarehouseId, "مخزن")}: {credit.Value:N0}");
+            }
 
             row.StockInfo = lines.Count > 0 ? string.Join(" | ", lines) : "لا يوجد رصيد";
 
@@ -540,11 +553,16 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             {
                 var lineWarehouseId = row.ResolveWarehouseId(SelectedWarehouse.Id);
                 row.AvailableStock = lineWarehouseId is > 0
-                    ? stocks.FirstOrDefault(s => s.WarehouseId == lineWarehouseId)?.Quantity ?? 0
-                    : stocks.Sum(s => s.Quantity);
+                    ? (stocks.FirstOrDefault(s => s.WarehouseId == lineWarehouseId)?.Quantity ?? 0)
+                      + GetEditingStockCredit(productId, lineWarehouseId.Value)
+                    : stocks.Sum(s => s.Quantity)
+                      + _editingStockCredits.Where(c => c.Key.ProductId == productId).Sum(c => c.Value);
             }
             else
-                row.AvailableStock = stocks.Sum(s => s.Quantity);
+            {
+                row.AvailableStock = stocks.Sum(s => s.Quantity)
+                    + _editingStockCredits.Where(c => c.Key.ProductId == productId).Sum(c => c.Value);
+            }
         }
         catch
         {
@@ -676,7 +694,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             var lineWarehouse = Warehouses.FirstOrDefault(w => w.Id == lineWarehouseId) ?? SelectedWarehouse;
             var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
                 s => s.WarehouseId == lineWarehouseId && s.ProductId == item.ProductId!.Value);
-            var available = stocks.FirstOrDefault()?.Quantity ?? 0;
+            var available = (stocks.FirstOrDefault()?.Quantity ?? 0)
+                + GetEditingStockCredit(item.ProductId!.Value, lineWarehouseId);
             if (item.Quantity > available)
             {
                 InvoiceValidationDialog.ShowBlockingError(

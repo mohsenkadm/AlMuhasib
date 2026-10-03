@@ -165,7 +165,7 @@
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount"/>
                                 <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="90"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
-                                <DataGridTemplateColumn Header="الإجراءات" Width="350" MinWidth="350"
+                                <DataGridTemplateColumn Header="الإجراءات" Width="390" MinWidth="390"
                                                         behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                     <DataGridTemplateColumn.CellStyle>
                                         <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
@@ -184,6 +184,25 @@
                                                 </Button>
                                                 <Button Style="{StaticResource TablePrintIconButton}" Command="{Binding DataContext.PrintRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}" CommandParameter="{Binding}">
                                                     <materialDesign:PackIcon Kind="Printer" Width="18" Height="18"/>
+                                                </Button>
+                                                <Button Command="{Binding DataContext.PrintCarContractRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="طباعة عقد معرض السيارات">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button" BasedOn="{StaticResource TablePrintIconButton}">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                            <Style.Triggers>
+                                                                <MultiDataTrigger>
+                                                                    <MultiDataTrigger.Conditions>
+                                                                        <Condition Binding="{Binding DataContext.ShowCarShowroomContractPrint, RelativeSource={RelativeSource AncestorType=DataGrid}}" Value="True"/>
+                                                                        <Condition Binding="{Binding IsReturn}" Value="False"/>
+                                                                    </MultiDataTrigger.Conditions>
+                                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                                </MultiDataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                    <materialDesign:PackIcon Kind="FileDocumentOutline" Width="18" Height="18"/>
                                                 </Button>
                                                 <Button Style="{StaticResource TableWhatsAppIconButton}"
                                                         Command="{Binding DataContext.SendWhatsAppRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"

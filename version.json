@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.33",
-  "releaseDate": "2026-10-03",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.33/AlMuhasib-1.14.33.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.33/Qayd-Setup-1.14.33.exe",
-  "sha256": "097F6DB46D047CE9ED653B30B9C83D21165F1A0CEA929987208B0E43D6575631",
-  "sizeBytes": 184606065,
-  "releaseNotes": "تحسين الفواتير والبحث السريع وعزل فرع السيارات — تحديث اختياري آمن بدون تغيير قاعدة البيانات",
+  "version": "1.14.34",
+  "releaseDate": "2026-10-04",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.34/AlMuhasib-1.14.34.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.34/Qayd-Setup-1.14.34.exe",
+  "sha256": "A62CA1A8043DD1456B3094052A5846E6AFDDCC33A1A01C64E121322E0C00837F",
+  "sizeBytes": 184618994,
+  "releaseNotes": "تحسين بحث الفواتير وتقرير المبيعات والتنقل — تحديث اختياري آمن بدون تغيير قاعدة البيانات",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

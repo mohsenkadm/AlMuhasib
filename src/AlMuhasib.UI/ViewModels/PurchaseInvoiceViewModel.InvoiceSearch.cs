@@ -82,8 +82,9 @@ public partial class PurchaseInvoiceViewModel
         IsInvoiceSearchLoading = true;
         try
         {
+            var searchType = IsReturnMode ? InvoiceType.PurchaseReturn : InvoiceType.Purchase;
             var results = await _invoiceService.SearchAsync(
-                InvoiceType.Purchase,
+                searchType,
                 InvoiceSearchText,
                 InvoiceSearchSortNewestFirst,
                 limit: 50,
@@ -127,7 +128,7 @@ public partial class PurchaseInvoiceViewModel
             return;
 
         var invoice = await _invoiceService.GetByIdWithDetailsAsync(invoiceId);
-        if (invoice is null || invoice.InvoiceType != InvoiceType.Purchase)
+        if (invoice is null || invoice.InvoiceType is not (InvoiceType.Purchase or InvoiceType.PurchaseReturn))
         {
             BeautifulMessageDialog.ShowWarning("تعذر تحميل الفاتورة");
             return;
@@ -143,6 +144,10 @@ public partial class PurchaseInvoiceViewModel
         _savedInvoice = null;
         _savedItems = [];
         ErrorMessage = string.Empty;
+
+        IsReturnMode = invoice.InvoiceType == InvoiceType.PurchaseReturn;
+        PageTitle = IsReturnMode ? "تعديل مرتجع مشتريات" : "تعديل فاتورة مشتريات";
+        _relatedInvoiceId = invoice.RelatedInvoiceId;
 
         InvoiceNumber = invoice.InvoiceNumber;
         InvoiceDate = invoice.Date;

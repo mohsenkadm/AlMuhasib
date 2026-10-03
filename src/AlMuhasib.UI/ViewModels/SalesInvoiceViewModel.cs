@@ -1018,19 +1018,40 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             var stocks = await _unitOfWork.WarehouseStocks.FindAsync(s => s.ProductId == row.ProductId.Value);
             var warehouses = await _unitOfWork.Warehouses.GetAllAsync();
             var warehouseDict = warehouses.ToDictionary(w => w.Id, w => w.Name);
+            var productId = row.ProductId.Value;
 
             var lines = stocks
-                .Where(s => s.Quantity != 0 && warehouseDict.ContainsKey(s.WarehouseId))
-                .Select(s => $"{warehouseDict[s.WarehouseId]}: {s.Quantity:N0}")
+                .Where(s => warehouseDict.ContainsKey(s.WarehouseId))
+                .Select(s =>
+                {
+                    var qty = s.Quantity + GetEditingStockCredit(productId, s.WarehouseId);
+                    return qty != 0 ? $"{warehouseDict[s.WarehouseId]}: {qty:N0}" : null;
+                })
+                .Where(s => s is not null)
+                .Cast<string>()
                 .ToList();
+
+            // ائتمان التعديل لمخزن بلا صف مخزون حالياً
+            foreach (var credit in _editingStockCredits.Where(c => c.Key.ProductId == productId))
+            {
+                if (stocks.Any(s => s.WarehouseId == credit.Key.WarehouseId)) continue;
+                if (!warehouseDict.TryGetValue(credit.Key.WarehouseId, out var whName)) continue;
+                lines.Add($"{whName}: {credit.Value:N0}");
+            }
 
             row.StockInfo = lines.Count > 0 ? string.Join(" | ", lines) : "لا يوجد رصيد";
 
             var lineWarehouseId = row.ResolveWarehouseId(SelectedWarehouse?.Id);
             if (lineWarehouseId is > 0)
-                row.AvailableStock = stocks.FirstOrDefault(s => s.WarehouseId == lineWarehouseId)?.Quantity ?? 0;
+            {
+                row.AvailableStock = (stocks.FirstOrDefault(s => s.WarehouseId == lineWarehouseId)?.Quantity ?? 0)
+                    + GetEditingStockCredit(productId, lineWarehouseId.Value);
+            }
             else
-                row.AvailableStock = stocks.Where(s => warehouseDict.ContainsKey(s.WarehouseId)).Sum(s => s.Quantity);
+            {
+                row.AvailableStock = stocks.Where(s => warehouseDict.ContainsKey(s.WarehouseId)).Sum(s => s.Quantity)
+                    + _editingStockCredits.Where(c => c.Key.ProductId == productId).Sum(c => c.Value);
+            }
 
             await LoadRowFeatureDataAsync(row);
         }
@@ -1198,7 +1219,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             return;
         }
 
-        // Stock validation for sales/damage (not returns — returns increase stock)
+        // Stock validation for sales/damage (not returns — returns increase stock).
+        // عند التعديل: أضف كميات الفاتورة الأصلية لأنها ستُعاد للمخزن قبل إعادة الخصم.
         if (!IsReturnMode)
         {
             foreach (var item in validItems.Where(i => i.ProductId.HasValue))
@@ -1207,7 +1229,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 var lineWarehouse = Warehouses.FirstOrDefault(w => w.Id == lineWarehouseId) ?? SelectedWarehouse;
                 var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
                     s => s.WarehouseId == lineWarehouseId && s.ProductId == item.ProductId!.Value);
-                var available = stocks.FirstOrDefault()?.Quantity ?? 0;
+                var available = (stocks.FirstOrDefault()?.Quantity ?? 0)
+                    + GetEditingStockCredit(item.ProductId!.Value, lineWarehouseId);
                 var requiredQty = Math.Abs(InvoiceCustomFieldsHelper.ToStockQuantity(item));
                 if (requiredQty > available)
                 {
@@ -1217,7 +1240,10 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 }
             }
 
-            if (_featureFlags?.ExpiryTracking == true && _productBatchService is not null)
+            // FEFO: عند التعديل يُعاد المخزون أولاً داخل ReplaceInvoiceAsync — تخطَّ الفحص المسبق.
+            if (_editingInvoiceId is null
+                && _featureFlags?.ExpiryTracking == true
+                && _productBatchService is not null)
             {
                 foreach (var item in validItems.Where(i => i.ProductId.HasValue))
                 {
@@ -1501,85 +1527,49 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         if (_savedInvoice is null)
             throw new InvalidOperationException("لا توجد فاتورة محفوظة");
 
-        var branding = PrintBrandingProvider.Current;
-        var customer = SelectedCustomer
-            ?? _savedInvoice.Customer
+        _savedInvoice.Customer ??= SelectedCustomer
             ?? Customers.FirstOrDefault(c => c.Id == _savedInvoice.CustomerId);
+        foreach (var item in _savedInvoice.Items.Where(i => i.ProductId is > 0 && i.Product is null))
+        {
+            item.Product = Products.FirstOrDefault(p => p.Id == item.ProductId)
+                ?? Items.FirstOrDefault(r => r.ProductId == item.ProductId)?.SelectedProduct;
+        }
 
+        // Mirror screen totals after save while reusing shared mapping for vehicle/parties.
         var paidAmount = _savedInvoice.PaymentMethod == PaymentMethod.Cash
             ? GrandTotal
             : Math.Clamp(_savedInvoice.PaidAmount, 0m, GrandTotal);
-        var remainingAmount = Math.Max(0m, GrandTotal - paidAmount);
-
-        var product = ResolveContractProduct();
-        var passengers = product?.PassengerCount;
-        var sizeText = passengers is > 0 ? $"{passengers} راكب" : string.Empty;
-
+        var baseModel = ShowroomSaleContractPrintModelFactory.FromInvoice(_savedInvoice, Products);
         return new ShowroomSaleContractPrintModel
         {
-            ContractNumber = _savedInvoice.InvoiceNumber,
-            ContractDate = _savedInvoice.Date.Kind == DateTimeKind.Utc
-                ? _savedInvoice.Date.ToLocalTime()
-                : _savedInvoice.Date,
-            City = ExtractCityFromAddress(branding.Address),
-            SellerName = branding.CompanyName,
-            SellerPhone = string.IsNullOrWhiteSpace(branding.PhonePrimary)
-                ? branding.PhoneSecondary
-                : branding.PhonePrimary,
-            SellerAddress = branding.Address,
-            SellerIdNumber = branding.CompanyIdNumber,
-            SellerIdIssuer = branding.CompanyIdIssuer,
-            AnnualRegistrationNote = "مطابق",
-            BuyerName = customer?.Name ?? CustomerSearchText,
-            BuyerPhone = customer?.Phone ?? string.Empty,
-            BuyerAddress = customer?.Address ?? string.Empty,
-            BuyerIdNumber = customer?.IdNumber ?? string.Empty,
-            BuyerIdIssuer = customer?.IdIssuer ?? string.Empty,
-            VehicleName = product?.Name ?? string.Empty,
-            PlateNumber = product?.PlateNumber ?? string.Empty,
-            ChassisNumber = product?.ChassisNumber ?? string.Empty,
-            VehicleType = product?.VehicleType ?? string.Empty,
-            VehicleColor = product?.VehicleColor ?? string.Empty,
-            VehicleModel = product?.CarModel ?? string.Empty,
-            VehicleSize = sizeText,
-            PlateType = product is null
-                ? string.Empty
-                : AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.ToDisplay(product.PlateType),
+            ContractNumber = baseModel.ContractNumber,
+            ContractDate = baseModel.ContractDate,
+            City = baseModel.City,
+            SellerName = baseModel.SellerName,
+            SellerPhone = baseModel.SellerPhone,
+            SellerAddress = baseModel.SellerAddress,
+            SellerIdNumber = baseModel.SellerIdNumber,
+            SellerIdIssuer = baseModel.SellerIdIssuer,
+            AnnualRegistrationNote = baseModel.AnnualRegistrationNote,
+            BuyerName = string.IsNullOrWhiteSpace(baseModel.BuyerName) ? CustomerSearchText : baseModel.BuyerName,
+            BuyerPhone = baseModel.BuyerPhone,
+            BuyerAddress = baseModel.BuyerAddress,
+            BuyerIdNumber = baseModel.BuyerIdNumber,
+            BuyerIdIssuer = baseModel.BuyerIdIssuer,
+            VehicleName = baseModel.VehicleName,
+            PlateNumber = baseModel.PlateNumber,
+            ChassisNumber = baseModel.ChassisNumber,
+            VehicleType = baseModel.VehicleType,
+            VehicleColor = baseModel.VehicleColor,
+            VehicleModel = baseModel.VehicleModel,
+            VehicleSize = baseModel.VehicleSize,
+            PlateType = baseModel.PlateType,
             TotalAmount = GrandTotal,
             TotalAmountInWords = AlMuhasib.Core.Utilities.ArabicAmountToWords.Convert(GrandTotal),
             PaidAmount = paidAmount,
-            RemainingAmount = remainingAmount,
-            DueDate = _savedInvoice.CreditDueDate
+            RemainingAmount = Math.Max(0m, GrandTotal - paidAmount),
+            DueDate = baseModel.DueDate
         };
-    }
-
-    private Product? ResolveContractProduct()
-    {
-        var fromItems = Items
-            .Select(r => r.SelectedProduct)
-            .FirstOrDefault(p => p is not null && (
-                !string.IsNullOrWhiteSpace(p.ChassisNumber)
-                || !string.IsNullOrWhiteSpace(p.PlateNumber)
-                || !string.IsNullOrWhiteSpace(p.VehicleType)));
-
-        if (fromItems is not null)
-            return fromItems;
-
-        var productId = _savedItems.FirstOrDefault(i => i.ProductId is > 0)?.ProductId
-            ?? Items.FirstOrDefault(r => r.ProductId is > 0)?.ProductId;
-        if (productId is null)
-            return Items.FirstOrDefault(r => r.SelectedProduct is not null)?.SelectedProduct;
-
-        return Products.FirstOrDefault(p => p.Id == productId)
-            ?? Items.FirstOrDefault(r => r.ProductId == productId)?.SelectedProduct;
-    }
-
-    private static string ExtractCityFromAddress(string? address)
-    {
-        if (string.IsNullOrWhiteSpace(address))
-            return string.Empty;
-        var parts = address.Split(['،', ',', '-'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        return parts.Length > 0 ? parts[^1] : address.Trim();
     }
 
     private InvoicePrintModel BuildSavedInvoicePrintModel()

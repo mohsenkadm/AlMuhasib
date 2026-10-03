@@ -13,6 +13,8 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class SalesInvoiceViewModel
 {
     private int? _editingInvoiceId;
+    /// <summary>كميات الفاتورة الأصلية تُضاف لرصيد المخزن أثناء التعديل (قبل عكس الحذف).</summary>
+    private readonly Dictionary<(int ProductId, int WarehouseId), decimal> _editingStockCredits = new();
     private DispatcherTimer? _invoiceSearchTimer;
     private CancellationTokenSource? _invoiceSearchCts;
 
@@ -92,8 +94,14 @@ public partial class SalesInvoiceViewModel
         IsInvoiceSearchLoading = true;
         try
         {
+            var searchType = IsDamageMode
+                ? InvoiceType.Damage
+                : IsReturnMode
+                    ? InvoiceType.SaleReturn
+                    : InvoiceType.Sale;
+
             var results = await _invoiceService.SearchAsync(
-                InvoiceType.Sale,
+                searchType,
                 InvoiceSearchText,
                 InvoiceSearchSortNewestFirst,
                 limit: 50,
@@ -139,7 +147,8 @@ public partial class SalesInvoiceViewModel
             return;
 
         var invoice = await _invoiceService.GetByIdWithDetailsAsync(invoiceId);
-        if (invoice is null || invoice.InvoiceType != InvoiceType.Sale)
+        if (invoice is null || invoice.InvoiceType is not (
+                InvoiceType.Sale or InvoiceType.SaleReturn or InvoiceType.Damage))
         {
             BeautifulMessageDialog.ShowWarning("تعذر تحميل الفاتورة");
             return;
@@ -151,10 +160,21 @@ public partial class SalesInvoiceViewModel
             return;
 
         _editingInvoiceId = invoiceId;
+        CaptureEditingStockCredits(invoice);
         IsSaved = false;
         _savedInvoice = null;
         _savedItems = [];
         ErrorMessage = string.Empty;
+
+        IsDamageMode = invoice.InvoiceType == InvoiceType.Damage;
+        IsReturnMode = invoice.InvoiceType == InvoiceType.SaleReturn;
+        PageTitle = invoice.InvoiceType switch
+        {
+            InvoiceType.Damage => "تعديل فاتورة تلف",
+            InvoiceType.SaleReturn => "تعديل مرتجع مبيعات",
+            _ => "تعديل فاتورة مبيعات"
+        };
+        _relatedInvoiceId = invoice.RelatedInvoiceId;
 
         InvoiceNumber = invoice.InvoiceNumber;
         InvoiceDate = invoice.Date;
@@ -235,8 +255,32 @@ public partial class SalesInvoiceViewModel
             AddRow();
 
         RecalculateTotals();
+        OnPropertyChanged(nameof(ShowCustomerAndPayment));
+        RefreshInvoiceWarnings();
         _draftService.ClearDraft(DraftKey);
     }
 
-    private void ClearEditingInvoiceId() => _editingInvoiceId = null;
+    private void ClearEditingInvoiceId()
+    {
+        _editingInvoiceId = null;
+        _editingStockCredits.Clear();
+    }
+
+    private void CaptureEditingStockCredits(Core.Entities.Invoice invoice)
+    {
+        _editingStockCredits.Clear();
+        // فقط أنواع الفواتير التي تُنقص المخزن تحتاج ائتمان كمية عند التعديل
+        if (invoice.InvoiceType is not (InvoiceType.Sale or InvoiceType.Damage or InvoiceType.Installment))
+            return;
+
+        foreach (var group in invoice.Items
+                     .Where(i => i.ProductId is > 0)
+                     .GroupBy(i => (ProductId: i.ProductId!.Value, WarehouseId: i.WarehouseId ?? invoice.WarehouseId)))
+        {
+            _editingStockCredits[group.Key] = group.Sum(i => Math.Abs(i.Quantity));
+        }
+    }
+
+    private decimal GetEditingStockCredit(int productId, int warehouseId) =>
+        _editingStockCredits.TryGetValue((productId, warehouseId), out var qty) ? qty : 0m;
 }

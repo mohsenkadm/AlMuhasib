@@ -22,6 +22,7 @@ public partial class SalesReportViewModel : ReportViewModelBase
     private readonly IInvoiceService _invoiceService;
     private readonly IWhatsAppShareService _whatsAppShare;
     private readonly IFeatureFlagService _featureFlags;
+    private readonly IShowroomSaleContractPrintService _showroomContractPrint;
 
     // Stats
     [ObservableProperty] private string _totalSales = "0";
@@ -63,28 +64,34 @@ public partial class SalesReportViewModel : ReportViewModelBase
     public ObservableCollection<CashBox> CashBoxes { get; } = [];
 
     [ObservableProperty] private bool _canSettleCreditInvoices = true;
+    [ObservableProperty] private bool _showCarShowroomContractPrint;
 
     public SalesReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService,
         IInvoiceService invoiceService, IWhatsAppShareService whatsAppShare,
-        IFeatureFlagService featureFlags)
+        IFeatureFlagService featureFlags,
+        IShowroomSaleContractPrintService showroomContractPrint)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
         _invoiceService = invoiceService;
         _whatsAppShare = whatsAppShare;
         _featureFlags = featureFlags;
+        _showroomContractPrint = showroomContractPrint;
         PageTitle = "تقرير المبيعات";
         InitReportActionServices(invoiceService);
         RegisterThemeChartReload(LoadDataAsync);
-        RefreshSettleFeatureFlag();
+        RefreshFeatureFlags();
         _featureFlags.FlagsChanged += OnFeatureFlagsChanged;
     }
 
     private void OnFeatureFlagsChanged(object? sender, EventArgs e) =>
-        Application.Current?.Dispatcher.Invoke(RefreshSettleFeatureFlag);
+        Application.Current?.Dispatcher.Invoke(RefreshFeatureFlags);
 
-    private void RefreshSettleFeatureFlag() =>
+    private void RefreshFeatureFlags()
+    {
         CanSettleCreditInvoices = _featureFlags.SettleCreditInvoicesInReports;
+        ShowCarShowroomContractPrint = _featureFlags.CarShowroom;
+    }
 
     public override async Task InitializeAsync()
     {
@@ -193,6 +200,35 @@ public partial class SalesReportViewModel : ReportViewModelBase
             _exportService.PrintInvoice(model);
         }
         catch (Exception ex) { BeautifulMessageDialog.ShowError(ex.Message); }
+    }
+
+    [RelayCommand]
+    private async Task PrintCarContractRow(SalesReportRow? row)
+    {
+        if (row is null || !ShowCarShowroomContractPrint || row.IsReturn) return;
+        try
+        {
+            var invoice = await _invoiceService.GetByIdWithDetailsAsync(row.InvoiceId);
+            if (invoice is null)
+            {
+                BeautifulMessageDialog.ShowWarning("الفاتورة غير موجودة");
+                return;
+            }
+
+            if (invoice.InvoiceType is not (InvoiceType.Sale or InvoiceType.Installment))
+            {
+                BeautifulMessageDialog.ShowWarning("طباعة عقد المعرض متاحة لفواتير المبيعات فقط");
+                return;
+            }
+
+            var products = await _unitOfWork.Products.GetAllAsync();
+            var model = ShowroomSaleContractPrintModelFactory.FromInvoice(invoice, products);
+            _showroomContractPrint.PrintContract(model);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذّرت طباعة العقد: {ex.Message}");
+        }
     }
 
     [RelayCommand]
