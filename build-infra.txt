@@ -1,0 +1,21 @@
+﻿  Determining projects to restore...
+  Restored D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Core\AlMuhasib.Core.csproj (in 4.57 sec).
+  Restored D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Sync\AlMuhasib.Sync.csproj (in 4.58 sec).
+  Restored D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\AlMuhasib.Infrastructure.csproj (in 9.24 sec).
+  AlMuhasib.Core -> D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Core\bin\Debug\net10.0\AlMuhasib.Core.dll
+  AlMuhasib.Sync -> D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Sync\bin\Debug\net10.0\AlMuhasib.Sync.dll
+D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\Services\CarContractService.cs(4,7): warning CS0105: The using directive for 'AlMuhasib.Core.Interfaces.Services' appeared previously in this namespace [D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\AlMuhasib.Infrastructure.csproj]
+D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\Data\Migrations\20260518222333_k.cs(8,26): warning CS8981: The type name 'k' only contains lower-cased ascii characters. Such names may become reserved for the language. [D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\AlMuhasib.Infrastructure.csproj]
+D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\Data\Migrations\20260518222333_k.Designer.cs(16,19): warning CS8981: The type name 'k' only contains lower-cased ascii characters. Such names may become reserved for the language. [D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\AlMuhasib.Infrastructure.csproj]
+D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\Services\WarehouseTransferService.cs(7,41): error CS0246: The type or namespace name 'IWarehouseTransferService' could not be found (are you missing a using directive or an assembly reference?) [D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\AlMuhasib.Infrastructure.csproj]
+
+Build FAILED.
+
+D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\Services\CarContractService.cs(4,7): warning CS0105: The using directive for 'AlMuhasib.Core.Interfaces.Services' appeared previously in this namespace [D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\AlMuhasib.Infrastructure.csproj]
+D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\Data\Migrations\20260518222333_k.cs(8,26): warning CS8981: The type name 'k' only contains lower-cased ascii characters. Such names may become reserved for the language. [D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\AlMuhasib.Infrastructure.csproj]
+D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\Data\Migrations\20260518222333_k.Designer.cs(16,19): warning CS8981: The type name 'k' only contains lower-cased ascii characters. Such names may become reserved for the language. [D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\AlMuhasib.Infrastructure.csproj]
+D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\Services\WarehouseTransferService.cs(7,41): error CS0246: The type or namespace name 'IWarehouseTransferService' could not be found (are you missing a using directive or an assembly reference?) [D:\AlMuhasib\AlMuhasib\AlMuhasib\src\AlMuhasib.Infrastructure\AlMuhasib.Infrastructure.csproj]
+    3 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:45.33
