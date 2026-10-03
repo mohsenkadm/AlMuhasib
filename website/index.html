@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="description" content="قيد — منصة أعمال عربية: محاسبة، ذهب، فنادق، عقود سيارات، تجارة سيارات، عقود عقارات، ولاء، حقول مخصصة، مساعد صوتي، ربط فروع، وتطبيق جوال. تعمل أوفلاين بالكامل."/>
+  <meta name="description" content="قيد — منصة أعمال عربية: محاسبة، ذهب، فنادق، عقود سيارات، تجارة سيارات، عقود عقارات، تعدد عملات، فروع متعددة، ولاء، حقول مخصصة، مساعد صوتي، ربط فروع، تطبيقات مجانية، وتطبيق جوال. تعمل أوفلاين بالكامل."/>
   <title>قيد — منصة أعمال متكاملة</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -25,6 +25,7 @@
         <a href="#systems" data-i18n="nav.systems">الأنظمة</a>
         <a href="#whats-new" data-i18n="nav.whatsNew">الجديد</a>
         <a href="#features" data-i18n="nav.features">المنصة</a>
+        <a href="#free-apps" data-i18n="nav.freeApps">تطبيقات مجانية</a>
         <a href="#how" data-i18n="nav.how">كيف يعمل</a>
         <a href="#videos" data-i18n="nav.videos">الفيديوهات</a>
         <a href="#mobile-app" data-i18n="nav.mobile">التطبيق</a>
@@ -47,13 +48,13 @@
       <div class="hero-backdrop" aria-hidden="true"></div>
       <div class="container hero-grid">
         <div class="hero-content reveal">
-          <p class="hero-eyebrow" data-i18n="hero.badge">جديد: خصم لكل بند + مخزن لكل سطر + POS ملء الشاشة</p>
+          <p class="hero-eyebrow" data-i18n="hero.badge">جديد: تعدد العملات دينار/دولار + الفروع المتعددة</p>
           <h1 class="hero-brand"><span data-i18n="hero.title">قيد</span></h1>
           <p class="hero-sub">
             <span data-i18n="hero.subtitle">منصة أعمال متكاملة —</span>
             <span class="hero-rotate-wrap" id="hero-rotate-words" aria-live="polite"></span>
           </p>
-          <p class="hero-desc" data-i18n="hero.desc">أنظمة سطح مكتب أوفلاين، ربط فروع عبر الشبكة، مساعد صوتي، وتطبيق جوال — جاهزة للمحلات والفنادق والمعارض والعقارات.</p>
+          <p class="hero-desc" data-i18n="hero.desc">أنظمة سطح مكتب أوفلاين، تعدد عملات، فروع متعددة، ربط شبكة، مساعد صوتي، وتطبيق جوال — جاهزة للمحلات والفنادق والمعارض والعقارات.</p>
           <div class="hero-cta">
             <a href="#download" class="btn btn-primary btn-lg" data-download-link data-i18n="hero.cta_download">حمّل النظام مجاناً</a>
             <a href="#systems" class="btn btn-ghost btn-lg" data-i18n="hero.cta_systems">استكشف الأنظمة</a>
@@ -158,6 +159,18 @@
       </div>
     </section>
 
+    <section class="section free-apps-section" id="free-apps">
+      <div class="free-apps-backdrop" aria-hidden="true"></div>
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="free-apps-eyebrow" data-i18n="freeApps.badge">مجاني بالكامل</span>
+          <h2 data-i18n="freeApps.title">تطبيقات مجانية تدعمها قيد</h2>
+          <p data-i18n="freeApps.subtitle">أدوات بسيطة ومجانية من منصة قيد — جاهزة على Google Play و App Store</p>
+        </div>
+        <div class="free-apps-grid" id="free-apps-grid"></div>
+      </div>
+    </section>
+
     <section class="section section-alt" id="features">
       <div class="container">
         <div class="section-head reveal">
@@ -172,7 +185,50 @@
       <div class="container">
         <div class="section-head reveal">
           <h2 data-i18n="platformInfra.title">البنية التحتية</h2>
-          <p data-i18n="platformInfra.subtitle">ربط فروع، مزامنة سحابية، وتقارير شاملة لكل نشاط</p>
+          <p data-i18n="platformInfra.subtitle">فروع متعددة، ربط شبكة، مزامنة سحابية، وتقارير شاملة لكل نشاط</p>
+        </div>
+
+        <div class="infra-block reveal" id="branches">
+          <div class="branches-split">
+            <div class="branches-text">
+              <span class="branches-badge" data-i18n="branches.badge">جديد</span>
+              <h3 data-i18n="branches.title">الفروع المتعددة</h3>
+              <p data-i18n="branches.desc">أدر عدة فروع من شركة واحدة: بيانات منفصلة لكل فرع، صلاحيات المستخدمين، ترقيم فواتير مستقل، وتقارير لفرع واحد أو لكل الفروع.</p>
+              <ul class="branches-points" id="branches-points"></ul>
+            </div>
+            <div class="branches-visual">
+              <div class="branches-flow">
+                <div class="branches-node company">
+                  <span class="branches-node-icon" aria-hidden="true">◈</span>
+                  <strong data-i18n="branches.diagram.company">الشركة</strong>
+                </div>
+                <div class="branches-links" aria-hidden="true">
+                  <span class="branches-link"></span>
+                  <span class="branches-link"></span>
+                  <span class="branches-link"></span>
+                </div>
+                <div class="branches-row">
+                  <div class="branches-node main">
+                    <span class="branches-node-icon" aria-hidden="true">▣</span>
+                    <strong data-i18n="branches.diagram.main">الفرع الرئيسي</strong>
+                  </div>
+                  <div class="branches-node leaf">
+                    <span class="branches-node-icon" aria-hidden="true">▢</span>
+                    <strong data-i18n="branches.diagram.branch1">فرع 1</strong>
+                  </div>
+                  <div class="branches-node leaf">
+                    <span class="branches-node-icon" aria-hidden="true">▢</span>
+                    <strong data-i18n="branches.diagram.branch2">فرع 2</strong>
+                  </div>
+                  <div class="branches-node leaf">
+                    <span class="branches-node-icon" aria-hidden="true">▢</span>
+                    <strong data-i18n="branches.diagram.branch3">فرع 3</strong>
+                  </div>
+                </div>
+                <p class="branches-flow-caption" data-i18n="branches.diagram.caption">بيانات وصلاحيات وترقيم مستقل لكل فرع</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="infra-block reveal" id="network">
@@ -301,9 +357,10 @@
           <p data-i18n="mobile.desc">تطبيق Flutter متصل بالـ API السحابي حسب نوع نظامك.</p>
           <div class="mobile-profiles" id="mobile-profiles"></div>
           <ul class="mobile-points" id="mobile-points"></ul>
+          <div class="mobile-stores" id="mobile-stores"></div>
         </div>
         <div class="phone-showcase">
-          <img src="assets/mobile-app.png" alt="" class="mobile-screenshot" id="mobile-screenshot" hidden/>
+          <img src="assets/mobile-app.png" alt="قيد المحاسبي" class="mobile-screenshot" id="mobile-screenshot" hidden/>
           <div class="phone-frame" id="phone-mock">
             <div class="phone-notch"></div>
             <div class="phone-screen">
@@ -325,7 +382,7 @@
               </div>
             </div>
           </div>
-          <p class="mobile-caption" data-i18n="mobile.caption">تطبيق قيد — iOS و Android</p>
+          <p class="mobile-caption" data-i18n="mobile.caption">قيد المحاسبي — iOS و Android</p>
         </div>
       </div>
     </section>

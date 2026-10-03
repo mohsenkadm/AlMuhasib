@@ -3,10 +3,11 @@ window.LOCALES = {
   ar: {
     meta: {
       title: "قيد — محاسبة، ذهب، فنادق، سيارات، عقارات وتطبيق جوال",
-      description: "منصة أعمال عربية متكاملة: محاسبة، ذهب، فنادق، عقود سيارات، تجارة سيارات، عقود عقارات، ولاء، حقول مخصصة، مساعد صوتي، ربط فروع، تطبيق جوال، ومزامنة سحابية. تعمل أوفلاين بالكامل."
+      description: "منصة أعمال عربية متكاملة: محاسبة، ذهب، فنادق، عقود سيارات، تجارة سيارات، عقود عقارات، تعدد عملات، فروع متعددة، ولاء، حقول مخصصة، مساعد صوتي، ربط فروع، تطبيقات مجانية، ومزامنة سحابية. تعمل أوفلاين بالكامل."
     },
     nav: {
-      systems: "الأنظمة", whatsNew: "الجديد", features: "المنصة", how: "كيف يعمل", videos: "الفيديوهات",
+      systems: "الأنظمة", whatsNew: "الجديد", features: "المنصة", freeApps: "تطبيقات مجانية",
+      how: "كيف يعمل", videos: "الفيديوهات",
       mobile: "التطبيق", download: "التنزيل", faq: "الأسئلة", contact: "تواصل"
     },
     support: { btn: "خدمة العملاء — واتساب", btnShort: "واتساب", float: "دعم واتساب", phoneLabel: "رقم الدعم:" },
@@ -26,11 +27,11 @@ window.LOCALES = {
       }
     },
     hero: {
-      badge: "جديد: خصم لكل بند + مخزن لكل سطر + POS ملء الشاشة",
+      badge: "جديد: تعدد العملات دينار/دولار + الفروع المتعددة",
       title: "قيد",
       subtitle: "منصة أعمال متكاملة —",
       rotateWords: ["محاسبة", "ذهب", "فنادق", "عقود سيارات", "تجارة سيارات", "عقود عقارات"],
-      desc: "ستة أنظمة سطح مكتب أوفلاين + مساعد صوتي + ربط فروع عبر WiFi + تطبيق جوال + مزامنة سحابية — عربي، جاهز للنمو.",
+      desc: "ستة أنظمة سطح مكتب أوفلاين + تعدد عملات + فروع متعددة + مساعد صوتي + ربط شبكة + تطبيق جوال + مزامنة سحابية — عربي، جاهز للنمو.",
       cta_download: "حمّل النظام مجاناً",
       cta_systems: "استكشف الأنظمة",
       cta_features: "مميزات المنصة",
@@ -51,19 +52,18 @@ window.LOCALES = {
           label: "المحاسبة",
           badge: "الأكثر استخداماً",
           tagline: "نظام محاسبة ومبيعات احترافي",
-          desc: "فواتير، POS، تسعير، مخازن، أقساط، مستثمرون، ولاء، حقول مخصصة، قوالب قطاعات، مساعد صوتي، واتساب موسّع، وأكثر من 30 تقريراً — للمحلات والمخازن والشركات.",
+          desc: "فواتير، POS، تعدد عملات دينار/دولار، فروع متعددة، تسعير، مخازن، أقساط، مستثمرون، ولاء، حقول مخصصة، مساعد صوتي، واتساب موسّع، وأكثر من 30 تقريراً — للمحلات والمخازن والشركات.",
           screenshot: "assets/desktop-accounting.png",
           screenshotCaption: "نظام المحاسبة — لوحة التحكم والمبيعات",
           highlights: [
+            "تعدد العملات دينار/دولار مع مبادلة وصرف",
+            "فروع متعددة مع عزل بيانات وصلاحيات لكل فرع",
             "فاتورة مبيعات + بيع سريع POS مع باركود ومفضلة",
+            "خصم نسبة لكل بند + مخزن مختلف لكل سطر",
             "بحث مواد ذكي مع تمييز وكميات المخازن + فحص الربح",
-            "فحص السعر بالباركود بسرعة من أي نقطة",
-            "تفعيل الخصم، أنواع التعبئة، أجور النقل، ووزن القائمة",
-            "حاسبة فكة الدينار (F7) في POS والبيع",
-            "نسخة المخزن بدون مبالغ + اختيار السائق",
             "نظام الولاء — نقاط من البيع واستبدال خصم",
             "حقول مخصصة للمنتجات والعملاء والموردين والمستثمرين",
-            "ملخص العمل: KPIs ومخططات وأفضل عملاء",
+            "موظفين وسندات ومصاريف محسّنة",
             "واتساب موسّع: فواتير، سندات، كشوف، وتقارير",
             "قوالب قطاعات: جوالات، ألبسة، مقاولات، صيدلية",
             "30+ تقرير: مبيعات، أرباح، أقساط، كشوف، رقابية"
@@ -72,9 +72,11 @@ window.LOCALES = {
             { title: "المبيعات ونقطة البيع", items: ["فاتورة مبيعات", "بيع سريع POS", "فحص سعر وربح"] },
             { title: "المنتجات والمخزون", items: ["منتجات وتصنيفات", "حقول مخصصة", "مخازن ونقل وتسوية"] },
             { title: "المشتريات والأقساط", items: ["فاتورة ومرتجع مشتريات", "فاتورة أقساط", "لوحة التحصيل"] },
-            { title: "المالية والولاء", items: ["سندات ومصاريف", "نظام الولاء", "مستثمرون"] }
+            { title: "المالية والفروع", items: ["تعدد عملات", "فروع متعددة", "سندات ومصاريف وولاء"] }
           ],
           features: [
+            { icon: "currency", title: "تعدد العملات", desc: "دينار ودولار مع صرف ومبادلة وتقارير منفصلة" },
+            { icon: "branches", title: "الفروع المتعددة", desc: "فروع مستقلة ببيانات وصلاحيات وترقيم خاص" },
             { icon: "receipt", title: "فواتير متكاملة", desc: "بيع، شراء، أقساط، ومرتجعات بكل التفاصيل" },
             { icon: "pos", title: "نقطة بيع POS", desc: "كاشير سريع مع باركود ومفضلة وفكة دينارية" },
             { icon: "search", title: "بحث وفحص ربح", desc: "بحث مواد ذكي + تكلفة وبيع وربح فوري" },
@@ -294,7 +296,11 @@ window.LOCALES = {
       appName: "قيد", greeting: "مرحباً — بياناتك متزامنة",
       cards: { sales: "تقرير المبيعات", statement: "كشف حساب", stock: "المخزون", overdue: "حجوزات اليوم" },
       nav: { home: "الرئيسية", reports: "التقارير", data: "البيانات" },
-      caption: "تطبيق قيد — iOS و Android"
+      caption: "قيد المحاسبي — iOS و Android",
+      storeGoogle: "Google Play",
+      storeApple: "App Store",
+      playStore: "https://play.google.com/store/apps/details?id=com.almuhasib.almuhasib_mobile",
+      appStore: "https://apps.apple.com/iq/app/%D9%82%D9%8A%D8%AF-%D8%A7%D9%84%D9%85%D8%AD%D8%A7%D8%B3%D8%A8%D9%8A/id6804299551"
     },
     whatsNew: {
       badge: "أحدث الإضافات",
@@ -302,16 +308,16 @@ window.LOCALES = {
       subtitle: "أحدث ما أُضيف لمنصة قيد — جاهز للاستخدام الآن",
       newLabel: "جديد",
       items: [
+        { icon: "currency", title: "تعدد العملات دينار/دولار", desc: "إدارة المبيعات والمشتريات والأرصدة بالدينار والدولار معاً — مع تقارير منفصلة لكل عملة." },
+        { icon: "branches", title: "الفروع المتعددة", desc: "أنشئ فروعاً مستقلة ببيانات وصلاحيات وترقيم فواتير خاص لكل فرع — مع تبديل سريع وتقارير مجمّعة." },
+        { icon: "exchange", title: "مبادلة العملة", desc: "صرف ومبادلة بين الدينار والدولار من داخل النظام مع تتبع سعر الصرف والرصيد." },
+        { icon: "employees", title: "الموظفون والمصاريف", desc: "إدارة الموظفين والسندات والمصاريف وأسعار الشراء بشكل أوضح وأكثر تنظيماً." },
         { icon: "receipt", title: "خصم نسبة لكل بند", desc: "حقل خصم % على مستوى كل مادة في فواتير البيع والشراء والأقساط — يظهر في الطباعة وإيصال POS." },
         { icon: "warehouse", title: "مخزن لكل بند", desc: "اختيار مخزن مختلف لكل سطر في الفاتورة — مع تحديث المخزون حسب البند وليس الفاتورة فقط." },
         { icon: "shield", title: "التحقق قبل الحفظ", desc: "حوار تحقق يمنع الأخطاء — تنبيه البيع تحت التكلفة وحد ائتمان العميل عند تجاوز السقف." },
         { icon: "pos", title: "POS ملء الشاشة", desc: "نافذة كاشير بملء الشاشة للبيع السريع — مثالية للشاشات اللمسية ونقاط البيع." },
-        { icon: "print", title: "طباعة محسّنة", desc: "تحسين حجم خط فاتورة A4، عرض الخصم % والمخزن على الطباعة، وترقيم صفحات الرصيد الافتتاحي." },
         { icon: "gold", title: "نظام الذهب", desc: "نظام مستقل لمحلات الذهب: أسعار المثقال، المخزون، البيع والآجل، والميزان." },
-        { icon: "loyalty", title: "نظام الولاء", desc: "نقاط تُكسب من البيع وتُستبدل خصماً — من الإعدادات والفواتير وPOS." },
-        { icon: "customFields", title: "الحقول المخصصة", desc: "حتى 8 حقول (نص، رقم، نعم/لا، اختيارات) للمنتجات والعملاء والموردين والمستثمرين." },
-        { icon: "search", title: "بحث ذكي وفحص ربح", desc: "بحث مواد بالاسم مع تمييز وكميات — وزر فحص الربح (تكلفة/بيع/ربح)." },
-        { icon: "whatsapp", title: "واتساب موسّع", desc: "مشاركة PDF عبر واتساب للسندات وإيصالات المستثمرين والكشوف وتقارير البيع/الشراء." }
+        { icon: "loyalty", title: "نظام الولاء", desc: "نقاط تُكسب من البيع وتُستبدل خصماً — من الإعدادات والفواتير وPOS." }
       ]
     },
     features: {
@@ -319,7 +325,9 @@ window.LOCALES = {
       subtitle: "ما يجمع كل الأنظمة — بنية تحتية موثوقة",
       items: [
         { icon: "offline", title: "100% أوفلاين", desc: "يعمل بدون إنترنت — المزامنة اختيارية" },
-        { icon: "network", title: "ربط الفروع", desc: "حاسبة رئيسية + فروع عبر WiFi — اتصال مباشر بدون مزامنة" },
+        { icon: "branches", title: "فروع متعددة", desc: "فروع مستقلة ببيانات وصلاحيات وترقيم خاص" },
+        { icon: "network", title: "ربط الشبكة", desc: "حاسبة رئيسية + فروع عبر WiFi — اتصال مباشر بدون مزامنة" },
+        { icon: "currency", title: "تعدد العملات", desc: "دينار ودولار مع صرف وتقارير منفصلة" },
         { icon: "voice", title: "المساعد الصوتي قيد", desc: "تحكّم بالتطبيق بالصوت — بحث، بيع سريع، وفتح الشاشات" },
         { icon: "print", title: "طباعة احترافية", desc: "هيدر بعرض الورقة ومعاينة طباعة متقدمة" },
         { icon: "shield", title: "صلاحيات دقيقة", desc: "تحكم بكل شاشة: إضافة، تعديل، حذف، طباعة" },
@@ -330,17 +338,82 @@ window.LOCALES = {
         { icon: "lang", title: "عربي / English", desc: "RTL كامل + واجهة ثنائية اللغة" }
       ]
     },
+    freeApps: {
+      badge: "مجاني بالكامل",
+      title: "تطبيقات مجانية تدعمها قيد",
+      subtitle: "أدوات بسيطة ومجانية 100% من منصة قيد — بدون اشتراك",
+      storeGoogle: "Google Play",
+      storeApple: "App Store",
+      storeSoon: "قريباً على Google Play",
+      apps: [
+        {
+          id: "dayni",
+          name: "دَيني",
+          tagline: "إدارة الديون والمبالغ المستحقة",
+          desc: "سجّل ديونك ومستحقاتك بسهولة، تابع الدفعات والأرصدة وتواريخ الاستحقاق — سواء لك مبالغ عند الآخرين أو عليك للغير. مجاني بالكامل.",
+          icon: "assets/dayni-icon.png",
+          accent: "dayni",
+          features: [
+            "تسجيل الديون والمستحقات بسهولة",
+            "متابعة الدفعات والمبالغ المتبقية",
+            "تنظيم بيانات الأشخاص المرتبطين",
+            "واجهة بسيطة للاستخدام اليومي",
+            "مجاني بالكامل"
+          ],
+          playStore: "https://play.google.com/store/apps/details?id=com.qaid.dayni",
+          appStore: "https://apps.apple.com/iq/app/%D8%AF-%D9%8A%D9%86%D9%8A/id6813496542?l=ar"
+        },
+        {
+          id: "sundooqi",
+          name: "صندوقي كاش",
+          tagline: "إدارة صندوق المحل يومياً",
+          desc: "سجّل المبيعات والمصاريف والسحب، اعرف كم موجود في الصندوق، واعمل جرد نهاية اليوم لاكتشاف أي فرق — سريع وبسيط وبدون تعقيد محاسبي. مجاني بالكامل.",
+          icon: "assets/sundooqi-icon.png",
+          accent: "sundooqi",
+          features: [
+            "تسجيل مبيعات ومشتريات ومصاريف وسحب",
+            "رصيد الصندوق محسوب تلقائياً",
+            "جرد نهاية اليوم ومقارنة الرصيد الفعلي",
+            "اكتشاف فرق الصندوق فوراً",
+            "يعمل بدون إنترنت — مجاني بالكامل"
+          ],
+          playStore: "",
+          appStore: "https://apps.apple.com/iq/app/%D8%B5%D9%86%D8%AF%D9%88%D9%82%D9%8A-%D9%83%D8%A7%D8%B4/id6814638729"
+        }
+      ]
+    },
     platformInfra: {
       title: "البنية التحتية",
-      subtitle: "ربط فروع، مزامنة سحابية، وتقارير شاملة لكل نشاط"
+      subtitle: "فروع متعددة، ربط شبكة، مزامنة سحابية، وتقارير شاملة لكل نشاط"
     },
     how: {
       title: "ابدأ في دقائق",
       steps: [
-        { num: "01", title: "نزّل النظام", desc: "ملف ZIP من GitHub — Windows 10/11" },
+        { num: "01", title: "نزّل النظام", desc: "ملف EXE من GitHub — Windows 10/11" },
         { num: "02", title: "اختر نظامك ونوع الحاسبة", desc: "محاسبة، ذهب، فندق، عقود سيارات، تجارة سيارات، أو عقارات — رئيسية أو فرعية" },
         { num: "03", title: "اعمل أوفلاين أو عبر الشبكة", desc: "قاعدة محلية أو اتصال مباشر بالحاسبة الرئيسية" }
       ]
+    },
+    branches: {
+      badge: "جديد",
+      title: "الفروع المتعددة",
+      desc: "أدر عدة فروع من شركة واحدة: بيانات منفصلة لكل فرع، صلاحيات المستخدمين، ترقيم فواتير مستقل، وتقارير لفرع واحد أو لكل الفروع.",
+      points: [
+        "فرع رئيسي + فروع إضافية بعزل كامل للبيانات",
+        "تعيين المستخدمين للفروع مع فرع افتراضي",
+        "ترقيم فواتير وسندات مستقل لكل فرع",
+        "تبديل الفرع بسرعة من داخل التطبيق",
+        "تقارير مجمّعة لكل الفروع بصلاحية خاصة",
+        "مزامنة سحابية وجوال مع عزل الفرع"
+      ],
+      diagram: {
+        company: "الشركة",
+        main: "الفرع الرئيسي",
+        branch1: "فرع 1",
+        branch2: "فرع 2",
+        branch3: "فرع 3",
+        caption: "بيانات وصلاحيات وترقيم مستقل لكل فرع"
+      }
     },
     network: {
       badge: "متاح",
@@ -378,7 +451,7 @@ window.LOCALES = {
     reports: {
       title: "تقارير شاملة",
       groups: [
-        { label: "المحاسبة", items: ["المبيعات والمشتريات", "الأرباح", "كشف حساب", "المخزون", "الأقساط المتأخرة", "ملخص العمل", "تقارير رقابية"] },
+        { label: "المحاسبة", items: ["المبيعات والمشتريات", "الأرباح", "كشف حساب", "المخزون", "الأقساط المتأخرة", "ملخص العمل", "تعدد العملات", "تقارير الفروع"] },
         { label: "الذهب", items: ["أسعار المثقال", "حركة المخزون", "البيع والشراء", "أرباح المحل"] },
         { label: "الفندق", items: ["الإشغال", "الإيرادات", "تدقيق ليلي", "وصول/مغادرة"] },
         { label: "المطعم", items: ["مبيعات F&B", "قنوات البيع", "أكثر الأصناف", "ربحية المطعم"] },
@@ -397,12 +470,16 @@ window.LOCALES = {
       title: "أسئلة شائعة",
       items: [
         { q: "هل يعمل بدون إنترنت؟", a: "نعم. كل الأنظمة أوفلاين بالكامل. الإنترنت للمزامنة السحابية والتحديثات فقط — ربط الفروع المحلي لا يحتاج إنترنت." },
+        { q: "ما هي الفروع المتعددة؟", a: "ميزة في المحاسبة لإنشاء فروع مستقلة داخل الشركة: بيانات منفصلة، صلاحيات مستخدمين، وترقيم فواتير لكل فرع. يمكن تبديل الفرع وعرض تقارير مجمّعة بصلاحية خاصة." },
+        { q: "ما الفرق بين الفروع المتعددة وربط الحاسبات؟", a: "الفروع المتعددة = تنظيم أعمال (بيانات كل فرع منفصلة). ربط الحاسبات = عدة أجهزة على نفس الشبكة تتصل بقاعدة البيانات مباشرة عبر WiFi/LAN." },
+        { q: "هل يدعم تعدد العملات؟", a: "نعم — دينار ودولار اختيارياً في المحاسبة، مع مبادلة العملة وتقارير أرصدة منفصلة لكل عملة." },
         { q: "كيف أربط فرعاً بالحاسبة الرئيسية؟", a: "عند التنصيب اختر «حاسبة فرعية»، ابحث عن الرئيسية على الشبكة أو أدخل IP، ثم أدخل رمز الربط. يمكن تعديل الإعدادات لاحقاً من «ربط الحاسبات»." },
         { q: "هل ربط الفروع يحتاج مزامنة؟", a: "لا. الفرعية تتصل مباشرة بقاعدة البيانات على الرئيسية عبر WiFi/LAN — مثل عدة مستخدمين على نفس السيرفر." },
         { q: "كيف أختار النظام المناسب؟", a: "عند الإعداد الأول: محاسبة للمحلات، ذهب لمحلات الذهب، فندق للضيافة، عقود سيارات للمعارض، تجارة سيارات لدورة الشراء والبيع، وعقود عقارات لمكاتب العقارات." },
         { q: "ما هو نظام الذهب؟", a: "نظام مستقل لمحلات الذهب العراقية: أسعار المثقال، مخزون القطع والمثاقيل، بيع وشراء نقدي وآجل، ميزان، لوحة تنافسية، وتقارير حركة المحل." },
         { q: "ما الفرق بين عقود السيارات وتجارة السيارات؟", a: "عقود السيارات لإبرام عقود بيع بين بائع ومشتري مع طباعة وشهود. تجارة السيارات لإدارة مخزون المعرض: شراء ثم بيع مع دفعات وتقارير." },
         { q: "ما هو نظام عقود العقارات؟", a: "نظام لإدارة العقود العقارية والزبائن والمدينين والمصاريف وبنود العقد مع تقارير أرباح — متزامن مع الجوال والسحابة." },
+        { q: "ما هي التطبيقات المجانية؟", a: "منصة قيد تدعم تطبيقات مجانية 100%: «دَيني» لإدارة الديون والمستحقات، و«صندوقي كاش» لتسجيل مبيعات ومصاريف الصندوق وجرد نهاية اليوم. دَيني على Google Play و App Store، وصندوقي كاش على App Store حالياً." },
         { q: "ما هو نظام الولاء؟", a: "ميزة في المحاسبة تُكسب العميل نقاطاً من فواتير البيع ويمكن استبدالها خصماً. تُفعَّل من إعدادات ميزات النشاط وتظهر في الفواتير وPOS وتقارير الولاء." },
         { q: "ما هي الحقول المخصصة؟", a: "إعدادات لإضافة حتى 8 حقول إضافية (نص، رقم، نعم/لا، اختيارات) للمنتجات والعملاء والموردين والمستثمرين — تظهر في الجداول والنماذج." },
         { q: "ما هو فحص الربح وبحث المواد الذكي؟", a: "في فاتورة البيع والأقساط: بحث منتج بالاسم مع تمييز وكميات المخازن والأسعار، وزر فحص الربح يعرض التكلفة وسعر البيع والربح والخصم فوراً." },
@@ -422,10 +499,11 @@ window.LOCALES = {
   en: {
     meta: {
       title: "Qayd — Accounting, Gold, Hotels, Cars, Real Estate & Mobile",
-      description: "Integrated Arabic business platform: accounting, gold shops, hotels, car contracts, car trading, real estate, loyalty, custom fields, voice assistant, LAN branch linking, mobile app, and cloud sync. Fully offline."
+      description: "Integrated Arabic business platform: accounting, gold shops, hotels, car contracts, car trading, real estate, multi-currency, multi-branch, loyalty, custom fields, voice assistant, LAN linking, free apps, and cloud sync. Fully offline."
     },
     nav: {
-      systems: "Systems", whatsNew: "What's new", features: "Platform", how: "How it works", videos: "Videos",
+      systems: "Systems", whatsNew: "What's new", features: "Platform", freeApps: "Free apps",
+      how: "How it works", videos: "Videos",
       mobile: "Mobile", download: "Download", faq: "FAQ", contact: "Contact"
     },
     support: { btn: "Customer support — WhatsApp", btnShort: "WhatsApp", float: "WhatsApp support", phoneLabel: "Support number:" },
@@ -444,11 +522,11 @@ window.LOCALES = {
       }
     },
     hero: {
-      badge: "New: per-line discount + warehouse per row + fullscreen POS",
+      badge: "New: IQD/USD multi-currency + multi-branch",
       title: "Qayd",
       subtitle: "Integrated business platform —",
       rotateWords: ["Accounting", "Gold", "Hotels", "Car contracts", "Car trading", "Real estate"],
-      desc: "Six offline desktop systems + voice assistant + main/branch LAN linking + mobile app + cloud sync — Arabic, built to scale.",
+      desc: "Six offline desktop systems + multi-currency + multi-branch + voice assistant + LAN linking + mobile app + cloud sync — Arabic, built to scale.",
       cta_download: "Download free",
       cta_systems: "Explore systems",
       cta_features: "Platform features",
@@ -467,19 +545,18 @@ window.LOCALES = {
         {
           id: "accounting", label: "Accounting", badge: "Most popular",
           tagline: "Professional accounting & sales",
-          desc: "Invoices, POS, pricing, warehouses, installments, investors, loyalty, custom fields, industry templates, voice assistant, expanded WhatsApp, and 30+ reports — for shops and SMBs.",
+          desc: "Invoices, POS, IQD/USD multi-currency, multi-branch, pricing, warehouses, installments, investors, loyalty, custom fields, voice assistant, expanded WhatsApp, and 30+ reports — for shops and SMBs.",
           screenshot: "assets/desktop-accounting.png",
           screenshotCaption: "Accounting — dashboard & sales",
           highlights: [
+            "IQD/USD multi-currency with exchange",
+            "Multi-branch with data isolation and per-branch permissions",
             "Sales invoice + quick POS with barcode & favorites",
+            "Per-line discount % + warehouse per invoice row",
             "Smart product search with stock qty + profit check",
-            "Barcode price check from any station",
-            "Discounts, packing types, shipping fees & list weight",
-            "Dinar change calculator (F7) in POS and sales",
-            "Warehouse copy without amounts + driver selection",
             "Loyalty — earn points on sales, redeem as discount",
             "Custom fields for products, customers, suppliers, investors",
-            "Work summary: KPIs, charts, top customers",
+            "Employees, vouchers, and expenses — clearer workflows",
             "Expanded WhatsApp: invoices, vouchers, statements, reports",
             "Industry templates: phones, clothing, construction, pharmacy",
             "30+ reports: sales, profit, installments, statements, audit"
@@ -488,9 +565,11 @@ window.LOCALES = {
             { title: "Sales & POS", items: ["Sales invoice", "Quick POS", "Price & profit check"] },
             { title: "Products & stock", items: ["Products & categories", "Custom fields", "Warehouses, transfers, adjustments"] },
             { title: "Purchases & installments", items: ["Purchase & returns", "Installment invoice", "Collection board"] },
-            { title: "Finance & loyalty", items: ["Vouchers & expenses", "Loyalty system", "Investors"] }
+            { title: "Finance & branches", items: ["Multi-currency", "Multi-branch", "Vouchers, expenses & loyalty"] }
           ],
           features: [
+            { icon: "currency", title: "Multi-currency", desc: "IQD & USD with exchange and separate reports" },
+            { icon: "branches", title: "Multi-branch", desc: "Independent branches with data, ACL, and numbering" },
             { icon: "receipt", title: "Full invoicing", desc: "Sales, purchases, installments, returns" },
             { icon: "pos", title: "POS", desc: "Fast cashier with barcode & dinar change" },
             { icon: "search", title: "Search & profit", desc: "Smart product search + instant margin" },
@@ -698,7 +777,11 @@ window.LOCALES = {
       appName: "Qayd", greeting: "Welcome — data synced",
       cards: { sales: "Sales report", statement: "Statement", stock: "Stock", overdue: "Today's bookings" },
       nav: { home: "Home", reports: "Reports", data: "Data" },
-      caption: "Qayd app — iOS & Android"
+      caption: "Qayd Accounting — iOS & Android",
+      storeGoogle: "Google Play",
+      storeApple: "App Store",
+      playStore: "https://play.google.com/store/apps/details?id=com.almuhasib.almuhasib_mobile",
+      appStore: "https://apps.apple.com/iq/app/%D9%82%D9%8A%D8%AF-%D8%A7%D9%84%D9%85%D8%AD%D8%A7%D8%B3%D8%A8%D9%8A/id6804299551"
     },
     whatsNew: {
       badge: "Latest additions",
@@ -706,16 +789,16 @@ window.LOCALES = {
       subtitle: "The newest Qayd features — ready to use now",
       newLabel: "New",
       items: [
+        { icon: "currency", title: "IQD/USD multi-currency", desc: "Run sales, purchases, and balances in dinar and dollar together — with separate reports per currency." },
+        { icon: "branches", title: "Multi-branch", desc: "Create independent branches with separate data, permissions, and invoice numbering — plus fast switching and all-branch reports." },
+        { icon: "exchange", title: "Currency exchange", desc: "Exchange between IQD and USD inside the system with rate tracking and balances." },
+        { icon: "employees", title: "Employees & expenses", desc: "Clearer employee, voucher, expense, and purchase-price workflows." },
         { icon: "receipt", title: "Per-line discount %", desc: "Discount % on each line in sales, purchase, and installment invoices — shown on print and POS receipts." },
         { icon: "warehouse", title: "Warehouse per line", desc: "Pick a different warehouse for each invoice row — stock updates per line, not just per invoice." },
         { icon: "shield", title: "Pre-save validation", desc: "Validation dialogs block mistakes — below-cost warnings and customer credit limit checks." },
         { icon: "pos", title: "Fullscreen POS", desc: "Dedicated fullscreen cashier window for quick sales — ideal for touch screens and checkout desks." },
-        { icon: "print", title: "Improved printing", desc: "Better A4 sales invoice font size, discount % and warehouse on printouts, opening stock page numbers." },
         { icon: "gold", title: "Gold system", desc: "Standalone gold-shop system: mithqal prices, stock, cash/credit sales, and scale." },
-        { icon: "loyalty", title: "Loyalty system", desc: "Earn points on sales and redeem discounts — from settings, invoices, and POS." },
-        { icon: "customFields", title: "Custom fields", desc: "Up to 8 fields (text, number, yes/no, choices) for products, customers, suppliers, and investors." },
-        { icon: "search", title: "Smart search & profit check", desc: "Highlight product search with stock qty — plus cost/sell/profit check." },
-        { icon: "whatsapp", title: "Expanded WhatsApp", desc: "Share PDFs for vouchers, investor receipts, statements, and sales/purchase reports." }
+        { icon: "loyalty", title: "Loyalty system", desc: "Earn points on sales and redeem discounts — from settings, invoices, and POS." }
       ]
     },
     features: {
@@ -723,7 +806,9 @@ window.LOCALES = {
       subtitle: "What powers every system — reliable infrastructure",
       items: [
         { icon: "offline", title: "100% offline", desc: "Works without internet — sync optional" },
-        { icon: "network", title: "Branch linking", desc: "Main PC + branches over WiFi — direct DB, no sync" },
+        { icon: "branches", title: "Multi-branch", desc: "Independent branches with data, ACL, and numbering" },
+        { icon: "network", title: "LAN linking", desc: "Main PC + branches over WiFi — direct DB, no sync" },
+        { icon: "currency", title: "Multi-currency", desc: "IQD & USD with exchange and separate reports" },
         { icon: "voice", title: "Qayd voice assistant", desc: "Control the app by voice — search, quick sale, open screens" },
         { icon: "print", title: "Pro printing", desc: "Full-bleed headers and advanced print preview" },
         { icon: "shield", title: "Fine permissions", desc: "Per-screen add, edit, delete, print" },
@@ -734,17 +819,82 @@ window.LOCALES = {
         { icon: "lang", title: "Arabic / English", desc: "Full RTL + bilingual UI" }
       ]
     },
+    freeApps: {
+      badge: "Completely free",
+      title: "Free apps powered by Qayd",
+      subtitle: "Simple 100% free tools from the Qayd platform — no subscription",
+      storeGoogle: "Google Play",
+      storeApple: "App Store",
+      storeSoon: "Coming soon on Google Play",
+      apps: [
+        {
+          id: "dayni",
+          name: "Dayni",
+          tagline: "Manage debts & receivables",
+          desc: "Record debts and outstanding amounts easily, track payments, balances, and due dates — whether others owe you or you owe them. Completely free.",
+          icon: "assets/dayni-icon.png",
+          accent: "dayni",
+          features: [
+            "Record debts and receivables easily",
+            "Track payments and remaining balances",
+            "Organize people linked to each debt",
+            "Simple interface for daily use",
+            "Completely free"
+          ],
+          playStore: "https://play.google.com/store/apps/details?id=com.qaid.dayni",
+          appStore: "https://apps.apple.com/iq/app/%D8%AF-%D9%8A%D9%86%D9%8A/id6813496542?l=ar"
+        },
+        {
+          id: "sundooqi",
+          name: "Sundooqi Cash",
+          tagline: "Daily shop cash-box management",
+          desc: "Record sales, expenses, and withdrawals, see what's in the cash box, and run end-of-day cash counts to catch any difference — fast, simple, no accounting complexity. Completely free.",
+          icon: "assets/sundooqi-icon.png",
+          accent: "sundooqi",
+          features: [
+            "Record sales, purchases, expenses, and withdrawals",
+            "Cash balance calculated automatically",
+            "End-of-day count vs expected balance",
+            "Spot cash differences instantly",
+            "Works offline — completely free"
+          ],
+          playStore: "",
+          appStore: "https://apps.apple.com/iq/app/%D8%B5%D9%86%D8%AF%D9%88%D9%82%D9%8A-%D9%83%D8%A7%D8%B4/id6814638729"
+        }
+      ]
+    },
     platformInfra: {
       title: "Infrastructure",
-      subtitle: "Branch linking, cloud sync, and reports for every business"
+      subtitle: "Multi-branch, LAN linking, cloud sync, and reports for every business"
     },
     how: {
       title: "Get started in minutes",
       steps: [
-        { num: "01", title: "Download", desc: "ZIP from GitHub — Windows 10/11" },
+        { num: "01", title: "Download", desc: "EXE from GitHub — Windows 10/11" },
         { num: "02", title: "Pick system & PC role", desc: "Accounting, gold, hotel, car contracts, car trading, or real estate — main or branch PC" },
         { num: "03", title: "Work offline or on LAN", desc: "Local database or direct link to main server" }
       ]
+    },
+    branches: {
+      badge: "New",
+      title: "Multi-branch",
+      desc: "Run multiple branches under one company: separate data per branch, user permissions, independent invoice numbering, and reports for one branch or all branches.",
+      points: [
+        "Main branch + extra branches with full data isolation",
+        "Assign users to branches with a default branch",
+        "Independent invoice and voucher numbering per branch",
+        "Switch branches quickly inside the app",
+        "All-branch reports with a dedicated permission",
+        "Cloud and mobile sync with branch isolation"
+      ],
+      diagram: {
+        company: "Company",
+        main: "Main branch",
+        branch1: "Branch 1",
+        branch2: "Branch 2",
+        branch3: "Branch 3",
+        caption: "Separate data, permissions, and numbering per branch"
+      }
     },
     network: {
       badge: "Available",
@@ -782,7 +932,7 @@ window.LOCALES = {
     reports: {
       title: "Comprehensive reports",
       groups: [
-        { label: "Accounting", items: ["Sales & purchases", "Profit", "Statements", "Inventory", "Overdue installments", "Work summary", "Audit reports"] },
+        { label: "Accounting", items: ["Sales & purchases", "Profit", "Statements", "Inventory", "Overdue installments", "Work summary", "Multi-currency", "Branch reports"] },
         { label: "Gold", items: ["Mithqal prices", "Stock movement", "Buy & sell", "Shop profit"] },
         { label: "Hotel", items: ["Occupancy", "Revenue", "Night audit", "Arrivals/departures"] },
         { label: "Restaurant", items: ["F&B sales", "Channels", "Top items", "F&B profit"] },
@@ -800,12 +950,16 @@ window.LOCALES = {
       title: "FAQ",
       items: [
         { q: "Works offline?", a: "Yes. All systems are fully offline. Internet is for cloud sync and updates only — LAN branch linking needs no internet." },
+        { q: "What is multi-branch?", a: "An accounting feature to create independent branches under one company: separate data, user permissions, and invoice numbering per branch. Switch branches and run all-branch reports with a special permission." },
+        { q: "Multi-branch vs LAN PC linking?", a: "Multi-branch = business structure (separate data per branch). LAN linking = multiple PCs on the same network connecting directly to one database over WiFi/LAN." },
+        { q: "Does it support multi-currency?", a: "Yes — optional IQD and USD in accounting, with currency exchange and separate balance reports per currency." },
         { q: "How to link a branch PC?", a: "At setup choose Branch PC, discover the main server on your network or enter its IP, then enter the pairing code. Change settings anytime under Network Linking." },
         { q: "Does branch linking use sync?", a: "No. Branch PCs connect directly to the main database over WiFi/LAN — like multiple users on one SQL Server." },
         { q: "How to pick a system?", a: "At first setup: accounting for retail, gold for gold shops, hotel for hospitality, car contracts for dealership paperwork, car trading for buy→stock→sell, real estate for property offices." },
         { q: "What is the Gold system?", a: "A standalone system for Iraqi gold shops: mithqal prices, piece/mithqal inventory, cash & credit buy/sell, scale, market board, and shop movement reports." },
         { q: "Contracts vs car trading?", a: "Contracts formalize a sale between seller and buyer with print and witnesses. Car trading manages showroom inventory: purchase then sell with payments and reports." },
         { q: "What is real estate contracts?", a: "A system for property contracts, parties, debtors, expenses, and clause templates with profit reports — synced to mobile and cloud." },
+        { q: "What are the free apps?", a: "Qayd powers 100% free companion apps: Dayni for debts and receivables, and Sundooqi Cash for daily cash-box sales, expenses, and end-of-day counts. Dayni is on Google Play and the App Store; Sundooqi Cash is on the App Store for now." },
         { q: "What is the loyalty system?", a: "An accounting feature that earns customers points on sales invoices and lets them redeem discounts. Enable it in business feature settings; it appears in invoices, POS, and loyalty reports." },
         { q: "What are custom fields?", a: "Settings to add up to 8 extra fields (text, number, yes/no, choices) for products, customers, suppliers, and investors — shown in grids and forms." },
         { q: "What are smart search and profit check?", a: "On sales and installment invoices: search products by name with highlight, stock quantities and prices, plus a profit-check button for cost, sell price, margin, and discount." },
