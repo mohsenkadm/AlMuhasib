@@ -44,7 +44,7 @@ public partial class InstallmentInvoiceViewModel
             GrandTotal,
             DocumentCurrency);
         BeautifulMessageDialog.ShowSuccess("تمت إضافة الفاتورة إلى قائمة الانتظار.");
-        _ = NewInvoice();
+        _ = ResetNewInvoiceCoreAsync();
     }
 
     [RelayCommand]

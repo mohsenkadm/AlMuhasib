@@ -81,6 +81,7 @@ public class InvoiceService : IInvoiceService
             decimal subtotal = 0m;
             foreach (var item in itemsList)
             {
+                item.UnitPrice = AccountingCurrencyHelper.NormalizeAmount(item.UnitPrice, invoice.Currency);
                 if (item.DiscountAmount < 0m)
                     item.DiscountAmount = 0m;
 
@@ -88,25 +89,38 @@ public class InvoiceService : IInvoiceService
                 var maxDiscount = Math.Abs(gross);
                 if (item.DiscountAmount > maxDiscount)
                     item.DiscountAmount = maxDiscount;
+                item.DiscountAmount = AccountingCurrencyHelper.NormalizeAmount(
+                    item.DiscountAmount, invoice.Currency);
 
-                item.TotalPrice = ProductDiscountHelper.CalculateLineTotal(
-                    item.Quantity, item.UnitPrice, item.DiscountAmount);
+                item.TotalPrice = AccountingCurrencyHelper.NormalizeAmount(
+                    ProductDiscountHelper.CalculateLineTotal(
+                        item.Quantity, item.UnitPrice, item.DiscountAmount),
+                    invoice.Currency);
                 item.CreatedBy = username;
                 item.CreatedAt = DateTime.UtcNow;
                 subtotal += item.TotalPrice;
             }
 
+            subtotal = AccountingCurrencyHelper.NormalizeAmount(subtotal, invoice.Currency);
             invoice.TotalAmount = subtotal;
             if (invoice.LoyaltyRedeemDiscountAmount < 0m)
                 invoice.LoyaltyRedeemDiscountAmount = 0m;
             if (invoice.DiscountAmount < 0m)
                 invoice.DiscountAmount = 0m;
+            invoice.DiscountAmount = AccountingCurrencyHelper.NormalizeAmount(
+                invoice.DiscountAmount, invoice.Currency);
+            invoice.LoyaltyRedeemDiscountAmount = AccountingCurrencyHelper.NormalizeAmount(
+                invoice.LoyaltyRedeemDiscountAmount, invoice.Currency);
 
             // دمج/التحقق من خصم الولاء قبل احتساب الصافي والقاصة
             if (applyLoyalty && (loyaltyRedeemPoints > 0 || invoice.LoyaltyRedeemDiscountAmount > 0m))
             {
                 await _loyaltyService.PrepareInvoiceRedeemDiscountAsync(
                     context, invoice, loyaltyRedeemPoints, CancellationToken.None);
+                invoice.DiscountAmount = AccountingCurrencyHelper.NormalizeAmount(
+                    invoice.DiscountAmount, invoice.Currency);
+                invoice.LoyaltyRedeemDiscountAmount = AccountingCurrencyHelper.NormalizeAmount(
+                    invoice.LoyaltyRedeemDiscountAmount, invoice.Currency);
             }
             else if (!applyLoyalty)
             {
@@ -123,14 +137,21 @@ public class InvoiceService : IInvoiceService
                 invoice.PurchaseExpenseAmount = 0m;
             if (invoice.InvoiceType is not (InvoiceType.Purchase or InvoiceType.PurchaseReturn))
                 invoice.PurchaseExpenseAmount = 0m;
-            decimal netAmount = subtotal - invoice.DiscountAmount;
+            invoice.TransportFeeAmount = AccountingCurrencyHelper.NormalizeAmount(
+                invoice.TransportFeeAmount, invoice.Currency);
+            invoice.PurchaseExpenseAmount = AccountingCurrencyHelper.NormalizeAmount(
+                invoice.PurchaseExpenseAmount, invoice.Currency);
+            decimal netAmount = AccountingCurrencyHelper.NormalizeAmount(
+                subtotal - invoice.DiscountAmount, invoice.Currency);
 
             decimal roundingAmount = CalculateRounding(netAmount, invoice.InvoiceType, invoice.Currency);
             invoice.RoundingAmount = roundingAmount;
             invoice.RoundingType = invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.PurchaseReturn
                 ? RoundingType.RoundUp
                 : RoundingType.RoundDown;
-            invoice.NetAmount = netAmount + roundingAmount + invoice.TransportFeeAmount + invoice.PurchaseExpenseAmount;
+            invoice.NetAmount = AccountingCurrencyHelper.NormalizeAmount(
+                netAmount + roundingAmount + invoice.TransportFeeAmount + invoice.PurchaseExpenseAmount,
+                invoice.Currency);
 
             // Initialize credit payment tracking (supports down-payment on credit)
             if (invoice.PaymentMethod == PaymentMethod.Credit)

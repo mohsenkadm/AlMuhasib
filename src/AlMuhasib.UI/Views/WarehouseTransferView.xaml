@@ -129,11 +129,26 @@
                 <DataGrid x:Name="TransferLinesGrid" Grid.Row="1"
                           ItemsSource="{Binding Lines}" Style="{StaticResource ModernDataGrid}"
                           AutoGenerateColumns="False" CanUserAddRows="False" MinHeight="220"
-                          IsReadOnly="False">
+                          IsReadOnly="False"
+                          SelectionUnit="FullRow"
+                          behaviors:DataGridCopyableCellsBehavior.IsEnabled="False">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="المنتج" Binding="{Binding ProductName}" Width="*" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, UpdateSourceTrigger=PropertyChanged}" Width="140"
-                                            IsReadOnly="False"/>
+                        <DataGridTemplateColumn Header="الكمية" Width="160" MinWidth="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBox Text="{Binding Quantity, UpdateSourceTrigger=LostFocus, StringFormat={}{0:0.##}}"
+                                             Style="{StaticResource NumericCellTextBox}"
+                                             MinWidth="100" MinHeight="34"
+                                             FontSize="15"
+                                             FontWeight="Bold"
+                                             Padding="8,6"
+                                             HorizontalContentAlignment="Center"
+                                             VerticalContentAlignment="Center"
+                                             Foreground="#EF6C00"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                         <DataGridTemplateColumn Header="إجراء" Width="100" IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>

@@ -1100,6 +1100,17 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
     [RelayCommand]
     private async Task NewInvoice()
     {
+        if (HasUnsavedChanges &&
+            !BeautifulMessageDialog.ShowConfirm(
+                "هناك تغييرات في الفاتورة الحالية. هل تريد إنشاء فاتورة جديدة وحذف البيانات الحالية؟",
+                "فاتورة جديدة"))
+            return;
+
+        await ResetNewInvoiceCoreAsync();
+    }
+
+    private async Task ResetNewInvoiceCoreAsync()
+    {
         // لا نخرج من وضع المرتجع — «جديد» داخل شاشة المرتجع يبقى مرتجعاً
         var keepReturnMode = IsReturnMode;
 

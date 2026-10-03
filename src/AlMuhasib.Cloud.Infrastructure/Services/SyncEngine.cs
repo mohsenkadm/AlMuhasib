@@ -36,6 +36,11 @@ public sealed partial class SyncEngine : ISyncEngine
             .Where(t => t.Id == tenantId)
             .Select(t => t.ApplicationSystemType)
             .FirstOrDefaultAsync(ct);
+
+        // Non-accounting verticals also inherit CloudBaseEntity.BranchId — must resolve Main
+        // before upserts. Desktop car/hotel/… clients do not send BranchSyncId.
+        await EnsureBranchScopeAsync(tenantId, tenantType, ct);
+
         if (tenantType == (int)ApplicationSystemType.HotelManagement)
             return await PushHotelAsync(tenantId, request, ct);
         if (tenantType == (int)ApplicationSystemType.CarContracts)
@@ -47,8 +52,6 @@ public sealed partial class SyncEngine : ISyncEngine
         if (tenantType == (int)ApplicationSystemType.GoldShop)
             return await PushGoldShopAsync(tenantId, request, ct);
 
-        await EnsureBranchCacheAsync(tenantId, ct);
-        await RefreshAllowedBranchesAsync(tenantId, ct);
         var resolver = new SyncIdResolver(_db, tenantId, _allowedBranchIds);
         var response = new SyncPushResponse { ServerTime = DateTime.UtcNow };
         var accepted = 0;
@@ -284,13 +287,13 @@ public sealed partial class SyncEngine : ISyncEngine
         _db.BypassBranchFilter = true;
         try
         {
-        await EnsureBranchCacheAsync(tenantId, ct);
-        await RefreshAllowedBranchesAsync(tenantId, ct);
-
         var tenantType = await _db.Tenants.AsNoTracking()
             .Where(t => t.Id == tenantId)
             .Select(t => t.ApplicationSystemType)
             .FirstOrDefaultAsync(ct);
+
+        await EnsureBranchScopeAsync(tenantId, tenantType, ct);
+
         if (tenantType == (int)ApplicationSystemType.HotelManagement)
             return await PullHotelAsync(tenantId, request, ct);
         if (tenantType == (int)ApplicationSystemType.CarContracts)
@@ -445,6 +448,23 @@ public sealed partial class SyncEngine : ISyncEngine
         entity.IsDeleted = dto.IsDeleted;
         entity.DeletedAt = dto.DeletedAt;
         entity.DeletedBy = dto.DeletedBy;
+    }
+
+    /// <summary>
+    /// Loads branch cache + allowed scope. Non-accounting systems have no multi-branch UX;
+    /// when assignments are empty they sync against the tenant Main branch.
+    /// </summary>
+    private async Task EnsureBranchScopeAsync(int tenantId, int tenantType, CancellationToken ct)
+    {
+        await EnsureBranchCacheAsync(tenantId, ct);
+        await RefreshAllowedBranchesAsync(tenantId, ct);
+
+        if (_allowedBranchIds.Count == 0
+            && _mainBranchId > 0
+            && tenantType != (int)ApplicationSystemType.Accounting)
+        {
+            _allowedBranchIds = [_mainBranchId];
+        }
     }
 
     private async Task EnsureBranchCacheAsync(int tenantId, CancellationToken ct)

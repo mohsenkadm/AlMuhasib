@@ -9,6 +9,7 @@
              xmlns:b="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              xmlns:loyalty="clr-namespace:AlMuhasib.UI.Controls.Loyalty"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SalesInvoiceViewModel}"
@@ -18,6 +19,7 @@
              Focusable="True">
 
     <UserControl.Resources>
+        <converters:AmountWithCurrencyMultiConverter x:Key="AmtCur"/>
         <ContextMenu x:Key="PageActionsMenu">
             <MenuItem Header="حفظ الفاتورة" Command="{Binding SaveInvoiceCommand}" InputGestureText="Ctrl+S">
                 <MenuItem.Icon><materialDesign:PackIcon Kind="ContentSave" Width="16" Height="16"/></MenuItem.Icon>
@@ -93,9 +95,13 @@
                                 <StackPanel HorizontalAlignment="Center" Margin="0,0,12,0" VerticalAlignment="Center">
                                     <TextBlock Text="الإجمالي" FontSize="11" Foreground="#B3FFFFFF" HorizontalAlignment="Center"/>
                                     <TextBlock FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center">
-                                        <Run Text="{Binding GrandTotal, StringFormat=N0, Mode=OneWay}"/>
-                                        <Run Text=" "/>
-                                        <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                        <TextBlock.Text>
+                                            <MultiBinding Converter="{StaticResource AmtCur}">
+                                                <Binding Path="GrandTotal" Mode="OneWay"/>
+                                                <Binding Path="SelectedCurrency" Mode="OneWay"/>
+                                                <Binding Path="ShowMultiCurrency" Mode="OneWay"/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
                                     </TextBlock>
                                 </StackPanel>
                                 <Button Command="{Binding OpenCurrencyChangeCommand}"
@@ -689,7 +695,7 @@
                                 <DataGridTemplateColumn Header="سعر الوحدة" Width="115">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBox Text="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                            <TextBox Text="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"
                                                      Style="{StaticResource NumericCellTextBox}"
                                                      IsEnabled="{Binding IsPriceEditable}" />
                                         </DataTemplate>
@@ -710,7 +716,7 @@
                                 <DataGridTemplateColumn Header="الإجمالي" Width="115">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBox Text="{Binding TotalPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                            <TextBox Text="{Binding TotalPrice, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"
                                                      Style="{StaticResource NumericCellTextBox}"
                                                      FontWeight="SemiBold"
                                                      Foreground="{DynamicResource BadgePaidForegroundBrush}"
@@ -822,9 +828,13 @@
                                                FontSize="11"
                                                Foreground="{DynamicResource TextPrimaryBrush}"
                                                VerticalAlignment="Center">
-                                        <Run Text="{Binding Subtotal, StringFormat=N0, Mode=OneWay}"/>
-                                        <Run Text=" "/>
-                                        <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                        <TextBlock.Text>
+                                            <MultiBinding Converter="{StaticResource AmtCur}">
+                                                <Binding Path="Subtotal" Mode="OneWay"/>
+                                                <Binding Path="SelectedCurrency" Mode="OneWay"/>
+                                                <Binding Path="ShowMultiCurrency" Mode="OneWay"/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
                                     </TextBlock>
                                 </Grid>
 
@@ -848,9 +858,13 @@
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0" Text="مبلغ الخصم:" FontSize="10" Foreground="#2E7D32" VerticalAlignment="Center"/>
                                         <TextBlock Grid.Column="1" FontSize="10" FontWeight="SemiBold" Foreground="#2E7D32">
-                                            <Run Text="{Binding InvoiceDiscountAmount, StringFormat=N0, Mode=OneWay}"/>
-                                            <Run Text=" "/>
-                                            <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{StaticResource AmtCur}">
+                                                    <Binding Path="InvoiceDiscountAmount" Mode="OneWay"/>
+                                                    <Binding Path="SelectedCurrency" Mode="OneWay"/>
+                                                    <Binding Path="ShowMultiCurrency" Mode="OneWay"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
                                         </TextBlock>
                                     </Grid>
                                 </StackPanel>
@@ -865,9 +879,13 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Text="خصم الولاء:" FontSize="13" Foreground="#C62828" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Column="1" FontSize="13" FontWeight="SemiBold" Foreground="#C62828">
-                                        <Run Text="{Binding LoyaltyDiscountAmount, StringFormat=N0, Mode=OneWay}"/>
-                                        <Run Text=" "/>
-                                        <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                        <TextBlock.Text>
+                                            <MultiBinding Converter="{StaticResource AmtCur}">
+                                                <Binding Path="LoyaltyDiscountAmount" Mode="OneWay"/>
+                                                <Binding Path="SelectedCurrency" Mode="OneWay"/>
+                                                <Binding Path="ShowMultiCurrency" Mode="OneWay"/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
                                     </TextBlock>
                                 </Grid>
 
@@ -893,9 +911,13 @@
                                                Foreground="#2E7D32"
                                                FontWeight="Medium"
                                                VerticalAlignment="Center">
-                                        <Run Text="{Binding RoundingAmount, StringFormat=N0, Mode=OneWay}"/>
-                                        <Run Text=" "/>
-                                        <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                        <TextBlock.Text>
+                                            <MultiBinding Converter="{StaticResource AmtCur}">
+                                                <Binding Path="RoundingAmount" Mode="OneWay"/>
+                                                <Binding Path="SelectedCurrency" Mode="OneWay"/>
+                                                <Binding Path="ShowMultiCurrency" Mode="OneWay"/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
                                     </TextBlock>
                                 </Grid>
 
@@ -934,9 +956,13 @@
                                                Foreground="#1B5E20"
                                                HorizontalAlignment="Left"
                                                VerticalAlignment="Center">
-                                        <Run Text="{Binding GrandTotal, StringFormat=N0, Mode=OneWay}"/>
-                                        <Run Text=" "/>
-                                        <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                        <TextBlock.Text>
+                                            <MultiBinding Converter="{StaticResource AmtCur}">
+                                                <Binding Path="GrandTotal" Mode="OneWay"/>
+                                                <Binding Path="SelectedCurrency" Mode="OneWay"/>
+                                                <Binding Path="ShowMultiCurrency" Mode="OneWay"/>
+                                            </MultiBinding>
+                                        </TextBlock.Text>
                                     </TextBlock>
                                 </Grid>
                             </StackPanel>

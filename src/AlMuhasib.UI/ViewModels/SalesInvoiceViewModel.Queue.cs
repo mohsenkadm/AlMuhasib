@@ -45,7 +45,7 @@ public partial class SalesInvoiceViewModel
             GrandTotal,
             ShowMultiCurrency ? SelectedCurrency : AccountingCurrency.IQD);
         BeautifulMessageDialog.ShowSuccess("تمت إضافة الفاتورة إلى قائمة الانتظار.");
-        _ = NewInvoice();
+        _ = ResetNewInvoiceCoreAsync();
     }
 
     [RelayCommand]

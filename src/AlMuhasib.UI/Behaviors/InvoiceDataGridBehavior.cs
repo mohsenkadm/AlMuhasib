@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using AlMuhasib.UI.Controls;
 
 namespace AlMuhasib.UI.Behaviors;
 
@@ -13,6 +14,8 @@ namespace AlMuhasib.UI.Behaviors;
 /// </summary>
 public static class InvoiceDataGridBehavior
 {
+    private static int _suppressEnterCount;
+
     public static readonly DependencyProperty EnableProperty =
         DependencyProperty.RegisterAttached("Enable", typeof(bool), typeof(InvoiceDataGridBehavior),
             new PropertyMetadata(false, OnEnableChanged));
@@ -25,6 +28,9 @@ public static class InvoiceDataGridBehavior
 
     public static ICommand? GetAddRowCommand(DependencyObject obj) => (ICommand?)obj.GetValue(AddRowCommandProperty);
     public static void SetAddRowCommand(DependencyObject obj, ICommand? value) => obj.SetValue(AddRowCommandProperty, value);
+
+    /// <summary>يتجاهل ضغطة Enter التالية على الجدول (بعد حوار الكمية السريع).</summary>
+    public static void SuppressEnterOnce() => _suppressEnterCount = 2;
 
     private static void OnEnableChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
@@ -57,39 +63,71 @@ public static class InvoiceDataGridBehavior
     {
         if (sender is not DataGrid grid) return;
 
-        if (e.Key == Key.Enter)
+        if (e.Key != Key.Enter)
+            return;
+
+        if (_suppressEnterCount > 0)
         {
-            var currentIndex = grid.Items.IndexOf(grid.CurrentItem);
-            if (currentIndex >= 0 && currentIndex == grid.Items.Count - 1)
+            _suppressEnterCount--;
+            e.Handled = true;
+            return;
+        }
+
+        // بحث المنتج يعالج Enter بنفسه
+        if (FindAncestor<ProductQuickSearchBox>(e.OriginalSource as DependencyObject) is not null)
+            return;
+
+        var currentIndex = grid.Items.IndexOf(grid.CurrentItem);
+        if (currentIndex < 0)
+            return;
+
+        // من عمود الكمية: انتقل لصف جديد على عمود المنتج فقط (وليس إعادة فتح بحث الصف الحالي)
+        var targetColumn = grid.Columns.Count > 1 ? grid.Columns[1] : grid.CurrentColumn;
+
+        if (currentIndex == grid.Items.Count - 1)
+        {
+            var cmd = GetAddRowCommand(grid);
+            if (cmd is not null && cmd.CanExecute(null))
             {
-                var cmd = GetAddRowCommand(grid);
-                if (cmd is not null && cmd.CanExecute(null))
-                {
-                    cmd.Execute(null);
-                    grid.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        var newItem = grid.Items[grid.Items.Count - 1];
-                        grid.ScrollIntoView(newItem);
-                        grid.CurrentCell = new DataGridCellInfo(newItem, grid.Columns[1]);
-                        grid.BeginEdit();
-                        FocusFirstTextBoxInCurrentCell(grid);
-                    }), System.Windows.Threading.DispatcherPriority.Background);
-                    e.Handled = true;
-                }
-            }
-            else if (currentIndex >= 0 && currentIndex < grid.Items.Count - 1)
-            {
-                var col = grid.CurrentColumn;
+                cmd.Execute(null);
                 grid.Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    var nextItem = grid.Items[currentIndex + 1];
-                    grid.CurrentCell = new DataGridCellInfo(nextItem, col ?? grid.Columns[1]);
-                    grid.BeginEdit();
+                    var newItem = grid.Items[grid.Items.Count - 1];
+                    grid.ScrollIntoView(newItem);
+                    if (grid.SelectionUnit == DataGridSelectionUnit.FullRow)
+                        grid.SelectedItem = newItem;
+                    grid.CurrentCell = new DataGridCellInfo(newItem, targetColumn ?? grid.Columns[0]);
+                    try { grid.BeginEdit(); } catch (InvalidOperationException) { }
                     FocusFirstTextBoxInCurrentCell(grid);
                 }), System.Windows.Threading.DispatcherPriority.Background);
                 e.Handled = true;
             }
         }
+        else
+        {
+            grid.Dispatcher.BeginInvoke(new Action(() =>
+            {
+                var nextItem = grid.Items[currentIndex + 1];
+                if (grid.SelectionUnit == DataGridSelectionUnit.FullRow)
+                    grid.SelectedItem = nextItem;
+                grid.CurrentCell = new DataGridCellInfo(nextItem, targetColumn ?? grid.Columns[1]);
+                try { grid.BeginEdit(); } catch (InvalidOperationException) { }
+                FocusFirstTextBoxInCurrentCell(grid);
+            }), System.Windows.Threading.DispatcherPriority.Background);
+            e.Handled = true;
+        }
+    }
+
+    private static T? FindAncestor<T>(DependencyObject? current) where T : DependencyObject
+    {
+        while (current is not null)
+        {
+            if (current is T match)
+                return match;
+            current = VisualTreeHelper.GetParent(current);
+        }
+
+        return null;
     }
 
     private static void FocusFirstTextBoxInCurrentCell(DataGrid grid)

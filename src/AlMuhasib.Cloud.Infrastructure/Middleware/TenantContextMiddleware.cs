@@ -1,5 +1,7 @@
+using AlMuhasib.Cloud.Core.Entities;
 using AlMuhasib.Cloud.Core.Interfaces;
 using AlMuhasib.Cloud.Infrastructure.Data;
+using AlMuhasib.Core.Enums;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -57,11 +59,28 @@ public sealed class TenantContextMiddleware
                 if (requestedBranch is null && int.TryParse(claimBranch, out var cb) && cb > 0)
                     requestedBranch = cb;
 
-                // No assignments and no manage-all claim → block data access entirely.
+                // No assignments and no manage-all claim.
                 if (accountId is > 0 && allowed.Count == 0 && !canViewAll)
                 {
-                    // Still allow auth/select-branch style paths that do not need data;
-                    // any branch-bound API stays fail-closed (UnsetBranchId).
+                    // Non-accounting verticals have no multi-branch UX — bind Main so cloud
+                    // writes (Car/Hotel/Gold/…) satisfy CloudBaseEntity.BranchId.
+                    var systemType = await db.Tenants.AsNoTracking()
+                        .Where(t => t.Id == tenantId)
+                        .Select(t => t.ApplicationSystemType)
+                        .FirstOrDefaultAsync(context.RequestAborted);
+
+                    if (systemType != (int)ApplicationSystemType.Accounting)
+                    {
+                        var mainId = await EnsureMainBranchBoundAsync(
+                            db, tenantContext, tenantId, accountId.Value, context.RequestAborted);
+                        if (mainId > 0)
+                        {
+                            await _next(context);
+                            return;
+                        }
+                    }
+
+                    // Accounting: still allow auth/select-branch paths; writes stay fail-closed.
                     tenantContext.SetTenant(tenantId, accountId);
                     await _next(context);
                     return;
@@ -139,5 +158,61 @@ public sealed class TenantContextMiddleware
         }
 
         await _next(context);
+    }
+
+    /// <summary>
+    /// Ensures tenant Main exists, assigns the account if needed, and binds write branch context.
+    /// </summary>
+    private static async Task<int> EnsureMainBranchBoundAsync(
+        CloudDbContext db,
+        ITenantContext tenantContext,
+        int tenantId,
+        int accountId,
+        CancellationToken ct)
+    {
+        db.BypassBranchFilter = true;
+        try
+        {
+            var main = await db.Branches
+                .FirstOrDefaultAsync(b => b.TenantId == tenantId && b.IsMain && !b.IsDeleted, ct);
+
+            if (main is null)
+            {
+                main = new CloudBranch
+                {
+                    TenantId = tenantId,
+                    Name = "الفرع الرئيسي",
+                    Code = CloudBranch.MainBranchCode,
+                    IsActive = true,
+                    IsMain = true,
+                    SyncId = Guid.NewGuid(),
+                    CreatedAt = DateTime.UtcNow
+                };
+                db.Branches.Add(main);
+                await db.SaveChangesAsync(ct);
+            }
+
+            var hasAssignment = await db.TenantAccountBranches
+                .AnyAsync(x => x.TenantAccountId == accountId && x.BranchId == main.Id, ct);
+            if (!hasAssignment)
+            {
+                db.TenantAccountBranches.Add(new TenantAccountBranch
+                {
+                    TenantId = tenantId,
+                    TenantAccountId = accountId,
+                    BranchId = main.Id,
+                    IsDefault = true,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await db.SaveChangesAsync(ct);
+            }
+
+            tenantContext.SetBranch(main.Id, [main.Id], canViewAllBranches: true);
+            return main.Id;
+        }
+        finally
+        {
+            db.BypassBranchFilter = false;
+        }
     }
 }

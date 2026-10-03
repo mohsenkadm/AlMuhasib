@@ -36,8 +36,9 @@ public class CarDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new UserConfiguration());
         modelBuilder.ApplyConfiguration(new PermissionConfiguration());
-        modelBuilder.ApplyConfiguration(new AuditLogConfiguration());
-        modelBuilder.ApplyConfiguration(new PrintBrandingSettingsConfiguration());
+        // Car-only configs: shared AuditLog/PrintBranding configs map BranchId for accounting.
+        modelBuilder.ApplyConfiguration(new CarAuditLogConfiguration());
+        modelBuilder.ApplyConfiguration(new CarPrintBrandingSettingsConfiguration());
         modelBuilder.ApplyConfiguration(new CarSaleContractConfiguration());
         modelBuilder.ApplyConfiguration(new CarContractPaymentConfiguration());
 

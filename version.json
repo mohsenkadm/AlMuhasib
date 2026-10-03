@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.32",
-  "releaseDate": "2026-10-02",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.32/AlMuhasib-1.14.32.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.32/Qayd-Setup-1.14.32.exe",
-  "sha256": "3FED0308BE0F3C6D98F46629F4DE539132365B77CC733D20DA8C708408AB0385",
-  "sizeBytes": 184585827,
-  "releaseNotes": "تعدد العملات دينار/دولار والفروع ومبادلة العملة — تحديث اختياري آمن مع ترحيلات إضافية",
+  "version": "1.14.33",
+  "releaseDate": "2026-10-03",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.33/AlMuhasib-1.14.33.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.33/Qayd-Setup-1.14.33.exe",
+  "sha256": "097F6DB46D047CE9ED653B30B9C83D21165F1A0CEA929987208B0E43D6575631",
+  "sizeBytes": 184606065,
+  "releaseNotes": "تحسين الفواتير والبحث السريع وعزل فرع السيارات — تحديث اختياري آمن بدون تغيير قاعدة البيانات",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

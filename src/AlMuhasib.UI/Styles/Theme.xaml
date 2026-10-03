@@ -1692,11 +1692,15 @@
                     Command="{Binding DataContext.DecreaseRowQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                     CommandParameter="{Binding}" ToolTip="نقصان"
                     IsEnabled="{Binding IsPriceEditable}"/>
-            <Border Grid.Column="1" MinWidth="52" Margin="6,0" CornerRadius="8" Background="{DynamicResource MutedIconBackgroundBrush}" Padding="2,0" VerticalAlignment="Center">
-                <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+            <Border Grid.Column="1" MinWidth="72" Width="72" Margin="6,0" CornerRadius="8"
+                    Background="{DynamicResource MutedIconBackgroundBrush}" Padding="4,2" VerticalAlignment="Center">
+                <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"
                          Style="{StaticResource NumericCellTextBox}"
+                         MinWidth="56" MinHeight="28"
+                         HorizontalContentAlignment="Center"
                          VerticalContentAlignment="Center"
-                         FontWeight="SemiBold" Foreground="{DynamicResource TextPrimaryBrush}" Padding="4,4"
+                         FontWeight="SemiBold" FontSize="14"
+                         Foreground="{DynamicResource TextPrimaryBrush}" Padding="6,4"
                          IsReadOnly="{Binding IsOfferGift}"/>
             </Border>
             <Button Grid.Column="2" Content="+" Style="{StaticResource InvoiceQtyPlusButton}"

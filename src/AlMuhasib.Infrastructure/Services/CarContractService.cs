@@ -1,7 +1,6 @@
 using AlMuhasib.Core.Entities.Car;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces.Services;
-using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Car;
 using AlMuhasib.Infrastructure.Data.Car;
 using AlMuhasib.Core.Utilities;

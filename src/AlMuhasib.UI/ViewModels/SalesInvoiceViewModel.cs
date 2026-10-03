@@ -1058,14 +1058,18 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             }
         }
 
-        Subtotal = sub;
         TotalItemCount = itemCount;
         TotalQuantity = totalQty;
         InvoiceWeightSummaryText = InvoiceWeightHelper.BuildSummaryText(Items);
 
+        var currency = DocumentRoundingCurrency;
+        Subtotal = AccountingCurrencyHelper.NormalizeAmount(sub, currency);
+
         if (ShowProductDiscount)
-            InvoiceDiscountAmount = ProductDiscountHelper.CalculateInvoiceDiscount(
-                InvoiceDiscountType, InvoiceDiscountValue, sub);
+            InvoiceDiscountAmount = AccountingCurrencyHelper.NormalizeAmount(
+                ProductDiscountHelper.CalculateInvoiceDiscount(
+                    InvoiceDiscountType, InvoiceDiscountValue, Subtotal),
+                currency);
         else
             InvoiceDiscountAmount = 0m;
 
@@ -1077,7 +1081,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             InvoiceType.Sale,
             totalDiscount,
             ShowTransportFee ? TransportFeeAmount : 0m,
-            DocumentRoundingCurrency);
+            currency);
         _ = computedSub;
         _ = discount;
 
@@ -1726,6 +1730,17 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     [RelayCommand]
     private async Task NewInvoice()
     {
+        if (HasUnsavedChanges &&
+            !BeautifulMessageDialog.ShowConfirm(
+                "هناك تغييرات في الفاتورة الحالية. هل تريد إنشاء فاتورة جديدة وحذف البيانات الحالية؟",
+                "فاتورة جديدة"))
+            return;
+
+        await ResetNewInvoiceCoreAsync();
+    }
+
+    private async Task ResetNewInvoiceCoreAsync()
+    {
         IsSaved = false;
         ClearEditingInvoiceId();
         _savedInvoice = null;
@@ -1740,6 +1755,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         SelectedPaymentMethod = PaymentMethod.Cash;
         CreditDueDate = null;
         InvoiceDate = DateTime.Now;
+        InvoiceDiscountType = DiscountType.None;
+        InvoiceDiscountValue = 0m;
+        InvoiceDiscountAmount = 0m;
         foreach (var item in Items.ToList())
             UnwireItemRow(item);
         Items.Clear();

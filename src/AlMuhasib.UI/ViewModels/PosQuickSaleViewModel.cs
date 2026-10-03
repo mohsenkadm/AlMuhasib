@@ -814,15 +814,19 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
     private void RecalcCartTotals()
     {
-        SubTotal = CartLines.Sum(l => l.LineTotal);
+        var currency = PosDocumentCurrency;
+        SubTotal = AccountingCurrencyHelper.NormalizeAmount(CartLines.Sum(l => l.LineTotal), currency);
         if (ShowProductDiscount)
-            InvoiceDiscountAmount = ProductDiscountHelper.CalculateInvoiceDiscount(
-                InvoiceDiscountType, InvoiceDiscountValue, SubTotal);
+            InvoiceDiscountAmount = AccountingCurrencyHelper.NormalizeAmount(
+                ProductDiscountHelper.CalculateInvoiceDiscount(
+                    InvoiceDiscountType, InvoiceDiscountValue, SubTotal),
+                currency);
         else
             InvoiceDiscountAmount = 0m;
 
         var loyaltyDiscount = ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m;
-        GrandTotal = Math.Max(0m, SubTotal - InvoiceDiscountAmount - loyaltyDiscount);
+        GrandTotal = AccountingCurrencyHelper.NormalizeAmount(
+            Math.Max(0m, SubTotal - InvoiceDiscountAmount - loyaltyDiscount), currency);
         CartLineCount = CartLines.Count;
         RecalcChange();
     }

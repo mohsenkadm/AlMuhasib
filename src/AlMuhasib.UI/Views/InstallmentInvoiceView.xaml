@@ -361,7 +361,7 @@
                                 <DataGridTemplateColumn Header="سعر الوحدة" Width="115">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBox Text="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                            <TextBox Text="{Binding UnitPrice, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"
                                                      Style="{StaticResource NumericCellTextBox}" />
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -381,7 +381,7 @@
                                 <DataGridTemplateColumn Header="الإجمالي" Width="115">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBox Text="{Binding TotalPrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                            <TextBox Text="{Binding TotalPrice, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"
                                                      Style="{StaticResource NumericCellTextBox}"
                                                      FontWeight="SemiBold"
                                                      Foreground="{DynamicResource HighlightBrush}" />

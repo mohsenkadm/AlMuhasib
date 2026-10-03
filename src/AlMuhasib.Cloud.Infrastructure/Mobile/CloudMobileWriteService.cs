@@ -335,10 +335,25 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             };
         }).ToList();
 
-        decimal subtotal = items.Sum(i => i.Quantity * i.UnitPrice - i.DiscountAmount);
-        decimal netBeforeRounding = subtotal - request.DiscountAmount;
+        foreach (var item in items)
+        {
+            item.UnitPrice = AccountingCurrencyHelper.NormalizeAmount(item.UnitPrice, request.Currency);
+            item.DiscountAmount = AccountingCurrencyHelper.NormalizeAmount(
+                Math.Max(0m, item.DiscountAmount), request.Currency);
+            var gross = Math.Abs(item.Quantity * item.UnitPrice);
+            if (item.DiscountAmount > gross)
+                item.DiscountAmount = gross;
+        }
+
+        decimal subtotal = AccountingCurrencyHelper.NormalizeAmount(
+            items.Sum(i => i.Quantity * i.UnitPrice - i.DiscountAmount), request.Currency);
+        var headerDiscount = AccountingCurrencyHelper.NormalizeAmount(
+            Math.Clamp(request.DiscountAmount, 0m, Math.Max(0m, subtotal)), request.Currency);
+        decimal netBeforeRounding = AccountingCurrencyHelper.NormalizeAmount(
+            subtotal - headerDiscount, request.Currency);
         decimal rounding = CalculateRounding(netBeforeRounding, request.InvoiceType, request.Currency);
-        decimal netAmount = netBeforeRounding + rounding;
+        decimal netAmount = AccountingCurrencyHelper.NormalizeAmount(
+            netBeforeRounding + rounding, request.Currency);
 
         var isCredit = request.PaymentMethod == PaymentMethod.Credit;
         var isInstallment = request.PaymentMethod == PaymentMethod.Installment
@@ -368,7 +383,7 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
             Currency = invoiceCurrency,
             FxRate = invoiceFxRate,
             TotalAmount = subtotal,
-            DiscountAmount = request.DiscountAmount,
+            DiscountAmount = headerDiscount,
             NetAmount = netAmount,
             RoundingAmount = rounding,
             RoundingType = request.InvoiceType == InvoiceType.Purchase || request.InvoiceType == InvoiceType.PurchaseReturn

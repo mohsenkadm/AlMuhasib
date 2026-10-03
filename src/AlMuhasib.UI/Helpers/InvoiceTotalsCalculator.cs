@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
 
 namespace AlMuhasib.UI.Helpers;
@@ -44,12 +45,15 @@ public static class InvoiceTotalsCalculator
         decimal purchaseExpenseAmount,
         AccountingCurrency currency = AccountingCurrency.IQD)
     {
-        var sub = lineTotals.Sum();
-        var discount = Math.Clamp(invoiceDiscountAmount, 0m, Math.Max(0m, sub));
-        var netBeforeRounding = sub - discount;
+        var sub = AccountingCurrencyHelper.NormalizeAmount(lineTotals.Sum(), currency);
+        var discount = AccountingCurrencyHelper.NormalizeAmount(
+            Math.Clamp(invoiceDiscountAmount, 0m, Math.Max(0m, sub)), currency);
+        var netBeforeRounding = AccountingCurrencyHelper.NormalizeAmount(sub - discount, currency);
         var rounding = invoiceService.CalculateRounding(netBeforeRounding, invoiceType, currency);
-        var transport = Math.Max(0m, transportFeeAmount);
-        var purchaseExpense = Math.Max(0m, purchaseExpenseAmount);
-        return (sub, discount, rounding, netBeforeRounding + rounding + transport + purchaseExpense);
+        var transport = AccountingCurrencyHelper.NormalizeAmount(Math.Max(0m, transportFeeAmount), currency);
+        var purchaseExpense = AccountingCurrencyHelper.NormalizeAmount(Math.Max(0m, purchaseExpenseAmount), currency);
+        var grand = AccountingCurrencyHelper.NormalizeAmount(
+            netBeforeRounding + rounding + transport + purchaseExpense, currency);
+        return (sub, discount, rounding, grand);
     }
 }

@@ -11,7 +11,9 @@ public static class NonAccountingEntityModel
 {
     public static void IgnoreSharedBranchProperties(ModelBuilder modelBuilder)
     {
+        // يجب تجاهل التنقل Branch أيضاً وإلا يعيد EF إنشاء ظلّ BranchId بعد Ignore للخاصية.
         modelBuilder.Entity<PrintBrandingSettings>().Ignore(e => e.BranchId);
+        modelBuilder.Entity<PrintBrandingSettings>().Ignore(e => e.Branch);
 
         modelBuilder.Entity<AuditLog>().Ignore(e => e.BranchId);
         modelBuilder.Entity<AuditLog>().Ignore(e => e.Branch);

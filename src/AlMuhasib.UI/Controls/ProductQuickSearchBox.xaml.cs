@@ -7,6 +7,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using AlMuhasib.Core.Entities;
+using AlMuhasib.UI.Behaviors;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using AlMuhasib.UI.ViewModels;
@@ -39,6 +40,8 @@ public partial class ProductQuickSearchBox : UserControl
     private readonly DispatcherTimer _filterTimer;
     private bool _suppressTextRefresh;
     private bool _isSelecting;
+    private bool _suppressPopup;
+    private int _refreshGeneration;
     private IProductQuickSearchHost? _host;
 
     public ProductQuickSearchBox()
@@ -91,11 +94,14 @@ public partial class ProductQuickSearchBox : UserControl
             box.Text = product.Name;
             box._suppressTextRefresh = false;
         }
+
+        if (e.NewValue is not null)
+            box.ClosePopup();
     }
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        if (_suppressTextRefresh || _isSelecting)
+        if (_suppressTextRefresh || _isSelecting || _suppressPopup)
             return;
         ScheduleRefresh();
     }
@@ -114,15 +120,25 @@ public partial class ProductQuickSearchBox : UserControl
     private void SearchBox_GotKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
         ResolveHost();
+        if (_suppressPopup || _isSelecting)
+            return;
+
+        // لا تفتح الاقتراحات لصف فيه منتج مختار مسبقاً — فقط عند البحث في صف فارغ
+        if (SelectedProduct is not null
+            && string.Equals(SelectedProduct.Name, Text?.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            ClosePopup();
+            return;
+        }
+
         RunRefreshAsync(forceOpen: true);
     }
 
     private void SearchBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
     {
-        // تأخير بسيط للسماح بالنقر على الاقتراح (الـ Popup خارج نطاق التركيز)
         Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
         {
-            if (_isSelecting || !SuggestionsPopup.IsOpen)
+            if (_isSelecting)
                 return;
 
             if (SuggestionsPopup.Child is FrameworkElement popupChild && popupChild.IsMouseOver)
@@ -142,7 +158,7 @@ public partial class ProductQuickSearchBox : UserControl
             return;
         }
 
-        if (e.Key == Key.Enter && Suggestions.Count > 0)
+        if (e.Key == Key.Enter && Suggestions.Count > 0 && SuggestionsPopup.IsOpen)
         {
             SelectSuggestion(Suggestions[0]);
             e.Handled = true;
@@ -161,21 +177,167 @@ public partial class ProductQuickSearchBox : UserControl
     private void SelectSuggestion(ProductSearchSuggestion suggestion)
     {
         _isSelecting = true;
+        _suppressPopup = true;
+        _filterTimer.Stop();
+        _refreshGeneration++;
         try
         {
             SelectedProduct = suggestion.Product;
             Text = suggestion.Product.Name;
             ClosePopup();
-            SearchBox.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+            CloseAllPopupsInGrid(FindAncestor<DataGrid>(this));
+
+            if (DataContext is InvoiceItemRow row)
+            {
+                var qty = QuickQuantityDialog.Prompt(suggestion.Product.Name, defaultQuantity: 1m);
+                if (qty is > 0)
+                    row.Quantity = qty.Value;
+            }
+
+            ClosePopup();
+            CloseAllPopupsInGrid(FindAncestor<DataGrid>(this));
+
+            // امنع Enter المتبقي من سلوك الجدول بعد إغلاق الحوار
+            InvoiceDataGridBehavior.SuppressEnterOnce();
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+            {
+                try
+                {
+                    FocusNextInvoiceProductRow();
+                }
+                finally
+                {
+                    Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, () =>
+                    {
+                        _suppressPopup = false;
+                        _isSelecting = false;
+                    });
+                }
+            });
         }
-        finally
+        catch
         {
+            _suppressPopup = false;
             _isSelecting = false;
+            throw;
         }
+    }
+
+    private void FocusNextInvoiceProductRow()
+    {
+        var grid = FindAncestor<DataGrid>(this);
+        if (grid is null)
+            return;
+
+        CloseAllPopupsInGrid(grid);
+
+        var currentIndex = grid.Items.IndexOf(DataContext);
+        if (currentIndex < 0)
+            return;
+
+        if (currentIndex == grid.Items.Count - 1)
+        {
+            var addCmd = InvoiceDataGridBehavior.GetAddRowCommand(grid);
+            if (addCmd is not null && addCmd.CanExecute(null))
+                addCmd.Execute(null);
+        }
+
+        var nextIndex = Math.Min(currentIndex + 1, grid.Items.Count - 1);
+        if (nextIndex < 0)
+            return;
+
+        var nextItem = grid.Items[nextIndex];
+        var productColumn = grid.Columns.Count > 1 ? grid.Columns[1] : grid.Columns.FirstOrDefault();
+        if (productColumn is null)
+            return;
+
+        grid.ScrollIntoView(nextItem);
+        if (grid.SelectionUnit == DataGridSelectionUnit.FullRow)
+            grid.SelectedItem = nextItem;
+        grid.CurrentCell = new DataGridCellInfo(nextItem, productColumn);
+        try { grid.BeginEdit(); } catch (InvalidOperationException) { }
+
+        Dispatcher.BeginInvoke(DispatcherPriority.Input, () =>
+        {
+            CloseAllPopupsInGrid(grid);
+
+            var rowContainer = grid.ItemContainerGenerator.ContainerFromItem(nextItem) as DependencyObject;
+            var searchBox = FindVisualChild<ProductQuickSearchBox>(rowContainer);
+            if (searchBox is null)
+                return;
+
+            // الصف التالي فارغ — افتح بحثه فقط
+            searchBox._suppressPopup = false;
+            var inner = FindVisualChild<TextBox>(searchBox);
+            if (inner is null)
+                return;
+
+            inner.Focus();
+            inner.SelectAll();
+            if (searchBox.SelectedProduct is null && string.IsNullOrWhiteSpace(searchBox.Text))
+                searchBox.RunRefreshAsync(forceOpen: true);
+        });
+    }
+
+    public void ClosePopup()
+    {
+        _filterTimer.Stop();
+        SuggestionsPopup.IsOpen = false;
+    }
+
+    private static void CloseAllPopupsInGrid(DataGrid? grid)
+    {
+        if (grid is null)
+            return;
+
+        for (var i = 0; i < grid.Items.Count; i++)
+        {
+            if (grid.ItemContainerGenerator.ContainerFromIndex(i) is not DependencyObject row)
+                continue;
+            FindVisualChild<ProductQuickSearchBox>(row)?.ClosePopup();
+        }
+    }
+
+    private static T? FindAncestor<T>(DependencyObject? current) where T : DependencyObject
+    {
+        while (current is not null)
+        {
+            if (current is T match)
+                return match;
+            current = VisualTreeHelper.GetParent(current)
+                      ?? (current as FrameworkElement)?.Parent as DependencyObject;
+        }
+
+        return null;
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject? parent) where T : DependencyObject
+    {
+        if (parent is null)
+            return null;
+
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T found)
+                return found;
+            var nested = FindVisualChild<T>(child);
+            if (nested is not null)
+                return nested;
+        }
+
+        return null;
     }
 
     private async Task RefreshSuggestionsAsync(bool forceOpen = false)
     {
+        if (_suppressPopup || _isSelecting)
+        {
+            ClosePopup();
+            return;
+        }
+
+        var generation = ++_refreshGeneration;
         ResolveHost();
         var catalog = _host?.QuickSearchCatalog;
         Suggestions.Clear();
@@ -184,13 +346,12 @@ public partial class ProductQuickSearchBox : UserControl
         if (catalog is null)
         {
             EmptyHint.Text = "تعذر تحميل كتالوج البحث";
-            if (forceOpen)
+            if (forceOpen && !_suppressPopup)
                 OpenPopup();
             return;
         }
 
-        if (!forceOpen
-            && SelectedProduct is not null
+        if (SelectedProduct is not null
             && string.Equals(SelectedProduct.Name, term, StringComparison.OrdinalIgnoreCase))
         {
             ClosePopup();
@@ -203,6 +364,12 @@ public partial class ProductQuickSearchBox : UserControl
                 ? ProductQuickSearchCatalog.DefaultPreviewCount
                 : ProductQuickSearchCatalog.DefaultSearchCount);
 
+        if (generation != _refreshGeneration || _suppressPopup || _isSelecting)
+        {
+            ClosePopup();
+            return;
+        }
+
         foreach (var item in results)
             Suggestions.Add(item);
 
@@ -214,7 +381,7 @@ public partial class ProductQuickSearchBox : UserControl
                 ? $"أول {Suggestions.Count} مادة — اكتب للبحث في الكل"
                 : $"{Suggestions.Count} مادة — انقر للاختيار";
 
-        if (forceOpen || IsKeyboardFocusWithin)
+        if (!_suppressPopup && !_isSelecting && (forceOpen || IsKeyboardFocusWithin))
             OpenPopup();
         else
             ClosePopup();
@@ -222,6 +389,9 @@ public partial class ProductQuickSearchBox : UserControl
 
     private void OpenPopup()
     {
+        if (_suppressPopup || _isSelecting)
+            return;
+
         if (!SuggestionsPopup.IsOpen)
         {
             SuggestionsPopup.IsOpen = true;
@@ -231,11 +401,6 @@ public partial class ProductQuickSearchBox : UserControl
         {
             PopupCard.Opacity = 1;
         }
-    }
-
-    private void ClosePopup()
-    {
-        SuggestionsPopup.IsOpen = false;
     }
 
     private void SuggestionsPopup_Opened(object sender, EventArgs e) => PlayOpenAnimation();
