@@ -38,7 +38,15 @@ window.LOCALES = {
       stat_systems: "أنظمة",
       stat_reports: "تقرير+",
       stat_offline: "أوفلاين",
-      screen_caption: "واجهة النظام الأوفلاين — لوحة التحكم"
+      screen_caption: "واجهة النظام الأوفلاين — لوحة التحكم",
+      map_caption: "شبكة قيد — تربط أعمالك عبر العراق",
+      mapCities: {
+        baghdad: "بغداد", basra: "البصرة", erbil: "أربيل", mosul: "الموصل",
+        kirkuk: "كركوك", sulaymaniyah: "السليمانية", najaf: "النجف",
+        karbala: "كربلاء", anbar: "الأنبار", nasiriyah: "الناصرية",
+        amarah: "العمارة", kut: "الكوت", diyala: "ديالى", hillah: "الحلة",
+        tikrit: "تكريت", duhok: "دهوك"
+      }
     },
     systems: {
       title: "أنظمتنا المتكاملة",
@@ -533,7 +541,15 @@ window.LOCALES = {
       stat_systems: "systems",
       stat_reports: "reports+",
       stat_offline: "offline",
-      screen_caption: "Offline desktop — dashboard"
+      screen_caption: "Offline desktop — dashboard",
+      map_caption: "Qayd network — connecting businesses across Iraq",
+      mapCities: {
+        baghdad: "Baghdad", basra: "Basra", erbil: "Erbil", mosul: "Mosul",
+        kirkuk: "Kirkuk", sulaymaniyah: "Sulaymaniyah", najaf: "Najaf",
+        karbala: "Karbala", anbar: "Anbar", nasiriyah: "Nasiriyah",
+        amarah: "Amarah", kut: "Kut", diyala: "Diyala", hillah: "Hillah",
+        tikrit: "Tikrit", duhok: "Duhok"
+      }
     },
     systems: {
       title: "Our integrated systems",

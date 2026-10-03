@@ -80,11 +80,19 @@ function initNav() {
 function observeReveals() {
   if (!revealObserver) {
     revealObserver = new IntersectionObserver(entries => {
-      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        e.target.classList.add('visible');
+        // staggered children inside infra / feature blocks
+        e.target.querySelectorAll('[data-stagger]').forEach((child, i) => {
+          child.style.setProperty('--stagger', `${i * 0.07}s`);
+          child.classList.add('stagger-in');
+        });
+      });
     }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
   }
   document.querySelectorAll('.reveal:not(.visible)').forEach(el => revealObserver.observe(el));
-  document.querySelectorAll('.hero .reveal, .site-header').forEach(el => el.classList.add('visible'));
+  document.querySelectorAll('.site-header').forEach(el => el.classList.add('visible'));
 }
 window.observeReveals = observeReveals;
 
@@ -132,6 +140,7 @@ async function boot() {
   initLang();
   initVideos?.();
   initSystems?.();
+  initIraqMap?.();
   loadVersion();
   document.querySelectorAll('[data-github]').forEach(a => a.href = GITHUB_REPO);
   requestAnimationFrame(scrollPageToTop);

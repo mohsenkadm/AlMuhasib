@@ -57,7 +57,6 @@ function tryLoadSystemScreenshot(imgId, mockId) {
 window.tryLoadSystemScreenshot = tryLoadSystemScreenshot;
 
 document.addEventListener('DOMContentLoaded', () => {
-  tryLoadScreenshot('desktop-screenshot', 'desktop-mock', ['assets/desktop-dashboard.png']);
   tryLoadScreenshot('mobile-screenshot', 'phone-mock');
-  tryLoadScreenshot('system-screenshot', 'system-mock', ['assets/desktop-dashboard.png']);
+  tryLoadScreenshot('system-screenshot', 'system-mock', ['assets/desktop-dashboard.png', 'assets/desktop-accounting.png']);
 });

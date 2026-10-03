@@ -112,12 +112,23 @@ html[lang="en"] body { font-family: var(--font-en); }
 .hero-backdrop {
   position: absolute; inset: 0; pointer-events: none; z-index: 0;
   background:
-    linear-gradient(105deg, rgba(6, 16, 28, 0.55) 0%, rgba(6, 16, 28, 0.15) 48%, transparent 70%),
-    radial-gradient(ellipse 50% 60% at 85% 40%, rgba(0, 172, 193, 0.12), transparent 60%);
+    linear-gradient(105deg, rgba(6, 16, 28, 0.72) 0%, rgba(6, 16, 28, 0.28) 48%, transparent 72%),
+    radial-gradient(ellipse 52% 58% at 82% 42%, rgba(0, 172, 193, 0.14), transparent 62%),
+    radial-gradient(ellipse 40% 40% at 20% 20%, rgba(13, 71, 161, 0.22), transparent 60%);
+  opacity: 0;
+  animation: heroBackdropIn 1.1s ease-out forwards;
+}
+@keyframes heroBackdropIn {
+  to { opacity: 1; }
 }
 .hero-grid {
   position: relative; z-index: 1;
-  display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 40px; align-items: center;
+  display: grid; grid-template-columns: 1.02fr 0.98fr; gap: 36px; align-items: center;
+}
+.hero-logo-mark { margin-bottom: 14px; }
+.hero-logo-q {
+  width: 52px; height: 52px; border-radius: 14px; font-size: 1.4rem;
+  box-shadow: 0 8px 28px rgba(21, 101, 192, 0.45);
 }
 .hero-eyebrow {
   display: inline-block; margin-bottom: 18px;
@@ -141,7 +152,7 @@ html[lang="en"] body { font-family: var(--font-en); }
 .hero-stats strong { display: block; font-size: 1.55rem; color: #fff; font-weight: 800; }
 .hero-stats span { font-size: 0.8rem; color: var(--text-muted); font-weight: 600; }
 
-.hero-visual { position: relative; min-height: 360px; }
+.hero-visual { position: relative; min-height: 420px; display: flex; align-items: center; justify-content: center; }
 .float { animation: float 7s ease-in-out infinite; }
 @keyframes float {
   0%, 100% { transform: translateY(0); }
@@ -149,6 +160,154 @@ html[lang="en"] body { font-family: var(--font-en); }
 }
 .hero-screen-caption {
   text-align: center; font-size: 0.8rem; color: var(--text-muted); margin-top: 14px;
+}
+
+/* Hero intro sequence */
+.hero-seq {
+  opacity: 0;
+  transform: translateY(18px);
+  filter: blur(4px);
+  animation: heroSeqIn 0.7s cubic-bezier(.22,.8,.24,1) forwards;
+  animation-delay: calc(var(--seq, 0) * 0.12s + 0.15s);
+}
+.hero-logo-mark.hero-seq {
+  transform: scale(0.9);
+  filter: none;
+}
+@keyframes heroSeqIn {
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+
+/* Iraq map */
+.iraq-map-stage {
+  position: relative;
+  width: min(100%, 520px);
+  margin-inline: auto;
+  aspect-ratio: 400 / 440;
+  border-radius: 28px;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 45%, rgba(13, 71, 161, 0.22), transparent 70%),
+    linear-gradient(160deg, rgba(8, 24, 48, 0.55), rgba(6, 16, 28, 0.2));
+  border: 1px solid rgba(100, 160, 255, 0.14);
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.4), inset 0 0 60px rgba(0, 172, 193, 0.04);
+  overflow: hidden;
+}
+.iraq-map-particles {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  pointer-events: none; opacity: 0.7; z-index: 0;
+}
+.iraq-map-svg {
+  position: relative; z-index: 1;
+  width: 100%; height: 100%; display: block;
+  padding: 5% 4% 11%;
+  overflow: visible;
+}
+.iraq-map-fill {
+  opacity: 0;
+  animation: iraqFillIn 0.9s ease-out 0.85s forwards;
+}
+@keyframes iraqFillIn { to { opacity: 1; } }
+.iraq-map-stroke,
+.iraq-map-stroke-glow {
+  stroke-dasharray: 1600;
+  stroke-dashoffset: 1600;
+  animation: iraqDraw 1.7s cubic-bezier(.4,0,.2,1) 0.55s forwards;
+}
+.iraq-map-stroke-glow { opacity: 0.55; }
+@keyframes iraqDraw { to { stroke-dashoffset: 0; } }
+.iraq-city-hub .iraq-city-dot {
+  fill: #fff;
+  stroke: #4fc3f7;
+  stroke-width: 1.8;
+  filter: drop-shadow(0 0 6px rgba(79, 195, 247, 0.7));
+}
+.iraq-city-hub .iraq-city-pulse { fill: rgba(79, 195, 247, 0.26); }
+.iraq-map-aura { opacity: 0; animation: iraqFillIn 1.2s ease 1s forwards; }
+
+.iraq-link {
+  stroke: rgba(79, 195, 247, 0.28);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  opacity: 0;
+  animation: iraqLinkIn 0.5s ease forwards;
+  animation-delay: calc(1.7s + var(--i, 0) * 0.08s);
+}
+@keyframes iraqLinkIn { to { opacity: 1; } }
+
+.iraq-city {
+  opacity: 0;
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: iraqCityIn 0.45s ease forwards;
+  animation-delay: calc(1.85s + var(--i, 0) * 0.07s);
+  cursor: pointer;
+  outline: none;
+}
+@keyframes iraqCityIn {
+  from { opacity: 0; transform: scale(0.4); }
+  to { opacity: 1; transform: scale(1); }
+}
+.iraq-city-dot {
+  fill: #e3f2fd;
+  stroke: #00acc1;
+  stroke-width: 1.4;
+  transition: transform 0.25s ease, filter 0.25s ease;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.iraq-city-pulse {
+  fill: rgba(0, 172, 193, 0.22);
+  animation: iraqPulse 2.8s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.iraq-city:nth-child(odd) .iraq-city-pulse { animation-delay: 0.6s; }
+.iraq-city:nth-child(3n) .iraq-city-pulse { animation-delay: 1.2s; }
+@keyframes iraqPulse {
+  0% { transform: scale(0.55); opacity: 0.7; }
+  70% { transform: scale(1.55); opacity: 0; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+.iraq-city-hit { fill: transparent; }
+.iraq-city.is-active .iraq-city-dot,
+.iraq-city:hover .iraq-city-dot,
+.iraq-city:focus-visible .iraq-city-dot {
+  transform: scale(1.35);
+  filter: drop-shadow(0 0 8px rgba(0, 172, 193, 0.85));
+  fill: #fff;
+}
+.iraq-packet {
+  fill: #4dd0e1;
+  opacity: 0;
+  animation: iraqPacketShow 0.3s ease forwards;
+  animation-delay: 2.3s;
+  filter: drop-shadow(0 0 4px rgba(0, 172, 193, 0.8));
+}
+@keyframes iraqPacketShow { to { opacity: 0.95; } }
+
+.iraq-map-tooltip {
+  position: absolute; z-index: 5; pointer-events: none;
+  transform: translate(-50%, -120%) scale(0.94);
+  opacity: 0;
+  padding: 8px 12px; border-radius: 10px;
+  background: rgba(8, 20, 40, 0.92);
+  border: 1px solid rgba(79, 195, 247, 0.35);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  color: #fff; text-align: center; min-width: 88px;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  backdrop-filter: blur(8px);
+}
+.iraq-map-tooltip.visible {
+  opacity: 1; transform: translate(-50%, -130%) scale(1);
+}
+.iraq-map-tooltip strong { display: block; font-size: 0.88rem; font-weight: 800; }
+.iraq-map-tooltip span { display: block; font-size: 0.72rem; color: #90caf9; margin-top: 2px; }
+
+.iraq-map-caption {
+  position: absolute; z-index: 2; left: 0; right: 0; bottom: 14px;
+  text-align: center; font-size: 0.82rem; font-weight: 600;
+  color: var(--text-muted); letter-spacing: 0.01em;
+  opacity: 0; animation: iraqFillIn 0.6s ease 2.4s forwards;
 }
 
 /* Desktop UI mock — mirrors offline WPF main window */
@@ -698,16 +857,8 @@ html[dir="rtl"] .cloud-points li { padding: 10px 28px 10px 0; }
 .site-footer { padding: 32px 0; border-top: 1px solid var(--border); }
 .footer-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; color: var(--text-muted); font-size: 0.88rem; }
 
-/* Reveal animation */
-/* المحتوى ظاهر افتراضياً — الأنيميشن تدريجي عند تفعيل JS */
+/* Reveal animation — المحتوى ظاهر افتراضياً؛ الأنيميشن عند تفعيل JS */
 .reveal { opacity: 1; transform: translateY(0); }
-html.js-ready .reveal:not(.visible) {
-  opacity: 0;
-  transform: translateY(28px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-  transition-delay: var(--delay, 0s);
-}
-html.js-ready .reveal.visible { opacity: 1; transform: translateY(0); }
 
 /* Responsive */
 @media (max-width: 1100px) {
@@ -1350,20 +1501,128 @@ html[dir="rtl"] .branches-points li { padding: 10px 28px 10px 0; }
   padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 600;
   background: var(--bg-card); border: 1px solid var(--border);
 }
-.sync-node.mobile { background: linear-gradient(135deg, #6a1b9a, #9c27b0); }
+.sync-node.mobile { background: linear-gradient(135deg, #0277bd, #00acc1); }
+.sync-pipe {
+  position: relative; width: 2px; height: 28px;
+  background: linear-gradient(180deg, rgba(0,172,193,0.15), rgba(79,195,247,0.55), rgba(0,172,193,0.15));
+  border-radius: 999px; overflow: hidden;
+}
+.sync-dot {
+  position: absolute; left: 50%; width: 6px; height: 6px; margin-left: -3px;
+  border-radius: 50%; background: #4dd0e1;
+  box-shadow: 0 0 8px rgba(0, 172, 193, 0.8);
+  animation: syncDotMove 2.8s linear infinite;
+}
+.sync-dot:nth-child(2) { animation-delay: 1.4s; }
+@keyframes syncDotMove {
+  0% { top: -8px; opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { top: calc(100% + 2px); opacity: 0; }
+}
+.sync-flow-live .sync-node {
+  box-shadow: 0 0 0 1px rgba(79, 195, 247, 0.2), 0 10px 28px rgba(0, 0, 0, 0.25);
+}
+
+/* Branches draw-on-visible */
+html.js-ready .branches-flow .branches-link {
+  transform: scaleY(0);
+  transform-origin: top;
+}
+html.js-ready .infra-block.visible .branches-flow .branches-link {
+  animation: branchLinkGrow 0.45s ease forwards;
+}
+html.js-ready .infra-block.visible .branches-flow .branches-link:nth-child(1) { animation-delay: 0.15s; }
+html.js-ready .infra-block.visible .branches-flow .branches-link:nth-child(2) { animation-delay: 0.3s; }
+html.js-ready .infra-block.visible .branches-flow .branches-link:nth-child(3) { animation-delay: 0.45s; }
+@keyframes branchLinkGrow {
+  to { transform: scaleY(1); }
+}
+html.js-ready .infra-block.visible .branches-node {
+  animation: branchNodeIn 0.5s ease both;
+}
+html.js-ready .infra-block.visible .branches-node.company { animation-delay: 0.05s; }
+html.js-ready .infra-block.visible .branches-row .branches-node:nth-child(1) { animation-delay: 0.55s; }
+html.js-ready .infra-block.visible .branches-row .branches-node:nth-child(2) { animation-delay: 0.65s; }
+html.js-ready .infra-block.visible .branches-row .branches-node:nth-child(3) { animation-delay: 0.75s; }
+html.js-ready .infra-block.visible .branches-row .branches-node:nth-child(4) { animation-delay: 0.85s; }
+@keyframes branchNodeIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Mobile phone float */
+.phone-showcase .phone-frame {
+  animation: phoneFloat 5.5s ease-in-out infinite;
+}
+@keyframes phoneFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+html.js-ready .phone-showcase .mobile-screenshot:not([hidden]) {
+  opacity: 0;
+  transform: translateY(16px) scale(0.96);
+}
+.mobile-split.visible .phone-showcase .mobile-screenshot:not([hidden]),
+html:not(.js-ready) .phone-showcase .mobile-screenshot:not([hidden]) {
+  animation: phoneReveal 0.8s ease forwards, phoneFloat 5.5s ease-in-out 0.8s infinite;
+}
+@keyframes phoneReveal {
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Scroll reveal polish */
+html.js-ready .reveal:not(.visible) {
+  opacity: 0;
+  transform: translateY(22px) scale(0.985);
+  transition: opacity 0.65s ease, transform 0.65s ease;
+  transition-delay: var(--delay, 0s);
+}
+html.js-ready .reveal.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
 
 @media (max-width: 900px) {
   .free-apps-grid { grid-template-columns: 1fr; }
+  .hero-visual { min-height: 320px; order: -1; }
+  .iraq-map-stage { width: min(100%, 380px); }
+  .iraq-city:nth-child(n+9) { display: none; }
+  .iraq-link:nth-child(n+7) { display: none; }
+  .iraq-packet:nth-child(n+7) { display: none; }
+}
+
+@media (max-width: 600px) {
+  .iraq-map-stage {
+    width: min(100%, 300px);
+    border-radius: 22px;
+  }
+  .iraq-map-caption { font-size: 0.75rem; bottom: 10px; }
+  .hero-logo-q { width: 44px; height: 44px; font-size: 1.2rem; }
+  .iraq-city:nth-child(n+7) { display: none; }
+  .iraq-link:nth-child(n+5) { display: none; }
+  .iraq-packet:nth-child(n+4) { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hero-rotate-word, .system-screenshot-glow, .float, .system-panel-in,
   .system-features-grid .feature-card, .whats-new-card, .whats-new-badge, .bg-mesh,
   .free-app-card, .free-app-icon-wrap, .free-app-icon-shine, .free-app-glow,
-  .branches-node.company { animation: none !important; }
+  .branches-node.company, .hero-backdrop, .hero-seq,
+  .iraq-map-fill, .iraq-map-stroke, .iraq-map-stroke-glow, .iraq-map-aura, .iraq-link, .iraq-city,
+  .iraq-city-pulse, .iraq-packet, .iraq-map-caption, .sync-dot,
+  .phone-showcase .mobile-screenshot, .phone-showcase .phone-frame,
+  html.js-ready .infra-block.visible .branches-flow .branches-link,
+  html.js-ready .infra-block.visible .branches-node,
+  html.js-ready .branches-flow .branches-link { animation: none !important; transform: none !important; }
+  .hero-seq, .iraq-map-fill, .iraq-map-stroke, .iraq-map-stroke-glow, .iraq-map-aura, .iraq-link,
+  .iraq-city, .iraq-packet, .iraq-map-caption, .hero-backdrop,
+  html.js-ready .phone-showcase .mobile-screenshot:not([hidden]) { opacity: 1 !important; filter: none !important; transform: none !important; }
+  .iraq-map-stroke, .iraq-map-stroke-glow { stroke-dashoffset: 0 !important; }
   .hero-rotate-word { position: static; opacity: 1; }
   .hero-rotate-wrap { height: auto; }
   .hero-rotate-word:not(:first-child) { display: none; }
   .whats-new-card:hover, .free-app-card:hover { transform: none; }
   .faq-answer { transition: none; }
+  .iraq-map-particles { display: none; }
 }
