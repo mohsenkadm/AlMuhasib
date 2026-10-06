@@ -115,7 +115,25 @@
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="الاسم" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="160" MinWidth="120"/>
                     <DataGridTextColumn Header="الباركود" Binding="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}" Width="120"/>
-                    <DataGridTextColumn Header="التصنيف" Binding="{Binding CategoryName, UpdateSourceTrigger=PropertyChanged}" Width="120"/>
+                    <DataGridTemplateColumn Header="التصنيف" Width="160" MinWidth="120">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <ComboBox ItemsSource="{Binding DataContext.CategoryNameOptions, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                          Text="{Binding CategoryName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                          IsEditable="True"
+                                          IsTextSearchEnabled="True"
+                                          StaysOpenOnEdit="True"
+                                          md:HintAssist.Hint="اختر تصنيفاً"
+                                          ToolTip="اختر تصنيفاً من القائمة أو اكتب اسماً جديداً"
+                                          Margin="2"
+                                          Padding="8,4"
+                                          MinHeight="32"
+                                          FontSize="13"
+                                          VerticalAlignment="Center"
+                                          HorizontalAlignment="Stretch"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Header="الوصف" Binding="{Binding Description, UpdateSourceTrigger=PropertyChanged}" Width="160"/>
 
                     <DataGridTextColumn x:Name="ColPharmacyScientific" Header="الاسم العلمي"
