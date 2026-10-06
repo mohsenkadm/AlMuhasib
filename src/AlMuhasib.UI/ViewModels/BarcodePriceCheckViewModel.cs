@@ -71,6 +71,14 @@ public partial class BarcodePriceCheckViewModel : ViewModelBase
                 return;
             }
 
+            var visibleInBranch = (await _productService.GetVisibleInCurrentBranchAsync())
+                .Any(p => p.Id == product.Id);
+            if (!visibleInBranch)
+            {
+                ShowNotFound(code);
+                return;
+            }
+
             var (price, pricingTypeName) = await ResolvePriceAsync(product.Id);
             ProductName = product.Name;
             DisplayedBarcode = string.IsNullOrWhiteSpace(product.Barcode) ? code : product.Barcode;

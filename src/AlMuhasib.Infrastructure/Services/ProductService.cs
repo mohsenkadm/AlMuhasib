@@ -75,6 +75,7 @@ public class ProductService : IProductService
             softDeleted.DiscountExpiresAt = product.DiscountExpiresAt;
             softDeleted.CustomFieldsJson = product.CustomFieldsJson;
             await context.SaveChangesAsync();
+            await EnsureDefaultProductBranchAsync(context, softDeleted.Id);
             return softDeleted;
         }
 
@@ -84,7 +85,38 @@ public class ProductService : IProductService
         product.CreatedAt = DateTime.UtcNow;
         await context.Products.AddAsync(product);
         await context.SaveChangesAsync();
+
+        // ربط افتراضي بالفرع الرئيسي (أو الحالي) إن لم تُضبط الفروع من الواجهة بعد.
+        await EnsureDefaultProductBranchAsync(context, product.Id);
         return product;
+    }
+
+    private static async Task EnsureDefaultProductBranchAsync(AppDbContext context, int productId)
+    {
+        if (await context.ProductBranches.AnyAsync(pb => pb.ProductId == productId))
+            return;
+
+        var mainId = await context.Branches.AsNoTracking()
+            .Where(b => b.IsMain && b.IsActive)
+            .Select(b => (int?)b.Id)
+            .FirstOrDefaultAsync();
+        if (mainId is null)
+        {
+            mainId = await context.Branches.AsNoTracking()
+                .Where(b => b.IsActive)
+                .OrderBy(b => b.Id)
+                .Select(b => (int?)b.Id)
+                .FirstOrDefaultAsync();
+        }
+        if (mainId is null) return;
+
+        context.ProductBranches.Add(new ProductBranch
+        {
+            ProductId = productId,
+            BranchId = mainId.Value,
+            CreatedAt = DateTime.UtcNow
+        });
+        await context.SaveChangesAsync();
     }
 
     public async Task<Product?> GetByIdAsync(int id)
@@ -253,5 +285,212 @@ public class ProductService : IProductService
                         || (plateType != AlMuhasib.Core.Enums.VehiclePlateType.None && p.PlateType == plateType))
             .Take(20)
             .ToListAsync();
+    }
+
+    public async Task<IReadOnlyList<int>> GetBranchIdsForProductAsync(int productId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        return await context.ProductBranches.AsNoTracking()
+            .Where(pb => pb.ProductId == productId)
+            .Select(pb => pb.BranchId)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyDictionary<int, string>> GetBranchNamesByProductIdsAsync(
+        IEnumerable<int> productIds,
+        CancellationToken ct = default)
+    {
+        var ids = productIds.Distinct().ToList();
+        if (ids.Count == 0)
+            return new Dictionary<int, string>();
+
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        var rows = await context.ProductBranches.AsNoTracking()
+            .Where(pb => ids.Contains(pb.ProductId))
+            .Select(pb => new { pb.ProductId, pb.Branch.Name, pb.Branch.IsMain })
+            .ToListAsync(ct);
+
+        return rows
+            .GroupBy(r => r.ProductId)
+            .ToDictionary(
+                g => g.Key,
+                g => string.Join(" · ", g.OrderByDescending(x => x.IsMain).ThenBy(x => x.Name).Select(x => x.Name)));
+    }
+
+    public async Task SetProductBranchesAsync(
+        int productId,
+        IEnumerable<int> branchIds,
+        CancellationToken ct = default)
+    {
+        var ids = branchIds.Distinct().Where(id => id > 0).ToList();
+        if (ids.Count == 0)
+            throw new InvalidOperationException("يجب اختيار فرع واحد على الأقل للمنتج");
+
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        var productExists = await context.Products.AnyAsync(p => p.Id == productId, ct);
+        if (!productExists)
+            throw new InvalidOperationException("المنتج غير موجود");
+
+        var validBranchIds = await context.Branches.AsNoTracking()
+            .Where(b => ids.Contains(b.Id) && b.IsActive)
+            .Select(b => b.Id)
+            .ToListAsync(ct);
+        if (validBranchIds.Count == 0)
+            throw new InvalidOperationException("لا يوجد فرع نشط صالح من الفروع المختارة");
+
+        var existing = await context.ProductBranches.Where(pb => pb.ProductId == productId).ToListAsync(ct);
+        context.ProductBranches.RemoveRange(existing);
+
+        var now = DateTime.UtcNow;
+        foreach (var branchId in validBranchIds)
+        {
+            context.ProductBranches.Add(new ProductBranch
+            {
+                ProductId = productId,
+                BranchId = branchId,
+                CreatedAt = now
+            });
+        }
+
+        await context.SaveChangesAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<Product>> GetVisibleInBranchAsync(int branchId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        // منتجات لها ربط بالفرع، أو بلا أي ربط (توافق مع بيانات قديمة قبل الجدول).
+        return await context.Products
+            .Include(p => p.Category)
+            .Where(p =>
+                context.ProductBranches.Any(pb => pb.ProductId == p.Id && pb.BranchId == branchId)
+                || !context.ProductBranches.Any(pb => pb.ProductId == p.Id))
+            .OrderBy(p => p.Name)
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<Product>> GetVisibleInCurrentBranchAsync(CancellationToken ct = default)
+    {
+        if (_branchContext.CurrentBranchId is int bid)
+            return await GetVisibleInBranchAsync(bid, ct);
+
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        return await context.Products
+            .Include(p => p.Category)
+            .OrderBy(p => p.Name)
+            .ToListAsync(ct);
+    }
+
+    public async Task<bool> IsVisibleInBranchAsync(int productId, int branchId, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        var hasAny = await context.ProductBranches.AnyAsync(pb => pb.ProductId == productId, ct);
+        if (!hasAny)
+            return true;
+        return await context.ProductBranches.AnyAsync(
+            pb => pb.ProductId == productId && pb.BranchId == branchId, ct);
+    }
+
+    public async Task UpsertWarehouseStocksAsync(
+        int productId,
+        IEnumerable<(int WarehouseId, decimal Quantity, decimal MinQuantity)> rows,
+        CancellationToken ct = default)
+    {
+        var list = rows.ToList();
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        context.BypassBranchFilter = true;
+
+        var productExists = await context.Products.AnyAsync(p => p.Id == productId, ct);
+        if (!productExists)
+            throw new InvalidOperationException("المنتج غير موجود");
+
+        var warehouseIds = list.Select(r => r.WarehouseId).Distinct().ToList();
+        var warehouses = await context.Warehouses.AsNoTracking()
+            .Where(w => warehouseIds.Contains(w.Id))
+            .ToDictionaryAsync(w => w.Id, ct);
+
+        var existing = await context.WarehouseStocks
+            .Where(s => s.ProductId == productId && warehouseIds.Contains(s.WarehouseId))
+            .ToDictionaryAsync(s => s.WarehouseId, ct);
+
+        var username = _currentUserService.Username ?? "system";
+        var now = DateTime.UtcNow;
+
+        foreach (var row in list)
+        {
+            if (!warehouses.TryGetValue(row.WarehouseId, out var warehouse))
+                continue;
+
+            var qty = row.Quantity < 0 ? 0 : row.Quantity;
+            var minQty = row.MinQuantity < 0 ? 0 : row.MinQuantity;
+
+            if (existing.TryGetValue(row.WarehouseId, out var stock))
+            {
+                // عند التعديل: حدّث الحد الأدنى دائماً؛ وحدّث الكمية فقط إن تغيّرت من الواجهة
+                // (الكمية الحالية قد تتأثر بالفواتير — عند الإنشاء نضبط الافتتاحية).
+                stock.MinQuantity = minQty;
+                if (qty != stock.Quantity)
+                {
+                    // إن كانت الكمية السابقة صفراً نعتبرها كمية افتتاحية
+                    if (stock.Quantity == 0 && qty > 0 && stock.OpeningQuantity == 0)
+                        stock.OpeningQuantity = qty;
+                    stock.Quantity = qty;
+                }
+                stock.UpdatedAt = now;
+                stock.UpdatedBy = username;
+            }
+            else if (qty > 0 || minQty > 0)
+            {
+                await context.WarehouseStocks.AddAsync(new WarehouseStock
+                {
+                    WarehouseId = row.WarehouseId,
+                    ProductId = productId,
+                    BranchId = warehouse.BranchId,
+                    Quantity = qty,
+                    OpeningQuantity = qty,
+                    UnitCost = 0,
+                    MinQuantity = minQty,
+                    CreatedAt = now,
+                    CreatedBy = username
+                }, ct);
+            }
+        }
+
+        await context.SaveChangesAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<(int WarehouseId, string WarehouseName, int BranchId, string BranchName, decimal Quantity, decimal MinQuantity, int? StockId)>>
+        GetWarehouseStockRowsForBranchesAsync(int? productId, IEnumerable<int> branchIds, CancellationToken ct = default)
+    {
+        var ids = branchIds.Distinct().Where(id => id > 0).ToList();
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        context.BypassBranchFilter = true;
+
+        var warehouses = await context.Warehouses.AsNoTracking()
+            .Include(w => w.Branch)
+            .Where(w => ids.Count == 0 || ids.Contains(w.BranchId))
+            .OrderBy(w => w.Branch!.Name)
+            .ThenBy(w => w.Name)
+            .ToListAsync(ct);
+
+        Dictionary<int, WarehouseStock> stocks = new();
+        if (productId is int pid)
+        {
+            stocks = await context.WarehouseStocks.AsNoTracking()
+                .Where(s => s.ProductId == pid)
+                .ToDictionaryAsync(s => s.WarehouseId, ct);
+        }
+
+        return warehouses.Select(w =>
+        {
+            stocks.TryGetValue(w.Id, out var stock);
+            return (
+                w.Id,
+                w.Name,
+                w.BranchId,
+                w.Branch?.Name ?? $"#{w.BranchId}",
+                stock?.Quantity ?? 0m,
+                stock?.MinQuantity ?? 0m,
+                (int?)stock?.Id);
+        }).ToList();
     }
 }

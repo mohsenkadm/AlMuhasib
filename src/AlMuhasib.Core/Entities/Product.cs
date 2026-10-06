@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace AlMuhasib.Core.Entities;
 
@@ -56,9 +57,14 @@ public class Product : BaseEntity
     /// <summary>نوع اللوحة: فحص أو رسمي (معرض سيارات).</summary>
     public VehiclePlateType PlateType { get; set; } = VehiclePlateType.None;
 
+    /// <summary>عرض أسماء الفروع المرتبطة (للواجهة فقط — غير مخزّن).</summary>
+    [NotMapped]
+    public string BranchesDisplay { get; set; } = "—";
+
     // Navigation
     public Category Category { get; set; } = null!;
     public ICollection<WarehouseStock> WarehouseStocks { get; set; } = [];
     public ICollection<InvoiceItem> InvoiceItems { get; set; } = [];
     public ICollection<ProductPrice> ProductPrices { get; set; } = [];
+    public ICollection<ProductBranch> ProductBranches { get; set; } = [];
 }

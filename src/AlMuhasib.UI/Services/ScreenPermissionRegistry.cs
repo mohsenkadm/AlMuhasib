@@ -258,6 +258,7 @@ public static class ScreenPermissionRegistry
     {
         [typeof(DashboardViewModel)] = Dashboard,
         [typeof(ProductsViewModel)] = "Products",
+        [typeof(ProductFormViewModel)] = "Products",
         [typeof(BulkProductsEntryViewModel)] = "Products",
         [typeof(CategoriesViewModel)] = "Categories",
         [typeof(PackagingTypesViewModel)] = "PackagingTypes",

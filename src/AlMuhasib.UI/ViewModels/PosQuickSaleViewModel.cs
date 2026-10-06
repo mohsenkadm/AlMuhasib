@@ -21,6 +21,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IInvoiceService _invoiceService;
+    private readonly IProductService _productService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserPreferencesService _userPreferences;
     private readonly IRecentActivityService _recentActivity;
@@ -92,6 +93,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     public PosQuickSaleViewModel(
         IUnitOfWork unitOfWork,
         IInvoiceService invoiceService,
+        IProductService productService,
         ICurrentUserService currentUserService,
         IUserPreferencesService userPreferences,
         IRecentActivityService recentActivity,
@@ -110,6 +112,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     {
         _unitOfWork = unitOfWork;
         _invoiceService = invoiceService;
+        _productService = productService;
         _sound = sound;
         _currentUserService = currentUserService;
         _userPreferences = userPreferences;
@@ -164,7 +167,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            var products = (await _unitOfWork.Products.GetAllAsync()).OrderBy(p => p.Name).ToList();
+            var products = (await _productService.GetVisibleInCurrentBranchAsync()).OrderBy(p => p.Name).ToList();
             _allProducts = products;
 
             await LoadSuggestedPricesAsync();

@@ -76,6 +76,7 @@ public partial class ProductPickerViewModel : ObservableObject
     private const int MaxSearchProducts = 150;
 
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IProductService? _productService;
     private readonly IProductPriceService? _productPriceService;
     private readonly bool _pricingEnabled;
     private readonly Dictionary<int, decimal> _quantities = new();
@@ -138,11 +139,13 @@ public partial class ProductPickerViewModel : ObservableObject
     public ProductPickerViewModel(
         IUnitOfWork unitOfWork,
         IProductPriceService? productPriceService = null,
-        bool pricingEnabled = false)
+        bool pricingEnabled = false,
+        IProductService? productService = null)
     {
         _unitOfWork = unitOfWork;
         _productPriceService = productPriceService;
         _pricingEnabled = pricingEnabled;
+        _productService = productService;
         IsPricingMode = pricingEnabled;
     }
 
@@ -163,7 +166,10 @@ public partial class ProductPickerViewModel : ObservableObject
         foreach (var c in _categories)
             Categories.Add(c);
 
-        _allProducts = ProductSearchHelper.ActiveOnly(await _unitOfWork.Products.GetAllAsync())
+        var source = _productService is not null
+            ? await _productService.GetVisibleInCurrentBranchAsync()
+            : await _unitOfWork.Products.GetAllAsync();
+        _allProducts = ProductSearchHelper.ActiveOnly(source)
             .OrderBy(p => p.Name)
             .ToList();
 
