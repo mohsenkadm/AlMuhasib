@@ -22,6 +22,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
     private readonly IInvoiceService _invoiceService;
     private readonly IInstallmentService _installmentService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IProductService _productService;
     private readonly ICurrentUserService _currentUserService;
     private readonly INavigationService _navigationService;
     private readonly IExportService _exportService;
@@ -191,6 +192,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         IInvoiceService invoiceService,
         IInstallmentService installmentService,
         IUnitOfWork unitOfWork,
+        IProductService productService,
         ICurrentUserService currentUserService,
         INavigationService navigationService,
         IExportService exportService,
@@ -210,6 +212,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         _invoiceService = invoiceService;
         _installmentService = installmentService;
         _unitOfWork = unitOfWork;
+        _productService = productService;
         _currentUserService = currentUserService;
         _navigationService = navigationService;
         _exportService = exportService;
@@ -231,7 +234,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         ProductPicker = new ProductPickerViewModel(
             _unitOfWork,
             productPriceService,
-            userPreferences.Current.FeatureFlags.ProductPricingEnabled);
+            userPreferences.Current.FeatureFlags.ProductPricingEnabled,
+            productService);
         ProductPicker.Confirmed += OnProductPickerConfirmed;
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
         QuickSearchCatalog = new ProductQuickSearchCatalog(_unitOfWork, productPriceService);
@@ -1037,7 +1041,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
 
     private async Task ReloadProductSearchCatalogAsync()
     {
-        var products = ProductSearchHelper.ActiveOnly(await _unitOfWork.Products.GetAllAsync())
+        var products = ProductSearchHelper.ActiveOnly(await _productService.GetVisibleInCurrentBranchAsync())
             .OrderBy(p => p.Name)
             .ToList();
         Products.Clear();

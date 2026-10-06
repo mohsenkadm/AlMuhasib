@@ -49,8 +49,10 @@ public partial class ProductCardDisplay : ObservableObject
     public string? Barcode { get; init; }
     public string? Description { get; init; }
     public string CategoryName { get; init; } = "—";
+    public string BranchesDisplay { get; init; } = "—";
     public ObservableCollection<ProductPriceCardLine> Prices { get; } = [];
     public bool HasPrices => Prices.Count > 0;
     public bool HasScientificName => !string.IsNullOrWhiteSpace(ScientificName);
     public bool HasUsageInstructions => !string.IsNullOrWhiteSpace(UsageInstructions);
+    public bool HasBranches => !string.IsNullOrWhiteSpace(BranchesDisplay) && BranchesDisplay != "—";
 }

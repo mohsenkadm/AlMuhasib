@@ -39,3 +39,24 @@ public class UserBranchConfiguration : IEntityTypeConfiguration<UserBranch>
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
+
+public class ProductBranchConfiguration : IEntityTypeConfiguration<ProductBranch>
+{
+    public void Configure(EntityTypeBuilder<ProductBranch> builder)
+    {
+        builder.ToTable("ProductBranches");
+
+        builder.HasIndex(pb => new { pb.ProductId, pb.BranchId }).IsUnique();
+        builder.HasIndex(pb => pb.BranchId);
+
+        builder.HasOne(pb => pb.Product)
+            .WithMany(p => p.ProductBranches)
+            .HasForeignKey(pb => pb.ProductId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(pb => pb.Branch)
+            .WithMany(b => b.ProductBranches)
+            .HasForeignKey(pb => pb.BranchId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}

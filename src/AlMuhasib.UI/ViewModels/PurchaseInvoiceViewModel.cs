@@ -20,6 +20,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
 {
     private readonly IInvoiceService _invoiceService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IProductService _productService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IExportService _exportService;
     private readonly IWhatsAppShareService _whatsAppShare;
@@ -167,6 +168,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
     public PurchaseInvoiceViewModel(
         IInvoiceService invoiceService,
         IUnitOfWork unitOfWork,
+        IProductService productService,
         ICurrentUserService currentUserService,
         IExportService exportService,
         IWhatsAppShareService whatsAppShare,
@@ -188,6 +190,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
+        _productService = productService;
         _currentUserService = currentUserService;
         _exportService = exportService;
         _whatsAppShare = whatsAppShare;
@@ -210,7 +213,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         ProductPicker = new ProductPickerViewModel(
             _unitOfWork,
             productPriceService,
-            userPreferences.Current.FeatureFlags.ProductPricingEnabled);
+            userPreferences.Current.FeatureFlags.ProductPricingEnabled,
+            productService);
         ProductPicker.Confirmed += OnProductPickerConfirmed;
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
         QuickSearchCatalog = new ProductQuickSearchCatalog(_unitOfWork, productPriceService);
@@ -1157,7 +1161,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
 
     private async Task ReloadProductSearchCatalogAsync()
     {
-        var products = ProductSearchHelper.ActiveOnly(await _unitOfWork.Products.GetAllAsync())
+        var products = ProductSearchHelper.ActiveOnly(await _productService.GetVisibleInCurrentBranchAsync())
             .OrderBy(p => p.Name)
             .ToList();
         Products.Clear();
