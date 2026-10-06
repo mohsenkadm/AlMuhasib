@@ -160,6 +160,10 @@
                         <TextBlock Text="تسهيلات محاسبية" FontSize="16" FontWeight="SemiBold" Margin="10,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
                     <UniformGrid Columns="2">
+                        <controls:FeatureToggleCard Title="الأقساط"
+                                                    Description="فواتير الأقساط، التحصيل، التقارير، والإجراءات السريعة — مفعّل افتراضياً"
+                                                    Icon="CalendarClock" IconBackground="{DynamicResource DashboardKpiIndigoLightBrush}" IconForeground="#3949AB"
+                                                    IsChecked="{Binding Installments}"/>
                         <controls:FeatureToggleCard Title="مرتجع مشتريات"
                                                     Description="إرجاع فواتير المشتريات للموردين"
                                                     Icon="KeyboardReturn" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828"

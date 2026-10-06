@@ -166,6 +166,14 @@ public partial class MainWindowViewModel
                 ShowQuickAssistant = true;
                 break;
         }
+
+        var installmentsEnabled = _userPreferences.Current.FeatureFlags.Installments;
+        if (!installmentsEnabled || !_currentUserService.CanView("Installments"))
+            ShowQuickInstallments = false;
+        if (!installmentsEnabled || !_currentUserService.CanView("InstallmentInvoice"))
+            ShowQuickInstallmentInvoice = false;
+        if (!_userPreferences.Current.FeatureFlags.SalesReturns)
+            ShowQuickReturn = false;
     }
 
     [RelayCommand]

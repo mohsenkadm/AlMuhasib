@@ -14,10 +14,13 @@ namespace AlMuhasib.UI.ViewModels;
 
 public partial class SalesByPaymentMethodReportViewModel : ReportViewModelBase
 {
+    private readonly IFeatureFlagService _featureFlags;
+
     [ObservableProperty] private string _totalSales = "0";
     [ObservableProperty] private string _cashSales = "0";
     [ObservableProperty] private string _creditSales = "0";
     [ObservableProperty] private string _installmentSales = "0";
+    [ObservableProperty] private bool _showInstallmentCard = true;
 
     [ObservableProperty] private int? _selectedWarehouseId;
     public ObservableCollection<Warehouse> Warehouses { get; } = [];
@@ -31,10 +34,14 @@ public partial class SalesByPaymentMethodReportViewModel : ReportViewModelBase
     public ObservableCollection<SalesByPaymentMethodRow> Rows { get; } = [];
 
     public SalesByPaymentMethodReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
-        IExportService exportService, ICurrentUserService currentUserService)
+        IExportService exportService, ICurrentUserService currentUserService, IFeatureFlagService featureFlags)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
+        _featureFlags = featureFlags;
         PageTitle = "مبيعات حسب طريقة الدفع";
+        ShowInstallmentCard = _featureFlags.Installments;
+        _featureFlags.FlagsChanged += (_, _) =>
+            System.Windows.Application.Current?.Dispatcher.Invoke(() => ShowInstallmentCard = _featureFlags.Installments);
         RegisterThemeChartReload(LoadDataAsync);
     }
 

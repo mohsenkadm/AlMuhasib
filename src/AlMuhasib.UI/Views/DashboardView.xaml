@@ -1100,6 +1100,7 @@
 
                     <controls:DashboardKpiCard Grid.Column="3" Margin="8,0,0,0"
                                                HorizontalAlignment="Stretch"
+                                               Visibility="{Binding ShowInstallmentStats, Converter={StaticResource BoolToVis}}"
                                                Title="الأقساط المتأخرة"
                                                Value="{Binding OverdueInstallmentsCount, StringFormat={}{0} قسط}"
                                                Icon="AlertCircleOutline"
@@ -1138,6 +1139,7 @@
 
                     <controls:DashboardKpiCard Grid.Column="1" Margin="3,0,3,0"
                                                HorizontalAlignment="Stretch"
+                                               Visibility="{Binding ShowInstallmentStats, Converter={StaticResource BoolToVis}}"
                                                Title="رصيد الأقساط غير المسددة"
                                                Value="{Binding UnpaidInstallmentsBalance, Converter={StaticResource CurrencyFormat}}"
                                                Icon="CalendarMultipleCheck"
@@ -1372,7 +1374,8 @@
                     </materialDesign:Card>
 
                     <!-- Upcoming Installments -->
-                    <materialDesign:Card Grid.Column="2" Style="{StaticResource SectionCard}">
+                    <materialDesign:Card Grid.Column="2" Style="{StaticResource SectionCard}"
+                                         Visibility="{Binding ShowInstallmentStats, Converter={StaticResource BoolToVis}}">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />

@@ -3,6 +3,9 @@ namespace AlMuhasib.Core.Models.Ux;
 /// <summary>تفعيل/إلغاء الميزات المحاسبية وقوالب السوق — يُخزَّن في user-preferences.json</summary>
 public class BusinessFeatureFlags
 {
+    /// <summary>نظام الأقساط (فواتير، تحصيل، تقارير، إجراءات سريعة) — مفعّل افتراضياً.</summary>
+    public bool Installments { get; set; } = true;
+
     public bool PurchaseReturns { get; set; }
 
     /// <summary>مرتجع مبيعات — معطّل افتراضياً.</summary>

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Ux;
+using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -238,9 +239,18 @@ public partial class MainWindowViewModel
 
     private void RefreshVoiceSuggestions()
     {
+        var flags = _userPreferences.Current.FeatureFlags;
         _voiceCommands = _voiceCommandCatalog.Build(
             _moduleRegistry,
-            vm => TryAuthorizeScreen(vm, out _),
+            vm =>
+            {
+                if (!TryAuthorizeScreen(vm, out _))
+                    return false;
+
+                return IsFeatureFlagVisible(
+                    new NavigationMenuItem { ViewModelType = vm },
+                    flags);
+            },
             MenuItems);
 
         VoiceSuggestions.Clear();

@@ -14,10 +14,13 @@ namespace AlMuhasib.UI.ViewModels;
 
 public partial class CustomerCollectionsReportViewModel : ReportViewModelBase
 {
+    private readonly IFeatureFlagService _featureFlags;
+
     [ObservableProperty] private string _totalCollected = "0";
     [ObservableProperty] private string _voucherCollections = "0";
     [ObservableProperty] private string _installmentCollections = "0";
     [ObservableProperty] private string _rowCount = "0";
+    [ObservableProperty] private bool _showInstallmentCard = true;
 
     [ObservableProperty] private int? _selectedCustomerId;
     public ObservableCollection<Customer> Customers { get; } = [];
@@ -33,10 +36,14 @@ public partial class CustomerCollectionsReportViewModel : ReportViewModelBase
     public ObservableCollection<CustomerCollectionRow> Rows { get; } = [];
 
     public CustomerCollectionsReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
-        IExportService exportService, ICurrentUserService currentUserService)
+        IExportService exportService, ICurrentUserService currentUserService, IFeatureFlagService featureFlags)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
+        _featureFlags = featureFlags;
         PageTitle = "كشف تحصيلات العملاء";
+        ShowInstallmentCard = _featureFlags.Installments;
+        _featureFlags.FlagsChanged += (_, _) =>
+            System.Windows.Application.Current?.Dispatcher.Invoke(() => ShowInstallmentCard = _featureFlags.Installments);
         RegisterThemeChartReload(LoadDataAsync);
     }
 
