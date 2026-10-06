@@ -2,13 +2,14 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             xmlns:b="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              Style="{StaticResource PageStyle}" FlowDirection="RightToLeft">
 
     <UserControl.Resources>
         <ContextMenu x:Key="PageActionsMenu">
-            <MenuItem Header="إضافة بند" Command="{Binding AddLineCommand}">
+            <MenuItem Header="إضافة صف" Command="{Binding AddRowCommand}">
                 <MenuItem.Icon><md:PackIcon Kind="Plus" Width="16" Height="16"/></MenuItem.Icon>
             </MenuItem>
             <MenuItem Header="مسح البنود" Command="{Binding ClearLinesCommand}">
@@ -29,7 +30,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Modern header card -->
+        <!-- Header card -->
         <md:Card Grid.Row="0" Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,16"
                  md:ElevationAssist.Elevation="Dp2">
             <StackPanel>
@@ -41,7 +42,7 @@
                     </Border>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock Text="نقل بين مخازن" FontSize="22" FontWeight="Bold"/>
-                        <TextBlock Text="انقل كميات المنتجات بين المخازن بنفس الفرع أو فروع مختلفة — عدّل الكميات من الجدول قبل التنفيذ"
+                        <TextBlock Text="أدر البنود داخل الجدول كجدول Excel — ابحث عن المنتج وعدّل الكمية ثم نفّذ النقل"
                                    FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0"/>
                     </StackPanel>
                 </DockPanel>
@@ -66,53 +67,50 @@
                                                IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                 </UniformGrid>
 
-                <Grid Margin="0,0,0,10">
+                <Grid Margin="0,0,0,12">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="12"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="من مخزن" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="SemiBold"/>
-                    <ComboBox Grid.Column="1" ItemsSource="{Binding Warehouses}" SelectedItem="{Binding FromWarehouse}"
-                              DisplayMemberPath="DisplayName" Margin="0,0,16,0"
-                              md:HintAssist.Hint="اختر المخزن المصدر"/>
-                    <TextBlock Grid.Column="2" Text="إلى مخزن" VerticalAlignment="Center" Margin="0,0,8,0" FontWeight="SemiBold"/>
-                    <ComboBox Grid.Column="3" ItemsSource="{Binding Warehouses}" SelectedItem="{Binding ToWarehouse}"
-                              DisplayMemberPath="DisplayName"
-                              md:HintAssist.Hint="اختر المخزن الوجهة"/>
-                </Grid>
 
-                <Grid Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="180"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="90"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <md:PackIcon Grid.Column="0" Kind="BarcodeScan" Width="20" Height="20"
-                                 VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBox Grid.Column="1" Text="{Binding BarcodeInput, UpdateSourceTrigger=PropertyChanged}"
-                             Margin="0,0,8,0" md:HintAssist.Hint="الباركود + Enter"
-                             behaviors:EnterKeyCommandBehavior.Command="{Binding ProcessBarcodeCommand}"/>
-                    <ComboBox Grid.Column="2" ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}"
-                              DisplayMemberPath="Name" Margin="0,0,8,0" md:HintAssist.Hint="المنتج"/>
-                    <TextBox Grid.Column="3" Text="{Binding LineQuantity}" Margin="0,0,8,0"
-                             md:HintAssist.Hint="الكمية"/>
-                    <Button Grid.Column="4" Content="إضافة" Command="{Binding AddLineCommand}"
-                            Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
-                    <Button Grid.Column="5" Content="مسح الكل" Command="{Binding ClearLinesCommand}"
-                            Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                    <ComboBox Grid.Column="0"
+                              ItemsSource="{Binding Warehouses}"
+                              SelectedItem="{Binding FromWarehouse}"
+                              DisplayMemberPath="DisplayName"
+                              md:HintAssist.Hint="من مخزن"
+                              md:HintAssist.IsFloating="True"
+                              md:ComboBoxAssist.ShowSelectedItem="True"
+                              Style="{StaticResource FilledComboBox}"
+                              FontSize="14"/>
+                    <ComboBox Grid.Column="2"
+                              ItemsSource="{Binding Warehouses}"
+                              SelectedItem="{Binding ToWarehouse}"
+                              DisplayMemberPath="DisplayName"
+                              md:HintAssist.Hint="إلى مخزن"
+                              md:HintAssist.IsFloating="True"
+                              md:ComboBoxAssist.ShowSelectedItem="True"
+                              Style="{StaticResource FilledComboBox}"
+                              FontSize="14"/>
+                    <DatePicker Grid.Column="4"
+                                SelectedDate="{Binding TransferDate}"
+                                md:HintAssist.Hint="التاريخ"
+                                md:HintAssist.IsFloating="True"
+                                Style="{StaticResource FilledDatePicker}"
+                                FontSize="14"/>
                 </Grid>
 
                 <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
                          md:HintAssist.Hint="ملاحظات النقل (اختياري)"
+                         md:HintAssist.IsFloating="True"
+                         Style="{StaticResource FilledTextBox}"
                          AcceptsReturn="True" MinHeight="44" TextWrapping="Wrap"/>
             </StackPanel>
         </md:Card>
 
+        <!-- Lines grid -->
         <md:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" Padding="0" md:ElevationAssist.Elevation="Dp1">
             <Grid>
                 <Grid.RowDefinitions>
@@ -120,46 +118,102 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
                 <controls:ListTableHeaderBar Grid.Row="0"
-                                             Title="بنود النقل — عدّل الكمية أو احذف الصف قبل التنفيذ"
+                                             Title="بنود النقل — ابحث عن المنتج وعدّل الكمية داخل الجدول"
                                              TargetDataGrid="{Binding ElementName=TransferLinesGrid}"
                                              ShowCardToggle="False"
                                              ShowExport="False"
                                              ShowPrint="False"
-                                             ShowFilter="False"/>
+                                             ShowFilter="False">
+                    <controls:ListTableHeaderBar.ExtraContent>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <md:PackIcon Kind="BarcodeScan" Width="18" Height="18"
+                                         VerticalAlignment="Center" Margin="0,0,6,0" Foreground="White"/>
+                            <TextBox Width="168" Height="32" Margin="0,0,10,0"
+                                     Padding="10,0"
+                                     VerticalContentAlignment="Center"
+                                     Background="White"
+                                     Foreground="#212121"
+                                     CaretBrush="#212121"
+                                     BorderThickness="0"
+                                     Text="{Binding BarcodeInput, UpdateSourceTrigger=PropertyChanged}"
+                                     md:HintAssist.Hint="الباركود + Enter"
+                                     md:HintAssist.Foreground="#78909C"
+                                     md:TextFieldAssist.HasClearButton="True"
+                                     behaviors:EnterKeyCommandBehavior.Command="{Binding ProcessBarcodeCommand}"/>
+                            <Button Command="{Binding AddRowCommand}"
+                                    Style="{StaticResource FlatButton}"
+                                    Foreground="White" Height="32" Padding="14,0" Margin="0,0,8,0"
+                                    ToolTip="إضافة صف فارغ">
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="Plus" Width="16" Height="16" VerticalAlignment="Center"/>
+                                    <TextBlock Text="إضافة صف" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding ClearLinesCommand}"
+                                    Style="{StaticResource FlatButton}"
+                                    Foreground="White" Height="32" Padding="12,0"
+                                    ToolTip="مسح جميع البنود">
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="DeleteSweep" Width="16" Height="16" VerticalAlignment="Center"/>
+                                    <TextBlock Text="مسح الكل" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </controls:ListTableHeaderBar.ExtraContent>
+                </controls:ListTableHeaderBar>
+
                 <DataGrid x:Name="TransferLinesGrid" Grid.Row="1"
-                          ItemsSource="{Binding Lines}" Style="{StaticResource ModernDataGrid}"
-                          AutoGenerateColumns="False" CanUserAddRows="False" MinHeight="220"
+                          ItemsSource="{Binding Lines}"
+                          Style="{StaticResource InvoiceItemsDataGrid}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          CanUserSortColumns="False"
                           IsReadOnly="False"
-                          SelectionUnit="FullRow"
-                          behaviors:DataGridCopyableCellsBehavior.IsEnabled="False">
+                          SelectionMode="Single"
+                          SelectionUnit="Cell"
+                          MinHeight="220"
+                          b:InvoiceDataGridBehavior.Enable="True"
+                          b:InvoiceDataGridBehavior.AddRowCommand="{Binding AddRowCommand}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="المنتج" Binding="{Binding ProductName}" Width="*" IsReadOnly="True"/>
-                        <DataGridTemplateColumn Header="الكمية" Width="160" MinWidth="120">
+                        <DataGridTemplateColumn Header="#" Width="50" IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBox Text="{Binding Quantity, UpdateSourceTrigger=LostFocus, StringFormat={}{0:0.##}}"
-                                             Style="{StaticResource NumericCellTextBox}"
-                                             MinWidth="100" MinHeight="34"
-                                             FontSize="15"
-                                             FontWeight="Bold"
-                                             Padding="8,6"
-                                             HorizontalContentAlignment="Center"
-                                             VerticalContentAlignment="Center"
-                                             Foreground="#EF6C00"/>
+                                    <TextBlock Text="{Binding RowNumber}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Foreground="{DynamicResource HintForegroundBrush}"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="إجراء" Width="100" IsReadOnly="True">
+
+                        <DataGridTemplateColumn Header="اسم المنتج" Width="*" MinWidth="220">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Button Content="حذف" Padding="10,2"
-                                            Command="{Binding DataContext.RemoveLineCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            CommandParameter="{Binding}"
-                                            Style="{StaticResource MaterialDesignFlatButton}"
-                                            Foreground="#C62828"/>
+                                    <ContentControl Content="{Binding}"
+                                                    ContentTemplate="{StaticResource InvoiceProductCellTemplate}"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="المتاح في المصدر" Width="140" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding AvailableQuantityText}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               FontWeight="SemiBold"
+                                               FontSize="14"
+                                               Foreground="#1565C0"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTemplateColumn Header="الكمية" Width="180" MinWidth="150"
+                                                CellTemplate="{StaticResource InvoiceQuantityCellTemplate}"/>
+
+                        <DataGridTemplateColumn Header="" Width="50" IsReadOnly="True"
+                                                CellTemplate="{StaticResource InvoiceDeleteRowCellTemplate}"/>
                     </DataGrid.Columns>
                 </DataGrid>
             </Grid>
