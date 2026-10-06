@@ -19,6 +19,7 @@ public partial class WarehouseTransferViewModel : ViewModelBase, IProductQuickSe
     private readonly IUserPreferencesService _preferences;
     private readonly IDbContextFactory<AppDbContext> _dbFactory;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IProductService _productService;
     private Dictionary<int, decimal> _fromStockByProduct = new();
 
     public ObservableCollection<WarehouseTransferWarehouseOption> Warehouses { get; } = [];
@@ -44,12 +45,14 @@ public partial class WarehouseTransferViewModel : ViewModelBase, IProductQuickSe
         ICurrentUserService currentUserService,
         IDbContextFactory<AppDbContext> dbFactory,
         IUnitOfWork unitOfWork,
+        IProductService productService,
         IProductPriceService productPriceService)
     {
         _transferService = transferService;
         _preferences = preferences;
         _dbFactory = dbFactory;
         _unitOfWork = unitOfWork;
+        _productService = productService;
         QuickSearchCatalog = new ProductQuickSearchCatalog(_unitOfWork, productPriceService);
         PageTitle = "نقل بين مخازن";
         LoadPermissions(currentUserService, "Warehouses");
@@ -86,10 +89,7 @@ public partial class WarehouseTransferViewModel : ViewModelBase, IProductQuickSe
             });
         }
 
-        var products = await db.Products.AsNoTracking()
-            .Where(p => !p.IsDeleted)
-            .OrderBy(p => p.Name)
-            .ToListAsync();
+        var products = (await _productService.GetVisibleInCurrentBranchAsync()).ToList();
         foreach (var p in products)
             Products.Add(p);
 

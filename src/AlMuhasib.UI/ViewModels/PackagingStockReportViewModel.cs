@@ -20,6 +20,7 @@ public partial class PackagingStockReportViewModel : ReportViewModelBase
     public ObservableCollection<Warehouse> Warehouses { get; } = [];
     public ObservableCollection<Product> Products { get; } = [];
 
+    private readonly IProductService _productService;
     private List<PackagingStockReportRow> _allRows = [];
     public ObservableCollection<PackagingStockReportRow> Rows { get; } = [];
 
@@ -27,9 +28,11 @@ public partial class PackagingStockReportViewModel : ReportViewModelBase
         IReportService reportService,
         IUnitOfWork unitOfWork,
         IExportService exportService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IProductService productService)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
+        _productService = productService;
         PageTitle = "كميات حسب التعبئة";
     }
 
@@ -38,7 +41,7 @@ public partial class PackagingStockReportViewModel : ReportViewModelBase
         LoadPermissions(_currentUserService, ScreenPermissionRegistry.PackagingStockReport);
         foreach (var w in await _unitOfWork.Warehouses.GetAllAsync())
             Warehouses.Add(w);
-        foreach (var p in (await _unitOfWork.Products.GetAllAsync()).OrderBy(x => x.Name))
+        foreach (var p in (await _productService.GetVisibleInCurrentBranchAsync()).OrderBy(x => x.Name))
             Products.Add(p);
         await LoadDataAsync();
     }

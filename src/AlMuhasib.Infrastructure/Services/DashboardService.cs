@@ -12,13 +12,16 @@ public class DashboardService : IDashboardService
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IBranchContext _branchContext;
 
     public DashboardService(
         IDbContextFactory<AppDbContext> contextFactory,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IBranchContext branchContext)
     {
         _contextFactory = contextFactory;
         _currentUserService = currentUserService;
+        _branchContext = branchContext;
     }
 
     public async Task<DashboardData> GetDashboardDataAsync()
@@ -68,8 +71,10 @@ public class DashboardService : IDashboardService
                 InvoiceFilters.ForProfitAndSalesTotals(context.Invoices, context.InstallmentPlans));
             var totalPurchases = await InvoiceSignedSums.SumSignedNetAsync(
                 InvoiceFilters.ForPurchasesTotals(context.Invoices));
+            var visibleProductIds = await ProductBranchVisibility.GetVisibleProductIdsAsync(
+                context, _branchContext);
             var openingStockRows = await context.WarehouseStocks.AsNoTracking()
-                .Where(s => s.OpeningQuantity > 0)
+                .Where(s => s.OpeningQuantity > 0 && visibleProductIds.Contains(s.ProductId))
                 .Select(s => new { s.OpeningQuantity, s.UnitCost })
                 .ToListAsync();
             var openingStockValue = Math.Round(
@@ -487,6 +492,9 @@ public class DashboardService : IDashboardService
 
             if (stockValues.Count > 0)
             {
+                var visibleProductIds = await ProductBranchVisibility.GetVisibleProductIdsAsync(
+                    context, _branchContext);
+                stockValues = stockValues.Where(s => visibleProductIds.Contains(s.ProductId)).ToList();
                 var productIds = stockValues.Select(s => s.ProductId).ToList();
                 var allStocks = await context.WarehouseStocks
                     .Where(ws => productIds.Contains(ws.ProductId))

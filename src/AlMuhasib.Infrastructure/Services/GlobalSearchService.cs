@@ -1,5 +1,6 @@
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Helpers;
+using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Ux;
 using AlMuhasib.Infrastructure.Data;
@@ -10,11 +11,15 @@ namespace AlMuhasib.Infrastructure.Services;
 public class GlobalSearchService : IGlobalSearchService
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
+    private readonly IBranchContext _branchContext;
     private const int PerCategoryLimit = 8;
 
-    public GlobalSearchService(IDbContextFactory<AppDbContext> contextFactory)
+    public GlobalSearchService(
+        IDbContextFactory<AppDbContext> contextFactory,
+        IBranchContext branchContext)
     {
         _contextFactory = contextFactory;
+        _branchContext = branchContext;
     }
 
     public async Task<IReadOnlyList<GlobalSearchHit>> SearchAsync(
@@ -62,7 +67,11 @@ public class GlobalSearchService : IGlobalSearchService
             .ToListAsync(cancellationToken);
         hits.AddRange(suppliers);
 
-        var products = await context.Products.AsNoTracking()
+        var productQuery = ProductBranchVisibility.WhereVisibleInCurrentScope(
+            context.Products.AsNoTracking(),
+            context,
+            _branchContext);
+        var products = await productQuery
             .Where(p => EF.Functions.Like(p.Name, like)
                         || (p.Barcode != null && EF.Functions.Like(p.Barcode, like))
                         || (p.ScientificName != null && EF.Functions.Like(p.ScientificName, like))

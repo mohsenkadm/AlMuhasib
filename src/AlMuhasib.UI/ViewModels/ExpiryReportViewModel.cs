@@ -35,6 +35,7 @@ public partial class ExpiryReportViewModel : ReportViewModelBase
         new("صالح", ExpiryStatusFilter.Valid)
     ];
 
+    private readonly IProductService _productService;
     private List<ExpiryReportRow> _allRows = [];
     public ObservableCollection<ExpiryReportRow> Rows { get; } = [];
 
@@ -42,9 +43,11 @@ public partial class ExpiryReportViewModel : ReportViewModelBase
         IReportService reportService,
         IUnitOfWork unitOfWork,
         IExportService exportService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IProductService productService)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
+        _productService = productService;
         PageTitle = "تقرير الصلاحية";
     }
 
@@ -53,7 +56,7 @@ public partial class ExpiryReportViewModel : ReportViewModelBase
         LoadPermissions(_currentUserService, "Reports");
         foreach (var w in await _unitOfWork.Warehouses.GetAllAsync())
             Warehouses.Add(w);
-        foreach (var p in (await _unitOfWork.Products.GetAllAsync()).OrderBy(x => x.Name))
+        foreach (var p in (await _productService.GetVisibleInCurrentBranchAsync()).OrderBy(x => x.Name))
             Products.Add(p);
         await LoadDataAsync();
     }

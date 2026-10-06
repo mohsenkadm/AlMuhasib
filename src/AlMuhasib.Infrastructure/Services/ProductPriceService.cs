@@ -10,13 +10,16 @@ public class ProductPriceService : IProductPriceService
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IBranchContext _branchContext;
 
     public ProductPriceService(
         IDbContextFactory<AppDbContext> contextFactory,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IBranchContext branchContext)
     {
         _contextFactory = contextFactory;
         _currentUserService = currentUserService;
+        _branchContext = branchContext;
     }
 
     public async Task<bool> ExistsAsync(int productId, int pricingTypeId, int? excludeId = null)
@@ -123,11 +126,15 @@ public class ProductPriceService : IProductPriceService
         decimal? maxPurchasePrice = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
+        var visibleProducts = ProductBranchVisibility.WhereVisibleInCurrentScope(
+            context.Products.AsNoTracking(),
+            context,
+            _branchContext);
         var query = context.ProductPrices
             .Include(p => p.Product)
             .ThenInclude(p => p.Category)
             .Include(p => p.PricingType)
-            .AsQueryable();
+            .Where(p => visibleProducts.Any(vp => vp.Id == p.ProductId));
 
         if (productId.HasValue)
             query = query.Where(p => p.ProductId == productId.Value);

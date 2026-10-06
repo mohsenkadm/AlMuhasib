@@ -137,8 +137,10 @@ public class ProductService : IProductService
         bool? hasBatches = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        var query = context.Products
-            .Include(p => p.Category)
+        var query = ProductBranchVisibility.WhereVisibleInCurrentScope(
+                context.Products.Include(p => p.Category),
+                context,
+                _branchContext)
             .AsQueryable();
 
         if (categoryId.HasValue)
@@ -262,8 +264,10 @@ public class ProductService : IProductService
     public async Task<Product?> GetByBarcodeAsync(string barcode)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.Products
-            .Include(p => p.Category)
+        return await ProductBranchVisibility.WhereVisibleInCurrentScope(
+                context.Products.Include(p => p.Category),
+                context,
+                _branchContext)
             .FirstOrDefaultAsync(p => p.Barcode == barcode);
     }
 
@@ -272,8 +276,10 @@ public class ProductService : IProductService
         await using var context = await _contextFactory.CreateDbContextAsync();
         var term = name.Trim();
         var plateType = AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.Parse(term);
-        return await context.Products
-            .Include(p => p.Category)
+        return await ProductBranchVisibility.WhereVisibleInCurrentScope(
+                context.Products.Include(p => p.Category),
+                context,
+                _branchContext)
             .Where(p => p.Name.Contains(term)
                         || (p.ScientificName != null && p.ScientificName.Contains(term))
                         || (p.Barcode != null && p.Barcode.Contains(term))
@@ -358,26 +364,29 @@ public class ProductService : IProductService
     public async Task<IReadOnlyList<Product>> GetVisibleInBranchAsync(int branchId, CancellationToken ct = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(ct);
-        // منتجات لها ربط بالفرع، أو بلا أي ربط (توافق مع بيانات قديمة قبل الجدول).
-        return await context.Products
-            .Include(p => p.Category)
-            .Where(p =>
-                context.ProductBranches.Any(pb => pb.ProductId == p.Id && pb.BranchId == branchId)
-                || !context.ProductBranches.Any(pb => pb.ProductId == p.Id))
+        return await ProductBranchVisibility.WhereVisibleInBranches(
+                context.Products.Include(p => p.Category),
+                context,
+                [branchId])
             .OrderBy(p => p.Name)
             .ToListAsync(ct);
     }
 
     public async Task<IReadOnlyList<Product>> GetVisibleInCurrentBranchAsync(CancellationToken ct = default)
     {
-        if (_branchContext.CurrentBranchId is int bid)
-            return await GetVisibleInBranchAsync(bid, ct);
-
         await using var context = await _contextFactory.CreateDbContextAsync(ct);
-        return await context.Products
-            .Include(p => p.Category)
+        return await ProductBranchVisibility.WhereVisibleInCurrentScope(
+                context.Products.Include(p => p.Category),
+                context,
+                _branchContext)
             .OrderBy(p => p.Name)
             .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlySet<int>> GetVisibleProductIdsForCurrentScopeAsync(CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        return await ProductBranchVisibility.GetVisibleProductIdsAsync(context, _branchContext, ct);
     }
 
     public async Task<bool> IsVisibleInBranchAsync(int productId, int branchId, CancellationToken ct = default)

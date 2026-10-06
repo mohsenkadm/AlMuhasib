@@ -20,13 +20,19 @@ public partial class ProductMovementReportViewModel : ReportViewModelBase
     public ObservableCollection<Warehouse> Warehouses { get; } = [];
     public ObservableCollection<Product> Products { get; } = [];
 
+    private readonly IProductService _productService;
     private List<ProductMovementRow> _allRows = [];
     public ObservableCollection<ProductMovementRow> Rows { get; } = [];
 
-    public ProductMovementReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
-        IExportService exportService, ICurrentUserService currentUserService)
+    public ProductMovementReportViewModel(
+        IReportService reportService,
+        IUnitOfWork unitOfWork,
+        IExportService exportService,
+        ICurrentUserService currentUserService,
+        IProductService productService)
         : base(reportService, unitOfWork, exportService, currentUserService)
     {
+        _productService = productService;
         PageTitle = "حركة المنتجات";
     }
 
@@ -35,7 +41,7 @@ public partial class ProductMovementReportViewModel : ReportViewModelBase
         LoadPermissions(_currentUserService, "Reports");
         foreach (var w in await _unitOfWork.Warehouses.GetAllAsync())
             Warehouses.Add(w);
-        foreach (var p in await _unitOfWork.Products.GetAllAsync())
+        foreach (var p in await _productService.GetVisibleInCurrentBranchAsync())
             Products.Add(p);
         await LoadDataAsync();
     }

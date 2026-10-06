@@ -18,6 +18,7 @@ public partial class ProductPricingViewModel : ViewModelBase
 {
     private readonly IProductPriceService _productPriceService;
     private readonly IPricingTypeService _pricingTypeService;
+    private readonly IProductService _productService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
@@ -53,6 +54,7 @@ public partial class ProductPricingViewModel : ViewModelBase
     public ProductPricingViewModel(
         IProductPriceService productPriceService,
         IPricingTypeService pricingTypeService,
+        IProductService productService,
         IUnitOfWork unitOfWork,
         IExportService exportService,
         ICurrentUserService currentUserService,
@@ -60,6 +62,7 @@ public partial class ProductPricingViewModel : ViewModelBase
     {
         _productPriceService = productPriceService;
         _pricingTypeService = pricingTypeService;
+        _productService = productService;
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _currentUserService = currentUserService;
@@ -90,7 +93,7 @@ public partial class ProductPricingViewModel : ViewModelBase
     private async Task LoadLookupsAsync()
     {
         Products.Clear();
-        foreach (var p in (await _unitOfWork.Products.GetAllAsync()).OrderBy(p => p.Name))
+        foreach (var p in (await _productService.GetVisibleInCurrentBranchAsync()).OrderBy(p => p.Name))
             Products.Add(p);
 
         PricingTypes.Clear();

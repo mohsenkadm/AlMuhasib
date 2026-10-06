@@ -1636,6 +1636,8 @@ public partial class ReportService
         if (!includeZero) stockQ = stockQ.Where(ws => ws.Quantity > 0);
 
         var stocks = await stockQ.ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        stocks = stocks.Where(s => visibleProductIds.Contains(s.ProductId)).ToList();
         var productIds = stocks.Select(s => s.ProductId).Distinct().ToList();
         var purchasesByProduct = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
         var rows = new List<InventoryValuationRow>();
@@ -1682,6 +1684,8 @@ public partial class ReportService
         if (!includeZero) stockQ = stockQ.Where(ws => ws.Quantity > 0);
 
         var stocks = await stockQ.ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        stocks = stocks.Where(s => visibleProductIds.Contains(s.ProductId)).ToList();
         if (stocks.Count == 0)
             return new WarehouseProductProfitReportResult();
 
@@ -1748,6 +1752,8 @@ public partial class ReportService
         if (!includeZero) stockQ = stockQ.Where(ws => ws.Quantity != 0);
 
         var stocks = await stockQ.OrderBy(ws => ws.Warehouse!.Name).ThenBy(ws => ws.Product!.Name).ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        stocks = stocks.Where(s => visibleProductIds.Contains(s.ProductId)).ToList();
         var rows = stocks.Select(s => new StockTakingRow
         {
             ProductId = s.ProductId,
@@ -1799,6 +1805,8 @@ public partial class ReportService
         if (warehouseId.HasValue) soldQ = soldQ.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
 
         var soldItems = await soldQ.ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        soldItems = soldItems.Where(ii => ii.ProductId is int pid && visibleProductIds.Contains(pid)).ToList();
         var productIds = soldItems.Select(ii => ii.ProductId!.Value).Distinct().ToList();
         var stocks = await context.WarehouseStocks.Where(ws => productIds.Contains(ws.ProductId)).ToListAsync();
         // متوسط التكلفة بالدينار يشمل مشتريات USD المحوّلة عبر FxRate اللقطة
@@ -2168,6 +2176,8 @@ public partial class ReportService
             installmentRows.Select(r => (r.RemainingAmount, r.Currency, r.FxRate)), foldInUsd);
 
         var stocks = await context.WarehouseStocks.Include(ws => ws.Product).ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        stocks = stocks.Where(s => visibleProductIds.Contains(s.ProductId)).ToList();
         var inventoryProductIds = stocks.Where(s => s.Quantity > 0).Select(s => s.ProductId).Distinct().ToList();
         var inventoryPurchases = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, inventoryProductIds);
         decimal inventory = 0;

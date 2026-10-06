@@ -11,6 +11,7 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class StockAdjustmentViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IProductService _productService;
     private readonly ICurrentUserService _currentUserService;
     private bool _initialized;
 
@@ -26,9 +27,13 @@ public partial class StockAdjustmentViewModel : ViewModelBase
     [ObservableProperty]
     private int _changedCount;
 
-    public StockAdjustmentViewModel(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public StockAdjustmentViewModel(
+        IUnitOfWork unitOfWork,
+        IProductService productService,
+        ICurrentUserService currentUserService)
     {
         _unitOfWork = unitOfWork;
+        _productService = productService;
         _currentUserService = currentUserService;
         PageTitle = "تسوية مخزنية";
     }
@@ -68,7 +73,7 @@ public partial class StockAdjustmentViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            var products = await _unitOfWork.Products.GetAllAsync();
+            var products = await _productService.GetVisibleInCurrentBranchAsync();
             var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
                 s => s.WarehouseId == SelectedWarehouse.Id);
             var stockDict = stocks.ToDictionary(s => s.ProductId);

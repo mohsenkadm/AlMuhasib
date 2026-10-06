@@ -12,11 +12,22 @@ namespace AlMuhasib.Infrastructure.Services;
 public partial class ReportService : IReportService
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
+    private readonly IBranchContext _branchContext;
 
-    public ReportService(IDbContextFactory<AppDbContext> contextFactory) => _contextFactory = contextFactory;
+    public ReportService(
+        IDbContextFactory<AppDbContext> contextFactory,
+        IBranchContext branchContext)
+    {
+        _contextFactory = contextFactory;
+        _branchContext = branchContext;
+    }
 
     /// <summary>Normalize "to" date to include the entire day (start of next day).</summary>
     private static DateTime? EndOfDay(DateTime? to) => to?.Date.AddDays(1);
+
+    /// <summary>معرّفات المنتجات الظاهرة في نطاق الفرع الحالي (أو اتحاد المسموح).</summary>
+    private Task<HashSet<int>> GetVisibleProductIdsAsync(AppDbContext context, CancellationToken ct = default)
+        => ProductBranchVisibility.GetVisibleProductIdsAsync(context, _branchContext, ct);
 
     // ══════════════════════════════════════════════════════════════
     // SALES
@@ -1527,6 +1538,8 @@ public partial class ReportService : IReportService
         if (!includeZero) query = query.Where(ws => ws.Quantity > 0);
 
         var stocks = await query.OrderBy(ws => ws.Warehouse!.Name).ThenBy(ws => ws.Product!.Name).ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        stocks = stocks.Where(s => visibleProductIds.Contains(s.ProductId)).ToList();
         var productIds = stocks.Select(s => s.ProductId).Distinct().ToList();
         var purchasesByProduct = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
         var damageItems = await context.InvoiceItems
@@ -1580,6 +1593,8 @@ public partial class ReportService : IReportService
         if (warehouseId.HasValue) query = query.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
 
         var items = await query.OrderByDescending(ii => ii.Invoice!.Date).ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        items = items.Where(i => i.ProductId is int pid && visibleProductIds.Contains(pid)).ToList();
         var productIds = items.Select(i => i.ProductId!.Value).Distinct().ToList();
         var stocks = await context.WarehouseStocks
             .Where(ws => productIds.Contains(ws.ProductId))
@@ -1627,6 +1642,8 @@ public partial class ReportService : IReportService
             stockQ = stockQ.Where(ws => ws.ProductId == productId.Value);
 
         var stocks = await stockQ.ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        stocks = stocks.Where(s => visibleProductIds.Contains(s.ProductId)).ToList();
         var productIds = stocks.Select(s => s.ProductId).Distinct().ToList();
         var units = await context.ProductUnits.AsNoTracking()
             .Include(u => u.PackagingType)
@@ -2071,6 +2088,8 @@ public partial class ReportService : IReportService
         var stocks = await context.WarehouseStocks
             .Include(ws => ws.Product)
             .ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        stocks = stocks.Where(s => visibleProductIds.Contains(s.ProductId)).ToList();
         var inventoryProductIds = stocks.Where(s => s.Quantity > 0).Select(s => s.ProductId).Distinct().ToList();
         var inventoryPurchases = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, inventoryProductIds);
         decimal inventoryValue = 0;
@@ -2203,6 +2222,8 @@ public partial class ReportService : IReportService
         if (warehouseId.HasValue) query = query.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
 
         var items = await query.ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        items = items.Where(ii => ii.ProductId is int pid && visibleProductIds.Contains(pid)).ToList();
         decimal LineRevenue(InvoiceItem x)
         {
             var signed = InvoiceFilters.SignedSaleLineAmount(x.Invoice!.InvoiceType, x.TotalPrice);
@@ -2263,6 +2284,8 @@ public partial class ReportService : IReportService
         if (warehouseId.HasValue) query = query.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
 
         var soldItems = await query.ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        soldItems = soldItems.Where(ii => ii.ProductId is int pid && visibleProductIds.Contains(pid)).ToList();
         if (soldItems.Count == 0)
         {
             return new ProductProfitMarginReportResult();
@@ -2336,6 +2359,8 @@ public partial class ReportService : IReportService
         if (warehouseId.HasValue) query = query.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
 
         var soldItems = await query.ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        soldItems = soldItems.Where(ii => ii.ProductId is int pid && visibleProductIds.Contains(pid)).ToList();
         if (soldItems.Count == 0)
             return new MaterialNetProfitReportResult();
 
@@ -3023,9 +3048,11 @@ public partial class ReportService : IReportService
             .ToListAsync();
         var openingMap = openingByProduct.ToDictionary(x => x.ProductId, x => x.Opening);
 
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
         var productIds = raw.Select(x => x.ii.ProductId!.Value)
             .Concat(openingMap.Keys)
             .Distinct()
+            .Where(visibleProductIds.Contains)
             .ToList();
 
         var productNames = await context.Products.AsNoTracking()
@@ -3088,6 +3115,8 @@ public partial class ReportService : IReportService
             stockQ = stockQ.Where(ws => ws.WarehouseId == warehouseId.Value);
 
         var stocks = await stockQ.ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        stocks = stocks.Where(s => visibleProductIds.Contains(s.ProductId)).ToList();
         var stockProductIds = stocks.Select(s => s.ProductId).Distinct().ToList();
         var purchasesByProduct = await ProductCostHelper.GetPurchaseItemsByProductAsync(context, stockProductIds);
 
@@ -3170,6 +3199,8 @@ public partial class ReportService : IReportService
             stockQ = stockQ.Where(ws => ws.WarehouseId == warehouseId.Value);
 
         var stocks = await stockQ.ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        stocks = stocks.Where(s => visibleProductIds.Contains(s.ProductId)).ToList();
 
         var salesQ = context.InvoiceItems.AsNoTracking()
             .Include(ii => ii.Invoice)
@@ -3183,6 +3214,7 @@ public partial class ReportService : IReportService
         if (warehouseId.HasValue) salesQ = salesQ.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
 
         var salesItems = await salesQ.ToListAsync();
+        salesItems = salesItems.Where(ii => ii.ProductId is int pid && visibleProductIds.Contains(pid)).ToList();
         var soldByKey = salesItems
             .GroupBy(ii => (ProductId: ii.ProductId!.Value, WarehouseId: ii.Invoice!.WarehouseId))
             .ToDictionary(
@@ -3318,6 +3350,8 @@ public partial class ReportService : IReportService
             q = q.Where(b => b.ExpiryDate != null && b.ExpiryDate <= expiryTo.Value.Date);
 
         var batches = await q.ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        batches = batches.Where(b => visibleProductIds.Contains(b.ProductId)).ToList();
         var rows = new List<ExpiryReportRow>();
 
         foreach (var batch in batches)
@@ -3469,6 +3503,8 @@ public partial class ReportService : IReportService
         }
 
         var stocks = await query.ToListAsync();
+        var visibleProductIds = await GetVisibleProductIdsAsync(context);
+        stocks = stocks.Where(s => visibleProductIds.Contains(s.ProductId)).ToList();
         var rows = new List<MinimumQuantityRow>();
 
         foreach (var s in stocks)

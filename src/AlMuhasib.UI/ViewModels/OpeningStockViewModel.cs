@@ -18,6 +18,7 @@ public partial class OpeningStockViewModel : ViewModelBase
     private const int DefaultPageSize = 50;
 
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IProductService _productService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IOpeningStockExcelService _excelService;
     private readonly IUserPreferencesService _userPreferences;
@@ -77,6 +78,7 @@ public partial class OpeningStockViewModel : ViewModelBase
 
     public OpeningStockViewModel(
         IUnitOfWork unitOfWork,
+        IProductService productService,
         ICurrentUserService currentUserService,
         IOpeningStockExcelService excelService,
         IUserPreferencesService userPreferences,
@@ -84,6 +86,7 @@ public partial class OpeningStockViewModel : ViewModelBase
         IPricingTypeService pricingTypeService)
     {
         _unitOfWork = unitOfWork;
+        _productService = productService;
         _currentUserService = currentUserService;
         _excelService = excelService;
         _userPreferences = userPreferences;
@@ -105,7 +108,7 @@ public partial class OpeningStockViewModel : ViewModelBase
             foreach (var w in warehouses)
                 Warehouses.Add(w);
 
-            var products = await _unitOfWork.Products.GetAllAsync();
+            var products = await _productService.GetVisibleInCurrentBranchAsync();
             Products.Clear();
             foreach (var p in products)
                 Products.Add(p);

@@ -13,6 +13,7 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class ProductOffersViewModel : ViewModelBase
 {
     private readonly IProductOfferService _offerService;
+    private readonly IProductService _productService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
@@ -50,12 +51,14 @@ public partial class ProductOffersViewModel : ViewModelBase
 
     public ProductOffersViewModel(
         IProductOfferService offerService,
+        IProductService productService,
         IUnitOfWork unitOfWork,
         IExportService exportService,
         ICurrentUserService currentUserService,
         IFeatureFlagService featureFlags)
     {
         _offerService = offerService;
+        _productService = productService;
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _currentUserService = currentUserService;
@@ -72,7 +75,7 @@ public partial class ProductOffersViewModel : ViewModelBase
             LoadPermissions(_currentUserService, "ProductOffers");
             FeatureEnabled = _featureFlags.ProductOffers;
             Products.Clear();
-            foreach (var p in await _unitOfWork.Products.GetAllAsync())
+            foreach (var p in await _productService.GetVisibleInCurrentBranchAsync())
                 Products.Add(p);
             await LoadAsync();
         }

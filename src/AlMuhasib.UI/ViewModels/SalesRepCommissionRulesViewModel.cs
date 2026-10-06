@@ -49,6 +49,7 @@ public sealed class SalesRepCommissionRuleRow
 public partial class SalesRepCommissionRulesViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IProductService _productService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
 
@@ -98,10 +99,12 @@ public partial class SalesRepCommissionRulesViewModel : ViewModelBase
 
     public SalesRepCommissionRulesViewModel(
         IUnitOfWork unitOfWork,
+        IProductService productService,
         IExportService exportService,
         ICurrentUserService currentUserService)
     {
         _unitOfWork = unitOfWork;
+        _productService = productService;
         _exportService = exportService;
         _currentUserService = currentUserService;
         PageTitle = "قواعد عمولة المندوبين";
@@ -131,7 +134,7 @@ public partial class SalesRepCommissionRulesViewModel : ViewModelBase
         _repNames = reps.ToDictionary(r => r.Id, r => r.Name);
         foreach (var r in reps) Representatives.Add(r);
 
-        var products = (await _unitOfWork.Products.GetAllAsync()).OrderBy(p => p.Name).ToList();
+        var products = (await _productService.GetVisibleInCurrentBranchAsync()).OrderBy(p => p.Name).ToList();
         _productNames = products.ToDictionary(p => p.Id, p => p.Name);
         foreach (var p in products) Products.Add(p);
 

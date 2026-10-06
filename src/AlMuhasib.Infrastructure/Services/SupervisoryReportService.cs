@@ -168,8 +168,8 @@ public class SupervisoryReportService : ISupervisoryReportService
             .Include(p => p.Category)
             .Where(p => p.IsDeleted);
 
-        // المنتجات مشتركة — لا تُصفّى بفرع
-        _ = AllowedBranchIdsOrCurrent();
+        var scopeBranchIds = ProductBranchVisibility.ResolveScopeBranchIds(_branchContext);
+        query = ProductBranchVisibility.WhereVisibleInBranches(query, context, scopeBranchIds);
 
         query = ApplyDeletedFilters(query, filter, p =>
             p.Name.Contains(filter.SearchTerm!) ||
@@ -387,6 +387,29 @@ public class SupervisoryReportService : ISupervisoryReportService
             .AsNoTracking()
             .Include(a => a.User)
             .Where(a => a.EntityName == entityName && a.Action == action);
+
+        if (entityName == "Product")
+        {
+            var branchIds = ProductBranchVisibility.ResolveScopeBranchIds(_branchContext).ToList();
+            if (branchIds.Count == 0)
+            {
+                query = query.Where(a =>
+                    !context.ProductBranches.Any(pb => pb.ProductId == a.EntityId));
+            }
+            else if (branchIds.Count == 1)
+            {
+                var branchId = branchIds[0];
+                query = query.Where(a =>
+                    context.ProductBranches.Any(pb => pb.ProductId == a.EntityId && pb.BranchId == branchId)
+                    || !context.ProductBranches.Any(pb => pb.ProductId == a.EntityId));
+            }
+            else
+            {
+                query = query.Where(a =>
+                    context.ProductBranches.Any(pb => pb.ProductId == a.EntityId && branchIds.Contains(pb.BranchId))
+                    || !context.ProductBranches.Any(pb => pb.ProductId == a.EntityId));
+            }
+        }
 
         if (filter.FromDate.HasValue)
             query = query.Where(a => a.Timestamp >= filter.FromDate.Value);

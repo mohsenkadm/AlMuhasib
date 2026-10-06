@@ -39,8 +39,11 @@ public interface IProductService
     /// <summary>منتجات ظاهرة في فرع معيّن (للفواتير والبحث).</summary>
     Task<IReadOnlyList<Product>> GetVisibleInBranchAsync(int branchId, CancellationToken ct = default);
 
-    /// <summary>منتجات ظاهرة في الفرع الحالي للجلسة.</summary>
+    /// <summary>منتجات ظاهرة في نطاق الفرع الحالي (أو اتحاد الفروع المسموحة في وضع كل الفروع).</summary>
     Task<IReadOnlyList<Product>> GetVisibleInCurrentBranchAsync(CancellationToken ct = default);
+
+    /// <summary>معرّفات المنتجات الظاهرة في نطاق الفرع الحالي — للتقارير والتجميعات.</summary>
+    Task<IReadOnlySet<int>> GetVisibleProductIdsForCurrentScopeAsync(CancellationToken ct = default);
 
     /// <summary>هل المنتج ظاهر في الفرع؟ منتجات بلا أي ربط تُعامل كظاهرة (توافق قديم).</summary>
     Task<bool> IsVisibleInBranchAsync(int productId, int branchId, CancellationToken ct = default);
