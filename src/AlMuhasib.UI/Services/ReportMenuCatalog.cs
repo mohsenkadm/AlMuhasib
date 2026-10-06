@@ -22,6 +22,7 @@ public static class ReportMenuCatalog
             ("المواد الأقل ربحاً", PackIconKind.TrendingDown, typeof(LeastProfitMaterialsReportViewModel), ScreenPermissionRegistry.Reports),
             ("مبيعات حسب طريقة الدفع", PackIconKind.CashRegister, typeof(SalesByPaymentMethodReportViewModel), ScreenPermissionRegistry.Reports),
             ("يومية المبيعات", PackIconKind.CalendarClock, typeof(DailySalesReportViewModel), ScreenPermissionRegistry.Reports),
+            ("التقرير اليومي", PackIconKind.ClipboardTextClock, typeof(DailyOperationsReportViewModel), ScreenPermissionRegistry.Reports),
             ("ملخص العمل", PackIconKind.ChartBoxOutline, typeof(WorkSummaryReportViewModel), ScreenPermissionRegistry.Reports),
             ("مبيعات حسب المخزن / المستخدم", PackIconKind.Warehouse, typeof(SalesByWarehouseUserReportViewModel), ScreenPermissionRegistry.Reports),
             ("هامش الربح الإجمالي", PackIconKind.ChartPie, typeof(GrossProfitMarginReportViewModel), ScreenPermissionRegistry.Reports),

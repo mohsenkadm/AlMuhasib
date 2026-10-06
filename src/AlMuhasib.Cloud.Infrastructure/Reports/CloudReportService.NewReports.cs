@@ -2861,4 +2861,331 @@ public sealed partial class CloudReportService
             Lines = lines
         };
     }
+
+    public async Task<DailyOperationsReportResult> GetDailyOperationsReportAsync(
+        DateTime? from, DateTime? to,
+        ReportCurrencyScope currencyScope = ReportCurrencyScope.Iqd)
+    {
+        var context = _db;
+        var tenantId = RequireTenantId();
+        var foldInUsd = FinancialReportIqdFoldIn.ShouldFoldUsdIntoIqd(
+            await CloudMultiCurrencyFeatureGate.IsEnabledAsync(context, tenantId), currencyScope);
+        var effectiveScope = foldInUsd ? ReportCurrencyScope.All : currencyScope;
+        var fromDate = from?.Date;
+        var toExclusive = EndOfDay(to);
+
+        var cashSalesQ = context.Invoices.Where(i =>
+            i.PaymentMethod == PaymentMethod.Cash &&
+            ((i.InvoiceType == InvoiceType.Sale
+              && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)))
+             || (i.InvoiceType == InvoiceType.Installment
+                 && !context.InstallmentPlans.Any(p =>
+                     p.InvoiceId == i.Id && p.InstallmentType == InstallmentType.OpeningBalance))));
+        cashSalesQ = ApplyCloudInvoiceCurrencyScope(cashSalesQ, effectiveScope, foldInUsd);
+        if (fromDate.HasValue) cashSalesQ = cashSalesQ.Where(i => i.Date >= fromDate.Value);
+        if (toExclusive.HasValue) cashSalesQ = cashSalesQ.Where(i => i.Date < toExclusive.Value);
+
+        var cashSalesRows = await cashSalesQ
+            .Select(i => new { i.BranchId, i.NetAmount, i.Currency, i.FxRate, i.CreatedBy })
+            .ToListAsync();
+        decimal Amt(decimal amount, AccountingCurrency currency, decimal fx) =>
+            FinancialReportIqdFoldIn.AmountInBaseIqd(amount, currency, fx, foldInUsd);
+
+        var cashSales = cashSalesRows.Sum(r => Amt(r.NetAmount, r.Currency, r.FxRate));
+        var cashSalesCount = cashSalesRows.Count;
+
+        var returnsQ = context.Invoices.Where(i => i.InvoiceType == InvoiceType.SaleReturn);
+        returnsQ = ApplyCloudInvoiceCurrencyScope(returnsQ, effectiveScope, foldInUsd);
+        if (fromDate.HasValue) returnsQ = returnsQ.Where(i => i.Date >= fromDate.Value);
+        if (toExclusive.HasValue) returnsQ = returnsQ.Where(i => i.Date < toExclusive.Value);
+
+        var returnRows = await returnsQ
+            .Select(i => new { i.BranchId, i.NetAmount, i.Currency, i.FxRate })
+            .ToListAsync();
+        var salesReturns = returnRows.Sum(r => Amt(Math.Abs(r.NetAmount), r.Currency, r.FxRate));
+        var salesReturnCount = returnRows.Count;
+
+        var expQ = context.Expenses.AsQueryable();
+        expQ = ApplyCloudExpenseCurrencyScope(expQ, effectiveScope, foldInUsd);
+        if (fromDate.HasValue) expQ = expQ.Where(e => e.Date >= fromDate.Value);
+        if (toExclusive.HasValue) expQ = expQ.Where(e => e.Date < toExclusive.Value);
+
+        var expenseRows = await expQ
+            .Select(e => new { e.BranchId, e.Amount, e.Currency, e.FxRate })
+            .ToListAsync();
+        var expenses = expenseRows.Sum(r => Amt(r.Amount, r.Currency, r.FxRate));
+        var expenseCount = expenseRows.Count;
+
+        var payVouchQ = context.Vouchers.Where(v =>
+            v.VoucherType == VoucherType.Payment && v.SupplierId != null);
+        payVouchQ = ApplyCloudVoucherCurrencyScope(payVouchQ, effectiveScope, foldInUsd);
+        if (fromDate.HasValue) payVouchQ = payVouchQ.Where(v => v.Date >= fromDate.Value);
+        if (toExclusive.HasValue) payVouchQ = payVouchQ.Where(v => v.Date < toExclusive.Value);
+
+        var payVouchRows = await payVouchQ
+            .Select(v => new { v.BranchId, v.Amount, v.Currency, v.FxRate })
+            .ToListAsync();
+
+        var cashPurchQ = context.Invoices.Where(i =>
+            i.InvoiceType == InvoiceType.Purchase
+            && i.PaymentMethod == PaymentMethod.Cash
+            && (i.Notes == null || !i.Notes.StartsWith(OpeningCreditBalanceMarkers.NotesPrefix)));
+        cashPurchQ = ApplyCloudInvoiceCurrencyScope(cashPurchQ, effectiveScope, foldInUsd);
+        if (fromDate.HasValue) cashPurchQ = cashPurchQ.Where(i => i.Date >= fromDate.Value);
+        if (toExclusive.HasValue) cashPurchQ = cashPurchQ.Where(i => i.Date < toExclusive.Value);
+
+        var cashPurchRows = await cashPurchQ
+            .Select(i => new { i.BranchId, i.NetAmount, i.Currency, i.FxRate })
+            .ToListAsync();
+
+        var supplierPayments =
+            payVouchRows.Sum(r => Amt(r.Amount, r.Currency, r.FxRate))
+            + cashPurchRows.Sum(r => Amt(r.NetAmount, r.Currency, r.FxRate));
+        var supplierPaymentCount = payVouchRows.Count + cashPurchRows.Count;
+
+        var receiptQ = context.Vouchers.Where(v =>
+            v.VoucherType == VoucherType.Receipt || v.VoucherType == VoucherType.DebtReceipt);
+        receiptQ = ApplyCloudVoucherCurrencyScope(receiptQ, effectiveScope, foldInUsd);
+        if (fromDate.HasValue) receiptQ = receiptQ.Where(v => v.Date >= fromDate.Value);
+        if (toExclusive.HasValue) receiptQ = receiptQ.Where(v => v.Date < toExclusive.Value);
+
+        var receiptRows = await receiptQ
+            .Select(v => new { v.BranchId, v.Amount, v.Currency, v.FxRate })
+            .ToListAsync();
+        var receipts = receiptRows.Sum(r => Amt(r.Amount, r.Currency, r.FxRate));
+        var receiptCount = receiptRows.Count;
+
+        var net = DailyOperationsReportCalculator.ComputeNet(
+            cashSales, salesReturns, expenses, supplierPayments, receipts);
+
+        var branchIds = cashSalesRows.Select(r => r.BranchId)
+            .Concat(returnRows.Select(r => r.BranchId))
+            .Concat(expenseRows.Select(r => r.BranchId))
+            .Concat(payVouchRows.Select(r => r.BranchId))
+            .Concat(cashPurchRows.Select(r => r.BranchId))
+            .Concat(receiptRows.Select(r => r.BranchId))
+            .Distinct()
+            .ToList();
+        var branchNames = branchIds.Count == 0
+            ? new Dictionary<int, string>()
+            : await context.Branches.AsNoTracking()
+                .Where(b => branchIds.Contains(b.Id))
+                .ToDictionaryAsync(b => b.Id, b => b.Name);
+
+        var branchRows = branchIds
+            .Select(id =>
+            {
+                var bCash = cashSalesRows.Where(r => r.BranchId == id).Sum(r => Amt(r.NetAmount, r.Currency, r.FxRate));
+                var bRet = returnRows.Where(r => r.BranchId == id).Sum(r => Amt(Math.Abs(r.NetAmount), r.Currency, r.FxRate));
+                var bExp = expenseRows.Where(r => r.BranchId == id).Sum(r => Amt(r.Amount, r.Currency, r.FxRate));
+                var bPay = payVouchRows.Where(r => r.BranchId == id).Sum(r => Amt(r.Amount, r.Currency, r.FxRate))
+                           + cashPurchRows.Where(r => r.BranchId == id).Sum(r => Amt(r.NetAmount, r.Currency, r.FxRate));
+                var bRec = receiptRows.Where(r => r.BranchId == id).Sum(r => Amt(r.Amount, r.Currency, r.FxRate));
+                return new DailyOperationsBranchRow
+                {
+                    BranchId = id,
+                    BranchName = branchNames.GetValueOrDefault(id, "—"),
+                    CashSales = bCash,
+                    Expenses = bExp,
+                    SalesReturns = bRet,
+                    SupplierPayments = bPay,
+                    Receipts = bRec,
+                    NetAmount = DailyOperationsReportCalculator.ComputeNet(bCash, bRet, bExp, bPay, bRec)
+                };
+            })
+            .OrderByDescending(r => r.CashSales)
+            .ToList();
+
+        IQueryable<CloudInvoice> salesQ = foldInUsd || effectiveScope == ReportCurrencyScope.All
+            ? CloudInvoiceFilters.ForProfitAndSalesTotalsAll(context.Invoices, context.InstallmentPlans)
+            : CloudInvoiceFilters.ForProfitAndSalesTotals(
+                context.Invoices, context.InstallmentPlans,
+                ReportCurrencyScopeHelper.ToStrictFilter(effectiveScope) ?? AccountingCurrency.IQD);
+        if (fromDate.HasValue) salesQ = salesQ.Where(i => i.Date >= fromDate.Value);
+        if (toExclusive.HasValue) salesQ = salesQ.Where(i => i.Date < toExclusive.Value);
+
+        var salesInvoices = await salesQ
+            .Select(i => new { i.CreatedBy, i.InvoiceType, i.NetAmount, i.Currency, i.FxRate, i.PaymentMethod })
+            .ToListAsync();
+
+        decimal SignedAmt(InvoiceType type, decimal netAmt, AccountingCurrency currency, decimal fx) =>
+            FinancialReportIqdFoldIn.SignedSalesInBaseIqd(type, netAmt, currency, fx, foldInUsd);
+
+        var salesTotal = salesInvoices.Sum(i => SignedAmt(i.InvoiceType, i.NetAmount, i.Currency, i.FxRate));
+        var userRows = salesInvoices
+            .GroupBy(i => string.IsNullOrWhiteSpace(i.CreatedBy) ? "—" : i.CreatedBy!)
+            .Select(g =>
+            {
+                var amount = g.Sum(i => SignedAmt(i.InvoiceType, i.NetAmount, i.Currency, i.FxRate));
+                return new DailyOperationsUserRow
+                {
+                    UserName = g.Key,
+                    InvoiceCount = g.Count(),
+                    Amount = amount,
+                    SharePercent = DailyOperationsReportCalculator.SharePercent(amount, salesTotal)
+                };
+            })
+            .OrderByDescending(r => r.Amount)
+            .ToList();
+
+        var paymentRows = salesInvoices
+            .GroupBy(i => i.PaymentMethod)
+            .Select(g =>
+            {
+                var amount = g.Sum(i => SignedAmt(i.InvoiceType, i.NetAmount, i.Currency, i.FxRate));
+                return new DailyOperationsPaymentMethodRow
+                {
+                    PaymentMethod = PaymentMethodLabel(g.Key),
+                    InvoiceCount = g.Count(),
+                    Amount = amount,
+                    SharePercent = DailyOperationsReportCalculator.SharePercent(amount, salesTotal)
+                };
+            })
+            .OrderByDescending(r => r.Amount)
+            .ToList();
+
+        var itemsQ = context.InvoiceItems
+            .Include(ii => ii.Product)!.ThenInclude(p => p!.Category)
+            .Include(ii => ii.Invoice)
+            .Where(ii => ii.ProductId != null
+                         && ii.Product != null
+                         && ii.Invoice != null
+                         && (ii.Invoice.InvoiceType == InvoiceType.Sale
+                             || ii.Invoice.InvoiceType == InvoiceType.Installment
+                             || ii.Invoice.InvoiceType == InvoiceType.SaleReturn));
+        if (!foldInUsd && effectiveScope != ReportCurrencyScope.All)
+        {
+            var strict = ReportCurrencyScopeHelper.ToStrictFilter(effectiveScope);
+            if (strict.HasValue)
+                itemsQ = itemsQ.Where(ii => ii.Invoice!.Currency == strict.Value);
+        }
+        else if (!foldInUsd)
+        {
+            itemsQ = itemsQ.Where(ii => ii.Invoice!.Currency == AccountingCurrency.IQD);
+        }
+
+        if (fromDate.HasValue) itemsQ = itemsQ.Where(ii => ii.Invoice!.Date >= fromDate.Value);
+        if (toExclusive.HasValue) itemsQ = itemsQ.Where(ii => ii.Invoice!.Date < toExclusive.Value);
+
+        var items = await itemsQ.ToListAsync();
+        decimal LineAmt(CloudInvoiceItem x)
+        {
+            var signed = InvoiceFilters.SignedSaleLineAmount(x.Invoice!.InvoiceType, x.TotalPrice);
+            return FinancialReportIqdFoldIn.AmountInBaseIqd(signed, x.Invoice.Currency, x.Invoice.FxRate, foldInUsd);
+        }
+
+        var productGroups = items
+            .GroupBy(ii => ii.ProductId!.Value)
+            .Select(g =>
+            {
+                var first = g.First();
+                return new DailyOperationsProductRow
+                {
+                    ProductId = g.Key,
+                    ProductName = first.Product?.Name ?? first.ItemName ?? "—",
+                    CategoryName = first.Product?.Category?.Name ?? "—",
+                    LineCount = g.Count(),
+                    Quantity = g.Sum(x => InvoiceFilters.SignedSaleLineQuantity(x.Invoice!.InvoiceType, x.Quantity)),
+                    Amount = g.Sum(LineAmt)
+                };
+            })
+            .OrderByDescending(r => r.Amount)
+            .ToList();
+
+        var productTotal = productGroups.Sum(r => r.Amount);
+        for (var i = 0; i < productGroups.Count; i++)
+        {
+            productGroups[i].Rank = i + 1;
+            productGroups[i].SharePercent =
+                DailyOperationsReportCalculator.SharePercent(productGroups[i].Amount, productTotal);
+        }
+
+        var categoryRows = items
+            .GroupBy(ii => new
+            {
+                CategoryId = (int?)ii.Product?.CategoryId,
+                Name = ii.Product?.Category?.Name ?? "—"
+            })
+            .Select(g =>
+            {
+                var amount = g.Sum(LineAmt);
+                return new DailyOperationsCategoryRow
+                {
+                    CategoryId = g.Key.CategoryId,
+                    CategoryName = g.Key.Name,
+                    LineCount = g.Count(),
+                    Quantity = g.Sum(x => InvoiceFilters.SignedSaleLineQuantity(x.Invoice!.InvoiceType, x.Quantity)),
+                    Amount = amount,
+                    SharePercent = DailyOperationsReportCalculator.SharePercent(amount, productTotal)
+                };
+            })
+            .OrderByDescending(r => r.Amount)
+            .ToList();
+
+        return new DailyOperationsReportResult
+        {
+            DateFrom = fromDate ?? from,
+            DateTo = to?.Date ?? to,
+            CurrencyScope = currencyScope,
+            CashSales = cashSales,
+            Expenses = expenses,
+            SalesReturns = salesReturns,
+            SupplierPayments = supplierPayments,
+            Receipts = receipts,
+            NetAmount = net,
+            CashSalesInvoiceCount = cashSalesCount,
+            SalesReturnInvoiceCount = salesReturnCount,
+            ExpenseCount = expenseCount,
+            SupplierPaymentCount = supplierPaymentCount,
+            ReceiptCount = receiptCount,
+            BranchRows = branchRows,
+            UserRows = userRows,
+            PaymentMethodRows = paymentRows,
+            CategoryRows = categoryRows,
+            ProductRows = productGroups,
+            PaymentMethodChart = paymentRows
+                .Select(r => new NameAmountPoint { Name = r.PaymentMethod, Amount = r.Amount }).ToList(),
+            UserChart = userRows.Take(10)
+                .Select(r => new NameAmountPoint { Name = r.UserName, Amount = r.Amount }).ToList(),
+            CategoryChart = categoryRows.Take(10)
+                .Select(r => new NameAmountPoint { Name = r.CategoryName, Amount = r.Amount }).ToList(),
+            ProductChart = productGroups.Take(10)
+                .Select(r => new NameAmountPoint { Name = r.ProductName, Amount = r.Amount }).ToList(),
+            SummaryChart =
+            [
+                new NameAmountPoint { Name = "مبيعات نقدية", Amount = cashSales },
+                new NameAmountPoint { Name = "وصولات قبض", Amount = receipts },
+                new NameAmountPoint { Name = "مصاريف", Amount = expenses },
+                new NameAmountPoint { Name = "مرتجعات", Amount = salesReturns },
+                new NameAmountPoint { Name = "مدفوعات موردين", Amount = supplierPayments }
+            ]
+        };
+    }
+
+    private static IQueryable<CloudInvoice> ApplyCloudInvoiceCurrencyScope(
+        IQueryable<CloudInvoice> query, ReportCurrencyScope scope, bool foldInUsd)
+    {
+        if (foldInUsd || scope == ReportCurrencyScope.All)
+            return query;
+        var strict = ReportCurrencyScopeHelper.ToStrictFilter(scope);
+        return strict is null ? query : query.Where(i => i.Currency == strict.Value);
+    }
+
+    private static IQueryable<CloudExpense> ApplyCloudExpenseCurrencyScope(
+        IQueryable<CloudExpense> query, ReportCurrencyScope scope, bool foldInUsd)
+    {
+        if (foldInUsd || scope == ReportCurrencyScope.All)
+            return query;
+        var strict = ReportCurrencyScopeHelper.ToStrictFilter(scope);
+        return strict is null ? query : query.Where(e => e.Currency == strict.Value);
+    }
+
+    private static IQueryable<CloudVoucher> ApplyCloudVoucherCurrencyScope(
+        IQueryable<CloudVoucher> query, ReportCurrencyScope scope, bool foldInUsd)
+    {
+        if (foldInUsd || scope == ReportCurrencyScope.All)
+            return query;
+        var strict = ReportCurrencyScopeHelper.ToStrictFilter(scope);
+        return strict is null ? query : query.Where(v => v.Currency == strict.Value);
+    }
 }

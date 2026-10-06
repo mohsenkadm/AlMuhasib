@@ -69,40 +69,81 @@ public class ExcelExportService : IExportService
 
     public void ExportToExcel(string filePath, string sheetName, string[] columns, IList<object[]> rows)
     {
+        ExportToExcel(filePath, [(sheetName, columns, rows)]);
+    }
+
+    public void ExportToExcel(
+        string filePath,
+        IReadOnlyList<(string SheetName, string[] Columns, IList<object[]> Rows)> sheets)
+    {
+        if (sheets is null || sheets.Count == 0)
+            throw new ArgumentException("At least one sheet is required.", nameof(sheets));
+
         using var workbook = new XLWorkbook();
-        var worksheet = workbook.Worksheets.Add(sheetName);
-        worksheet.RightToLeft = true;
+        var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        // Header
-        for (int col = 0; col < columns.Length; col++)
+        foreach (var (rawName, columns, rows) in sheets)
         {
-            var cell = worksheet.Cell(1, col + 1);
-            cell.Value = columns[col];
-            cell.Style.Font.Bold = true;
-            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#1A237E");
-            cell.Style.Font.FontColor = XLColor.White;
-            cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
-        }
+            var sheetName = SanitizeSheetName(rawName, usedNames);
+            usedNames.Add(sheetName);
+            var worksheet = workbook.Worksheets.Add(sheetName);
+            worksheet.RightToLeft = true;
 
-        // Data
-        for (int r = 0; r < rows.Count; r++)
-        {
-            var rowData = rows[r];
-            for (int col = 0; col < rowData.Length && col < columns.Length; col++)
+            for (int col = 0; col < columns.Length; col++)
             {
-                var cell = worksheet.Cell(r + 2, col + 1);
-                var value = rowData[col];
-                if (value is decimal d)
-                    cell.Value = d;
-                else if (value is int i)
-                    cell.Value = i;
-                else
-                    cell.Value = value?.ToString() ?? string.Empty;
+                var cell = worksheet.Cell(1, col + 1);
+                cell.Value = columns[col];
+                cell.Style.Font.Bold = true;
+                cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#1A237E");
+                cell.Style.Font.FontColor = XLColor.White;
+                cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             }
+
+            for (int r = 0; r < rows.Count; r++)
+            {
+                var rowData = rows[r];
+                for (int col = 0; col < rowData.Length && col < columns.Length; col++)
+                {
+                    var cell = worksheet.Cell(r + 2, col + 1);
+                    var value = rowData[col];
+                    if (value is decimal d)
+                        cell.Value = d;
+                    else if (value is int i)
+                        cell.Value = i;
+                    else if (value is long l)
+                        cell.Value = l;
+                    else if (value is double dbl)
+                        cell.Value = dbl;
+                    else if (value is DateTime dt)
+                        cell.Value = dt.ToString("yyyy/MM/dd");
+                    else
+                        cell.Value = value?.ToString() ?? string.Empty;
+                }
+            }
+
+            worksheet.Columns().AdjustToContents();
         }
 
-        worksheet.Columns().AdjustToContents();
         workbook.SaveAs(filePath);
+    }
+
+    private static string SanitizeSheetName(string? name, HashSet<string> usedNames)
+    {
+        var baseName = string.IsNullOrWhiteSpace(name) ? "Sheet" : name.Trim();
+        foreach (var c in Path.GetInvalidFileNameChars().Concat([':', '\\', '/', '?', '*', '[', ']']))
+            baseName = baseName.Replace(c, '_');
+        if (baseName.Length > 31)
+            baseName = baseName[..31];
+
+        var candidate = baseName;
+        var n = 2;
+        while (usedNames.Contains(candidate))
+        {
+            var suffix = $"_{n++}";
+            var max = 31 - suffix.Length;
+            candidate = (baseName.Length > max ? baseName[..max] : baseName) + suffix;
+        }
+        return candidate;
     }
 
     public void PrintTable(string title, string[] columns, IList<object[]> rows, IList<string>? summaryLines = null)
