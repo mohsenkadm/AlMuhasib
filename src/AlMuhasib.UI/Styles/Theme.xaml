@@ -3987,6 +3987,15 @@
         </Setter>
     </Style>
 
+    <!-- Equal-width chip that stretches across a horizontal UniformGrid row -->
+    <Style x:Key="PosChoiceChipBar" TargetType="Button" BasedOn="{StaticResource PosChoiceChip}">
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="MinWidth" Value="0"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="Padding" Value="6,8"/>
+    </Style>
+
     <Style x:Key="PosTouchValueButton" TargetType="Button">
         <Setter Property="FontFamily" Value="{DynamicResource AppFont}"/>
         <Setter Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
