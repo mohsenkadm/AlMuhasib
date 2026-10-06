@@ -152,17 +152,18 @@
                             <ComboBox SelectedValue="{Binding PaperSize}" SelectedValuePath="Content"
                                       materialDesign:HintAssist.Hint="حجم ورق الفواتير والتقارير" Style="{StaticResource FilledComboBox}" Margin="0,0,0,10">
                                 <ComboBoxItem Content="A4"/>
+                                <ComboBoxItem Content="A5"/>
                                 <ComboBoxItem Content="Letter"/>
                             </ComboBox>
                             <CheckBox Content="معاينة قبل الطباعة" IsChecked="{Binding ShowPrintPreview}" Margin="0,0,0,14"/>
 
-                            <TextBlock Text="نماذج طباعة الفواتير A4" FontWeight="Bold" FontSize="14" Foreground="#1565C0" Margin="0,4,0,8"/>
-                            <TextBlock Text="اختر أحد النماذج الثلاثة لطباعة فواتير المبيعات والمشتريات والأقساط بحجم A4. التصميم التفصيلي للنموذجين المضغوط والعصري سيُحدَّد لاحقاً."
+                            <TextBlock Text="نماذج طباعة الفواتير" FontWeight="Bold" FontSize="14" Foreground="#1565C0" Margin="0,4,0,8"/>
+                            <TextBlock Text="اختر أحد النماذج الثلاثة لطباعة فواتير المبيعات والمشتريات والأقساط. يُطبَّق نفس التصميم على حجم الورق المختار (A4 أو A5 أو Letter) مع تحجيم مناسب."
                                        FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8" TextWrapping="Wrap"/>
                             <ComboBox ItemsSource="{Binding A4InvoiceTemplateOptions}"
                                       SelectedItem="{Binding SelectedA4InvoiceTemplate}"
                                       DisplayMemberPath="ArabicName"
-                                      materialDesign:HintAssist.Hint="نموذج طباعة الفاتورة A4"
+                                      materialDesign:HintAssist.Hint="نموذج طباعة الفاتورة"
                                       Style="{StaticResource FilledComboBox}" Margin="0,0,0,8"/>
                             <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="8" Padding="12,10" Margin="0,0,0,14">
                                 <StackPanel Orientation="Horizontal">

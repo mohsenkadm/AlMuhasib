@@ -1458,6 +1458,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             BeautifulMessageDialog.ShowSuccess(
                 $"تم حفظ {(IsDamageMode ? "فاتورة التلف" : IsReturnMode ? "مرتجع المبيعات" : "الفاتورة")} بنجاح\nرقم الفاتورة: {saved.InvoiceNumber}\nالمبلغ الكلي: {saved.NetAmount:N0} {CurrencyAmountSuffix}\n\nيمكنك الطباعة أو الإرسال عبر واتساب.");
 
+            // حدّث ذمة العميل بعد الحفظ حتى تظهر في الطباعة شاملة أثر هذه الفاتورة.
+            await RefreshCustomerBalanceAsync();
             PrintInvoice();
         }
         catch (Exception ex)
@@ -1624,6 +1626,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             PaidAmount = paidAmount,
             RemainingAmount = remainingAmount,
             GrandTotal = GrandTotal,
+            CustomerOutstandingBalance = CustomerOutstandingBalance,
+            CustomerOutstandingBalanceUsd = ShowMultiCurrency ? CustomerOutstandingBalanceUsd : null,
             ShowLineDiscount = ShowProductDiscount,
             PharmacyUsageReceipt = ShowPharmacyUsage,
             ShowCarShowroomFields = ShowCarShowroomContractPrint,

@@ -25,26 +25,30 @@ internal static class InvoicePdfGenerator
         var hideAmounts = m.HideAmounts;
         var brandedHeader = branding.HasHeaderContent;
 
+        var scale = InvoicePaperSizes.GetScale(m.PaperSize);
+        var pageMargin = (float)(32 * scale);
+        var baseFont = (float)(10 * scale);
+
         return Document.Create(container =>
         {
             container.Page(page =>
             {
-                page.Size(PageSizes.A4);
-                page.Margin(32);
-                page.DefaultTextStyle(x => x.FontSize(10).FontFamily("Arial").FontColor(InkColor));
+                page.Size(InvoicePaperSizes.GetQuestPdfPageSize(m.PaperSize));
+                page.Margin(pageMargin);
+                page.DefaultTextStyle(x => x.FontSize(baseFont).FontFamily("Arial").FontColor(InkColor));
                 page.ContentFromRightToLeft();
 
                 page.Content().Column(col =>
                 {
                     if (branding.ShowHeaderText && !string.IsNullOrWhiteSpace(branding.CompanyName))
                     {
-                        col.Item().AlignCenter().Text(branding.CompanyName).FontSize(13).Bold();
+                        col.Item().AlignCenter().Text(branding.CompanyName).FontSize(13f * (float)scale).Bold();
                         if (!string.IsNullOrWhiteSpace(branding.Details))
-                            col.Item().AlignCenter().Text(branding.Details).FontSize(9).FontColor(MutedColor);
+                            col.Item().AlignCenter().Text(branding.Details).FontSize(9f * (float)scale).FontColor(MutedColor);
                         col.Item().PaddingVertical(6).LineHorizontal(0.8f).LineColor(Colors.Grey.Lighten1);
                     }
 
-                    col.Item().PaddingTop(4).AlignCenter().Text(m.Title).FontSize(18).Bold();
+                    col.Item().PaddingTop(4).AlignCenter().Text(m.Title).FontSize(18f * (float)scale).Bold();
 
                     // سطر بيانات الشركة يظهر فقط بدون ترويسة مطبوعة، لتفادي تكرار نفس البيانات.
                     var companyParts = brandedHeader
@@ -55,7 +59,7 @@ internal static class InvoicePdfGenerator
                     if (companyParts.Length > 0)
                     {
                         col.Item().PaddingTop(10).AlignCenter()
-                            .Text(string.Join("  |  ", companyParts)).FontSize(10).SemiBold();
+                            .Text(string.Join("  |  ", companyParts)).FontSize(10f * (float)scale).SemiBold();
                     }
 
                     col.Item().PaddingTop(10).Text(t =>
@@ -94,7 +98,7 @@ internal static class InvoicePdfGenerator
 
                     // ── جدول البنود والمجاميع ──
                     col.Item().PaddingTop(14).Text(hideAmounts ? "تفاصيل المواد" : "المبالغ الإجمالية")
-                        .FontSize(12).Bold();
+                        .FontSize(12f * (float)scale).Bold();
 
                     var layout = InvoicePrintLayoutHelper.Resolve(m, compact: m.Items.Count > 18);
 
@@ -175,10 +179,14 @@ internal static class InvoicePdfGenerator
                             amountEntries.Add(("المتبقي", FormatNumber(m.RemainingAmount), false));
                         }
 
+                        var customerBalance = m.GetCustomerOutstandingBalanceDisplay();
+                        if (customerBalance is not null)
+                            amountEntries.Add(("رصيد العميل (الباقي عليه)", customerBalance, false));
+
                         col.Item().PaddingTop(8).Row(totalsRow =>
                         {
                             totalsRow.RelativeItem();
-                            totalsRow.ConstantItem(320).Table(totals =>
+                            totalsRow.ConstantItem(320f * (float)scale).Table(totals =>
                             {
                                 totals.ColumnsDefinition(c =>
                                 {
@@ -188,11 +196,12 @@ internal static class InvoicePdfGenerator
                                     c.RelativeColumn(1);
                                 });
 
+                                var pdfScale = (float)scale;
                                 for (var i = 0; i < amountEntries.Count; i += 2)
                                 {
-                                    PdfAmountPair(totals, amountEntries[i]);
+                                    PdfAmountPair(totals, amountEntries[i], pdfScale);
                                     if (i + 1 < amountEntries.Count)
-                                        PdfAmountPair(totals, amountEntries[i + 1]);
+                                        PdfAmountPair(totals, amountEntries[i + 1], pdfScale);
                                     else
                                     {
                                         totals.Cell().Element(TotalCell).Text(" ");
@@ -369,11 +378,12 @@ internal static class InvoicePdfGenerator
             rows.Add((label, value));
     }
 
-    private static void PdfAmountPair(TableDescriptor table, (string Label, string Value, bool Emphasize) entry)
+    private static void PdfAmountPair(TableDescriptor table, (string Label, string Value, bool Emphasize) entry, float scale = 1f)
     {
         var style = entry.Emphasize ? TotalStrongCell : (Func<IContainer, IContainer>)TotalCell;
-        table.Cell().Element(style).Text(entry.Label).Bold().FontSize(entry.Emphasize ? 9.5f : 8.5f);
-        table.Cell().Element(style).AlignCenter().Text(entry.Value).Bold().FontSize(entry.Emphasize ? 9.5f : 8.5f);
+        var font = (entry.Emphasize ? 9.5f : 8.5f) * scale;
+        table.Cell().Element(style).Text(entry.Label).Bold().FontSize(font);
+        table.Cell().Element(style).AlignCenter().Text(entry.Value).Bold().FontSize(font);
     }
 
     private static string FormatNumber(decimal value) =>

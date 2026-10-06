@@ -229,21 +229,27 @@ public class ExcelExportService : IExportService
             return;
         }
 
-        // ── A4 page dimensions (96 DPI) ──
-        const double A4Width = 793.7;   // 210mm
-        const double A4Height = 1122.5; // 297mm
+        // ── Page dimensions from invoice paper preference (A4/A5/Letter @ 96 DPI) ──
+        var pageSize = InvoicePaperSizes.GetPageSize(m.PaperSize);
+        var pageScale = InvoicePaperSizes.GetScale(m.PaperSize);
         var theme = InvoiceA4TemplateTheme.Resolve(m.A4TemplateId);
         var compactScheduleMode = theme.ForceCompactMetrics || m.Schedule is { Count: >= 14 };
+        var basePagePadding = compactScheduleMode ? theme.CompactPagePadding : theme.PagePadding;
+        var pagePadding = new Thickness(
+            basePagePadding.Left * pageScale,
+            basePagePadding.Top * pageScale,
+            basePagePadding.Right * pageScale,
+            basePagePadding.Bottom * pageScale);
 
         var doc = new FlowDocument
         {
             FontFamily = new FontFamily("Segoe UI, Tahoma, Arial"),
-            FontSize = compactScheduleMode ? 10 : 11,
+            FontSize = (compactScheduleMode ? 10 : 11) * pageScale,
             FlowDirection = FlowDirection.RightToLeft,
-            PageWidth = A4Width,
-            PageHeight = A4Height,
-            PagePadding = compactScheduleMode ? theme.CompactPagePadding : theme.PagePadding,
-            ColumnWidth = A4Width // single column
+            PageWidth = pageSize.Width,
+            PageHeight = pageSize.Height,
+            PagePadding = pagePadding,
+            ColumnWidth = pageSize.Width // single column
         };
 
         PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
@@ -646,6 +652,37 @@ public class ExcelExportService : IExportService
             totalsGroup.Rows.Add(r);
         }
 
+        void AddTotalTextRow(string label, string valueText, bool isBold = false)
+        {
+            var r = new TableRow();
+            r.Cells.Add(new TableCell(new Paragraph(new Run(""))));
+            r.Cells.Add(new TableCell(new Paragraph(new Run(label))
+            {
+                FontWeight = isBold ? FontWeights.Bold : FontWeights.Normal,
+                FontSize = isBold ? 14 : 12,
+                TextAlignment = TextAlignment.Right,
+                Foreground = Brushes.Black
+            })
+            {
+                Padding = new Thickness(8, 6, 8, 6),
+                BorderBrush = borderBrush,
+                BorderThickness = new Thickness(0, 0, 0, 1)
+            });
+            r.Cells.Add(new TableCell(new Paragraph(new Run(valueText))
+            {
+                FontWeight = isBold ? FontWeights.Bold : FontWeights.Normal,
+                FontSize = isBold ? 14 : 12,
+                TextAlignment = TextAlignment.Center,
+                Foreground = darkBrush
+            })
+            {
+                Padding = new Thickness(8, 6, 8, 6),
+                BorderBrush = borderBrush,
+                BorderThickness = new Thickness(0, 0, 0, 1)
+            });
+            totalsGroup.Rows.Add(r);
+        }
+
         if (isGold)
         {
             AddTotalRow("قيمة الذهب", m.TotalGoldValue);
@@ -682,6 +719,11 @@ public class ExcelExportService : IExportService
                 AddTotalRow("المدفوع", m.PaidAmount);
                 AddTotalRow("المتبقي", m.RemainingAmount);
             }
+
+            var customerBalance = m.GetCustomerOutstandingBalanceDisplay();
+            if (customerBalance is not null)
+                AddTotalTextRow("رصيد العميل (الباقي عليه)", customerBalance);
+
             if (m.CompanyFeeAmount is > 0)
                 AddTotalRow("نسبة الشركة (8%)", m.CompanyFeeAmount.Value);
         }
@@ -789,19 +831,17 @@ public class ExcelExportService : IExportService
         // ═══════════════════════════════════════════════
         PrintBrandingFlowDocumentHelper.AppendBrandingFooter(doc, systemLine: $"طُبع بتاريخ: {DateTime.Now:yyyy/MM/dd HH:mm}");
 
-        DocumentPrintHelper.PrintWithPreview(doc, m.Title, new Size(A4Width, A4Height));
+        DocumentPrintHelper.PrintWithPreview(doc, m.Title, pageSize);
     }
 
     /// <summary>
-    /// طباعة فاتورة بيع/شراء/مرتجع بقالب A4 الاحترافي (نفس تنسيق ملف PDF).
+    /// طباعة فاتورة بيع/شراء/مرتجع بقالب احترافي (نفس تنسيق ملف PDF) بحجم الورق المختار.
     /// </summary>
     private void PrintModernInvoice(InvoicePrintModel m)
     {
         var doc = ModernInvoiceDocumentBuilder.Build(m);
-        DocumentPrintHelper.PrintWithPreview(
-            doc,
-            m.Title,
-            new Size(ModernInvoiceDocumentBuilder.PageWidth, ModernInvoiceDocumentBuilder.PageHeight));
+        var pageSize = ModernInvoiceDocumentBuilder.ResolvePageSize(m);
+        DocumentPrintHelper.PrintWithPreview(doc, m.Title, pageSize);
     }
 
     private void PrintInstallmentInvoiceLikeReference(InvoicePrintModel m)

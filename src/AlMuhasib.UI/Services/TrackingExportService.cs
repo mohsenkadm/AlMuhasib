@@ -53,12 +53,21 @@ public sealed class TrackingExportService : IExportService
 
         if (string.IsNullOrWhiteSpace(model.A4TemplateId))
             model.A4TemplateId = A4InvoiceTemplates.Normalize(PrintPreferences.A4InvoiceTemplate);
+        if (string.IsNullOrWhiteSpace(model.PaperSize))
+            model.PaperSize = InvoicePaperSizes.Normalize(PrintPreferences.PaperSize);
 
         _inner.PrintInvoice(model);
     }
 
-    public string ExportInvoiceToPdf(InvoicePrintModel model) =>
-        _inner.ExportInvoiceToPdf(model);
+    public string ExportInvoiceToPdf(InvoicePrintModel model)
+    {
+        PrintPreferences.Load();
+        if (string.IsNullOrWhiteSpace(model.A4TemplateId))
+            model.A4TemplateId = A4InvoiceTemplates.Normalize(PrintPreferences.A4InvoiceTemplate);
+        if (string.IsNullOrWhiteSpace(model.PaperSize))
+            model.PaperSize = InvoicePaperSizes.Normalize(PrintPreferences.PaperSize);
+        return _inner.ExportInvoiceToPdf(model);
+    }
 
     public string ExportInstallmentPaymentReceiptToPdf(InstallmentPaymentReceiptPrintModel model) =>
         _inner.ExportInstallmentPaymentReceiptToPdf(model);
@@ -86,6 +95,8 @@ public sealed class TrackingExportService : IExportService
                 model.Title = model.IsGoldInvoice ? "فاتورة ذهب" : "فاتورة بيع سريع";
             if (string.IsNullOrWhiteSpace(model.A4TemplateId))
                 model.A4TemplateId = A4InvoiceTemplates.Normalize(PrintPreferences.A4InvoiceTemplate);
+            if (string.IsNullOrWhiteSpace(model.PaperSize))
+                model.PaperSize = InvoicePaperSizes.Normalize(PrintPreferences.PaperSize);
             _inner.PrintInvoice(model);
             return;
         }
