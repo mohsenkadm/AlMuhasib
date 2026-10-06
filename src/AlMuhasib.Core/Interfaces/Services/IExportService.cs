@@ -13,6 +13,11 @@ public interface IExportService
     /// <summary>Exports tabular data with custom column headers to an Excel file.</summary>
     void ExportToExcel(string filePath, string sheetName, string[] columns, IList<object[]> rows);
 
+    /// <summary>Exports multiple worksheets into one Excel workbook.</summary>
+    void ExportToExcel(
+        string filePath,
+        IReadOnlyList<(string SheetName, string[] Columns, IList<object[]> Rows)> sheets);
+
     /// <summary>Prints tabular data using a FlowDocument with custom title and columns.</summary>
     void PrintTable(string title, string[] columns, IList<object[]> rows, IList<string>? summaryLines = null);
 

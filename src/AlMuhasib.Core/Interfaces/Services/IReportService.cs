@@ -136,6 +136,9 @@ public interface IReportService
     Task<StatementOfFinancialPositionReportResult> GetStatementOfFinancialPositionReportAsync(DateTime date);
     Task<WorkSummaryReportResult> GetWorkSummaryAsync(DateTime? from, DateTime? to);
     Task<ExecutiveBusinessSummaryResult> GetExecutiveBusinessSummaryAsync(DateTime? from, DateTime? to);
+    Task<DailyOperationsReportResult> GetDailyOperationsReportAsync(
+        DateTime? from, DateTime? to,
+        ReportCurrencyScope currencyScope = ReportCurrencyScope.Iqd);
 
 }
 
@@ -1965,4 +1968,88 @@ public class PackagingStockReportRow
     public string PackagingTypeName { get; set; } = string.Empty;
     public decimal ConversionFactor { get; set; }
     public decimal EquivalentPackQuantity { get; set; }
+}
+
+/// <summary>نتيجة التقرير اليومي (ملخص تشغيلي للفترة حسب الفرع).</summary>
+public class DailyOperationsReportResult
+{
+    public DateTime? DateFrom { get; set; }
+    public DateTime? DateTo { get; set; }
+    public ReportCurrencyScope CurrencyScope { get; set; } = ReportCurrencyScope.Iqd;
+
+    public decimal CashSales { get; set; }
+    public decimal Expenses { get; set; }
+    public decimal SalesReturns { get; set; }
+    public decimal SupplierPayments { get; set; }
+    public decimal Receipts { get; set; }
+    /// <summary>CashSales − SalesReturns − Expenses − SupplierPayments + Receipts</summary>
+    public decimal NetAmount { get; set; }
+
+    public int CashSalesInvoiceCount { get; set; }
+    public int SalesReturnInvoiceCount { get; set; }
+    public int ExpenseCount { get; set; }
+    public int SupplierPaymentCount { get; set; }
+    public int ReceiptCount { get; set; }
+
+    public List<DailyOperationsBranchRow> BranchRows { get; set; } = [];
+    public List<DailyOperationsUserRow> UserRows { get; set; } = [];
+    public List<DailyOperationsPaymentMethodRow> PaymentMethodRows { get; set; } = [];
+    public List<DailyOperationsCategoryRow> CategoryRows { get; set; } = [];
+    public List<DailyOperationsProductRow> ProductRows { get; set; } = [];
+
+    public List<NameAmountPoint> PaymentMethodChart { get; set; } = [];
+    public List<NameAmountPoint> UserChart { get; set; } = [];
+    public List<NameAmountPoint> CategoryChart { get; set; } = [];
+    public List<NameAmountPoint> ProductChart { get; set; } = [];
+    public List<NameAmountPoint> SummaryChart { get; set; } = [];
+}
+
+public class DailyOperationsBranchRow
+{
+    public int BranchId { get; set; }
+    public string BranchName { get; set; } = string.Empty;
+    public decimal CashSales { get; set; }
+    public decimal Expenses { get; set; }
+    public decimal SalesReturns { get; set; }
+    public decimal SupplierPayments { get; set; }
+    public decimal Receipts { get; set; }
+    public decimal NetAmount { get; set; }
+}
+
+public class DailyOperationsUserRow
+{
+    public string UserName { get; set; } = string.Empty;
+    public int InvoiceCount { get; set; }
+    public decimal Amount { get; set; }
+    public decimal SharePercent { get; set; }
+}
+
+public class DailyOperationsPaymentMethodRow
+{
+    public string PaymentMethod { get; set; } = string.Empty;
+    public int InvoiceCount { get; set; }
+    public decimal Amount { get; set; }
+    public decimal SharePercent { get; set; }
+}
+
+public class DailyOperationsCategoryRow
+{
+    public int? CategoryId { get; set; }
+    public string CategoryName { get; set; } = string.Empty;
+    public int LineCount { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal Amount { get; set; }
+    public decimal SharePercent { get; set; }
+}
+
+public class DailyOperationsProductRow
+{
+    public int Rank { get; set; }
+    public int ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public int LineCount { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal Amount { get; set; }
+    public decimal SharePercent { get; set; }
 }

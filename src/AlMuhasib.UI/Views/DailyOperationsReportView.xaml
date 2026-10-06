@@ -1,0 +1,312 @@
+<UserControl x:Class="AlMuhasib.UI.Views.DailyOperationsReportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
+             xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:DailyOperationsReportViewModel, IsDesignTimeCreatable=False}"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="بحث / تحديث" Command="{Binding LoadDataCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Magnify" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تصدير Excel" Command="{Binding ExportToExcelCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="طباعة" Command="{Binding PrintCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <converters:CurrencyFormatConverter x:Key="CurrencyFormat"/>
+    </UserControl.Resources>
+
+    <Grid behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="24,24,24,8">
+                <TextBlock Text="التقرير اليومي" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
+
+                <UniformGrid Columns="3" Margin="0,0,0,12">
+                    <controls:AnimatedStatCard
+                        Title="مبيعات نقدية"
+                        TextValue="{Binding CashSales}"
+                        Hint="{Binding CashSalesCount, StringFormat=فواتير: {0}}"
+                        Icon="Cash"
+                        IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
+                        IconForeground="#2E7D32"
+                        ValueForeground="#2E7D32"
+                        Margin="0,0,8,8"/>
+                    <controls:AnimatedStatCard
+                        Title="المصاريف"
+                        TextValue="{Binding Expenses}"
+                        Hint="{Binding ExpenseCount, StringFormat=عدد: {0}}"
+                        Icon="CashMinus"
+                        IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}"
+                        IconForeground="#EF6C00"
+                        ValueForeground="#EF6C00"
+                        Margin="8,0,8,8"/>
+                    <controls:AnimatedStatCard
+                        Title="مرجوعات المبيعات"
+                        TextValue="{Binding SalesReturns}"
+                        Hint="{Binding SalesReturnCount, StringFormat=عدد: {0}}"
+                        Icon="CashRefund"
+                        IconBackground="{DynamicResource DashboardKpiRedLightBrush}"
+                        IconForeground="#C62828"
+                        ValueForeground="#C62828"
+                        Margin="8,0,0,8"/>
+                    <controls:AnimatedStatCard
+                        Title="مدفوعات الموردين"
+                        TextValue="{Binding SupplierPayments}"
+                        Hint="{Binding SupplierPaymentCount, StringFormat=عدد: {0}}"
+                        Icon="TruckDelivery"
+                        IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
+                        IconForeground="#1565C0"
+                        ValueForeground="#1565C0"
+                        Margin="0,0,8,8"/>
+                    <controls:AnimatedStatCard
+                        Title="وصولات القبض"
+                        TextValue="{Binding Receipts}"
+                        Hint="{Binding ReceiptCount, StringFormat=عدد: {0}}"
+                        Icon="CashPlus"
+                        IconBackground="{DynamicResource PrimaryHueLightBrush}"
+                        IconForeground="#6A1B9A"
+                        ValueForeground="#6A1B9A"
+                        Margin="8,0,8,8"/>
+                    <controls:AnimatedStatCard
+                        Title="الصافي"
+                        TextValue="{Binding NetAmount}"
+                        Hint="مبيعات − مرتجعات − مصاريف − مدفوعات + قبض"
+                        Icon="ChartTimelineVariant"
+                        IconBackground="{DynamicResource DashboardKpiTealLightBrush}"
+                        IconForeground="#00695C"
+                        ValueForeground="#00695C"
+                        Margin="8,0,0,8"/>
+                </UniformGrid>
+
+                <UniformGrid Columns="2" Margin="0,0,0,8">
+                    <controls:ChartCard Title="ملخص البنود" Margin="0,0,8,8">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:PieChart Series="{Binding SummarySeries}" Height="260"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                    <controls:ChartCard Title="طرق الدفع" Margin="8,0,0,8">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:PieChart Series="{Binding PaymentMethodSeries}" Height="260"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                    <controls:ChartCard Title="مبيعات المستخدمين" Margin="0,0,8,0">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:CartesianChart Series="{Binding UserSeries}"
+                                                XAxes="{Binding UserXAxes}"
+                                                YAxes="{Binding UserYAxes}"
+                                                Height="260"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                    <controls:ChartCard Title="مبيعات الأصناف" Margin="8,0,0,0">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:CartesianChart Series="{Binding CategorySeries}"
+                                                XAxes="{Binding CategoryXAxes}"
+                                                YAxes="{Binding CategoryYAxes}"
+                                                Height="260"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                </UniformGrid>
+
+                <Border Style="{StaticResource FilterBar}" Margin="0,12,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <DatePicker SelectedDate="{Binding DateFrom}"
+                                    Style="{StaticResource FilledDatePicker}"
+                                    materialDesign:HintAssist.Hint="من تاريخ"
+                                    Width="140" Margin="0,0,12,0"/>
+                        <DatePicker SelectedDate="{Binding DateTo}"
+                                    Style="{StaticResource FilledDatePicker}"
+                                    materialDesign:HintAssist.Hint="إلى تاريخ"
+                                    Width="140" Margin="0,0,12,0"/>
+                        <ComboBox ItemsSource="{Binding CurrencyScopeOptions}"
+                                  SelectedItem="{Binding SelectedCurrencyScopeOption}"
+                                  DisplayMemberPath="DisplayName"
+                                  Style="{StaticResource FilledComboBox}"
+                                  materialDesign:HintAssist.Hint="العملة"
+                                  Width="150" Margin="0,0,12,0"/>
+                        <ComboBox ItemsSource="{Binding DetailSections}"
+                                  SelectedValue="{Binding SelectedDetailIndex}"
+                                  SelectedValuePath="Index"
+                                  DisplayMemberPath="Title"
+                                  Style="{StaticResource FilledComboBox}"
+                                  materialDesign:HintAssist.Hint="جدول التفاصيل"
+                                  Width="220" Margin="0,0,12,0"/>
+                        <Button Content="بحث" Style="{StaticResource PrimaryButton}"
+                                Command="{Binding LoadDataCommand}" Margin="0,0,12,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <materialDesign:Card Grid.Row="1" materialDesign:ElevationAssist.Elevation="Dp2" Margin="24,0,24,16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="{Binding DetailTableTitle}"
+                                             TargetDataGrid="{Binding ElementName=UsersDetailGrid}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintCommand}"
+                                             ShowCardToggle="False"/>
+
+                <Grid Grid.Row="1" MinHeight="300">
+                    <!-- Users -->
+                    <DataGrid x:Name="UsersDetailGrid"
+                              ItemsSource="{Binding UserRows}"
+                              Style="{StaticResource ModernDataGrid}"
+                              IsReadOnly="True" AutoGenerateColumns="False"
+                              CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single"
+                              Visibility="{Binding ShowUsersGrid, Converter={StaticResource BoolToVis}}"
+                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="المستخدم" Binding="{Binding UserName}" Width="*"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="UserName"/>
+                            <DataGridTextColumn Header="عدد الفواتير" Binding="{Binding InvoiceCount}" Width="130"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InvoiceCount"/>
+                            <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="140"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
+                            <DataGridTextColumn Header="النسبة %" Binding="{Binding SharePercent, StringFormat=N1}" Width="110"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SharePercent"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Payment methods -->
+                    <DataGrid ItemsSource="{Binding PaymentMethodRows}"
+                              Style="{StaticResource ModernDataGrid}"
+                              IsReadOnly="True" AutoGenerateColumns="False"
+                              CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single"
+                              Visibility="{Binding ShowPaymentGrid, Converter={StaticResource BoolToVis}}"
+                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="طريقة الدفع" Binding="{Binding PaymentMethod}" Width="*"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaymentMethod"/>
+                            <DataGridTextColumn Header="عدد الفواتير" Binding="{Binding InvoiceCount}" Width="130"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InvoiceCount"/>
+                            <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="140"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
+                            <DataGridTextColumn Header="النسبة %" Binding="{Binding SharePercent, StringFormat=N1}" Width="110"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SharePercent"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Categories -->
+                    <DataGrid ItemsSource="{Binding CategoryRows}"
+                              Style="{StaticResource ModernDataGrid}"
+                              IsReadOnly="True" AutoGenerateColumns="False"
+                              CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single"
+                              Visibility="{Binding ShowCategoryGrid, Converter={StaticResource BoolToVis}}"
+                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="الصنف" Binding="{Binding CategoryName}" Width="*"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CategoryName"/>
+                            <DataGridTextColumn Header="عدد البنود" Binding="{Binding LineCount}" Width="110"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="LineCount"/>
+                            <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, StringFormat=N0}" Width="110"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Quantity"/>
+                            <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="140"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
+                            <DataGridTextColumn Header="النسبة %" Binding="{Binding SharePercent, StringFormat=N1}" Width="110"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SharePercent"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Products -->
+                    <DataGrid ItemsSource="{Binding ProductRows}"
+                              Style="{StaticResource ModernDataGrid}"
+                              IsReadOnly="True" AutoGenerateColumns="False"
+                              CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single"
+                              Visibility="{Binding ShowProductGrid, Converter={StaticResource BoolToVis}}"
+                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="#" Binding="{Binding Rank}" Width="60"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Rank"/>
+                            <DataGridTextColumn Header="المادة" Binding="{Binding ProductName}" Width="*"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ProductName"/>
+                            <DataGridTextColumn Header="الصنف" Binding="{Binding CategoryName}" Width="140"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CategoryName"/>
+                            <DataGridTextColumn Header="عدد البنود" Binding="{Binding LineCount}" Width="100"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="LineCount"/>
+                            <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, StringFormat=N0}" Width="100"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Quantity"/>
+                            <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="130"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Amount"/>
+                            <DataGridTextColumn Header="النسبة %" Binding="{Binding SharePercent, StringFormat=N1}" Width="100"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SharePercent"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <!-- Branches -->
+                    <DataGrid ItemsSource="{Binding BranchRows}"
+                              Style="{StaticResource ModernDataGrid}"
+                              IsReadOnly="True" AutoGenerateColumns="False"
+                              CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single"
+                              Visibility="{Binding ShowBranchGrid, Converter={StaticResource BoolToVis}}"
+                              behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                              behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                              behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="الفرع" Binding="{Binding BranchName}" Width="*"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="BranchName"/>
+                            <DataGridTextColumn Header="مبيعات نقدية" Binding="{Binding CashSales, StringFormat=N0}" Width="120"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CashSales"/>
+                            <DataGridTextColumn Header="مصاريف" Binding="{Binding Expenses, StringFormat=N0}" Width="110"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Expenses"/>
+                            <DataGridTextColumn Header="مرتجعات" Binding="{Binding SalesReturns, StringFormat=N0}" Width="110"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SalesReturns"/>
+                            <DataGridTextColumn Header="مدفوعات" Binding="{Binding SupplierPayments, StringFormat=N0}" Width="110"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SupplierPayments"/>
+                            <DataGridTextColumn Header="قبض" Binding="{Binding Receipts, StringFormat=N0}" Width="110"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Receipts"/>
+                            <DataGridTextColumn Header="الصافي" Binding="{Binding NetAmount, StringFormat=N0}" Width="120"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="NetAmount"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+
+                <controls:PaginationBar Grid.Row="2"/>
+            </Grid>
+        </materialDesign:Card>
+
+        <Border Grid.RowSpan="2" Background="#80FFFFFF" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Width="48" Height="48"/>
+                <TextBlock Text="جاري التحميل..." Margin="0,12,0,0" FontSize="14" Foreground="{DynamicResource TextSecondaryBrush}"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

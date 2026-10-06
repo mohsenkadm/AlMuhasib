@@ -378,6 +378,17 @@ public sealed class ReportsController : TenantApiControllerBase
         return Ok(await _reports.GetDailySalesReportAsync(f.From, f.To, f.WarehouseId, paymentMethod, currencyScope));
     }
 
+    [HttpGet("daily-operations")]
+    public async Task<IActionResult> DailyOperations(
+        [FromQuery] ReportFilterRequest filter,
+        [FromQuery] ReportCurrencyScope currencyScope = ReportCurrencyScope.Iqd,
+        CancellationToken ct = default)
+    {
+        EnsureTenant();
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetDailyOperationsReportAsync(f.From, f.To, currencyScope));
+    }
+
     [HttpGet("sales-by-warehouse-user")]
     public async Task<IActionResult> SalesByWarehouseUser([FromQuery] ReportFilterRequest filter, CancellationToken ct)
     {

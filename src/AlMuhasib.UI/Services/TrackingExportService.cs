@@ -32,6 +32,15 @@ public sealed class TrackingExportService : IExportService
         _recentExcel.RecordExport(filePath, sheetName);
     }
 
+    public void ExportToExcel(
+        string filePath,
+        IReadOnlyList<(string SheetName, string[] Columns, IList<object[]> Rows)> sheets)
+    {
+        _inner.ExportToExcel(filePath, sheets);
+        var label = sheets.Count > 0 ? sheets[0].SheetName : "Excel";
+        _recentExcel.RecordExport(filePath, label);
+    }
+
     public void PrintTable(string title, string[] columns, IList<object[]> rows, IList<string>? summaryLines = null) =>
         _inner.PrintTable(title, columns, rows, summaryLines);
 
