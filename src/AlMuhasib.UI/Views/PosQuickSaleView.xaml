@@ -215,133 +215,177 @@
                              Margin="0,0,0,10"
                              FontSize="15"/>
 
-                    <ScrollViewer Grid.Row="2" Margin="0,0,0,8" MaxHeight="160"
-                                  VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled"
-                                  Style="{DynamicResource ThinScrollViewer}">
-                    <StackPanel>
-                        <!-- Currency chips -->
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6"
-                                    Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolVis}}">
+                    <!-- Choice rows: label + equal-width chips across remaining width (horizontal only) -->
+                    <StackPanel Grid.Row="2" Margin="0,0,0,8">
+                        <Grid Margin="0,0,0,6"
+                              Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolVis}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*" MinWidth="0"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
                             <TextBlock Text="العملة" FontSize="12" FontWeight="SemiBold"
-                                       VerticalAlignment="Center" Margin="0,0,8,6"
+                                       VerticalAlignment="Center" Margin="0,0,8,0" MinWidth="56"
                                        Foreground="{DynamicResource TextSecondaryBrush}"/>
-                            <Button Content="دينار"
-                                    Command="{Binding SelectPosCurrencyCommand}" CommandParameter="IQD">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChip}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SelectedPosCurrency, Converter={StaticResource EnumToBool}, ConverterParameter=IQD}" Value="True">
-                                                <Setter Property="Tag" Value="Selected"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-                            <Button Content="دولار" Command="{Binding SelectPosCurrencyCommand}" CommandParameter="USD">
-                                <Button.Style>
-                                    <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChip}">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding SelectedPosCurrency, Converter={StaticResource EnumToBool}, ConverterParameter=USD}" Value="True">
-                                                <Setter Property="Tag" Value="Selected"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Button.Style>
-                            </Button>
-                            <TextBlock Text="{Binding FxRateText}" FontSize="11" VerticalAlignment="Center"
-                                       Margin="8,0,0,6" Foreground="#1565C0"
+                            <UniformGrid Grid.Column="1" Rows="1" Columns="2">
+                                <Button Content="دينار" Margin="0,0,4,0"
+                                        Command="{Binding SelectPosCurrencyCommand}" CommandParameter="IQD">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChipBar}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedPosCurrency, Converter={StaticResource EnumToBool}, ConverterParameter=IQD}" Value="True">
+                                                    <Setter Property="Tag" Value="Selected"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Button Content="دولار" Margin="4,0,0,0"
+                                        Command="{Binding SelectPosCurrencyCommand}" CommandParameter="USD">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChipBar}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding SelectedPosCurrency, Converter={StaticResource EnumToBool}, ConverterParameter=USD}" Value="True">
+                                                    <Setter Property="Tag" Value="Selected"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </UniformGrid>
+                            <TextBlock Grid.Column="2" Text="{Binding FxRateText}" FontSize="11"
+                                       VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#1565C0"
                                        Visibility="{Binding ShowFxInfo, Converter={StaticResource BoolVis}}"/>
-                        </StackPanel>
+                        </Grid>
 
-                        <TextBlock Text="المخزن" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"
-                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
-                        <ItemsControl ItemsSource="{Binding Warehouses}" Margin="0,0,0,6">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Button Content="{Binding Name}"
-                                            Command="{Binding DataContext.SelectWarehouseCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}">
-                                        <Button.Style>
-                                            <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChip}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Value="True">
-                                                        <DataTrigger.Binding>
-                                                            <MultiBinding Converter="{StaticResource ObjectsEqual}">
-                                                                <Binding Path="DataContext.SelectedWarehouse" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
-                                                                <Binding Path="."/>
-                                                            </MultiBinding>
-                                                        </DataTrigger.Binding>
-                                                        <Setter Property="Tag" Value="Selected"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-
-                        <TextBlock Text="القاصة" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"
-                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
-                        <ItemsControl ItemsSource="{Binding FilteredCashBoxes}" Margin="0,0,0,4">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Button Command="{Binding DataContext.SelectCashBoxCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}">
-                                        <Button.Content>
-                                            <TextBlock>
-                                                <Run Text="{Binding Name, Mode=OneWay}"/>
-                                                <Run Text=" "/>
-                                                <Run Text="{Binding Currency, Mode=OneWay, StringFormat=({0})}"/>
-                                            </TextBlock>
-                                        </Button.Content>
-                                        <Button.Style>
-                                            <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChip}">
-                                                <Style.Triggers>
-                                                    <DataTrigger Value="True">
-                                                        <DataTrigger.Binding>
-                                                            <MultiBinding Converter="{StaticResource ObjectsEqual}">
-                                                                <Binding Path="DataContext.SelectedCashBox" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
-                                                                <Binding Path="."/>
-                                                            </MultiBinding>
-                                                        </DataTrigger.Binding>
-                                                        <Setter Property="Tag" Value="Selected"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                    </Button>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-
-                        <StackPanel Visibility="{Binding ShowProductPricing, Converter={StaticResource BoolVis}}" Margin="0,4,0,0">
-                            <TextBlock Text="نوع التسعير" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,4"
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*" MinWidth="0"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="المخزن" FontSize="12" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" Margin="0,0,8,0" MinWidth="56"
                                        Foreground="{DynamicResource TextSecondaryBrush}"/>
-                            <ItemsControl ItemsSource="{Binding BulkPricingTypes}">
+                            <ItemsControl Grid.Column="1" ItemsSource="{Binding Warehouses}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <WrapPanel/>
+                                        <UniformGrid Rows="1"/>
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Margin" Value="0,0,4,0"/>
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Button Content="{Binding Name}"
-                                                Command="{Binding DataContext.SelectBulkPricingTypeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        <Button Command="{Binding DataContext.SelectWarehouseCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}">
+                                            <Button.Content>
+                                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                                                           TextAlignment="Center"/>
+                                            </Button.Content>
                                             <Button.Style>
-                                                <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChip}">
+                                                <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChipBar}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Value="True">
+                                                            <DataTrigger.Binding>
+                                                                <MultiBinding Converter="{StaticResource ObjectsEqual}">
+                                                                    <Binding Path="DataContext.SelectedWarehouse" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                                    <Binding Path="."/>
+                                                                </MultiBinding>
+                                                            </DataTrigger.Binding>
+                                                            <Setter Property="Tag" Value="Selected"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
+
+                        <Grid Margin="0,0,0,6">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*" MinWidth="0"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="القاصة" FontSize="12" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" Margin="0,0,8,0" MinWidth="56"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            <ItemsControl Grid.Column="1" ItemsSource="{Binding FilteredCashBoxes}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Margin" Value="0,0,4,0"/>
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding DataContext.SelectCashBoxCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}">
+                                            <Button.Content>
+                                                <TextBlock TextTrimming="CharacterEllipsis" TextAlignment="Center">
+                                                    <Run Text="{Binding Name, Mode=OneWay}"/>
+                                                    <Run Text=" "/>
+                                                    <Run Text="{Binding Currency, Mode=OneWay, StringFormat=({0})}"/>
+                                                </TextBlock>
+                                            </Button.Content>
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChipBar}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Value="True">
+                                                            <DataTrigger.Binding>
+                                                                <MultiBinding Converter="{StaticResource ObjectsEqual}">
+                                                                    <Binding Path="DataContext.SelectedCashBox" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                                    <Binding Path="."/>
+                                                                </MultiBinding>
+                                                            </DataTrigger.Binding>
+                                                            <Setter Property="Tag" Value="Selected"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Button.Style>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
+
+                        <Grid Visibility="{Binding ShowProductPricing, Converter={StaticResource BoolVis}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*" MinWidth="0"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="التسعير" FontSize="12" FontWeight="SemiBold"
+                                       VerticalAlignment="Center" Margin="0,0,8,0" MinWidth="56"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            <ItemsControl Grid.Column="1" ItemsSource="{Binding BulkPricingTypes}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Margin" Value="0,0,4,0"/>
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Command="{Binding DataContext.SelectBulkPricingTypeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}">
+                                            <Button.Content>
+                                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
+                                                           TextAlignment="Center"/>
+                                            </Button.Content>
+                                            <Button.Style>
+                                                <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChipBar}">
                                                     <Style.Triggers>
                                                         <DataTrigger Value="True">
                                                             <DataTrigger.Binding>
@@ -359,9 +403,8 @@
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                        </StackPanel>
+                        </Grid>
                     </StackPanel>
-                    </ScrollViewer>
 
                     <ListBox Grid.Row="3"
                              ItemsSource="{Binding FilteredProducts}"
