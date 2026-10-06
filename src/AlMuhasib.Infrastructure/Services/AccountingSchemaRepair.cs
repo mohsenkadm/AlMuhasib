@@ -106,7 +106,9 @@ public static class AccountingSchemaRepair
             END
             """, cancellationToken);
 
-        // ProductBranches: table + backfill so existing products remain visible in all branches.
+        // ProductBranches: table + one-time backfill فقط للمنتجات بلا أي ربط.
+        // مهم: لا نُكمل الفروع الناقصة لمنتج مرتبط مسبقاً — وإلا يُعاد ربط «كل الفروع»
+        // بعد اختيار فرع واحد عند كل تشغيل لـ SchemaRepair/Migrate.
         await TryExecAsync(db, """
             IF OBJECT_ID(N'dbo.ProductBranches', N'U') IS NULL
                AND OBJECT_ID(N'dbo.Products', N'U') IS NOT NULL
@@ -140,7 +142,7 @@ public static class AccountingSchemaRepair
                   AND b.[IsActive] = 1
                   AND NOT EXISTS (
                       SELECT 1 FROM [dbo].[ProductBranches] pb
-                      WHERE pb.[ProductId] = p.[Id] AND pb.[BranchId] = b.[Id]);
+                      WHERE pb.[ProductId] = p.[Id]);
             END
             """, cancellationToken);
     }

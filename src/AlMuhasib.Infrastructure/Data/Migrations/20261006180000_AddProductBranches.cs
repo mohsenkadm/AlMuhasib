@@ -30,7 +30,8 @@ public partial class AddProductBranches : Migration
                 CREATE INDEX [IX_ProductBranches_BranchId] ON [dbo].[ProductBranches]([BranchId]);
             END
 
-            -- Backfill: every existing (non-deleted) product appears in every active branch.
+            -- Backfill: only products with ZERO links → all active branches (legacy).
+            -- Do NOT fill missing branches for products that already have at least one link.
             IF OBJECT_ID(N'dbo.ProductBranches', N'U') IS NOT NULL
                AND OBJECT_ID(N'dbo.Products', N'U') IS NOT NULL
                AND OBJECT_ID(N'dbo.Branches', N'U') IS NOT NULL
@@ -44,7 +45,7 @@ public partial class AddProductBranches : Migration
                   AND b.[IsActive] = 1
                   AND NOT EXISTS (
                       SELECT 1 FROM [dbo].[ProductBranches] pb
-                      WHERE pb.[ProductId] = p.[Id] AND pb.[BranchId] = b.[Id]);
+                      WHERE pb.[ProductId] = p.[Id]);
             END
             """);
     }
