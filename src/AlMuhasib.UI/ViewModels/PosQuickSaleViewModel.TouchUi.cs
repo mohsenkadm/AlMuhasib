@@ -475,6 +475,7 @@ public partial class PosQuickSaleViewModel
                 // Soft-delete without stock reversal (hold never applied stock).
                 held.HoldStatus = InvoiceHoldStatus.Completed;
                 held.MarkSoftDeleted(_currentUserService.Username ?? "pos");
+                _unitOfWork.Invoices.Update(held);
                 await _unitOfWork.SaveChangesAsync();
             }
         }

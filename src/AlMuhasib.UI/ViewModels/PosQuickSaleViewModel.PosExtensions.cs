@@ -81,6 +81,7 @@ public partial class PosQuickSaleViewModel
                 {
                     previous.HoldStatus = InvoiceHoldStatus.Completed;
                     previous.MarkSoftDeleted(_currentUserService.Username ?? "pos");
+                    _unitOfWork.Invoices.Update(previous);
                     await _unitOfWork.SaveChangesAsync();
                 }
                 _activeHeldInvoiceId = null;
