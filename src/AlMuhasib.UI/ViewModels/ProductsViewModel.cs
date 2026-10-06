@@ -318,6 +318,7 @@ public partial class ProductsViewModel : ViewModelBase
                 TotalCount = filteredTotal;
                 TotalPages = filteredPages;
                 PaginationText = filteredText;
+                await ApplyBranchNamesAsync(Products);
                 await RebuildProductCardsAsync(Products);
                 return;
             }
@@ -341,11 +342,32 @@ public partial class ProductsViewModel : ViewModelBase
             foreach (var p in items)
                 Products.Add(p);
 
+            await ApplyBranchNamesAsync(Products);
             await RebuildProductCardsAsync(items);
         }
         finally
         {
             _loadLock.Release();
+        }
+    }
+
+    private async Task ApplyBranchNamesAsync(IEnumerable<Product> products)
+    {
+        var list = products as IList<Product> ?? products.ToList();
+        if (list.Count == 0) return;
+
+        try
+        {
+            var map = await _productService.GetBranchNamesByProductIdsAsync(list.Select(p => p.Id));
+            foreach (var p in list)
+                p.BranchesDisplay = map.TryGetValue(p.Id, out var names) && !string.IsNullOrWhiteSpace(names)
+                    ? names
+                    : "—";
+        }
+        catch
+        {
+            foreach (var p in list)
+                p.BranchesDisplay = "—";
         }
     }
 
@@ -396,7 +418,8 @@ public partial class ProductsViewModel : ViewModelBase
                 UsageInstructions = product.UsageInstructions,
                 Barcode = product.Barcode,
                 Description = product.Description,
-                CategoryName = categoryName
+                CategoryName = categoryName,
+                BranchesDisplay = string.IsNullOrWhiteSpace(product.BranchesDisplay) ? "—" : product.BranchesDisplay
             };
             if (pricesByProduct.TryGetValue(product.Id, out var productPrices))
             {
@@ -506,173 +529,67 @@ public partial class ProductsViewModel : ViewModelBase
         await LoadProductsAsync();
     }
 
-    // ── Add / Edit Dialog ──────────────────────────────────
+    // ── Add / Edit Form (full page tab) ────────────────────
     [RelayCommand]
     private async Task OpenAddDialog()
     {
-        _editingProductId = null;
-        IsEditMode = false;
-        DialogTitle = "إضافة منتج جديد";
-        EditName = string.Empty;
-        EditDescription = string.Empty;
-        EditBarcode = string.Empty;
-        EditScientificName = string.Empty;
-        EditUsageInstructions = string.Empty;
-        EditVehicleType = string.Empty;
-        EditChassisNumber = string.Empty;
-        EditCarModel = string.Empty;
-        EditVehicleColor = string.Empty;
-        EditPassengerCountText = string.Empty;
-        EditPlateNumber = string.Empty;
-        EditPlateType = VehiclePlateType.None;
-        EditPlateTypeOption = PlateTypeOptions[0];
-        EditCategory = null;
-        EditWeight = 0m;
-        EditWeightUnit = "كغ";
-        EditDiscountType = DiscountType.None;
-        EditDiscountTypeOption = ProductDiscountTypeOptions[0];
-        EditDiscountValue = 0m;
-        EditDiscountHasExpiry = false;
-        EditDiscountExpiresAt = null;
-        DialogError = string.Empty;
-        ClearFeatureEditCollections();
-        await ResetCustomFieldEditorsAsync(null);
-        await LoadMinQuantitiesForProductAsync(null);
-        IsDialogOpen = true;
+        if (!CanAdd)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية إضافة منتجات");
+            return;
+        }
+
+        if (_services.GetService(typeof(MainWindowViewModel)) is not MainWindowViewModel main)
+        {
+            BeautifulMessageDialog.ShowError("تعذّر فتح واجهة إضافة المنتج");
+            return;
+        }
+
+        ProductFormNavigationBridge.PendingEditProductId = null;
+        await main.OpenTabAsync(
+            typeof(ProductFormViewModel),
+            "إضافة منتج",
+            MaterialDesignThemes.Wpf.PackIconKind.PackageVariantPlus,
+            activateIfExists: false,
+            permissionScreenName: "Products");
     }
 
     [RelayCommand]
     private async Task OpenEditDialog(Product product)
     {
         if (product is null) return;
+        if (!CanEdit)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية تعديل المنتجات");
+            return;
+        }
 
-        _editingProductId = product.Id;
-        IsEditMode = true;
-        DialogTitle = "تعديل المنتج";
-        EditName = product.Name;
-        EditDescription = product.Description ?? string.Empty;
-        EditBarcode = product.Barcode ?? string.Empty;
-        EditScientificName = product.ScientificName ?? string.Empty;
-        EditUsageInstructions = product.UsageInstructions ?? string.Empty;
-        EditVehicleType = product.VehicleType ?? string.Empty;
-        EditChassisNumber = product.ChassisNumber ?? string.Empty;
-        EditCarModel = product.CarModel ?? string.Empty;
-        EditVehicleColor = product.VehicleColor ?? string.Empty;
-        EditPassengerCountText = product.PassengerCount?.ToString() ?? string.Empty;
-        EditPlateNumber = product.PlateNumber ?? string.Empty;
-        EditPlateType = product.PlateType;
-        EditPlateTypeOption = PlateTypeOptions.FirstOrDefault(o => o.Type == product.PlateType)
-            ?? PlateTypeOptions[0];
-        EditCategory = Categories.FirstOrDefault(c => c.Id == product.CategoryId);
-        EditWeight = product.Weight;
-        EditWeightUnit = string.IsNullOrWhiteSpace(product.WeightUnit) ? "كغ" : product.WeightUnit;
-        EditDiscountType = product.DiscountType;
-        EditDiscountTypeOption = ProductDiscountTypeOptions.FirstOrDefault(o => o.Type == product.DiscountType)
-            ?? ProductDiscountTypeOptions[0];
-        EditDiscountValue = product.DiscountValue;
-        EditDiscountHasExpiry = product.DiscountExpiresAt.HasValue;
-        EditDiscountExpiresAt = product.DiscountExpiresAt?.ToLocalTime().Date;
-        DialogError = string.Empty;
-        await LoadFeatureDataForProductAsync(product.Id);
-        await ResetCustomFieldEditorsAsync(product.CustomFieldsJson);
-        await LoadMinQuantitiesForProductAsync(product.Id);
-        IsDialogOpen = true;
+        if (_services.GetService(typeof(MainWindowViewModel)) is not MainWindowViewModel main)
+        {
+            BeautifulMessageDialog.ShowError("تعذّر فتح واجهة تعديل المنتج");
+            return;
+        }
+
+        ProductFormNavigationBridge.PendingEditProductId = product.Id;
+        await main.OpenTabAsync(
+            typeof(ProductFormViewModel),
+            $"تعديل — {product.Name}",
+            MaterialDesignThemes.Wpf.PackIconKind.PackageVariantClosed,
+            activateIfExists: false,
+            permissionScreenName: "Products");
+    }
+
+    public async Task ReloadAfterExternalChangeAsync()
+    {
+        await LoadCategoriesAsync();
+        await LoadProductsAsync();
     }
 
     [RelayCommand]
     private async Task SaveProduct()
     {
-        // Validation
-        if (string.IsNullOrWhiteSpace(EditName))
-        {
-            DialogError = "اسم المنتج مطلوب";
-            return;
-        }
-        if (EditCategory is null)
-        {
-            DialogError = "يرجى اختيار الصنف";
-            return;
-        }
-
-        if (ShowDiscountSection && EditDiscountType != DiscountType.None)
-        {
-            if (EditDiscountValue <= 0)
-            {
-                DialogError = "أدخل قيمة خصم أكبر من صفر أو اختر بدون خصم";
-                return;
-            }
-            if (EditDiscountType == DiscountType.Percentage && EditDiscountValue > 100m)
-            {
-                DialogError = "نسبة الخصم لا تتجاوز 100%";
-                return;
-            }
-            if (EditDiscountHasExpiry && EditDiscountExpiresAt is null)
-            {
-                DialogError = "حدد تاريخ انتهاء الخصم أو ألغِ خيار الانتهاء";
-                return;
-            }
-        }
-
-        DialogError = string.Empty;
-
-        try
-        {
-            if (IsEditMode && _editingProductId.HasValue)
-            {
-                var product = await _productService.GetByIdAsync(_editingProductId.Value);
-                if (product is null) return;
-
-                product.Name = EditName.Trim();
-                product.Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim();
-                product.Barcode = string.IsNullOrWhiteSpace(EditBarcode) ? null : EditBarcode.Trim();
-                product.ScientificName = string.IsNullOrWhiteSpace(EditScientificName) ? null : EditScientificName.Trim();
-                product.UsageInstructions = string.IsNullOrWhiteSpace(EditUsageInstructions) ? null : EditUsageInstructions.Trim();
-                ApplyCarShowroomFieldsToProduct(product);
-                product.CategoryId = EditCategory.Id;
-                product.Weight = EditWeight < 0 ? 0m : EditWeight;
-                product.WeightUnit = string.IsNullOrWhiteSpace(EditWeightUnit) ? null : EditWeightUnit.Trim();
-                product.CustomFieldsJson = SerializeCustomFieldsFromEditors();
-                ApplyEditDiscountToProduct(product);
-
-                await _productService.UpdateAsync(product);
-                await SaveMinQuantitiesAsync(product.Id);
-            }
-            else
-            {
-                var product = new Product
-                {
-                    Name = EditName.Trim(),
-                    Description = string.IsNullOrWhiteSpace(EditDescription) ? null : EditDescription.Trim(),
-                    Barcode = string.IsNullOrWhiteSpace(EditBarcode) ? null : EditBarcode.Trim(),
-                    ScientificName = string.IsNullOrWhiteSpace(EditScientificName) ? null : EditScientificName.Trim(),
-                    UsageInstructions = string.IsNullOrWhiteSpace(EditUsageInstructions) ? null : EditUsageInstructions.Trim(),
-                    CategoryId = EditCategory.Id,
-                    Weight = EditWeight < 0 ? 0m : EditWeight,
-                    WeightUnit = string.IsNullOrWhiteSpace(EditWeightUnit) ? null : EditWeightUnit.Trim(),
-                    CustomFieldsJson = SerializeCustomFieldsFromEditors()
-                };
-                ApplyCarShowroomFieldsToProduct(product);
-                ApplyEditDiscountToProduct(product);
-
-                var created = await _productService.CreateAsync(product);
-                _editingProductId = created.Id;
-                IsEditMode = true;
-                DialogTitle = "تعديل المنتج";
-                await SaveMinQuantitiesAsync(created.Id);
-                await LoadFeatureDataForProductAsync(created.Id);
-                await LoadMinQuantitiesForProductAsync(created.Id);
-                BeautifulMessageDialog.ShowSuccess("تم حفظ المنتج — يمكنك الآن إضافة الوحدات/الدفعات/السيريالات إن كانت مفعّلة");
-                await LoadProductsAsync();
-                return;
-            }
-
-            IsDialogOpen = false;
-            await LoadProductsAsync();
-        }
-        catch (Exception ex)
-        {
-            DialogError = $"حدث خطأ: {ex.Message}";
-        }
+        // حفظ المنتج أصبح عبر ProductFormViewModel — أبقِ الأمر فارغاً لتوافق الأوامر القديمة إن وُجدت.
+        await Task.CompletedTask;
     }
 
     private void ApplyEditDiscountToProduct(Product product)

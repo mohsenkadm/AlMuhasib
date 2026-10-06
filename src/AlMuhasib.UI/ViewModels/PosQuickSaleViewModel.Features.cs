@@ -45,6 +45,10 @@ public partial class PosQuickSaleViewModel
         ShowProductPricing = _featureFlags.ProductPricingEnabled;
         ShowClothingSizes = _featureFlags.TemplateClothing;
         ShowPharmacy = _featureFlags.TemplatePharmacy;
+        RefreshMultiCurrencyVisibility();
+        RefreshFilteredCashBoxes(preferKeepSelection: true);
+        _ = LoadBulkPricingTypesAsync();
+        _ = RefreshFxAndEquivalentAsync();
 
         ApplyMarketTemplateHeaders();
 
@@ -264,21 +268,19 @@ public partial class PosQuickSaleViewModel
         if (ShowProductPricing)
         {
             var prices = await _productPriceService.GetByProductIdsAsync([line.ProductId]);
+            var currency = PosDocumentCurrency;
+            var previousTypeId = line.PricingTypeId ?? SelectedBulkPricingType?.Id;
             line.AvailablePricingOptions.Clear();
-            foreach (var p in prices.OrderByDescending(x => x.PricingType?.IsDefault == true))
+            foreach (var opt in InvoiceBulkPricingHelper.ToOptions(prices, usePurchasePrice: false, currency)
+                         .OrderByDescending(x => x.IsDefault))
             {
-                line.AvailablePricingOptions.Add(new ProductPricingOption
-                {
-                    PricingTypeId = p.PricingTypeId,
-                    Name = p.PricingType?.Name ?? "",
-                    Price = p.SalePrice,
-                    IsDefault = p.PricingType?.IsDefault == true
-                });
+                line.AvailablePricingOptions.Add(opt);
             }
 
-            var preferred = line.AvailablePricingOptions.FirstOrDefault(o => o.PricingTypeId == line.PricingTypeId)
-                            ?? line.AvailablePricingOptions.FirstOrDefault(o => o.IsDefault)
-                            ?? line.AvailablePricingOptions.FirstOrDefault();
+            var preferred = InvoiceBulkPricingHelper.ResolvePreferredOption(
+                line.AvailablePricingOptions.ToList(),
+                previousTypeId,
+                SelectedBulkPricingType?.Id);
             if (preferred is not null)
                 line.SelectedPricingOption = preferred;
         }

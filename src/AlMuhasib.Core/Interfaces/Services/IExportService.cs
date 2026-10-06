@@ -108,11 +108,36 @@ public class InvoicePrintModel
     public decimal TotalAmountIqd { get; set; }
     public decimal TotalAmountUsd { get; set; }
 
+    /// <summary>ذمة العميل الإجمالية بالدينار بعد حفظ الفاتورة (الباقي عليه).</summary>
+    public decimal? CustomerOutstandingBalance { get; set; }
+
+    /// <summary>ذمة العميل الإجمالية بالدولار بعد حفظ الفاتورة (الباقي عليه).</summary>
+    public decimal? CustomerOutstandingBalanceUsd { get; set; }
+
     /// <summary>A4 layout template id: Classic, Compact, or Modern. Null = Classic.</summary>
     public string? A4TemplateId { get; set; }
 
+    /// <summary>حجم ورق الفاتورة: A4, A5, أو Letter. Null = A4.</summary>
+    public string? PaperSize { get; set; }
+
     /// <summary>إظهار عمود خصم السطر في الطباعة.</summary>
     public bool ShowLineDiscount { get; set; }
+
+    /// <summary>نص عرض رصيد العميل للطباعة، أو null إن لم تكن هناك ذمة.</summary>
+    public string? GetCustomerOutstandingBalanceDisplay()
+    {
+        var iqd = CustomerOutstandingBalance ?? 0m;
+        var usd = CustomerOutstandingBalanceUsd ?? 0m;
+        if (iqd <= 0 && usd <= 0)
+            return null;
+
+        var parts = new List<string>();
+        if (iqd > 0)
+            parts.Add($"{iqd:N0} د.ع");
+        if (usd > 0)
+            parts.Add($"{usd:N2} $");
+        return string.Join("  |  ", parts);
+    }
 }
 
 public class InvoicePrintItem

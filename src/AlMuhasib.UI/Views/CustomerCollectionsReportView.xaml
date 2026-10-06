@@ -63,7 +63,8 @@
                         Icon="CalendarClock"
                         IconBackground="{DynamicResource PrimaryHueLightBrush}"
                         IconForeground="#6A1B9A"
-                        ValueForeground="#6A1B9A"/>
+                        ValueForeground="#6A1B9A"
+                        Visibility="{Binding ShowInstallmentCard, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                     <controls:AnimatedStatCard
                         Title="عدد الحركات"
                         TextValue="{Binding RowCount}"

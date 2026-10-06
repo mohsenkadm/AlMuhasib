@@ -12,4 +12,5 @@ public class Branch : BaseEntity
     public const string MainBranchCode = "MAIN";
 
     public ICollection<UserBranch> UserBranches { get; set; } = [];
+    public ICollection<ProductBranch> ProductBranches { get; set; } = [];
 }

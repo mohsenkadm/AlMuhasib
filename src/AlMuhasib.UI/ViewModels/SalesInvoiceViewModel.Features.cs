@@ -136,6 +136,7 @@ public partial class SalesInvoiceViewModel
         ShowPharmacyUsage = _featureFlags.TemplatePharmacy;
         ShowCarShowroomContractPrint = _featureFlags.CarShowroom;
         PrintCarContractCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(ShowConvertToSalesReturn));
         RefreshLoyaltyFeatureVisibility();
         RefreshProductOffersFeatureVisibility();
         RefreshMultiCurrencyFeatureVisibility();

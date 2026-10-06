@@ -10,6 +10,7 @@
         Background="{DynamicResource BackgroundBrush}"
         FlowDirection="RightToLeft"
         FontFamily="{DynamicResource AppFont}"
+        TextElement.FontFamily="{DynamicResource AppFont}"
         MinWidth="1024"
         MinHeight="640">
 

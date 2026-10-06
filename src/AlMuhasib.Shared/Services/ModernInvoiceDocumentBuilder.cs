@@ -7,13 +7,13 @@ using AlMuhasib.Core.Interfaces.Services;
 namespace AlMuhasib.Shared.Services;
 
 /// <summary>
-/// قالب A4 لفواتير البيع/الشراء/المرتجع: عنوان، تاريخ الفاتورة، بيانات الجهة ورقم الفاتورة/المندوب،
+/// قالب فاتورة بيع/شراء/مرتجع (A4/A5/Letter): عنوان، تاريخ الفاتورة، بيانات الجهة ورقم الفاتورة/المندوب،
 /// ثم جدول البنود مع صفوف المجاميع وطريقة الدفع أسفل الجدول.
 /// العملة تُكتب في رأس الأعمدة وليس بجانب كل رقم لتفادي تشابك الأرقام مع النص العربي.
 /// </summary>
 public static class ModernInvoiceDocumentBuilder
 {
-    public const double PageWidth = 793.7;   // A4 @ 96 DPI
+    public const double PageWidth = InvoicePaperSizes.ReferenceWidth; // A4 @ 96 DPI (مرجع التحجيم)
     public const double PageHeight = 1122.5;
 
     private const double LineWidth = 1.0;
@@ -32,20 +32,25 @@ public static class ModernInvoiceDocumentBuilder
         return brush;
     }
 
+    public static Size ResolvePageSize(InvoicePrintModel m) =>
+        InvoicePaperSizes.GetPageSize(m.PaperSize);
+
     public static FlowDocument Build(InvoicePrintModel m)
     {
+        var pageSize = ResolvePageSize(m);
+        var scale = pageSize.Width / InvoicePaperSizes.ReferenceWidth;
         var hideAmounts = m.HideAmounts;
         // قالب "Compact" في الإعدادات — أو عدد بنود كبير — يضغط الخطوط والحشوات بنفس التصميم.
         var compact = InvoiceA4TemplateTheme.Resolve(m.A4TemplateId).ForceCompactMetrics || m.Items.Count > 18;
-        // حجم الخط الأساسي 14 لسهولة القراءة؛ القالب المضغوط يقلّل قليلاً فقط.
-        var baseFont = compact ? 13.0 : 14.0;
-        var cellPadding = compact ? new Thickness(6, 4, 6, 4) : new Thickness(8, 5, 8, 5);
+        // حجم الخط الأساسي 14 لسهولة القراءة؛ القالب المضغوط يقلّل قليلاً فقط — ثم يُحوَّل حسب حجم الورق.
+        var baseFont = (compact ? 13.0 : 14.0) * scale;
+        var cellPadding = ScaleThickness(compact ? new Thickness(6, 4, 6, 4) : new Thickness(8, 5, 8, 5), scale);
         var currency = string.IsNullOrWhiteSpace(m.CurrencyLabel) ? "د.ع" : m.CurrencyLabel;
         var branding = PrintBrandingProvider.Current;
-        var pagePadding = compact ? new Thickness(34, 20, 34, 20) : new Thickness(44, 24, 44, 24);
+        var pagePadding = ScaleThickness(compact ? new Thickness(34, 20, 34, 20) : new Thickness(44, 24, 44, 24), scale);
         // أعمدة الجداول تُحسب على عرض المحتوى الفعلي: الأعمدة المرنة (Star) تخرج عن الصفحة
         // في FlowDocument فتختفي القيم وتتضخم الصفوف.
-        var contentWidth = PageWidth - pagePadding.Left - pagePadding.Right;
+        var contentWidth = pageSize.Width - pagePadding.Left - pagePadding.Right;
 
         var doc = new FlowDocument
         {
@@ -53,8 +58,8 @@ public static class ModernInvoiceDocumentBuilder
             FontSize = baseFont,
             Foreground = Ink,
             FlowDirection = FlowDirection.RightToLeft,
-            PageWidth = PageWidth,
-            PageHeight = PageHeight,
+            PageWidth = pageSize.Width,
+            PageHeight = pageSize.Height,
             PagePadding = pagePadding,
             ColumnWidth = contentWidth
         };
@@ -64,10 +69,10 @@ public static class ModernInvoiceDocumentBuilder
         // ── العنوان ──
         doc.Blocks.Add(new Paragraph(new Run(m.Title))
         {
-            FontSize = compact ? 20 : 24,
+            FontSize = (compact ? 20 : 24) * scale,
             FontWeight = FontWeights.Bold,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, compact ? 4 : 8, 0, compact ? 6 : 10)
+            Margin = ScaleThickness(new Thickness(0, compact ? 4 : 8, 0, compact ? 6 : 10), scale)
         });
 
         // سطر بيانات الشركة يظهر فقط عندما لا يوجد ترويسة مطبوعة، لتفادي تكرار نفس البيانات.
@@ -83,14 +88,14 @@ public static class ModernInvoiceDocumentBuilder
                 FontSize = baseFont,
                 FontWeight = FontWeights.Bold,
                 TextAlignment = TextAlignment.Center,
-                Margin = new Thickness(0, 0, 0, compact ? 8 : 12)
+                Margin = ScaleThickness(new Thickness(0, 0, 0, compact ? 8 : 12), scale)
             });
         }
 
         var dateLine = new Paragraph
         {
             FontSize = baseFont + 0.5,
-            Margin = new Thickness(0, compact ? 2 : 4, 0, compact ? 8 : 12)
+            Margin = ScaleThickness(new Thickness(0, compact ? 2 : 4, 0, compact ? 8 : 12), scale)
         };
         dateLine.Inlines.Add(new Run("تاريخ الفاتورة  ") { FontWeight = FontWeights.Bold, Foreground = HeaderInk });
         dateLine.Inlines.Add(new Run(m.Date.ToString("yyyy/MM/dd")) { FontWeight = FontWeights.SemiBold });
@@ -102,7 +107,7 @@ public static class ModernInvoiceDocumentBuilder
         doc.Blocks.Add(dateLine);
 
         // ── بطاقة العميل يميناً، ورقم الفاتورة مع المندوب يساراً ──
-        var detailsGap = compact ? 8.0 : 12.0;
+        var detailsGap = (compact ? 8.0 : 12.0) * scale;
         var detailsWidth = (contentWidth - detailsGap) / 2;
         var detailsLayout = new Table
         {
@@ -135,25 +140,29 @@ public static class ModernInvoiceDocumentBuilder
             cellPadding,
             baseFont,
             detailsWidth - (detailsGap / 2),
-            new Thickness(detailsGap / 2, 0, 0, 0)));
+            new Thickness(detailsGap / 2, 0, 0, 0),
+            scale));
         detailsRow.Cells.Add(DetailsCard(
             invoiceRows,
             cellPadding,
             baseFont,
             detailsWidth - (detailsGap / 2),
-            new Thickness(0, 0, detailsGap / 2, 0)));
+            new Thickness(0, 0, detailsGap / 2, 0),
+            scale));
 
         detailsGroup.Rows.Add(detailsRow);
         detailsLayout.RowGroups.Add(detailsGroup);
         doc.Blocks.Add(detailsLayout);
 
         // ── جدول البنود والمجاميع ──
-        AddHeading(doc, hideAmounts ? "تفاصيل المواد" : "المبالغ الإجمالية", baseFont, compact);
+        AddHeading(doc, hideAmounts ? "تفاصيل المواد" : "المبالغ الإجمالية", baseFont, compact, scale);
 
-        var itemsTable = NewGridTable(new Thickness(0, compact ? 2 : 4, 0, 0));
+        var itemsTable = NewGridTable(ScaleThickness(new Thickness(0, compact ? 2 : 4, 0, 0), scale));
         var layout = InvoicePrintLayoutHelper.Resolve(m, compact);
         var columnTitles = InvoicePrintLayoutHelper.BuildColumnTitles(layout, currency);
-        var numericWidths = InvoicePrintLayoutHelper.BuildNumericWidths(layout);
+        var numericWidths = InvoicePrintLayoutHelper.BuildNumericWidths(layout)
+            .Select(w => w * scale)
+            .ToArray();
         itemsTable.Columns.Add(new TableColumn { Width = new GridLength(contentWidth - numericWidths.Sum()) });
         foreach (var width in numericWidths)
             itemsTable.Columns.Add(new TableColumn { Width = new GridLength(width) });
@@ -257,12 +266,20 @@ public static class ModernInvoiceDocumentBuilder
                 amountEntries.Add(("المتبقي", FormatNumber(m.RemainingAmount), false));
             }
 
-            AddCompactTotals(doc, amountEntries, contentWidth, compact, baseFont);
+            var customerBalance = m.GetCustomerOutstandingBalanceDisplay();
+            if (customerBalance is not null)
+                amountEntries.Add(("رصيد العميل (الباقي عليه)", customerBalance, false));
+
+            AddCompactTotals(doc, amountEntries, contentWidth, compact, baseFont, scale);
         }
 
         if (!string.IsNullOrWhiteSpace(m.Notes))
         {
-            var notes = new Paragraph { Margin = new Thickness(0, compact ? 6 : 10, 0, 0), FontSize = baseFont };
+            var notes = new Paragraph
+            {
+                Margin = ScaleThickness(new Thickness(0, compact ? 6 : 10, 0, 0), scale),
+                FontSize = baseFont
+            };
             notes.Inlines.Add(new Run("ملاحظات: ") { FontWeight = FontWeights.Bold });
             notes.Inlines.Add(new Run(m.Notes));
             doc.Blocks.Add(notes);
@@ -272,7 +289,7 @@ public static class ModernInvoiceDocumentBuilder
         var signatureTable = new Table
         {
             CellSpacing = 0,
-            Margin = new Thickness(0, compact ? 12 : 28, 0, 0)
+            Margin = ScaleThickness(new Thickness(0, compact ? 12 : 28, 0, 0), scale)
         };
         signatureTable.Columns.Add(new TableColumn { Width = new GridLength(contentWidth / 2) });
         signatureTable.Columns.Add(new TableColumn { Width = new GridLength(contentWidth / 2) });
@@ -287,7 +304,7 @@ public static class ModernInvoiceDocumentBuilder
                 FontSize = baseFont,
                 Margin = new Thickness(0)
             })
-            { Padding = new Thickness(0, 6, 0, 6) });
+            { Padding = ScaleThickness(new Thickness(0, 6, 0, 6), scale) });
         }
         signatureGroup.Rows.Add(signatureRow);
         signatureTable.RowGroups.Add(signatureGroup);
@@ -308,17 +325,21 @@ public static class ModernInvoiceDocumentBuilder
         BorderThickness = new Thickness(LineWidth)
     };
 
+    private static Thickness ScaleThickness(Thickness thickness, double scale) =>
+        new(thickness.Left * scale, thickness.Top * scale, thickness.Right * scale, thickness.Bottom * scale);
+
     private static TableCell DetailsCard(
         IReadOnlyList<(string Label, string Value)> rows,
         Thickness padding,
         double fontSize,
         double cardWidth,
-        Thickness outerPadding)
+        Thickness outerPadding,
+        double scale = 1.0)
     {
-        const double labelWidth = 105;
+        var labelWidth = 105 * scale;
         var card = NewGridTable(new Thickness(0));
         card.Columns.Add(new TableColumn { Width = new GridLength(labelWidth) });
-        card.Columns.Add(new TableColumn { Width = new GridLength(Math.Max(40, cardWidth - labelWidth)) });
+        card.Columns.Add(new TableColumn { Width = new GridLength(Math.Max(40 * scale, cardWidth - labelWidth)) });
 
         var group = new TableRowGroup();
         foreach (var (label, value) in rows)
@@ -355,11 +376,12 @@ public static class ModernInvoiceDocumentBuilder
         IReadOnlyList<(string Label, string Value, bool Emphasize)> entries,
         double contentWidth,
         bool compact,
-        double baseFont)
+        double baseFont,
+        double scale = 1.0)
     {
-        var fontSize = Math.Max(8.5, baseFont - 1.5);
-        var padding = compact ? new Thickness(4, 2, 4, 2) : new Thickness(5, 3, 5, 3);
-        var totalsWidth = Math.Min(contentWidth * 0.58, compact ? 360.0 : 400.0);
+        var fontSize = Math.Max(8.5 * scale, baseFont - (1.5 * scale));
+        var padding = ScaleThickness(compact ? new Thickness(4, 2, 4, 2) : new Thickness(5, 3, 5, 3), scale);
+        var totalsWidth = Math.Min(contentWidth * 0.58, (compact ? 360.0 : 400.0) * scale);
         var labelWidth = totalsWidth * 0.28;
         var valueWidth = totalsWidth * 0.22;
 
@@ -392,7 +414,7 @@ public static class ModernInvoiceDocumentBuilder
         var wrapper = new Table
         {
             CellSpacing = 0,
-            Margin = new Thickness(0, compact ? 6 : 8, 0, 0)
+            Margin = ScaleThickness(new Thickness(0, compact ? 6 : 8, 0, 0), scale)
         };
         wrapper.Columns.Add(new TableColumn { Width = new GridLength(contentWidth - totalsWidth) });
         wrapper.Columns.Add(new TableColumn { Width = new GridLength(totalsWidth) });
@@ -470,12 +492,12 @@ public static class ModernInvoiceDocumentBuilder
         return cell;
     }
 
-    private static void AddHeading(FlowDocument doc, string text, double baseFont, bool compact) =>
+    private static void AddHeading(FlowDocument doc, string text, double baseFont, bool compact, double scale = 1.0) =>
         doc.Blocks.Add(new Paragraph(new Run(text))
         {
-            FontSize = baseFont + 1.5,
+            FontSize = baseFont + (1.5 * scale),
             FontWeight = FontWeights.Bold,
-            Margin = new Thickness(0, compact ? 8 : 14, 0, compact ? 3 : 5)
+            Margin = ScaleThickness(new Thickness(0, compact ? 8 : 14, 0, compact ? 3 : 5), scale)
         });
 
     private static void AddBullet(FlowDocument doc, string label, string value, double baseFont)

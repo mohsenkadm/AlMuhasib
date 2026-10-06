@@ -70,7 +70,8 @@
                         Icon="CalendarClock"
                         IconBackground="{DynamicResource PrimaryHueLightBrush}"
                         IconForeground="#6A1B9A"
-                        ValueForeground="#6A1B9A"/>
+                        ValueForeground="#6A1B9A"
+                        Visibility="{Binding ShowInstallmentCard, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                 </UniformGrid>
 
                 <UniformGrid Columns="2" Margin="0,0,0,4">

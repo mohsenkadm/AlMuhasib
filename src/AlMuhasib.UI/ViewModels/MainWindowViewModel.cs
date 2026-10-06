@@ -347,6 +347,12 @@ public partial class MainWindowViewModel : ObservableObject
 
     private async Task EditInstallmentInvoiceAsync(int invoiceId)
     {
+        if (!_userPreferences.Current.FeatureFlags.Installments)
+        {
+            _toast.ShowWarning("فعّل ميزة الأقساط من إعدادات الميزات");
+            return;
+        }
+
         var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(InstallmentInvoiceViewModel));
         if (existing?.ViewModel is InstallmentInvoiceViewModel installmentVm)
         {

@@ -16,6 +16,7 @@ public partial class DashboardViewModel
     [ObservableProperty] private bool _showDashboardQuickPurchase = true;
     [ObservableProperty] private bool _showDashboardQuickInstallment = true;
     [ObservableProperty] private bool _showCollectionDashboard;
+    [ObservableProperty] private bool _showInstallmentStats = true;
     [ObservableProperty] private bool _showTodayPurchases = true;
     [ObservableProperty] private bool _showNetProfit = true;
     [ObservableProperty] private bool _showInvestorStats = true;
@@ -35,10 +36,12 @@ public partial class DashboardViewModel
     {
         // ملف العمل (كاشير/محاسب) يخصّص شريط المساعد السريع فقط.
         // لوحة التحكم تعرض كل الإحصائيات والإجراءات؛ الصلاحيات تحدّد الظهور.
+        var installmentsEnabled = _featureFlags.Installments;
         ShowDashboardQuickSales = _currentUserService.CanView("SaleInvoice");
         ShowDashboardQuickPurchase = _currentUserService.CanView("PurchaseInvoice");
-        ShowDashboardQuickInstallment = _currentUserService.CanView("InstallmentInvoice");
-        ShowCollectionDashboard = _currentUserService.CanView("Installments");
+        ShowDashboardQuickInstallment = installmentsEnabled && _currentUserService.CanView("InstallmentInvoice");
+        ShowCollectionDashboard = installmentsEnabled && _currentUserService.CanView("Installments");
+        ShowInstallmentStats = installmentsEnabled;
 
         ShowTodayPurchases = true;
         ShowNetProfit = true;

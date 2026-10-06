@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using AlMuhasib.Shared.Services;
 
 namespace AlMuhasib.UI.Services;
 
@@ -34,7 +35,7 @@ public static class PrintPreferences
                 return;
 
             PreferredPrinter = data.PreferredPrinter;
-            PaperSize = string.IsNullOrWhiteSpace(data.PaperSize) ? "A4" : data.PaperSize;
+            PaperSize = InvoicePaperSizes.Normalize(data.PaperSize);
             PosReceiptPaperSize = string.IsNullOrWhiteSpace(data.PosReceiptPaperSize)
                 ? "80mm"
                 : data.PosReceiptPaperSize;
@@ -57,6 +58,7 @@ public static class PrintPreferences
             var dir = Path.GetDirectoryName(SettingsPath)!;
             Directory.CreateDirectory(dir);
 
+            PaperSize = InvoicePaperSizes.Normalize(PaperSize);
             var data = new PrintSettingsData
             {
                 PreferredPrinter = PreferredPrinter,

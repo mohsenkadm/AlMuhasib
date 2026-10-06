@@ -44,6 +44,7 @@
                 <TextBlock Text="حجم الورق" FontWeight="SemiBold" Margin="0,0,0,6"/>
                 <ComboBox x:Name="PaperSizeCombo" Height="40" Margin="0,0,0,16">
                     <ComboBoxItem Content="A4" IsSelected="True"/>
+                    <ComboBoxItem Content="A5"/>
                     <ComboBoxItem Content="Letter"/>
                 </ComboBox>
 

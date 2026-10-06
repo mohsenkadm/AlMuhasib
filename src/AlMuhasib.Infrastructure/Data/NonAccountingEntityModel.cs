@@ -24,5 +24,6 @@ public static class NonAccountingEntityModel
 
         modelBuilder.Ignore<Branch>();
         modelBuilder.Ignore<UserBranch>();
+        modelBuilder.Ignore<ProductBranch>();
     }
 }

@@ -22,6 +22,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 {
     private readonly IInvoiceService _invoiceService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IProductService _productService;
     private readonly ICurrentUserService _currentUserService;
     private readonly INavigationService _navigationService;
     private readonly IExportService _exportService;
@@ -176,16 +177,22 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(InvoiceWarningsBanner))]
     [NotifyPropertyChangedFor(nameof(ShowCustomerAndPayment))]
+    [NotifyPropertyChangedFor(nameof(ShowConvertToSalesReturn))]
     private bool _isReturnMode;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(InvoiceWarningsBanner))]
     [NotifyPropertyChangedFor(nameof(ShowCustomerAndPayment))]
     [NotifyPropertyChangedFor(nameof(ShowCashBox))]
+    [NotifyPropertyChangedFor(nameof(ShowConvertToSalesReturn))]
     private bool _isDamageMode;
 
     /// <summary>إخفاء العميل وطريقة الدفع في وضع التلف.</summary>
     public bool ShowCustomerAndPayment => !IsDamageMode;
+
+    /// <summary>زر تحويل البيع إلى مرتجع مبيعات — يظهر فقط في وضع البيع مع تفعيل ميزة المرتجع.</summary>
+    public bool ShowConvertToSalesReturn =>
+        !IsReturnMode && !IsDamageMode && (_featureFlags?.SalesReturns ?? false);
 
     /// <summary>
     /// الصندوق يظهر للنقد دائماً، وللآجل أيضاً (دفعة مقدمة اختيارية) —
@@ -242,6 +249,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     public SalesInvoiceViewModel(
         IInvoiceService invoiceService,
         IUnitOfWork unitOfWork,
+        IProductService productService,
         ICurrentUserService currentUserService,
         INavigationService navigationService,
         IExportService exportService,
@@ -271,6 +279,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     {
         _invoiceService = invoiceService;
         _unitOfWork = unitOfWork;
+        _productService = productService;
         _currentUserService = currentUserService;
         _navigationService = navigationService;
         _exportService = exportService;
@@ -294,7 +303,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         ProductPicker = new ProductPickerViewModel(
             _unitOfWork,
             productPriceService,
-            userPreferences.Current.FeatureFlags.ProductPricingEnabled);
+            userPreferences.Current.FeatureFlags.ProductPricingEnabled,
+            productService);
         ProductPicker.Confirmed += OnProductPickerConfirmed;
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
         QuickSearchCatalog = new ProductQuickSearchCatalog(_unitOfWork, productPriceService);
@@ -637,6 +647,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         var source = await _invoiceService.GetByIdWithDetailsAsync(invoiceId);
         var refNumber = source?.InvoiceNumber ?? invoiceId.ToString();
         await CopyFromInvoiceAsync(invoiceId);
+        ClearEditingInvoiceId();
+        _savedInvoice = null;
+        _savedItems = [];
         _relatedInvoiceId = invoiceId;
         await EnterReturnModeAsync(refNumber);
 
@@ -646,6 +659,57 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         RecalculateTotals();
         RefreshInvoiceWarnings();
         BeautifulMessageDialog.ShowInfo("وضع المرتجع: راجع الكميات ثم احفظ لإرجاع البضاعة للمخزن واسترداد النقد.");
+    }
+
+    /// <summary>
+    /// تحويل سريع من فاتورة المبيعات الحالية إلى مرتجع مبيعات (نفس واجهة المرتجع).
+    /// لا يغيّر الفاتورة الأصلية — يجهّز مرتجعاً جديداً للحفظ.
+    /// </summary>
+    [RelayCommand]
+    private async Task ConvertToSalesReturnAsync()
+    {
+        if (!ShowConvertToSalesReturn)
+        {
+            BeautifulMessageDialog.ShowWarning("فعّل «مرتجع مبيعات» من إعدادات الميزات أولاً");
+            return;
+        }
+
+        if (IsReturnMode || IsDamageMode)
+            return;
+
+        var sourceId = _savedInvoice?.Id ?? _editingInvoiceId;
+        if (sourceId is int invoiceId)
+        {
+            if (!BeautifulMessageDialog.ShowConfirm(
+                    "تحويل هذه الفاتورة إلى مرتجع مبيعات؟\nستُنشأ فاتورة مرتجع جديدة بنفس البنود مرتبطة بالفاتورة الأصلية."))
+                return;
+
+            await LoadAsReturnFromInvoiceAsync(invoiceId);
+            OnPropertyChanged(nameof(ShowConvertToSalesReturn));
+            return;
+        }
+
+        if (!Items.Any(i => !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity != 0))
+        {
+            BeautifulMessageDialog.ShowWarning("أضف بنوداً أولاً أو حمّل فاتورة مبيعات قبل التحويل إلى مرتجع");
+            return;
+        }
+
+        if (!BeautifulMessageDialog.ShowConfirm(
+                "تحويل المسودة الحالية إلى مرتجع مبيعات؟\nستبقى نفس البنود والتفاصيل في وضع المرتجع."))
+            return;
+
+        ClearEditingInvoiceId();
+        _savedInvoice = null;
+        _savedItems = [];
+        IsSaved = false;
+
+        foreach (var row in Items.Where(i => i.Quantity != 0).ToList())
+            row.Quantity = Math.Abs(row.Quantity);
+
+        RecalculateTotals();
+        await EnterReturnModeAsync();
+        OnPropertyChanged(nameof(ShowConvertToSalesReturn));
     }
 
     partial void OnGrandTotalChanged(decimal value) => RefreshInvoiceWarnings();
@@ -1458,6 +1522,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             BeautifulMessageDialog.ShowSuccess(
                 $"تم حفظ {(IsDamageMode ? "فاتورة التلف" : IsReturnMode ? "مرتجع المبيعات" : "الفاتورة")} بنجاح\nرقم الفاتورة: {saved.InvoiceNumber}\nالمبلغ الكلي: {saved.NetAmount:N0} {CurrencyAmountSuffix}\n\nيمكنك الطباعة أو الإرسال عبر واتساب.");
 
+            // حدّث ذمة العميل بعد الحفظ حتى تظهر في الطباعة شاملة أثر هذه الفاتورة.
+            await RefreshCustomerBalanceAsync();
             PrintInvoice();
         }
         catch (Exception ex)
@@ -1624,6 +1690,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             PaidAmount = paidAmount,
             RemainingAmount = remainingAmount,
             GrandTotal = GrandTotal,
+            CustomerOutstandingBalance = CustomerOutstandingBalance,
+            CustomerOutstandingBalanceUsd = ShowMultiCurrency ? CustomerOutstandingBalanceUsd : null,
             ShowLineDiscount = ShowProductDiscount,
             PharmacyUsageReceipt = ShowPharmacyUsage,
             ShowCarShowroomFields = ShowCarShowroomContractPrint,
@@ -1776,7 +1844,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
     private async Task ReloadProductSearchCatalogAsync()
     {
-        var products = ProductSearchHelper.ActiveOnly(await _unitOfWork.Products.GetAllAsync())
+        var products = ProductSearchHelper.ActiveOnly(await _productService.GetVisibleInCurrentBranchAsync())
             .OrderBy(p => p.Name)
             .ToList();
         Products.Clear();

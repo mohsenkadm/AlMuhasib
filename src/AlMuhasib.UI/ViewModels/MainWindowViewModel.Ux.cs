@@ -60,6 +60,20 @@ public partial class MainWindowViewModel
 
         return item.ViewModelType switch
         {
+            var t when t == typeof(InstallmentInvoiceViewModel) => flags.Installments,
+            var t when t == typeof(CollectionDashboardViewModel) => flags.Installments,
+            var t when t == typeof(InstallmentsViewModel) => flags.Installments,
+            var t when t == typeof(PlatformDeductionSettlementViewModel) => flags.Installments,
+            var t when t == typeof(OpeningInstallmentBalanceViewModel) => flags.Installments,
+            var t when t == typeof(InstallmentAgingReportViewModel) => flags.Installments,
+            var t when t == typeof(InstallmentsReportViewModel) => flags.Installments,
+            var t when t == typeof(InstallmentDetailReportViewModel) => flags.Installments,
+            var t when t == typeof(PaidInstallmentsReportViewModel) => flags.Installments,
+            var t when t == typeof(UnpaidInstallmentsReportViewModel) => flags.Installments,
+            var t when t == typeof(OverdueReportViewModel) => flags.Installments,
+            var t when t == typeof(OpeningInstallmentBalancesReportViewModel) => flags.Installments,
+            var t when t == typeof(CompanyFeeReportViewModel) => flags.Installments,
+            var t when t == typeof(InstallmentScheduleReportViewModel) => flags.Installments,
             var t when t == typeof(WarehouseTransferViewModel) => flags.WarehouseTransfers,
             var t when t == typeof(WarehouseTransfersReportViewModel) => flags.WarehouseTransfers,
             var t when t == typeof(DriversViewModel) => flags.WarehouseInvoiceAndDriver,
@@ -94,6 +108,7 @@ public partial class MainWindowViewModel
     {
         var allOff = new BusinessFeatureFlags
         {
+            Installments = false,
             SettleCreditInvoicesInReports = false,
             InvestorProfitEligibility15Days = false
         };
@@ -316,6 +331,12 @@ public partial class MainWindowViewModel
 
         if (item.EntityHit.Kind == GlobalSearchKind.Installment)
         {
+            if (!_userPreferences.Current.FeatureFlags.Installments)
+            {
+                _toast.ShowWarning("فعّل ميزة الأقساط من إعدادات الميزات");
+                return;
+            }
+
             await QuickInstallmentsAsync();
             return;
         }
@@ -406,12 +427,28 @@ public partial class MainWindowViewModel
         await OpenVouchersAsync(VoucherType.Payment);
 
     [RelayCommand]
-    private async Task QuickInstallmentsAsync() =>
+    private async Task QuickInstallmentsAsync()
+    {
+        if (!_userPreferences.Current.FeatureFlags.Installments)
+        {
+            _toast.ShowWarning("فعّل ميزة الأقساط من إعدادات الميزات");
+            return;
+        }
+
         await OpenTabAsync(typeof(InstallmentsViewModel), "الأقساط", PackIconKind.CalendarClock);
+    }
 
     [RelayCommand]
-    private async Task QuickInstallmentInvoiceAsync() =>
+    private async Task QuickInstallmentInvoiceAsync()
+    {
+        if (!_userPreferences.Current.FeatureFlags.Installments)
+        {
+            _toast.ShowWarning("فعّل ميزة الأقساط من إعدادات الميزات");
+            return;
+        }
+
         await OpenTabAsync(typeof(InstallmentInvoiceViewModel), "فاتورة أقساط", PackIconKind.CalendarClock);
+    }
 
     private async Task OpenVouchersAsync(VoucherType type)
     {
@@ -498,6 +535,12 @@ public partial class MainWindowViewModel
 
     public async Task ExecuteDailyTaskAsync(SmartAlertAction action)
     {
+        if (IsInstallmentSmartAlert(action) && !_userPreferences.Current.FeatureFlags.Installments)
+        {
+            _toast.ShowWarning("فعّل ميزة الأقساط من إعدادات الميزات");
+            return;
+        }
+
         switch (action)
         {
             case SmartAlertAction.OpenInstallments:
@@ -574,6 +617,12 @@ public partial class MainWindowViewModel
                 break;
         }
     }
+
+    private static bool IsInstallmentSmartAlert(SmartAlertAction action) =>
+        action is SmartAlertAction.OpenInstallments
+            or SmartAlertAction.OpenCollectionDashboard
+            or SmartAlertAction.OpenOverdueReport
+            or SmartAlertAction.OpenInstallmentInvoiceQueue;
 
     private async Task OpenInvoiceQueueAsync(InvoiceQueueKind kind)
     {

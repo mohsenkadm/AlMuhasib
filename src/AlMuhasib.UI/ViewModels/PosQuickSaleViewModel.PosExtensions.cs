@@ -26,6 +26,17 @@ public partial class PosQuickSaleViewModel
 
     partial void OnIsInstallmentModeChanged(bool value)
     {
+        if (value && !_featureFlags.Installments)
+        {
+            BeautifulMessageDialog.ShowWarning("فعّل ميزة الأقساط من إعدادات الميزات");
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+            {
+                if (!_featureFlags.Installments)
+                    IsInstallmentMode = false;
+            });
+            return;
+        }
+
         if (value && PosCustomers.Count == 0)
             _ = LoadPosCustomersAsync();
     }
@@ -54,16 +65,44 @@ public partial class PosQuickSaleViewModel
         try
         {
             IsBusy = true;
+            var currency = PosDocumentCurrency;
+            var fxRate = await ResolveFxRateAsync(currency);
+            if (currency == AccountingCurrency.USD && fxRate <= 0)
+            {
+                BeautifulMessageDialog.ShowWarning("سعر الصرف مطلوب لتعليق فاتورة بالدولار.");
+                return;
+            }
+
+            // If resuming an existing hold, discard the old shell before creating a new one.
+            if (_activeHeldInvoiceId is int previousHeldId)
+            {
+                var previous = await _unitOfWork.Invoices.GetByIdAsync(previousHeldId);
+                if (previous is not null && previous.HoldStatus == InvoiceHoldStatus.Held)
+                {
+                    previous.HoldStatus = InvoiceHoldStatus.Completed;
+                    previous.MarkSoftDeleted(_currentUserService.Username ?? "pos");
+                    _unitOfWork.Invoices.Update(previous);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+                _activeHeldInvoiceId = null;
+            }
+
             var invoice = new Invoice
             {
                 InvoiceType = InvoiceType.Sale,
                 CustomerId = SelectedPosCustomer?.Id ?? _userPreferences.Current.DefaultSalesCustomerId,
                 WarehouseId = SelectedWarehouse.Id,
-                PaymentMethod = PaymentMethod.Cash,
+                // Credit + zero paid avoids cash-box movement while still storing CashBoxId for resume.
+                PaymentMethod = PaymentMethod.Credit,
+                PaidAmount = 0m,
+                CashBoxId = SelectedCashBox?.Id,
+                Currency = currency,
+                FxRate = fxRate,
                 Date = DateTime.Now,
                 DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
                 HoldStatus = InvoiceHoldStatus.Held,
                 HeldAt = DateTime.Now,
+                HoldNote = SelectedCashBox is null ? "فاتورة موقوفة POS" : $"POS-HOLD-CASHBOX:{SelectedCashBox.Id}",
                 Notes = "فاتورة موقوفة POS"
             };
             var items = CartLines.Select(l => new InvoiceItem
@@ -103,6 +142,7 @@ public partial class PosQuickSaleViewModel
         var held = await _unitOfWork.Invoices.FindAsync(i => i.HoldStatus == InvoiceHoldStatus.Held);
         foreach (var h in held.OrderByDescending(i => i.HeldAt))
             HeldInvoices.Add(h);
+        HeldInvoiceCount = HeldInvoices.Count;
     }
 
     private async Task CompleteInstallmentSaleCoreAsync()
@@ -110,6 +150,12 @@ public partial class PosQuickSaleViewModel
         if (!IsInstallmentMode)
         {
             await CompleteSaleCoreAsync(printReceipt: PrintAfterSale);
+            return;
+        }
+
+        if (!_featureFlags.Installments)
+        {
+            BeautifulMessageDialog.ShowWarning("فعّل ميزة الأقساط من إعدادات الميزات");
             return;
         }
 
@@ -135,8 +181,9 @@ public partial class PosQuickSaleViewModel
             return;
         }
 
-        var fxRate = await ResolveFxRateAsync(SelectedCashBox.Currency);
-        if (SelectedCashBox.Currency == AccountingCurrency.USD && fxRate <= 0)
+        var currency = PosDocumentCurrency;
+        var fxRate = await ResolveFxRateAsync(currency);
+        if (currency == AccountingCurrency.USD && fxRate <= 0)
         {
             BeautifulMessageDialog.ShowWarning("سعر الصرف مطلوب لبيع بالدولار. سجّل سعر الصرف اليومي أولاً.");
             return;
@@ -144,7 +191,7 @@ public partial class PosQuickSaleViewModel
 
         var check = await credit.CheckCreditAsync(
             SelectedPosCustomer.Id, GrandTotal, isInstallment: true,
-            SelectedCashBox.Currency, fxRate);
+            currency, fxRate);
         if (!check.IsAllowed)
         {
             BeautifulMessageDialog.ShowWarning(check.Message ?? "تجاوز حد الائتمان");
@@ -163,7 +210,7 @@ public partial class PosQuickSaleViewModel
                 WarehouseId = SelectedWarehouse.Id,
                 PaymentMethod = PaymentMethod.Cash,
                 CashBoxId = SelectedCashBox.Id,
-                Currency = SelectedCashBox.Currency,
+                Currency = currency,
                 FxRate = fxRate,
                 Date = DateTime.Now,
                 DiscountAmount = ShowProductDiscount ? InvoiceDiscountAmount : 0m,
@@ -189,10 +236,12 @@ public partial class PosQuickSaleViewModel
                 saved.NetAmount, InstallmentCount, DateTime.Today.AddMonths(1));
 
             LastSavedInvoiceNumber = saved.InvoiceNumber;
+            await DiscardActiveHeldInvoiceAsync();
             CartLines.Clear();
             PaidAmount = 0;
             StatusMessage = $"تقسيط — {saved.InvoiceNumber}";
             _sound.Play(SoundEffect.Success);
+            _ = LoadRecentInvoicesAsync();
 
             if (PrintAfterSale)
             {
