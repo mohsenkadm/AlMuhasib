@@ -1131,6 +1131,12 @@ public partial class CashBankViewModel : ViewModelBase
                 await _mainWindow.OpenTabAsync(typeof(ExpenseViewModel), "المصروفات", PackIconKind.CashMinus);
                 break;
             case "Installment":
+                if (!_featureFlags.Installments)
+                {
+                    BeautifulMessageDialog.ShowWarning("فعّل ميزة الأقساط من إعدادات الميزات");
+                    return;
+                }
+
                 await _mainWindow.OpenTabAsync(typeof(InstallmentsViewModel), "الأقساط", PackIconKind.CalendarClock);
                 break;
             case "Transfer":

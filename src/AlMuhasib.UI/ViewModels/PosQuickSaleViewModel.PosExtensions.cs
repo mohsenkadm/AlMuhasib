@@ -26,6 +26,17 @@ public partial class PosQuickSaleViewModel
 
     partial void OnIsInstallmentModeChanged(bool value)
     {
+        if (value && !_featureFlags.Installments)
+        {
+            BeautifulMessageDialog.ShowWarning("فعّل ميزة الأقساط من إعدادات الميزات");
+            System.Windows.Application.Current?.Dispatcher.BeginInvoke(() =>
+            {
+                if (!_featureFlags.Installments)
+                    IsInstallmentMode = false;
+            });
+            return;
+        }
+
         if (value && PosCustomers.Count == 0)
             _ = LoadPosCustomersAsync();
     }
@@ -110,6 +121,12 @@ public partial class PosQuickSaleViewModel
         if (!IsInstallmentMode)
         {
             await CompleteSaleCoreAsync(printReceipt: PrintAfterSale);
+            return;
+        }
+
+        if (!_featureFlags.Installments)
+        {
+            BeautifulMessageDialog.ShowWarning("فعّل ميزة الأقساط من إعدادات الميزات");
             return;
         }
 

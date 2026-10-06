@@ -27,6 +27,10 @@
             <MenuItem Header="فاتورة جديدة" Command="{Binding NewInvoiceCommand}">
                 <MenuItem.Icon><materialDesign:PackIcon Kind="FileDocumentPlusOutline" Width="16" Height="16"/></MenuItem.Icon>
             </MenuItem>
+            <MenuItem Header="مرتجع مبيعات" Command="{Binding ConvertToSalesReturnCommand}"
+                      Visibility="{Binding ShowConvertToSalesReturn, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="BackupRestore" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
             <Separator/>
             <MenuItem Header="اختيار المنتجات" Command="{Binding OpenProductPickerCommand}">
                 <MenuItem.Icon><materialDesign:PackIcon Kind="CartPlus" Width="16" Height="16"/></MenuItem.Icon>
@@ -1091,6 +1095,16 @@
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="Whatsapp" Width="18" Height="18" VerticalAlignment="Center" Foreground="#25D366"/>
                                         <TextBlock Text="واتساب" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding ConvertToSalesReturnCommand}" Style="{StaticResource OutlinedButton}"
+                                        Height="40" Padding="16,0" Margin="0,0,8,4"
+                                        materialDesign:ButtonAssist.CornerRadius="10"
+                                        Visibility="{Binding ShowConvertToSalesReturn, Converter={StaticResource BoolToVis}}"
+                                        ToolTip="تحويل الفاتورة الحالية إلى مرتجع مبيعات بنفس التفاصيل">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="BackupRestore" Width="18" Height="18" VerticalAlignment="Center"/>
+                                        <TextBlock Text="مرتجع مبيعات" Margin="6,0,0,0" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                                 <Button Command="{Binding SaveInvoiceCommand}" Style="{StaticResource SuccessButton}"

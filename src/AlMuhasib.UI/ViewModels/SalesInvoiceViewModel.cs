@@ -176,16 +176,22 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(InvoiceWarningsBanner))]
     [NotifyPropertyChangedFor(nameof(ShowCustomerAndPayment))]
+    [NotifyPropertyChangedFor(nameof(ShowConvertToSalesReturn))]
     private bool _isReturnMode;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(InvoiceWarningsBanner))]
     [NotifyPropertyChangedFor(nameof(ShowCustomerAndPayment))]
     [NotifyPropertyChangedFor(nameof(ShowCashBox))]
+    [NotifyPropertyChangedFor(nameof(ShowConvertToSalesReturn))]
     private bool _isDamageMode;
 
     /// <summary>إخفاء العميل وطريقة الدفع في وضع التلف.</summary>
     public bool ShowCustomerAndPayment => !IsDamageMode;
+
+    /// <summary>زر تحويل البيع إلى مرتجع مبيعات — يظهر فقط في وضع البيع مع تفعيل ميزة المرتجع.</summary>
+    public bool ShowConvertToSalesReturn =>
+        !IsReturnMode && !IsDamageMode && (_featureFlags?.SalesReturns ?? false);
 
     /// <summary>
     /// الصندوق يظهر للنقد دائماً، وللآجل أيضاً (دفعة مقدمة اختيارية) —
@@ -637,6 +643,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         var source = await _invoiceService.GetByIdWithDetailsAsync(invoiceId);
         var refNumber = source?.InvoiceNumber ?? invoiceId.ToString();
         await CopyFromInvoiceAsync(invoiceId);
+        ClearEditingInvoiceId();
+        _savedInvoice = null;
+        _savedItems = [];
         _relatedInvoiceId = invoiceId;
         await EnterReturnModeAsync(refNumber);
 
@@ -646,6 +655,57 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         RecalculateTotals();
         RefreshInvoiceWarnings();
         BeautifulMessageDialog.ShowInfo("وضع المرتجع: راجع الكميات ثم احفظ لإرجاع البضاعة للمخزن واسترداد النقد.");
+    }
+
+    /// <summary>
+    /// تحويل سريع من فاتورة المبيعات الحالية إلى مرتجع مبيعات (نفس واجهة المرتجع).
+    /// لا يغيّر الفاتورة الأصلية — يجهّز مرتجعاً جديداً للحفظ.
+    /// </summary>
+    [RelayCommand]
+    private async Task ConvertToSalesReturnAsync()
+    {
+        if (!ShowConvertToSalesReturn)
+        {
+            BeautifulMessageDialog.ShowWarning("فعّل «مرتجع مبيعات» من إعدادات الميزات أولاً");
+            return;
+        }
+
+        if (IsReturnMode || IsDamageMode)
+            return;
+
+        var sourceId = _savedInvoice?.Id ?? _editingInvoiceId;
+        if (sourceId is int invoiceId)
+        {
+            if (!BeautifulMessageDialog.ShowConfirm(
+                    "تحويل هذه الفاتورة إلى مرتجع مبيعات؟\nستُنشأ فاتورة مرتجع جديدة بنفس البنود مرتبطة بالفاتورة الأصلية."))
+                return;
+
+            await LoadAsReturnFromInvoiceAsync(invoiceId);
+            OnPropertyChanged(nameof(ShowConvertToSalesReturn));
+            return;
+        }
+
+        if (!Items.Any(i => !string.IsNullOrWhiteSpace(i.ItemName) && i.Quantity != 0))
+        {
+            BeautifulMessageDialog.ShowWarning("أضف بنوداً أولاً أو حمّل فاتورة مبيعات قبل التحويل إلى مرتجع");
+            return;
+        }
+
+        if (!BeautifulMessageDialog.ShowConfirm(
+                "تحويل المسودة الحالية إلى مرتجع مبيعات؟\nستبقى نفس البنود والتفاصيل في وضع المرتجع."))
+            return;
+
+        ClearEditingInvoiceId();
+        _savedInvoice = null;
+        _savedItems = [];
+        IsSaved = false;
+
+        foreach (var row in Items.Where(i => i.Quantity != 0).ToList())
+            row.Quantity = Math.Abs(row.Quantity);
+
+        RecalculateTotals();
+        await EnterReturnModeAsync();
+        OnPropertyChanged(nameof(ShowConvertToSalesReturn));
     }
 
     partial void OnGrandTotalChanged(decimal value) => RefreshInvoiceWarnings();

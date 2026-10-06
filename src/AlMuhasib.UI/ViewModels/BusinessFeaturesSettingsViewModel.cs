@@ -28,6 +28,9 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private string? _backupFolderPath;
     [ObservableProperty] private int _backupRetainCount = 7;
 
+    /// <summary>نظام الأقساط — مفعّل افتراضياً.</summary>
+    [ObservableProperty] private bool _installments = true;
+
     [ObservableProperty] private bool _purchaseReturns;
     [ObservableProperty] private bool _salesReturns;
     [ObservableProperty] private bool _warehouseTransfers;
@@ -82,7 +85,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
 
     public int EnabledFeaturesCount =>
         CountEnabled(InstallmentRemindersEnabled, ReminderPlaySound, ReminderShowBanner,
-            AutoBackupEnabled, PurchaseReturns, SalesReturns, WarehouseTransfers, UnitsOfMeasure, TransportFees,
+            AutoBackupEnabled, Installments, PurchaseReturns, SalesReturns, WarehouseTransfers, UnitsOfMeasure, TransportFees,
             MultiCurrency, WarehouseInvoiceAndDriver, MenuWeight,
             ExpiryTracking, SerialNumbers, ProductPricingEnabled, UpdateProductPriceOnPurchase,
             UpdateSalePriceOnPurchase, AddMissingProductsOnPurchase, PurchaseExpenses,
@@ -159,6 +162,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         BackupFolderPath = p.Backup.BackupFolderPath ?? _backupService.GetDefaultBackupDirectory();
         BackupRetainCount = p.Backup.RetainCount;
 
+        Installments = p.FeatureFlags.Installments;
         PurchaseReturns = p.FeatureFlags.PurchaseReturns;
         SalesReturns = p.FeatureFlags.SalesReturns;
         WarehouseTransfers = p.FeatureFlags.WarehouseTransfers;
@@ -208,6 +212,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnReminderPlaySoundChanged(bool value) => NotifyFeaturesCount();
     partial void OnReminderShowBannerChanged(bool value) => NotifyFeaturesCount();
     partial void OnAutoBackupEnabledChanged(bool value) => NotifyFeaturesCount();
+    partial void OnInstallmentsChanged(bool value) => NotifyFeaturesCount();
     partial void OnPurchaseReturnsChanged(bool value) => NotifyFeaturesCount();
     partial void OnSalesReturnsChanged(bool value) => NotifyFeaturesCount();
     partial void OnWarehouseTransfersChanged(bool value) => NotifyFeaturesCount();
@@ -269,6 +274,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.Backup.BackupFolderPath = BackupFolderPath;
             p.Backup.RetainCount = Math.Max(1, BackupRetainCount);
 
+            p.FeatureFlags.Installments = Installments;
             p.FeatureFlags.PurchaseReturns = PurchaseReturns;
             p.FeatureFlags.SalesReturns = SalesReturns;
             p.FeatureFlags.WarehouseTransfers = WarehouseTransfers;

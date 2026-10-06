@@ -7,6 +7,9 @@ public interface IFeatureFlagService
 {
     BusinessFeatureFlags Current { get; }
 
+    /// <summary>نظام الأقساط — مفعّل افتراضياً.</summary>
+    bool Installments { get; }
+
     bool PurchaseReturns { get; }
     bool SalesReturns { get; }
     bool WarehouseTransfers { get; }

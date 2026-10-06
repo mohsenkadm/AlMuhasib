@@ -37,7 +37,8 @@ public sealed class OfflineReminderService : IOfflineReminderService
 
     public void Start()
     {
-        if (_preferences.Current.Reminders.InstallmentRemindersEnabled
+        if ((_preferences.Current.FeatureFlags.Installments
+                && _preferences.Current.Reminders.InstallmentRemindersEnabled)
             || _preferences.Current.Reminders.RealEstateDebtRemindersEnabled)
             _timer.Start();
     }
@@ -63,7 +64,8 @@ public sealed class OfflineReminderService : IOfflineReminderService
             {
                 await CheckRealEstateDebtsAsync(scope.ServiceProvider, today);
             }
-            else if (_preferences.Current.Reminders.InstallmentRemindersEnabled)
+            else if (_preferences.Current.FeatureFlags.Installments
+                     && _preferences.Current.Reminders.InstallmentRemindersEnabled)
             {
                 await CheckInstallmentsAsync(scope.ServiceProvider, today);
             }

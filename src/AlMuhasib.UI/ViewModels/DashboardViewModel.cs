@@ -299,6 +299,7 @@ public partial class DashboardViewModel : ViewModelBase
             FeatureUiRefresh.Invoke(() =>
             {
                 ShowMultiCurrency = _featureFlags.MultiCurrency;
+                ApplyDashboardProfile();
                 NotifyUsdDisplayProperties();
             });
         ApplyDashboardProfile();
@@ -760,8 +761,16 @@ public partial class DashboardViewModel : ViewModelBase
         await _mainWindow.OpenTabAsync(typeof(PurchaseInvoiceViewModel), "فاتورة مشتريات", PackIconKind.CartArrowDown);
 
     [RelayCommand]
-    private async Task OpenInstallmentInvoiceAsync() =>
+    private async Task OpenInstallmentInvoiceAsync()
+    {
+        if (!_featureFlags.Installments)
+        {
+            BeautifulMessageDialog.ShowWarning("فعّل ميزة الأقساط من إعدادات الميزات");
+            return;
+        }
+
         await _mainWindow.OpenTabAsync(typeof(InstallmentInvoiceViewModel), "فاتورة أقساط", PackIconKind.CalendarClock);
+    }
 
     [RelayCommand]
     private async Task ExecuteDailyTaskAsync(DailyTaskItem? task)
@@ -775,8 +784,16 @@ public partial class DashboardViewModel : ViewModelBase
         await _mainWindow.QuickInstallmentsCommand.ExecuteAsync(null);
 
     [RelayCommand]
-    private async Task OpenCollectionDashboardAsync() =>
+    private async Task OpenCollectionDashboardAsync()
+    {
+        if (!_featureFlags.Installments)
+        {
+            BeautifulMessageDialog.ShowWarning("فعّل ميزة الأقساط من إعدادات الميزات");
+            return;
+        }
+
         await _mainWindow.OpenTabAsync(typeof(CollectionDashboardViewModel), "لوحة التحصيل", PackIconKind.CashMultiple);
+    }
 
     [RelayCommand]
     private async Task RefreshDashboardAsync()
@@ -916,7 +933,11 @@ public partial class DashboardViewModel : ViewModelBase
         foreach (var t in data.RecentTransactions) RecentTransactions.Add(t);
 
         UpcomingInstallments.Clear();
-        foreach (var i in data.UpcomingInstallments) UpcomingInstallments.Add(i);
+        if (_featureFlags.Installments)
+        {
+            foreach (var i in data.UpcomingInstallments)
+                UpcomingInstallments.Add(i);
+        }
 
         CashBoxes.Clear();
         foreach (var c in data.CashBoxes) CashBoxes.Add(c);
@@ -935,15 +956,22 @@ public partial class DashboardViewModel : ViewModelBase
         OnPropertyChanged(nameof(TotalCashBalanceUsdText));
         OnPropertyChanged(nameof(BankBalanceUsdText));
 
+        var installmentsOn = _featureFlags.Installments;
+        static bool IsInstallmentAlert(SmartAlertAction action) =>
+            action is SmartAlertAction.OpenInstallments
+                or SmartAlertAction.OpenCollectionDashboard
+                or SmartAlertAction.OpenOverdueReport
+                or SmartAlertAction.OpenInstallmentInvoiceQueue;
+
         SmartAlerts.Clear();
-        foreach (var a in alertSummary.Alerts)
+        foreach (var a in alertSummary.Alerts.Where(a => installmentsOn || !IsInstallmentAlert(a.Action)))
             SmartAlerts.Add(a);
 
         DailyTasks.Clear();
-        foreach (var t in alertSummary.DailyTasks)
+        foreach (var t in alertSummary.DailyTasks.Where(t => installmentsOn || !IsInstallmentAlert(t.Action)))
             DailyTasks.Add(t);
-        DailyTaskCount = alertSummary.TotalTaskCount;
-        SmartAlertCount = alertSummary.Alerts.Count;
+        DailyTaskCount = DailyTasks.Count;
+        SmartAlertCount = SmartAlerts.Count;
     }
 
     private Task RefreshChartsOnlyAsync()
