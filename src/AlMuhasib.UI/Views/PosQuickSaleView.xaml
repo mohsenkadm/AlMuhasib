@@ -941,7 +941,7 @@
                                                     <DataTrigger Value="True">
                                                         <DataTrigger.Binding>
                                                             <MultiBinding Converter="{StaticResource ObjectsEqual}">
-                                                                <Binding Path="DataContext.SelectedCashBox" ElementName=Root/>
+                                                                <Binding Path="DataContext.SelectedCashBox" ElementName="Root"/>
                                                                 <Binding Path="."/>
                                                             </MultiBinding>
                                                         </DataTrigger.Binding>
