@@ -50,6 +50,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private Warehouse? _selectedWarehouse;
     [ObservableProperty] private CashBox? _selectedCashBox;
+    // SelectedPosCurrency / FilteredCashBoxes / ShowMultiCurrency live in TouchUi partial.
     [ObservableProperty] private decimal _subTotal;
     [ObservableProperty] private decimal _invoiceDiscountAmount;
     [ObservableProperty] private DiscountType _invoiceDiscountType = DiscountType.None;
@@ -178,22 +179,32 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             foreach (var w in await _unitOfWork.Warehouses.GetAllAsync())
                 Warehouses.Add(w);
 
-            CashBoxes.Clear();
-            foreach (var c in await _unitOfWork.CashBoxes.GetAllAsync())
-                CashBoxes.Add(c);
+            RefreshMultiCurrencyVisibility();
+            SeedCashBoxes(await _unitOfWork.CashBoxes.GetAllAsync());
 
             var prefs = _userPreferences.Current;
             SelectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == prefs.DefaultPosWarehouseId)
                                 ?? Warehouses.FirstOrDefault();
-            SelectedCashBox = CashBoxes.FirstOrDefault(c => c.Id == prefs.DefaultPosCashBoxId)
-                              ?? CashBoxes.FirstOrDefault();
+
+            var preferredCash = _allCashBoxes.FirstOrDefault(c => c.Id == prefs.DefaultPosCashBoxId)
+                                ?? _allCashBoxes.FirstOrDefault();
+            if (preferredCash is not null && ShowMultiCurrency)
+                SelectedPosCurrency = preferredCash.Currency;
+            RefreshFilteredCashBoxes(preferKeepSelection: false);
+            if (preferredCash is not null &&
+                (!ShowMultiCurrency || preferredCash.Currency == SelectedPosCurrency))
+                SelectedCashBox = FilteredCashBoxes.FirstOrDefault(c => c.Id == preferredCash.Id)
+                                  ?? FilteredCashBoxes.FirstOrDefault();
 
             await LoadPosCustomersAsync();
             await LoadHeldInvoicesAsync();
+            await LoadBulkPricingTypesAsync();
+            await LoadRecentInvoicesAsync();
 
             RefreshFilteredProducts();
             RefreshFavoriteProducts();
             RefreshCurrencyAmountSuffix();
+            await RefreshFxAndEquivalentAsync();
         }
         finally
         {
@@ -223,18 +234,24 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     partial void OnSelectedCashBoxChanged(CashBox? value)
     {
         PersistPosDefaults();
+        if (!_suppressCashBoxCurrencySync && value is not null && ShowMultiCurrency
+            && value.Currency != SelectedPosCurrency)
+        {
+            SelectedPosCurrency = value.Currency;
+            return;
+        }
+
         RefreshCurrencyAmountSuffix();
         RefreshFilteredProducts();
         RefreshFavoriteProducts();
         RequoteCartForCashBoxCurrency();
+        _ = RefreshFxAndEquivalentAsync();
     }
 
     partial void OnPaidAmountChanged(decimal value) => RecalcChange();
 
     private AccountingCurrency PosDocumentCurrency =>
-        _featureFlags.MultiCurrency
-            ? (SelectedCashBox?.Currency ?? AccountingCurrency.IQD)
-            : AccountingCurrency.IQD;
+        ShowMultiCurrency ? SelectedPosCurrency : AccountingCurrency.IQD;
 
     private void RefreshCurrencyAmountSuffix()
     {
@@ -261,13 +278,11 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
     private void RequoteCartForCashBoxCurrency()
     {
-        if (!_featureFlags.MultiCurrency || !_pricingEnabled)
+        if (!ShowMultiCurrency)
             return;
 
         foreach (var line in CartLines.Where(l => !l.IsOfferGift && l.ProductId > 0))
-        {
             line.UnitPrice = ResolveSuggestedPrice(line.ProductId);
-        }
 
         RecalcCartTotals();
     }
@@ -342,6 +357,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         if (!BeautifulMessageDialog.ShowConfirm("مسح كل بنود السلة؟")) return;
         CartLines.Clear();
         PaidAmount = 0;
+        ClearActiveHeldInvoice();
         StatusMessage = "تم مسح السلة";
     }
 
@@ -680,6 +696,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             LastSavedInvoiceNumber = saved.InvoiceNumber;
 
             await ApplyPosFeatureSideEffectsOnSaveAsync(cartSnapshot, items);
+            await DiscardActiveHeldInvoiceAsync();
 
             _recentActivity.Record(
                 "بيع سريع",
@@ -698,6 +715,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 StatusMessage += $" — +{saved.LoyaltyPointsEarned} نقطة ولاء";
             _sound.Play(SoundEffect.Success);
             _ = RefreshLoyaltyQuoteAsync();
+            _ = LoadRecentInvoicesAsync();
 
             if (printReceipt)
             {
@@ -832,6 +850,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             Math.Max(0m, SubTotal - InvoiceDiscountAmount - loyaltyDiscount), currency);
         CartLineCount = CartLines.Count;
         RecalcChange();
+        RefreshIqdEquivalentOnly();
     }
 
     private void RecalcChange()
