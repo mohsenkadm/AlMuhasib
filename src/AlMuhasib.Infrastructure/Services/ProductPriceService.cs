@@ -10,13 +10,16 @@ public class ProductPriceService : IProductPriceService
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IBranchContext _branchContext;
 
     public ProductPriceService(
         IDbContextFactory<AppDbContext> contextFactory,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IBranchContext branchContext)
     {
         _contextFactory = contextFactory;
         _currentUserService = currentUserService;
+        _branchContext = branchContext;
     }
 
     public async Task<bool> ExistsAsync(int productId, int pricingTypeId, int? excludeId = null)
@@ -128,6 +131,13 @@ public class ProductPriceService : IProductPriceService
             .ThenInclude(p => p.Category)
             .Include(p => p.PricingType)
             .AsQueryable();
+
+        if (_branchContext.CurrentBranchId is int branchId && !_branchContext.IsAllBranchesMode)
+        {
+            query = query.Where(p =>
+                context.ProductBranches.Any(pb => pb.ProductId == p.ProductId && pb.BranchId == branchId)
+                || !context.ProductBranches.Any(pb => pb.ProductId == p.ProductId));
+        }
 
         if (productId.HasValue)
             query = query.Where(p => p.ProductId == productId.Value);

@@ -40,7 +40,7 @@ public class ProductBranchVisibilityTests
         public AppDbContext CreateDbContext() => new(_options, null, _branchContext);
     }
 
-    private static (SharedDbContextFactory Factory, ProductService Service) Create()
+    private static (SharedDbContextFactory Factory, ProductService Service, BranchContext Branch) Create()
     {
         var branch = new BranchContext();
         branch.SetAllowedBranches([1, 2], false, false);
@@ -51,13 +51,13 @@ public class ProductBranchVisibilityTests
             .Options;
         var factory = new SharedDbContextFactory(options, branch);
         var service = new ProductService(factory, new FakeUser(), branch);
-        return (factory, service);
+        return (factory, service, branch);
     }
 
     [Fact]
     public async Task Product_visible_only_in_assigned_branches()
     {
-        var (factory, service) = Create();
+        var (factory, service, branchCtx) = Create();
         int mainId;
         int secondaryId;
         int categoryId;
@@ -98,12 +98,21 @@ public class ProductBranchVisibilityTests
 
         Assert.DoesNotContain(inMain, p => p.Id == product.Id);
         Assert.Contains(inSecondary, p => p.Id == product.Id);
+
+        // GetPagedAsync يحترم الفرع الحالي للجلسة
+        branchCtx.SetCurrentBranch(mainId, "رئيسي", "MAIN");
+        var (pagedMain, _) = await service.GetPagedAsync(1, 50);
+        Assert.DoesNotContain(pagedMain, p => p.Id == product.Id);
+
+        branchCtx.SetCurrentBranch(secondaryId, "فرعي", "B2");
+        var (pagedSecondary, _) = await service.GetPagedAsync(1, 50);
+        Assert.Contains(pagedSecondary, p => p.Id == product.Id);
     }
 
     [Fact]
     public async Task Create_links_product_to_main_branch_by_default()
     {
-        var (factory, service) = Create();
+        var (factory, service, _) = Create();
         int mainId;
         int categoryId;
 

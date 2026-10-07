@@ -154,9 +154,13 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
             return;
         }
 
+        // لا تستخدم SaveChanges() المتزامن — يسبب تجمّد الواجهة عبر sync-over-async.
         using var context = _contextFactory.CreateDbContext();
         context.Set<T>().Update(entity);
-        context.SaveChanges();
+        context.SaveChangesAsync()
+            .ConfigureAwait(false)
+            .GetAwaiter()
+            .GetResult();
     }
 
     public void SoftDelete(T entity, string deletedBy)
@@ -173,7 +177,10 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
         using var context = _contextFactory.CreateDbContext();
         context.Set<T>().Attach(entity);
         context.Entry(entity).State = EntityState.Modified;
-        context.SaveChanges();
+        context.SaveChangesAsync()
+            .ConfigureAwait(false)
+            .GetAwaiter()
+            .GetResult();
     }
 
     public async Task<T?> FindSoftDeletedFirstAsync(Expression<Func<T, bool>> predicate)

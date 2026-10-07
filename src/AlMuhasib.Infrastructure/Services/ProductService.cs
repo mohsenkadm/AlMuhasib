@@ -141,6 +141,10 @@ public class ProductService : IProductService
             .Include(p => p.Category)
             .AsQueryable();
 
+        // عند فرع تشغيلي محدد: أخفِ المنتجات غير المربوطة بهذا الفرع.
+        if (_branchContext.CurrentBranchId is int currentBranchId && !_branchContext.IsAllBranchesMode)
+            query = ApplyVisibleInBranchFilter(query, context, currentBranchId);
+
         if (categoryId.HasValue)
             query = query.Where(p => p.CategoryId == categoryId.Value);
 
@@ -359,14 +363,22 @@ public class ProductService : IProductService
     {
         await using var context = await _contextFactory.CreateDbContextAsync(ct);
         // منتجات لها ربط بالفرع، أو بلا أي ربط (توافق مع بيانات قديمة قبل الجدول).
-        return await context.Products
-            .Include(p => p.Category)
-            .Where(p =>
-                context.ProductBranches.Any(pb => pb.ProductId == p.Id && pb.BranchId == branchId)
-                || !context.ProductBranches.Any(pb => pb.ProductId == p.Id))
+        return await ApplyVisibleInBranchFilter(
+                context.Products.Include(p => p.Category),
+                context,
+                branchId)
             .OrderBy(p => p.Name)
             .ToListAsync(ct);
     }
+
+    /// <summary>منتجات مربوطة بالفرع، أو بلا أي ربط (توافق قديم).</summary>
+    private static IQueryable<Product> ApplyVisibleInBranchFilter(
+        IQueryable<Product> query,
+        AppDbContext context,
+        int branchId) =>
+        query.Where(p =>
+            context.ProductBranches.Any(pb => pb.ProductId == p.Id && pb.BranchId == branchId)
+            || !context.ProductBranches.Any(pb => pb.ProductId == p.Id));
 
     public async Task<IReadOnlyList<Product>> GetVisibleInCurrentBranchAsync(CancellationToken ct = default)
     {

@@ -23,6 +23,7 @@ public partial class OpeningStockViewModel : ViewModelBase
     private readonly IUserPreferencesService _userPreferences;
     private readonly IProductPriceService _productPriceService;
     private readonly IPricingTypeService _pricingTypeService;
+    private readonly IProductService _productService;
     private readonly List<OpeningStockRow> _allRows = [];
     private bool _initialized;
     private bool _suppressPricingTypeReload;
@@ -81,7 +82,8 @@ public partial class OpeningStockViewModel : ViewModelBase
         IOpeningStockExcelService excelService,
         IUserPreferencesService userPreferences,
         IProductPriceService productPriceService,
-        IPricingTypeService pricingTypeService)
+        IPricingTypeService pricingTypeService,
+        IProductService productService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
@@ -89,6 +91,7 @@ public partial class OpeningStockViewModel : ViewModelBase
         _userPreferences = userPreferences;
         _productPriceService = productPriceService;
         _pricingTypeService = pricingTypeService;
+        _productService = productService;
         PageTitle = "الأرصدة الافتتاحية للمنتجات";
     }
 
@@ -105,9 +108,9 @@ public partial class OpeningStockViewModel : ViewModelBase
             foreach (var w in warehouses)
                 Warehouses.Add(w);
 
-            var products = await _unitOfWork.Products.GetAllAsync();
+            var products = await _productService.GetVisibleInCurrentBranchAsync();
             Products.Clear();
-            foreach (var p in products)
+            foreach (var p in products.OrderBy(x => x.Name))
                 Products.Add(p);
 
             await EnsurePricingTypesLoadedAsync();

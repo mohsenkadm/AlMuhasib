@@ -137,6 +137,10 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
         try
         {
             IsBusy = true;
+
+            // احفظ حجم الورق/الطابعة أولاً (ملف محلي) حتى لا يضيع اختيار A5 إن تعثّر حفظ الهوية.
+            SavePrinterPreferences();
+
             var settings = new PrintBrandingSettings
             {
                 Id = _settingsId,
@@ -158,9 +162,8 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
                 UpdatedBy = _currentUserService.Username
             };
 
-            await _brandingService.SaveAsync(settings);
-            _settingsId = settings.Id;
-            SavePrinterPreferences();
+            await _brandingService.SaveAsync(settings).ConfigureAwait(true);
+            _settingsId = settings.Id > 0 ? settings.Id : _settingsId;
             IsSaved = true;
             StatusMessage = "تم حفظ الإعدادات — ستُطبَّق على جميع الطباعات.";
             BeautifulMessageDialog.ShowSuccess("تم حفظ إعدادات الطباعة بنجاح.");
@@ -253,8 +256,16 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
     private void LoadPrinterPreferences()
     {
         AvailablePrinters.Clear();
-        foreach (var queue in new LocalPrintServer().GetPrintQueues())
-            AvailablePrinters.Add(queue.FullName);
+        try
+        {
+            // GetPrintQueues قد يتجمّد مع spooler معطوب — لا تُسقط الشاشة.
+            foreach (var queue in new LocalPrintServer().GetPrintQueues())
+                AvailablePrinters.Add(queue.FullName);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[PrintSettings] Printer enumeration failed: {ex.Message}");
+        }
 
         PrintPreferences.Load();
         SelectedPrinter = PrintPreferences.PreferredPrinter;

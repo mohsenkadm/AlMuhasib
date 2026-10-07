@@ -22,6 +22,7 @@ public partial class ProductPricingViewModel : ViewModelBase
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IFeatureFlagService _featureFlags;
+    private readonly IProductService _productService;
 
     public ObservableCollection<ProductPriceEditRow> Rows { get; } = [];
     public ObservableCollection<Product> Products { get; } = [];
@@ -56,7 +57,8 @@ public partial class ProductPricingViewModel : ViewModelBase
         IUnitOfWork unitOfWork,
         IExportService exportService,
         ICurrentUserService currentUserService,
-        IFeatureFlagService featureFlags)
+        IFeatureFlagService featureFlags,
+        IProductService productService)
     {
         _productPriceService = productPriceService;
         _pricingTypeService = pricingTypeService;
@@ -64,6 +66,7 @@ public partial class ProductPricingViewModel : ViewModelBase
         _exportService = exportService;
         _currentUserService = currentUserService;
         _featureFlags = featureFlags;
+        _productService = productService;
         PageTitle = "تسعير منتجات";
         ShowMultiCurrency = _featureFlags.MultiCurrency;
         _featureFlags.FlagsChanged += (_, _) =>
@@ -90,7 +93,7 @@ public partial class ProductPricingViewModel : ViewModelBase
     private async Task LoadLookupsAsync()
     {
         Products.Clear();
-        foreach (var p in (await _unitOfWork.Products.GetAllAsync()).OrderBy(p => p.Name))
+        foreach (var p in (await _productService.GetVisibleInCurrentBranchAsync()).OrderBy(p => p.Name))
             Products.Add(p);
 
         PricingTypes.Clear();

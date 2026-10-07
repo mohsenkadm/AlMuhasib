@@ -35,8 +35,19 @@ public class PrintBrandingService : IPrintBrandingService
             CreatedAt = DateTime.UtcNow
         };
 
-        await _unitOfWork.PrintBrandingSettings.AddAsync(created);
-        await _unitOfWork.SaveChangesAsync();
+        await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+            await _unitOfWork.PrintBrandingSettings.AddAsync(created);
+            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.CommitTransactionAsync();
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            throw;
+        }
+
         return created;
     }
 
@@ -50,28 +61,40 @@ public class PrintBrandingService : IPrintBrandingService
     {
         settings.UpdatedAt = DateTime.UtcNow;
 
-        var existing = await GetSingletonAsync();
-        PrintBrandingSettings saved;
-
-        if (existing is null)
+        // معاملة نشطة تمنع Repository.Update من استدعاء SaveChanges المتزامن على خيط الواجهة.
+        await _unitOfWork.BeginTransactionAsync();
+        try
         {
-            settings.Id = 0;
-            if (settings.BranchId <= 0 && _branchContext?.HasWriteBranchContext == true)
-                settings.BranchId = _branchContext.CurrentBranchId!.Value;
-            await _unitOfWork.PrintBrandingSettings.AddAsync(settings);
-            saved = settings;
-        }
-        else
-        {
-            CopySettings(settings, existing);
-            existing.UpdatedAt = settings.UpdatedAt;
-            existing.UpdatedBy = settings.UpdatedBy;
-            _unitOfWork.PrintBrandingSettings.Update(existing);
-            saved = existing;
-        }
+            var existing = await GetSingletonAsync();
+            PrintBrandingSettings saved;
 
-        await _unitOfWork.SaveChangesAsync();
-        PrintBrandingProvider.Update(ToSnapshot(saved));
+            if (existing is null)
+            {
+                settings.Id = 0;
+                if (settings.BranchId <= 0 && _branchContext?.HasWriteBranchContext == true)
+                    settings.BranchId = _branchContext.CurrentBranchId!.Value;
+                await _unitOfWork.PrintBrandingSettings.AddAsync(settings);
+                saved = settings;
+            }
+            else
+            {
+                CopySettings(settings, existing);
+                existing.UpdatedAt = settings.UpdatedAt;
+                existing.UpdatedBy = settings.UpdatedBy;
+                // الكيان متتبَّع داخل سياق المعاملة — لا تستدعِ Update() المنفصل.
+                saved = existing;
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.CommitTransactionAsync();
+            settings.Id = saved.Id;
+            PrintBrandingProvider.Update(ToSnapshot(saved));
+        }
+        catch
+        {
+            await _unitOfWork.RollbackTransactionAsync();
+            throw;
+        }
     }
 
     public async Task RefreshProviderAsync()

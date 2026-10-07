@@ -311,14 +311,17 @@ public partial class ProductsViewModel : ViewModelBase
 
                 if (requestId != _loadRequestId) return;
 
-                var filtered = ColumnFilterEngine.Apply(allItems, ColumnFilters).ToList();
+                var allList = allItems as IList<Product> ?? allItems.ToList();
+                // أسماء الفروع قبل الربط بالواجهة — Product لا يُبلّغ PropertyChanged.
+                await ApplyBranchNamesAsync(allList);
+
+                var filtered = ColumnFilterEngine.Apply(allList, ColumnFilters).ToList();
                 MasterDataColumnFilterHelper.ApplyClientPagination(
                     filtered, Products, CurrentPage, PageSize,
                     out var filteredTotal, out var filteredPages, out var filteredText);
                 TotalCount = filteredTotal;
                 TotalPages = filteredPages;
                 PaginationText = filteredText;
-                await ApplyBranchNamesAsync(Products);
                 await RebuildProductCardsAsync(Products);
                 return;
             }
@@ -338,12 +341,14 @@ public partial class ProductsViewModel : ViewModelBase
             TotalPages = PaginationHelper.ComputeTotalPages(totalCount, PageSize);
             PaginationText = PaginationHelper.BuildPaginationText(totalCount, CurrentPage, PageSize);
 
+            var pageItems = items as IList<Product> ?? items.ToList();
+            await ApplyBranchNamesAsync(pageItems);
+
             Products.Clear();
-            foreach (var p in items)
+            foreach (var p in pageItems)
                 Products.Add(p);
 
-            await ApplyBranchNamesAsync(Products);
-            await RebuildProductCardsAsync(items);
+            await RebuildProductCardsAsync(pageItems);
         }
         finally
         {

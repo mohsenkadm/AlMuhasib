@@ -340,8 +340,18 @@ public class AppDbContext : DbContext
             nameof(BaseEntity.CreatedAt), nameof(BaseEntity.CreatedBy),
             nameof(BaseEntity.UpdatedAt), nameof(BaseEntity.UpdatedBy),
             nameof(BaseEntity.DeletedAt), nameof(BaseEntity.DeletedBy),
-            nameof(BaseEntity.IsDeleted)
+            nameof(BaseEntity.IsDeleted),
+            "HeaderImageData",
+            "FooterImageData"
         ];
+
+        private static bool ShouldSkipProperty(Microsoft.EntityFrameworkCore.ChangeTracking.PropertyEntry prop)
+        {
+            if (_excludedProps.Contains(prop.Metadata.Name)) return true;
+            if (prop.Metadata.IsPrimaryKey()) return true;
+            var clr = Nullable.GetUnderlyingType(prop.Metadata.ClrType) ?? prop.Metadata.ClrType;
+            return clr == typeof(byte[]);
+        }
 
         public EntityEntry Entry { get; }
         public AuditAction Action { get; }
@@ -376,8 +386,7 @@ public class AppDbContext : DbContext
                     var dict = new Dictionary<string, object?>();
                     foreach (var prop in Entry.Properties)
                     {
-                        if (_excludedProps.Contains(prop.Metadata.Name)) continue;
-                        if (prop.Metadata.IsPrimaryKey()) continue;
+                        if (ShouldSkipProperty(prop)) continue;
                         dict[prop.Metadata.Name] = prop.CurrentValue;
                     }
                     newValues = JsonSerializer.Serialize(dict, _jsonOptions);
@@ -389,8 +398,7 @@ public class AppDbContext : DbContext
                     var newDict = new Dictionary<string, object?>();
                     foreach (var prop in Entry.Properties)
                     {
-                        if (_excludedProps.Contains(prop.Metadata.Name)) continue;
-                        if (prop.Metadata.IsPrimaryKey()) continue;
+                        if (ShouldSkipProperty(prop)) continue;
                         if (!prop.IsModified) continue;
                         oldDict[prop.Metadata.Name] = prop.OriginalValue;
                         newDict[prop.Metadata.Name] = prop.CurrentValue;
@@ -405,8 +413,7 @@ public class AppDbContext : DbContext
                     var dict = new Dictionary<string, object?>();
                     foreach (var prop in Entry.Properties)
                     {
-                        if (_excludedProps.Contains(prop.Metadata.Name)) continue;
-                        if (prop.Metadata.IsPrimaryKey()) continue;
+                        if (ShouldSkipProperty(prop)) continue;
                         dict[prop.Metadata.Name] = prop.OriginalValue;
                     }
                     oldValues = JsonSerializer.Serialize(dict, _jsonOptions);

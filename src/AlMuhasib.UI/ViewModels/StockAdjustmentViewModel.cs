@@ -12,6 +12,7 @@ public partial class StockAdjustmentViewModel : ViewModelBase
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IProductService _productService;
     private bool _initialized;
 
     public ObservableCollection<StockAdjustmentRow> Rows { get; } = [];
@@ -26,10 +27,14 @@ public partial class StockAdjustmentViewModel : ViewModelBase
     [ObservableProperty]
     private int _changedCount;
 
-    public StockAdjustmentViewModel(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public StockAdjustmentViewModel(
+        IUnitOfWork unitOfWork,
+        ICurrentUserService currentUserService,
+        IProductService productService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _productService = productService;
         PageTitle = "تسوية مخزنية";
     }
 
@@ -68,13 +73,13 @@ public partial class StockAdjustmentViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            var products = await _unitOfWork.Products.GetAllAsync();
+            var products = await _productService.GetVisibleInCurrentBranchAsync();
             var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
                 s => s.WarehouseId == SelectedWarehouse.Id);
             var stockDict = stocks.ToDictionary(s => s.ProductId);
 
             Rows.Clear();
-            foreach (var product in products)
+            foreach (var product in products.OrderBy(p => p.Name))
             {
                 stockDict.TryGetValue(product.Id, out var stock);
                 var current = stock?.Quantity ?? 0;
