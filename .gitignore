@@ -369,3 +369,7 @@ FodyWeavers.xsd
 # Desktop license private key (never commit)
 src/AlMuhasib.Admin/appsettings.DesktopLicense.json
 
+# Qaid Telegram bot local SQLite
+**/qaid-telegram-bot.db
+**/qaid-telegram-bot.db-*
+
