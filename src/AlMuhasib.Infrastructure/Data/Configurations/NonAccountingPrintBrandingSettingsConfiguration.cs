@@ -2,12 +2,14 @@ using AlMuhasib.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace AlMuhasib.Infrastructure.Data.Car.Configurations;
+namespace AlMuhasib.Infrastructure.Data.Configurations;
 
 /// <summary>
-/// إعدادات الطباعة لقاعدة عقود السيارات فقط — بدون BranchId (الكيان يرث BranchScopedEntity للمحاسبة).
+/// إعدادات الطباعة للأنظمة غير المحاسبية — بدون BranchId
+/// (الكيان يرث BranchScopedEntity للمحاسبة فقط).
 /// </summary>
-public sealed class CarPrintBrandingSettingsConfiguration : IEntityTypeConfiguration<PrintBrandingSettings>
+public sealed class NonAccountingPrintBrandingSettingsConfiguration
+    : IEntityTypeConfiguration<PrintBrandingSettings>
 {
     public void Configure(EntityTypeBuilder<PrintBrandingSettings> builder)
     {

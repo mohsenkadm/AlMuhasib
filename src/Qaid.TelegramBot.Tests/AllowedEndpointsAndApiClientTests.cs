@@ -83,4 +83,34 @@ public class AllowedEndpointsAndApiClientTests
         Assert.DoesNotContain(names, n => n.Contains("Push", StringComparison.OrdinalIgnoreCase));
         Assert.Contains("GetDailySalesAsync", names);
     }
+
+    [Fact]
+    public async Task LoginAsync_deserializes_cloud_auth_shape()
+    {
+        var mock = new MockHttpMessageHandler();
+        mock.When(HttpMethod.Post, "https://api.test/api/auth/login")
+            .Respond("application/json", """
+                {
+                  "accessToken":"tok",
+                  "refreshToken":"ref",
+                  "accessTokenExpiresAt":"2026-10-09T22:25:10.0391207Z",
+                  "tenantId":11,
+                  "companyName":"branch",
+                  "tenantName":"branch",
+                  "applicationSystemType":0,
+                  "isMobileEnabled":true,
+                  "allowedBranches":[{"branchId":10,"syncId":"00000000-0000-0000-0000-000000000001","name":"main","code":"M","isMain":true,"isDefault":true}],
+                  "defaultBranchId":10,
+                  "requiresBranchSelection":false,
+                  "currentBranchId":10
+                }
+                """);
+
+        var client = TestHelpers.CreateApiClient(mock);
+        var login = await client.LoginAsync("test5", "test5", CancellationToken.None);
+        Assert.Equal(11, login.TenantId);
+        Assert.Equal("tok", login.AccessToken);
+        Assert.Equal(10, login.CurrentBranchId);
+        Assert.Single(login.AllowedBranches);
+    }
 }

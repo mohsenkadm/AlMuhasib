@@ -2,13 +2,14 @@ using AlMuhasib.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace AlMuhasib.Infrastructure.Data.Car.Configurations;
+namespace AlMuhasib.Infrastructure.Data.Configurations;
 
 /// <summary>
-/// إعداد AuditLog لقاعدة عقود السيارات فقط — بدون BranchId/IpAddress (غير موجودة في مخطط Car).
-/// لا تستخدم إعداد المحاسبة المشترك <see cref="Configurations.AuditLogConfiguration"/>.
+/// AuditLog للأنظمة غير المحاسبية — بدون BranchId/IpAddress/DeviceInfo.
+/// لا تستخدم <see cref="AuditLogConfiguration"/> هنا وإلا يُسحب كيان Branch
+/// ومعه مخطط المحاسبة بالكامل عبر تنقلات Branch.
 /// </summary>
-public sealed class CarAuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
+public sealed class NonAccountingAuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 {
     public void Configure(EntityTypeBuilder<AuditLog> builder)
     {

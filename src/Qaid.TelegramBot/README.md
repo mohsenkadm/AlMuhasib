@@ -11,6 +11,8 @@
 
 ## التشغيل
 
+> **مهم:** لا تضع `QaidApi:BaseUrl` في `appsettings.Development.json` يشير إلى `localhost` إلا إذا كان الـ API يعمل محلياً فعلاً. وإلا صفحة `/link` تظهر «تعذّر الاتصال بخدمة قيد» رغم أن Swagger يعمل على السيرفر.
+
 1. انسخ `appsettings.Example.json` وعدّل القيم، أو استخدم User Secrets / متغيرات البيئة:
 
 ```bash

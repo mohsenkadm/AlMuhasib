@@ -39,10 +39,12 @@ public class RealEstateDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        NonAccountingEntityModel.BlockAccountingGraphDiscovery(modelBuilder);
+
         modelBuilder.ApplyConfiguration(new UserConfiguration());
         modelBuilder.ApplyConfiguration(new PermissionConfiguration());
-        modelBuilder.ApplyConfiguration(new AuditLogConfiguration());
-        modelBuilder.ApplyConfiguration(new PrintBrandingSettingsConfiguration());
+        modelBuilder.ApplyConfiguration(new NonAccountingAuditLogConfiguration());
+        modelBuilder.ApplyConfiguration(new NonAccountingPrintBrandingSettingsConfiguration());
         modelBuilder.ApplyConfiguration(new RealEstateContractConfiguration());
         modelBuilder.ApplyConfiguration(new RealEstateContractPaymentConfiguration());
         modelBuilder.ApplyConfiguration(new RealEstateContractClauseConfiguration());

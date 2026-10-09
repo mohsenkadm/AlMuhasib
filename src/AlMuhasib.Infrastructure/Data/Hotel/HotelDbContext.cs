@@ -61,10 +61,12 @@ public class HotelDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        NonAccountingEntityModel.BlockAccountingGraphDiscovery(modelBuilder);
+
         modelBuilder.ApplyConfiguration(new UserConfiguration());
         modelBuilder.ApplyConfiguration(new PermissionConfiguration());
-        modelBuilder.ApplyConfiguration(new AuditLogConfiguration());
-        modelBuilder.ApplyConfiguration(new PrintBrandingSettingsConfiguration());
+        modelBuilder.ApplyConfiguration(new NonAccountingAuditLogConfiguration());
+        modelBuilder.ApplyConfiguration(new NonAccountingPrintBrandingSettingsConfiguration());
         modelBuilder.ApplyConfiguration(new HotelSettingsConfiguration());
         modelBuilder.ApplyConfiguration(new FloorConfiguration());
         modelBuilder.ApplyConfiguration(new RoomTypeConfiguration());

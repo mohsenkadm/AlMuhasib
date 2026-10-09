@@ -35,10 +35,12 @@ public static class DependencyInjection
         services.AddScoped<ITelegramBotGateway, TelegramBotGateway>();
 
         var apiOptions = configuration.GetSection(QaidApiOptions.SectionName).Get<QaidApiOptions>() ?? new QaidApiOptions();
+        if (string.IsNullOrWhiteSpace(apiOptions.BaseUrl))
+            throw new InvalidOperationException("QaidApi:BaseUrl must be configured (e.g. https://your-api-host).");
+
         services.AddHttpClient<IQaidApiClient, QaidApiClient>(client =>
         {
-            if (!string.IsNullOrWhiteSpace(apiOptions.BaseUrl))
-                client.BaseAddress = new Uri(apiOptions.BaseUrl.TrimEnd('/') + "/");
+            client.BaseAddress = new Uri(apiOptions.BaseUrl.TrimEnd('/') + "/");
             client.Timeout = TimeSpan.FromSeconds(apiOptions.TimeoutSeconds <= 0 ? 30 : apiOptions.TimeoutSeconds);
             client.DefaultRequestHeaders.Accept.ParseAdd("application/json");
         });

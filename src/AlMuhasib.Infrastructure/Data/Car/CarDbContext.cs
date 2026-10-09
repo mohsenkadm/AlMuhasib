@@ -34,11 +34,13 @@ public class CarDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        NonAccountingEntityModel.BlockAccountingGraphDiscovery(modelBuilder);
+
         modelBuilder.ApplyConfiguration(new UserConfiguration());
         modelBuilder.ApplyConfiguration(new PermissionConfiguration());
-        // Car-only configs: shared AuditLog/PrintBranding configs map BranchId for accounting.
-        modelBuilder.ApplyConfiguration(new CarAuditLogConfiguration());
-        modelBuilder.ApplyConfiguration(new CarPrintBrandingSettingsConfiguration());
+        // إعدادات غير محاسبية — لا تستخدم AuditLog/PrintBranding المشتركين (يسحبان Branch).
+        modelBuilder.ApplyConfiguration(new NonAccountingAuditLogConfiguration());
+        modelBuilder.ApplyConfiguration(new NonAccountingPrintBrandingSettingsConfiguration());
         modelBuilder.ApplyConfiguration(new CarSaleContractConfiguration());
         modelBuilder.ApplyConfiguration(new CarContractPaymentConfiguration());
 

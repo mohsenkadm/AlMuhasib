@@ -5,12 +5,14 @@ using Qaid.TelegramBot.Application.Options;
 using Qaid.TelegramBot.Infrastructure;
 using Qaid.TelegramBot.Infrastructure.Data;
 using Qaid.TelegramBot.Endpoints;
+using Qaid.TelegramBot.Services;
 using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddQaidTelegramBot(builder.Configuration);
+builder.Services.AddHostedService<TelegramPollingHostedService>();
 builder.Services.AddRazorPages();
 builder.Services.AddRateLimiter(options =>
 {
@@ -30,6 +32,16 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+
+var qaidApiBase = app.Configuration["QaidApi:BaseUrl"];
+if (string.IsNullOrWhiteSpace(qaidApiBase))
+{
+    app.Logger.LogCritical("QaidApi:BaseUrl is not configured. Link login will fail.");
+}
+else
+{
+    app.Logger.LogInformation("Qaid API BaseUrl: {BaseUrl}", qaidApiBase.TrimEnd('/'));
+}
 
 using (var scope = app.Services.CreateScope())
 {

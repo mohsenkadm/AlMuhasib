@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using Qaid.TelegramBot.Application.Abstractions;
 using Qaid.TelegramBot.Application.Options;
+using Qaid.TelegramBot.Services;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums;
 
 namespace Qaid.TelegramBot.Endpoints;
 
@@ -55,25 +55,7 @@ public static class TelegramWebhookEndpoint
 
         try
         {
-            if (update.Type == UpdateType.Message && update.Message?.From is not null)
-            {
-                var msg = update.Message;
-                var text = msg.Text ?? string.Empty;
-                await processor.ProcessMessageAsync(msg.From.Id, msg.Chat.Id, text, ct);
-            }
-            else if (update.Type == UpdateType.CallbackQuery && update.CallbackQuery?.From is not null)
-            {
-                var cq = update.CallbackQuery;
-                var chatId = cq.Message?.Chat.Id ?? cq.From.Id;
-                var messageId = cq.Message?.MessageId ?? 0;
-                await processor.ProcessCallbackAsync(
-                    cq.From.Id,
-                    chatId,
-                    messageId,
-                    cq.Id,
-                    cq.Data ?? string.Empty,
-                    ct);
-            }
+            await TelegramUpdateRouter.DispatchAsync(processor, update, ct);
         }
         catch (Exception ex)
         {

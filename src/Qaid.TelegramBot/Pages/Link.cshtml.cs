@@ -100,9 +100,16 @@ public sealed class LinkModel : PageModel
             ErrorMessage = "بيانات الدخول غير صحيحة.";
             return Page();
         }
-        catch (HttpRequestException)
+        catch (HttpRequestException ex)
         {
-            ErrorMessage = "تعذّر الاتصال بخدمة قيد. حاول لاحقاً.";
+            _logger.LogWarning(ex, "Link login could not reach Qaid API");
+            ErrorMessage = "تعذّر الاتصال بخدمة قيد. تحقّق من إعداد QaidApi:BaseUrl ثم حاول لاحقاً.";
+            return Page();
+        }
+        catch (TaskCanceledException ex) when (!ct.IsCancellationRequested)
+        {
+            _logger.LogWarning(ex, "Link login timed out calling Qaid API");
+            ErrorMessage = "انتهت مهلة الاتصال بخدمة قيد. حاول مرة أخرى.";
             return Page();
         }
         catch (Exception ex)
