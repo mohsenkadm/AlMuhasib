@@ -1,0 +1,55 @@
+@page
+@model Qaid.TelegramBot.Pages.LinkModel
+@{
+    ViewData["Title"] = "ربط بوت قيد";
+    Layout = "_Layout";
+}
+
+<section class="card">
+    <h1>ربط بوت تقارير قيد</h1>
+    <p class="muted">سجّل الدخول بحساب قيد المرتبط بشركتك. لن تُطلب كلمة المرور داخل Telegram.</p>
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="error">@Model.ErrorMessage</div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.GeneratedCode))
+    {
+        <div class="success">
+            <p>تم إنشاء رمز الربط لشركة <strong>@Model.CompanyName</strong>.</p>
+            <p class="code">@Model.GeneratedCode</p>
+            <p>أرسل هذا الرمز إلى بوت Telegram خلال 5 دقائق (أو استخدم الأمر <code>/link @Model.GeneratedCode</code>).</p>
+            <p class="muted">ينتهي في: @Model.CodeExpiresAtUtc?.ToString("yyyy/MM/dd HH:mm") UTC</p>
+            <p class="muted">الرمز لمرة واحدة فقط. لا تشارك كلمة المرور أو الرموز السرية في المحادثة.</p>
+        </div>
+    }
+    else if (Model.NeedsBranchSelection)
+    {
+        <form method="post" asp-page-handler="SelectBranch">
+            <label>اختر الفرع</label>
+            <select asp-for="Input.BranchId" required>
+                <option value="">— اختر —</option>
+                @foreach (var b in Model.Branches)
+                {
+                    <option value="@b.BranchId">@b.Name (@b.Code)</option>
+                }
+            </select>
+            <button type="submit">متابعة وإنشاء الرمز</button>
+        </form>
+    }
+    else
+    {
+        <form method="post" asp-page-handler="Login">
+            <label asp-for="Input.Username">اسم المستخدم</label>
+            <input asp-for="Input.Username" autocomplete="username" />
+            <span asp-validation-for="Input.Username" class="error"></span>
+
+            <label asp-for="Input.Password">كلمة المرور</label>
+            <input asp-for="Input.Password" autocomplete="current-password" />
+            <span asp-validation-for="Input.Password" class="error"></span>
+
+            <button type="submit">تسجيل الدخول وإنشاء رمز الربط</button>
+        </form>
+    }
+</section>

@@ -12,6 +12,10 @@
     <Project Path="src/AlMuhasib.Sync/AlMuhasib.Sync.csproj" />
     <Project Path="src/AlMuhasib.UI/AlMuhasib.UI.csproj" />
     <Project Path="src/AlMuhasib.Updater/AlMuhasib.Updater.csproj" />
+    <Project Path="src/Qaid.TelegramBot/Qaid.TelegramBot.csproj" />
+    <Project Path="src/Qaid.TelegramBot.Application/Qaid.TelegramBot.Application.csproj" />
+    <Project Path="src/Qaid.TelegramBot.Infrastructure/Qaid.TelegramBot.Infrastructure.csproj" />
+    <Project Path="src/Qaid.TelegramBot.Tests/Qaid.TelegramBot.Tests.csproj" />
   </Folder>
   <Folder Name="/website/">
     <File Path="website/index.html" />
