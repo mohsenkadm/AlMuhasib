@@ -6,6 +6,12 @@ namespace Qaid.TelegramBot.Application.Bot;
 
 public static class BotMenus
 {
+    public static IReadOnlyList<IReadOnlyList<BotButton>> NotLinked(string linkUrl)
+        =>
+        [
+            [new BotButton { Text = "🔗 ربط الحساب", Url = linkUrl }]
+        ];
+
     public static IReadOnlyList<IReadOnlyList<BotButton>> MainMenu(string companyName)
     {
         var rows = new List<IReadOnlyList<BotButton>>();
@@ -21,7 +27,55 @@ public static class BotMenus
         }
         if (buffer.Count > 0)
             rows.Add(buffer);
+        rows.Add(
+        [
+            new BotButton { Text = "كشف زبون", CallbackData = CallbackData.PromptCustomer },
+            new BotButton { Text = "كشف مورد", CallbackData = CallbackData.PromptSupplier }
+        ]);
+        rows.Add(
+        [
+            new BotButton { Text = "لوحة النظام", CallbackData = CallbackData.SystemDashboard },
+            new BotButton { Text = "تغيير الفرع", CallbackData = CallbackData.BranchList }
+        ]);
         rows.Add([new BotButton { Text = "إلغاء الربط", CallbackData = CallbackData.Unlink }]);
+        return rows;
+    }
+
+    public static IReadOnlyList<IReadOnlyList<BotButton>> LookupResults(
+        IReadOnlyList<LookupItemDto> items, bool customers)
+    {
+        var rows = new List<IReadOnlyList<BotButton>>();
+        foreach (var item in items.Take(8))
+        {
+            var label = string.IsNullOrWhiteSpace(item.FileNumber)
+                ? item.Name
+                : $"{item.Name} ({item.FileNumber})";
+            if (label.Length > 40)
+                label = label[..40];
+            rows.Add(
+            [
+                new BotButton
+                {
+                    Text = label,
+                    CallbackData = customers
+                        ? CallbackData.PickCustomer(item.SyncId)
+                        : CallbackData.PickSupplier(item.SyncId)
+                }
+            ]);
+        }
+        rows.Add([new BotButton { Text = "القائمة الرئيسية", CallbackData = CallbackData.Main }]);
+        return rows;
+    }
+
+    public static IReadOnlyList<IReadOnlyList<BotButton>> BranchPicker(IReadOnlyList<BranchInfoDto> branches)
+    {
+        var rows = new List<IReadOnlyList<BotButton>>();
+        foreach (var b in branches)
+        {
+            var label = string.IsNullOrWhiteSpace(b.Code) ? b.Name : $"{b.Name} ({b.Code})";
+            rows.Add([new BotButton { Text = label, CallbackData = CallbackData.SelectBranch(b.BranchId) }]);
+        }
+        rows.Add([new BotButton { Text = "القائمة الرئيسية", CallbackData = CallbackData.Main }]);
         return rows;
     }
 

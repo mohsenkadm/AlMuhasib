@@ -35,7 +35,8 @@ internal static class TestHelpers
         var links = new LinkService(db, protector, Options.Create(new LinkOptions
         {
             CodeLifetimeMinutes = 5,
-            CodeLength = 8
+            CodeLength = 8,
+            SessionDays = 10
         }));
         return (db, protector, links);
     }

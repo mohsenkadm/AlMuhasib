@@ -65,4 +65,22 @@ public class LinkServiceTests
             Assert.NotEqual(created.PlainCode, entity.CodeHash);
         }
     }
+
+    [Fact]
+    public async Task Session_expires_after_configured_days()
+    {
+        var (db, _, links) = TestHelpers.CreateLinkStack();
+        await using (db)
+        {
+            var created = await links.CreateLinkCodeAsync(TestHelpers.SampleCodeRequest(), CancellationToken.None);
+            await links.ConsumeLinkCodeAsync(created.PlainCode, 66, CancellationToken.None);
+
+            var entity = Assert.Single(db.TelegramLinks);
+            entity.LinkedAtUtc = DateTime.UtcNow.AddDays(-11);
+            await db.SaveChangesAsync();
+
+            Assert.Null(await links.GetActiveLinkAsync(66, CancellationToken.None));
+            Assert.False((await db.TelegramLinks.FindAsync(66L))!.IsActive);
+        }
+    }
 }

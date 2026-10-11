@@ -34,6 +34,7 @@ public sealed class LinkService : ILinkService
             CompanyName = request.CompanyName,
             Username = request.Username,
             CurrentBranchId = request.CurrentBranchId,
+            ApplicationSystemType = request.ApplicationSystemType,
             ProtectedAccessToken = _protector.Protect(request.AccessToken),
             ProtectedRefreshToken = _protector.Protect(request.RefreshToken),
             AccessTokenExpiresAt = request.AccessTokenExpiresAt,
@@ -84,6 +85,7 @@ public sealed class LinkService : ILinkService
         existing.CompanyName = entity.CompanyName;
         existing.Username = entity.Username;
         existing.CurrentBranchId = entity.CurrentBranchId;
+        existing.ApplicationSystemType = entity.ApplicationSystemType;
         existing.ProtectedAccessToken = entity.ProtectedAccessToken;
         existing.ProtectedRefreshToken = entity.ProtectedRefreshToken;
         existing.AccessTokenExpiresAt = entity.AccessTokenExpiresAt;
@@ -97,9 +99,24 @@ public sealed class LinkService : ILinkService
 
     public async Task<TelegramLinkInfo?> GetActiveLinkAsync(long telegramUserId, CancellationToken ct)
     {
-        var entity = await _db.TelegramLinks.AsNoTracking()
+        var entity = await _db.TelegramLinks
             .FirstOrDefaultAsync(x => x.TelegramUserId == telegramUserId && x.IsActive, ct);
-        return entity is null ? null : Map(entity);
+        if (entity is null)
+            return null;
+
+        var sessionDays = _options.SessionDays <= 0 ? 10 : _options.SessionDays;
+        var expiresAt = entity.LinkedAtUtc.AddDays(sessionDays);
+        if (expiresAt <= DateTime.UtcNow)
+        {
+            entity.IsActive = false;
+            entity.ProtectedAccessToken = string.Empty;
+            entity.ProtectedRefreshToken = string.Empty;
+            entity.UnlinkedAtUtc = DateTime.UtcNow;
+            await _db.SaveChangesAsync(ct);
+            return null;
+        }
+
+        return Map(entity, expiresAt);
     }
 
     public async Task UpdateTokensAsync(long telegramUserId, StoredSessionTokens tokens, CancellationToken ct)
@@ -111,6 +128,29 @@ public sealed class LinkService : ILinkService
         entity.ProtectedAccessToken = _protector.Protect(tokens.AccessToken);
         entity.ProtectedRefreshToken = _protector.Protect(tokens.RefreshToken);
         entity.AccessTokenExpiresAt = tokens.AccessTokenExpiresAt;
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task UpdateBranchAsync(long telegramUserId, int branchId, StoredSessionTokens tokens, CancellationToken ct)
+    {
+        var entity = await _db.TelegramLinks.FirstOrDefaultAsync(x => x.TelegramUserId == telegramUserId && x.IsActive, ct);
+        if (entity is null)
+            return;
+
+        entity.CurrentBranchId = branchId;
+        entity.ProtectedAccessToken = _protector.Protect(tokens.AccessToken);
+        entity.ProtectedRefreshToken = _protector.Protect(tokens.RefreshToken);
+        entity.AccessTokenExpiresAt = tokens.AccessTokenExpiresAt;
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task UpdateApplicationSystemTypeAsync(long telegramUserId, int applicationSystemType, CancellationToken ct)
+    {
+        var entity = await _db.TelegramLinks.FirstOrDefaultAsync(x => x.TelegramUserId == telegramUserId && x.IsActive, ct);
+        if (entity is null)
+            return;
+
+        entity.ApplicationSystemType = applicationSystemType;
         await _db.SaveChangesAsync(ct);
     }
 
@@ -141,7 +181,7 @@ public sealed class LinkService : ILinkService
         await _db.SaveChangesAsync(ct);
     }
 
-    private TelegramLinkInfo Map(TelegramLinkEntity entity)
+    private TelegramLinkInfo Map(TelegramLinkEntity entity, DateTime? sessionExpiresAtUtc = null)
     {
         string access = string.Empty;
         string refresh = string.Empty;
@@ -156,6 +196,9 @@ public sealed class LinkService : ILinkService
             catch { /* session must re-link */ }
         }
 
+        var sessionDays = _options.SessionDays <= 0 ? 10 : _options.SessionDays;
+        var expires = sessionExpiresAtUtc ?? entity.LinkedAtUtc.AddDays(sessionDays);
+
         return new TelegramLinkInfo
         {
             TelegramUserId = entity.TelegramUserId,
@@ -164,7 +207,10 @@ public sealed class LinkService : ILinkService
             CompanyName = entity.CompanyName,
             Username = entity.Username,
             CurrentBranchId = entity.CurrentBranchId,
+            ApplicationSystemType = entity.ApplicationSystemType,
             IsActive = entity.IsActive,
+            LinkedAtUtc = entity.LinkedAtUtc,
+            SessionExpiresAtUtc = expires,
             Tokens = new StoredSessionTokens
             {
                 AccessToken = access,

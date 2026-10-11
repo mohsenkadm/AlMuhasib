@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="description" content="قيد — منصة أعمال عربية: محاسبة، ذهب، فنادق، عقود سيارات، تجارة سيارات، عقود عقارات، تعدد عملات، فروع متعددة، ولاء، حقول مخصصة، مساعد صوتي، ربط فروع، تطبيقات مجانية، وتطبيق جوال. تعمل أوفلاين بالكامل."/>
+  <meta name="description" content="قيد — منصة أعمال عربية: محاسبة، ذهب، فنادق، سيارات، عقارات، بوت تيليجرام للتقارير، تعدد عملات، فروع متعددة، وتطبيق جوال. تعمل أوفلاين بالكامل."/>
   <title>قيد — منصة أعمال متكاملة</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -48,6 +48,7 @@
       <nav class="nav-links">
         <a href="#systems" data-i18n="nav.systems">الأنظمة</a>
         <a href="#whats-new" data-i18n="nav.whatsNew">الجديد</a>
+        <a href="#telegram-bot" data-i18n="nav.telegram">بوت تيليجرام</a>
         <a href="#features" data-i18n="nav.features">المنصة</a>
         <a href="#free-apps" data-i18n="nav.freeApps">تطبيقات مجانية</a>
         <a href="#how" data-i18n="nav.how">كيف يعمل</a>
@@ -75,7 +76,7 @@
           <div class="hero-logo-mark hero-seq" style="--seq:0">
             <span class="logo-mark hero-logo-q"><img src="assets/qayd-logo.png" alt="قيد" width="52" height="52" decoding="async"/></span>
           </div>
-          <p class="hero-eyebrow hero-seq" style="--seq:1" data-i18n="hero.badge">جديد: تعدد العملات دينار/دولار + الفروع المتعددة</p>
+          <p class="hero-eyebrow hero-seq" style="--seq:1" data-i18n="hero.badge">جديد: بوت تيليجرام للتقارير + تعدد العملات والفروع</p>
           <h1 class="hero-brand hero-seq" style="--seq:2"><span data-i18n="hero.title">قيد</span></h1>
           <p class="hero-sub hero-seq" style="--seq:3">
             <span data-i18n="hero.subtitle">منصة أعمال متكاملة —</span>
@@ -84,6 +85,7 @@
           <p class="hero-desc hero-seq" style="--seq:4" data-i18n="hero.desc">أنظمة سطح مكتب أوفلاين، تعدد عملات، فروع متعددة، ربط شبكة، مساعد صوتي، وتطبيق جوال — جاهزة للمحلات والفنادق والمعارض والعقارات.</p>
           <div class="hero-cta hero-seq" style="--seq:5">
             <a href="#download" class="btn btn-primary btn-lg" data-download-link data-i18n="hero.cta_download">حمّل النظام مجاناً</a>
+            <a href="https://t.me/qaidsystem_bot" class="btn btn-telegram btn-lg" target="_blank" rel="noopener noreferrer" data-i18n="hero.cta_telegram">بوت تيليجرام</a>
             <a href="#systems" class="btn btn-ghost btn-lg" data-i18n="hero.cta_systems">استكشف الأنظمة</a>
           </div>
           <div class="hero-stats hero-seq" style="--seq:6" aria-label="Highlights">
@@ -143,6 +145,69 @@
           <p data-i18n="whatsNew.subtitle">أحدث ما أُضيف لمنصة قيد — جاهز للاستخدام الآن</p>
         </div>
         <div class="whats-new-grid" id="whats-new-grid"></div>
+      </div>
+    </section>
+
+    <section class="section telegram-bot-section" id="telegram-bot" aria-labelledby="telegram-bot-title">
+      <div class="tg-backdrop" aria-hidden="true">
+        <span class="tg-orb tg-orb-a"></span>
+        <span class="tg-orb tg-orb-b"></span>
+        <span class="tg-wave"></span>
+      </div>
+      <div class="container tg-layout">
+        <div class="tg-copy reveal">
+          <span class="tg-eyebrow" data-i18n="telegram.badge">جديد على قيد</span>
+          <h2 id="telegram-bot-title" data-i18n="telegram.title">بوت تيليجرام لتقارير قيد</h2>
+          <p class="tg-lead" data-i18n="telegram.subtitle">تقاريرك المحاسبية في جيبك — ملخص اليوم، النقد، الأقساط، المخزون وكشوف الحساب عبر تيليجرام بأمان.</p>
+          <ul class="tg-points">
+            <li data-stagger data-i18n="telegram.p1">تقارير فورية بأوامر سريعة مثل /today و /cash</li>
+            <li data-stagger data-i18n="telegram.p2">اختيار الفرع وحماية الجلسة لمدة 10 أيام</li>
+            <li data-stagger data-i18n="telegram.p3">كشف زبون/مورد بالبحث — قراءة فقط بدون تعديل بيانات</li>
+            <li data-stagger data-i18n="telegram.p4">لوحات تخصصية للسيارات والفندق والعقار والذهب</li>
+          </ul>
+          <div class="tg-cta">
+            <a class="btn btn-telegram btn-lg" href="https://t.me/qaidsystem_bot" target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+              <span data-i18n="telegram.cta">افتح @qaidsystem_bot</span>
+            </a>
+            <a class="btn btn-ghost btn-lg" href="https://t.me/qaidsystem_bot" target="_blank" rel="noopener noreferrer" data-i18n="telegram.ctaSecondary">جرّب البوت الآن</a>
+          </div>
+          <p class="tg-handle">
+            <span data-i18n="telegram.handleLabel">الرابط:</span>
+            <a href="https://t.me/qaidsystem_bot" target="_blank" rel="noopener noreferrer">t.me/qaidsystem_bot</a>
+          </p>
+        </div>
+
+        <div class="tg-stage reveal" style="--delay:0.12s">
+          <div class="tg-phone" id="tg-phone">
+            <div class="tg-phone-notch" aria-hidden="true"></div>
+            <div class="tg-chat-head">
+              <span class="tg-avatar" aria-hidden="true">ق</span>
+              <div>
+                <strong data-i18n="telegram.botName">قيد المحاسبي</strong>
+                <small data-i18n="telegram.botStatus">متصل · تقارير آمنة</small>
+              </div>
+            </div>
+            <div class="tg-chat-body" id="tg-chat-body">
+              <div class="tg-bubble tg-bubble-bot" data-chat-step="0" data-i18n="telegram.chat1">مرحباً بك في بوت تقارير قيد.</div>
+              <div class="tg-bubble tg-bubble-user" data-chat-step="1" data-i18n="telegram.chat2">/today</div>
+              <div class="tg-bubble tg-bubble-bot tg-bubble-report" data-chat-step="2">
+                <span data-i18n="telegram.chat3title">ملخص العمليات — اليوم</span>
+                <span data-i18n="telegram.chat3a">مبيعات نقدية: 2,450,000 د.ع</span>
+                <span data-i18n="telegram.chat3b">مصروفات: 180,000 د.ع</span>
+                <span data-i18n="telegram.chat3c">صافي اليوم: 2,270,000 د.ع</span>
+              </div>
+              <div class="tg-bubble tg-bubble-user" data-chat-step="3" data-i18n="telegram.chat4">/cash</div>
+              <div class="tg-bubble tg-bubble-bot" data-chat-step="4" data-i18n="telegram.chat5">أرصدة النقد والبنوك جاهزة ✓</div>
+            </div>
+            <div class="tg-chat-input" aria-hidden="true">
+              <span data-i18n="telegram.chatHint">اكتب / لعرض الأوامر…</span>
+            </div>
+          </div>
+          <div class="tg-float-chip tg-chip-a" data-i18n="telegram.chip1">/today</div>
+          <div class="tg-float-chip tg-chip-b" data-i18n="telegram.chip2">/overdue</div>
+          <div class="tg-float-chip tg-chip-c" data-i18n="telegram.chip3">/customer</div>
+        </div>
       </div>
     </section>
 
@@ -449,6 +514,7 @@
   <script src="js/systems.js"></script>
   <script src="js/iraq-map.js"></script>
   <script src="js/splash.js"></script>
+  <script src="js/telegram-bot.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

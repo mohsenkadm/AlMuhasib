@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.35",
-  "releaseDate": "2026-10-07",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.35/AlMuhasib-1.14.35.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.35/Qayd-Setup-1.14.35.exe",
-  "sha256": "390D9CE86261E804EA99C7F6F1E83A245474CD18A659D28A1558F40AD58E7BF6",
-  "sizeBytes": 184939298,
-  "releaseNotes": "منتجات حسب الفروع، POS باللمس، تقرير العمليات اليومية — تحديث اختياري آمن مع ترحيل ProductBranches",
+  "version": "1.14.36",
+  "releaseDate": "2026-10-12",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.36/AlMuhasib-1.14.36.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.36/Qayd-Setup-1.14.36.exe",
+  "sha256": "F70EE02A73DD3CFFDF70EB816B440B33DB0DD1877F86BA12712B7F875A45E139",
+  "sizeBytes": 159833235,
+  "releaseNotes": "تحسين طباعة عقد المعرض وبوت تيليجرام للموقع — تحديث اختياري آمن بدون تغيير قاعدة البيانات",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

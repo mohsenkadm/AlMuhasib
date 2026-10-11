@@ -4,9 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Qaid.TelegramBot.Application.Options;
 using Qaid.TelegramBot.Infrastructure;
 using Qaid.TelegramBot.Infrastructure.Data;
+using Qaid.TelegramBot.Application.Bot;
 using Qaid.TelegramBot.Endpoints;
 using Qaid.TelegramBot.Services;
 using Telegram.Bot;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,6 +49,16 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<BotDbContext>();
     await db.Database.EnsureCreatedAsync();
+    // Soft-upgrade existing SQLite files created before ApplicationSystemType.
+    foreach (var sql in new[]
+             {
+                 "ALTER TABLE LinkCodes ADD COLUMN ApplicationSystemType INTEGER NOT NULL DEFAULT 0",
+                 "ALTER TABLE TelegramLinks ADD COLUMN ApplicationSystemType INTEGER NOT NULL DEFAULT 0"
+             })
+    {
+        try { await db.Database.ExecuteSqlRawAsync(sql); }
+        catch { /* column already exists */ }
+    }
 }
 
 if (!app.Environment.IsDevelopment())
@@ -72,24 +84,37 @@ app.MapTelegramWebhook();
 
 app.MapGet("/", () => Results.Redirect("/link"));
 
-// Optional webhook registration when URL + token are configured.
+// Register slash-command suggestions + optional webhook.
 var telegramOpts = app.Configuration.GetSection(TelegramBotOptions.SectionName).Get<TelegramBotOptions>();
 if (!string.IsNullOrWhiteSpace(telegramOpts?.BotToken)
-    && !string.IsNullOrWhiteSpace(telegramOpts.WebhookUrl)
     && !telegramOpts.BotToken.Contains("PLACEHOLDER", StringComparison.OrdinalIgnoreCase))
 {
+    var bot = app.Services.GetRequiredService<ITelegramBotClient>();
     try
     {
-        var bot = app.Services.GetRequiredService<ITelegramBotClient>();
-        await bot.SetWebhook(
-            url: telegramOpts.WebhookUrl,
-            secretToken: string.IsNullOrWhiteSpace(telegramOpts.WebhookSecret) ? null : telegramOpts.WebhookSecret,
-            allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery]);
-        app.Logger.LogInformation("Telegram webhook configured.");
+        await bot.SetMyCommands(
+            BotCommands.All.Select(c => new BotCommand { Command = c.Command, Description = c.Description }));
+        app.Logger.LogInformation("Telegram bot commands registered.");
     }
     catch (Exception ex)
     {
-        app.Logger.LogWarning(ex, "Failed to set Telegram webhook at startup.");
+        app.Logger.LogWarning(ex, "Failed to register Telegram bot commands.");
+    }
+
+    if (!string.IsNullOrWhiteSpace(telegramOpts.WebhookUrl))
+    {
+        try
+        {
+            await bot.SetWebhook(
+                url: telegramOpts.WebhookUrl,
+                secretToken: string.IsNullOrWhiteSpace(telegramOpts.WebhookSecret) ? null : telegramOpts.WebhookSecret,
+                allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery]);
+            app.Logger.LogInformation("Telegram webhook configured.");
+        }
+        catch (Exception ex)
+        {
+            app.Logger.LogWarning(ex, "Failed to set Telegram webhook at startup.");
+        }
     }
 }
 

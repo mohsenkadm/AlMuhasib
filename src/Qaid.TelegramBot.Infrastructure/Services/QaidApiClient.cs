@@ -68,6 +68,90 @@ public sealed class QaidApiClient : IQaidApiClient
     public Task<CustomersOverviewReportResult> GetCustomersOverviewAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct)
         => GetAsync<CustomersOverviewReportResult>(AllowedEndpoints.CustomersOverview, accessToken, DateQuery(from, to), ct);
 
+    public Task<DailyOperationsReportResult> GetDailyOperationsAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct)
+        => GetAsync<DailyOperationsReportResult>(AllowedEndpoints.DailyOperations, accessToken, DateQuery(from, to), ct);
+
+    public Task<OverdueResult> GetInstallmentsOverdueAsync(string accessToken, CancellationToken ct)
+        => GetAsync<OverdueResult>(AllowedEndpoints.InstallmentsOverdue, accessToken, query: null, ct);
+
+    public Task<InstallmentsSummaryResult> GetInstallmentsSummaryAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct)
+        => GetAsync<InstallmentsSummaryResult>(AllowedEndpoints.InstallmentsSummary, accessToken, DateQuery(from, to), ct);
+
+    public Task<OverdueCustomersReportResult> GetOverdueCustomersAsync(string accessToken, CancellationToken ct)
+        => GetAsync<OverdueCustomersReportResult>(AllowedEndpoints.OverdueCustomers, accessToken, query: null, ct);
+
+    public Task<ReceivablesAgingReportResult> GetReceivablesAgingAsync(string accessToken, CancellationToken ct)
+        => GetAsync<ReceivablesAgingReportResult>(AllowedEndpoints.ReceivablesAging, accessToken, query: null, ct);
+
+    public Task<MinimumQuantityReportResult> GetMinimumQuantityAsync(string accessToken, CancellationToken ct)
+        => GetAsync<MinimumQuantityReportResult>(AllowedEndpoints.MinimumQuantity, accessToken, query: null, ct);
+
+    public Task<StockHealthReportResult> GetStockHealthAsync(string accessToken, CancellationToken ct)
+        => GetAsync<StockHealthReportResult>(AllowedEndpoints.StockHealth, accessToken, query: null, ct);
+
+    public Task<TopProductsReportResult> GetTopProductsAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct)
+        => GetAsync<TopProductsReportResult>(AllowedEndpoints.TopProducts, accessToken, DateQuery(from, to), ct);
+
+    public Task<PurchasesReportResult> GetPurchasesAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct)
+        => GetAsync<PurchasesReportResult>(AllowedEndpoints.Purchases, accessToken, DateQuery(from, to), ct);
+
+    public Task<SuppliersOverviewReportResult> GetSuppliersOverviewAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct)
+        => GetAsync<SuppliersOverviewReportResult>(AllowedEndpoints.SuppliersOverview, accessToken, DateQuery(from, to), ct);
+
+    public Task<SalesByPaymentMethodReportResult> GetSalesByPaymentMethodAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct)
+        => GetAsync<SalesByPaymentMethodReportResult>(AllowedEndpoints.SalesByPaymentMethod, accessToken, DateQuery(from, to), ct);
+
+    public Task<PayablesAgingReportResult> GetPayablesAgingAsync(string accessToken, CancellationToken ct)
+        => GetAsync<PayablesAgingReportResult>(AllowedEndpoints.PayablesAging, accessToken, query: null, ct);
+
+    public Task<CustomerCollectionsReportResult> GetCustomerCollectionsAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct)
+        => GetAsync<CustomerCollectionsReportResult>(AllowedEndpoints.CustomerCollections, accessToken, DateQuery(from, to), ct);
+
+    public Task<SupplierPaymentsReportResult> GetSupplierPaymentsAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct)
+        => GetAsync<SupplierPaymentsReportResult>(AllowedEndpoints.SupplierPayments, accessToken, DateQuery(from, to), ct);
+
+    public Task<FinancialPositionSummaryReportResult> GetFinancialPositionAsync(string accessToken, CancellationToken ct)
+        => GetAsync<FinancialPositionSummaryReportResult>(AllowedEndpoints.FinancialPositionSummary, accessToken, query: null, ct);
+
+    public Task<CogsReportResult> GetCogsAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct)
+        => GetAsync<CogsReportResult>(AllowedEndpoints.Cogs, accessToken, DateQuery(from, to), ct);
+
+    public Task<InventoryValuationReportResult> GetInventoryValuationAsync(string accessToken, CancellationToken ct)
+        => GetAsync<InventoryValuationReportResult>(AllowedEndpoints.InventoryValuation, accessToken, query: null, ct);
+
+    public Task<TransfersReportResult> GetTransfersAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct)
+        => GetAsync<TransfersReportResult>(AllowedEndpoints.Transfers, accessToken, DateQuery(from, to), ct);
+
+    public Task<GrossProfitMarginReportResult> GetGrossProfitMarginAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct)
+        => GetAsync<GrossProfitMarginReportResult>(AllowedEndpoints.GrossProfitMargin, accessToken, DateQuery(from, to), ct);
+
+    public Task<List<LookupItemDto>> SearchCustomersAsync(string accessToken, string search, CancellationToken ct)
+        => GetAsync<List<LookupItemDto>>(AllowedEndpoints.MasterCustomers, accessToken, $"search={Uri.EscapeDataString(search)}", ct);
+
+    public Task<List<LookupItemDto>> SearchSuppliersAsync(string accessToken, string search, CancellationToken ct)
+        => GetAsync<List<LookupItemDto>>(AllowedEndpoints.MasterSuppliers, accessToken, $"search={Uri.EscapeDataString(search)}", ct);
+
+    public Task<CustomerStatementResult> GetCustomerStatementAsync(string accessToken, Guid customerSyncId, CancellationToken ct)
+        => GetAsync<CustomerStatementResult>(AllowedEndpoints.CustomerStatement, accessToken, $"customerSyncId={customerSyncId:D}", ct);
+
+    public Task<SupplierStatementResult> GetSupplierStatementAsync(string accessToken, Guid supplierSyncId, CancellationToken ct)
+        => GetAsync<SupplierStatementResult>(AllowedEndpoints.SupplierStatement, accessToken, $"supplierSyncId={supplierSyncId:D}", ct);
+
+    public Task<CarDashboardDto> GetCarDashboardAsync(string accessToken, CancellationToken ct)
+        => GetAsync<CarDashboardDto>(AllowedEndpoints.CarDashboard, accessToken, query: null, ct);
+
+    public Task<CarTradeDashboardDto> GetCarTradeDashboardAsync(string accessToken, CancellationToken ct)
+        => GetAsync<CarTradeDashboardDto>(AllowedEndpoints.CarTradeDashboard, accessToken, query: null, ct);
+
+    public Task<RealEstateDashboardDto> GetRealEstateDashboardAsync(string accessToken, CancellationToken ct)
+        => GetAsync<RealEstateDashboardDto>(AllowedEndpoints.RealEstateDashboard, accessToken, query: null, ct);
+
+    public Task<HotelRestaurantSummaryDto> GetHotelRestaurantSummaryAsync(string accessToken, CancellationToken ct)
+        => GetAsync<HotelRestaurantSummaryDto>(AllowedEndpoints.HotelRestaurantSummary, accessToken, query: null, ct);
+
+    public Task<GoldStockReportDto> GetGoldStockAsync(string accessToken, CancellationToken ct)
+        => GetAsync<GoldStockReportDto>(AllowedEndpoints.GoldStock, accessToken, query: null, ct);
+
     private async Task<T> GetAsync<T>(string relativePath, string accessToken, string? query, CancellationToken ct)
     {
         AllowedEndpoints.EnsureAllowed(HttpMethod.Get, relativePath);

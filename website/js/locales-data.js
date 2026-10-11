@@ -2,11 +2,11 @@
 window.LOCALES = {
   ar: {
     meta: {
-      title: "قيد — محاسبة، ذهب، فنادق، سيارات، عقارات وتطبيق جوال",
-      description: "منصة أعمال عربية متكاملة: محاسبة، ذهب، فنادق، عقود سيارات، تجارة سيارات، عقود عقارات، تعدد عملات، فروع متعددة، ولاء، حقول مخصصة، مساعد صوتي، ربط فروع، تطبيقات مجانية، ومزامنة سحابية. تعمل أوفلاين بالكامل."
+      title: "قيد — محاسبة، ذهب، فنادق، سيارات، عقارات وبوت تيليجرام",
+      description: "منصة أعمال عربية متكاملة: محاسبة، ذهب، فنادق، عقود سيارات، تجارة سيارات، عقود عقارات، بوت تيليجرام للتقارير، تعدد عملات، فروع متعددة، ولاء، حقول مخصصة، مساعد صوتي، ربط فروع، تطبيقات مجانية، ومزامنة سحابية. تعمل أوفلاين بالكامل."
     },
     nav: {
-      systems: "الأنظمة", whatsNew: "الجديد", features: "المنصة", freeApps: "تطبيقات مجانية",
+      systems: "الأنظمة", whatsNew: "الجديد", telegram: "بوت تيليجرام", features: "المنصة", freeApps: "تطبيقات مجانية",
       how: "كيف يعمل", videos: "الفيديوهات",
       mobile: "التطبيق", download: "التنزيل", faq: "الأسئلة", contact: "تواصل"
     },
@@ -28,13 +28,14 @@ window.LOCALES = {
     },
     splash: { tagline: "منصة أعمال متكاملة" },
     hero: {
-      badge: "جديد: تعدد العملات دينار/دولار + الفروع المتعددة",
+      badge: "جديد: بوت تيليجرام للتقارير + تعدد العملات والفروع",
       title: "قيد",
       subtitle: "منصة أعمال متكاملة —",
       rotateWords: ["محاسبة", "ذهب", "فنادق", "عقود سيارات", "تجارة سيارات", "عقود عقارات"],
-      desc: "ستة أنظمة سطح مكتب أوفلاين + تعدد عملات + فروع متعددة + مساعد صوتي + ربط شبكة + تطبيق جوال + مزامنة سحابية — عربي، جاهز للنمو.",
+      desc: "ستة أنظمة سطح مكتب أوفلاين + بوت تيليجرام للتقارير + تعدد عملات + فروع متعددة + مساعد صوتي + ربط شبكة + تطبيق جوال + مزامنة سحابية — عربي، جاهز للنمو.",
       cta_download: "حمّل النظام مجاناً",
       cta_systems: "استكشف الأنظمة",
+      cta_telegram: "بوت تيليجرام",
       cta_features: "مميزات المنصة",
       stat_systems: "أنظمة",
       stat_reports: "تقرير+",
@@ -46,8 +47,34 @@ window.LOCALES = {
         kirkuk: "كركوك", sulaymaniyah: "السليمانية", najaf: "النجف",
         karbala: "كربلاء", anbar: "الأنبار", nasiriyah: "الناصرية",
         amarah: "العمارة", kut: "الكوت", diyala: "ديالى", hillah: "الحلة",
-        tikrit: "تكريت", duhok: "دهوك"
+        tikrit: "تكريت",         duhok: "دهوك"
       }
+    },
+    telegram: {
+      badge: "جديد على قيد",
+      title: "بوت تيليجرام لتقارير قيد",
+      subtitle: "تقاريرك المحاسبية في جيبك — ملخص اليوم، النقد، الأقساط، المخزون وكشوف الحساب عبر تيليجرام بأمان.",
+      p1: "تقارير فورية بأوامر سريعة مثل /today و /cash",
+      p2: "اختيار الفرع وحماية الجلسة لمدة 10 أيام",
+      p3: "كشف زبون/مورد بالبحث — قراءة فقط بدون تعديل بيانات",
+      p4: "لوحات تخصصية للسيارات والفندق والعقار والذهب",
+      cta: "افتح @qaidsystem_bot",
+      ctaSecondary: "جرّب البوت الآن",
+      handleLabel: "الرابط:",
+      botName: "قيد المحاسبي",
+      botStatus: "متصل · تقارير آمنة",
+      chat1: "مرحباً بك في بوت تقارير قيد.",
+      chat2: "/today",
+      chat3title: "ملخص العمليات — اليوم",
+      chat3a: "مبيعات نقدية: 2,450,000 د.ع",
+      chat3b: "مصروفات: 180,000 د.ع",
+      chat3c: "صافي اليوم: 2,270,000 د.ع",
+      chat4: "/cash",
+      chat5: "أرصدة النقد والبنوك جاهزة ✓",
+      chatHint: "اكتب / لعرض الأوامر…",
+      chip1: "/today",
+      chip2: "/overdue",
+      chip3: "/customer"
     },
     systems: {
       title: "أنظمتنا المتكاملة",
@@ -317,6 +344,7 @@ window.LOCALES = {
       subtitle: "أحدث ما أُضيف لمنصة قيد — جاهز للاستخدام الآن",
       newLabel: "جديد",
       items: [
+        { icon: "telegram", title: "بوت تيليجرام للتقارير", desc: "اطلع على ملخص اليوم والنقد والأقساط وكشوف الحساب من تيليجرام — قراءة فقط، جلسة 10 أيام، واختيار الفرع. @qaidsystem_bot" },
         { icon: "currency", title: "تعدد العملات دينار/دولار", desc: "إدارة المبيعات والمشتريات والأرصدة بالدينار والدولار معاً — مع تقارير منفصلة لكل عملة." },
         { icon: "branches", title: "الفروع المتعددة", desc: "أنشئ فروعاً مستقلة ببيانات وصلاحيات وترقيم فواتير خاص لكل فرع — مع تبديل سريع وتقارير مجمّعة." },
         { icon: "exchange", title: "مبادلة العملة", desc: "صرف ومبادلة بين الدينار والدولار من داخل النظام مع تتبع سعر الصرف والرصيد." },
@@ -507,11 +535,11 @@ window.LOCALES = {
   },
   en: {
     meta: {
-      title: "Qayd — Accounting, Gold, Hotels, Cars, Real Estate & Mobile",
-      description: "Integrated Arabic business platform: accounting, gold shops, hotels, car contracts, car trading, real estate, multi-currency, multi-branch, loyalty, custom fields, voice assistant, LAN linking, free apps, and cloud sync. Fully offline."
+      title: "Qayd — Accounting, Gold, Hotels, Cars, Real Estate & Telegram bot",
+      description: "Integrated Arabic business platform: accounting, gold shops, hotels, car contracts, car trading, real estate, Telegram reports bot, multi-currency, multi-branch, loyalty, custom fields, voice assistant, LAN linking, free apps, and cloud sync. Fully offline."
     },
     nav: {
-      systems: "Systems", whatsNew: "What's new", features: "Platform", freeApps: "Free apps",
+      systems: "Systems", whatsNew: "What's new", telegram: "Telegram bot", features: "Platform", freeApps: "Free apps",
       how: "How it works", videos: "Videos",
       mobile: "Mobile", download: "Download", faq: "FAQ", contact: "Contact"
     },
@@ -532,13 +560,14 @@ window.LOCALES = {
     },
     splash: { tagline: "All-in-one business platform" },
     hero: {
-      badge: "New: IQD/USD multi-currency + multi-branch",
+      badge: "New: Telegram reports bot + multi-currency & branches",
       title: "Qayd",
       subtitle: "Integrated business platform —",
       rotateWords: ["Accounting", "Gold", "Hotels", "Car contracts", "Car trading", "Real estate"],
-      desc: "Six offline desktop systems + multi-currency + multi-branch + voice assistant + LAN linking + mobile app + cloud sync — Arabic, built to scale.",
+      desc: "Six offline desktop systems + Telegram reports bot + multi-currency + multi-branch + voice assistant + LAN linking + mobile app + cloud sync — Arabic, built to scale.",
       cta_download: "Download free",
       cta_systems: "Explore systems",
+      cta_telegram: "Telegram bot",
       cta_features: "Platform features",
       stat_systems: "systems",
       stat_reports: "reports+",
@@ -552,6 +581,32 @@ window.LOCALES = {
         amarah: "Amarah", kut: "Kut", diyala: "Diyala", hillah: "Hillah",
         tikrit: "Tikrit", duhok: "Duhok"
       }
+    },
+    telegram: {
+      badge: "New on Qayd",
+      title: "Telegram bot for Qayd reports",
+      subtitle: "Your accounting reports in your pocket — today's summary, cash, installments, stock, and statements securely in Telegram.",
+      p1: "Instant reports with quick commands like /today and /cash",
+      p2: "Branch picker and a protected 10-day session",
+      p3: "Customer/supplier statements by search — read-only, no data edits",
+      p4: "Specialized dashboards for cars, hotels, real estate, and gold",
+      cta: "Open @qaidsystem_bot",
+      ctaSecondary: "Try the bot now",
+      handleLabel: "Link:",
+      botName: "Qayd Accounting",
+      botStatus: "Online · secure reports",
+      chat1: "Welcome to the Qayd reports bot.",
+      chat2: "/today",
+      chat3title: "Operations summary — today",
+      chat3a: "Cash sales: 2,450,000 IQD",
+      chat3b: "Expenses: 180,000 IQD",
+      chat3c: "Net today: 2,270,000 IQD",
+      chat4: "/cash",
+      chat5: "Cash & bank balances ready ✓",
+      chatHint: "Type / to see commands…",
+      chip1: "/today",
+      chip2: "/overdue",
+      chip3: "/customer"
     },
     systems: {
       title: "Our integrated systems",
@@ -807,6 +862,7 @@ window.LOCALES = {
       subtitle: "The newest Qayd features — ready to use now",
       newLabel: "New",
       items: [
+        { icon: "telegram", title: "Telegram reports bot", desc: "Check today's summary, cash, overdue installments, and account statements in Telegram — read-only, 10-day session, branch picker. @qaidsystem_bot" },
         { icon: "currency", title: "IQD/USD multi-currency", desc: "Run sales, purchases, and balances in dinar and dollar together — with separate reports per currency." },
         { icon: "branches", title: "Multi-branch", desc: "Create independent branches with separate data, permissions, and invoice numbering — plus fast switching and all-branch reports." },
         { icon: "exchange", title: "Currency exchange", desc: "Exchange between IQD and USD inside the system with rate tracking and balances." },

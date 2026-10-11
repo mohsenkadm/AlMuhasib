@@ -1616,7 +1616,6 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             SellerAddress = baseModel.SellerAddress,
             SellerIdNumber = baseModel.SellerIdNumber,
             SellerIdIssuer = baseModel.SellerIdIssuer,
-            AnnualRegistrationNote = baseModel.AnnualRegistrationNote,
             BuyerName = string.IsNullOrWhiteSpace(baseModel.BuyerName) ? CustomerSearchText : baseModel.BuyerName,
             BuyerPhone = baseModel.BuyerPhone,
             BuyerAddress = baseModel.BuyerAddress,

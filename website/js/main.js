@@ -1,6 +1,6 @@
 const VERSION_URL = 'https://raw.githubusercontent.com/mohsenkadm/AlMuhasib/master/version.json';
 const GITHUB_REPO = 'https://github.com/mohsenkadm/AlMuhasib';
-const FALLBACK_DOWNLOAD = 'https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.35/Qayd-Setup-1.14.35.exe';
+const FALLBACK_DOWNLOAD = 'https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.36/Qayd-Setup-1.14.36.exe';
 
 let revealObserver = null;
 
@@ -34,7 +34,7 @@ async function loadVersion() {
     // زر التنزيل يشير للمثبت EXE؛ ZIP يبقى لـ downloadUrl (التحديث التلقائي داخل التطبيق)
     applyDownloadLinks(data.installerUrl || data.downloadUrl || FALLBACK_DOWNLOAD);
   } catch {
-    if (els.version) els.version.textContent = '1.14.35';
+    if (els.version) els.version.textContent = '1.14.36';
     applyDownloadLinks(FALLBACK_DOWNLOAD);
   }
 }
@@ -141,6 +141,7 @@ async function boot() {
   initVideos?.();
   initSystems?.();
   initIraqMap?.();
+  initTelegramBotSection?.();
   loadVersion();
   document.querySelectorAll('[data-github]').forEach(a => a.href = GITHUB_REPO);
   requestAnimationFrame(scrollPageToTop);

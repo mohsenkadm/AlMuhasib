@@ -11,16 +11,25 @@ namespace AlMuhasib.UI.Services;
 
 /// <summary>
 /// طباعة عقد بيع وشراء لمعرض السيارات من فاتورة المبيعات —
-/// الهيدر والفوتر من إعدادات الطباعة، والمحتوى وفق نموذج العقد المعتمد.
+/// الهيدر/الفوتر من إعدادات الطباعة بنفس آلية فاتورة المبيعات.
 /// </summary>
 public sealed class ShowroomSaleContractPrintService : IShowroomSaleContractPrintService
 {
     private static readonly CultureInfo ArabicCulture = CultureInfo.GetCultureInfo("ar-IQ");
-    private static readonly Brush BorderBrush = new SolidColorBrush(Color.FromRgb(0x33, 0x33, 0x33));
-    private static readonly Brush HeaderBg = new SolidColorBrush(Color.FromRgb(0xEE, 0xEE, 0xEE));
-    private static readonly Brush LightBg = new SolidColorBrush(Color.FromRgb(0xFA, 0xFA, 0xFA));
-    private static readonly Brush WarningBg = new SolidColorBrush(Color.FromRgb(0xE3, 0xF2, 0xFD));
-    private static readonly Brush WarningFg = new SolidColorBrush(Color.FromRgb(0x0D, 0x47, 0xA1));
+
+    // A4 @ 96 DPI
+    private const double A4Width = 793.7;
+    private const double A4Height = 1122.5;
+
+    private static readonly Brush PrimaryBlue = new SolidColorBrush(Color.FromRgb(0x1E, 0x5B, 0xA8));
+    private static readonly Brush SectionBorder = new SolidColorBrush(Color.FromRgb(0x6B, 0xA3, 0xD6));
+    private static readonly Brush ContractHeader = new SolidColorBrush(Color.FromRgb(0x5A, 0x5A, 0x5A));
+    private static readonly Brush TitleGold = new SolidColorBrush(Color.FromRgb(0xC9, 0xA2, 0x27));
+    private static readonly Brush LabelBlue = new SolidColorBrush(Color.FromRgb(0x1E, 0x5B, 0xA8));
+    private static readonly Brush FooterBar = new SolidColorBrush(Color.FromRgb(0x0D, 0x3B, 0x7A));
+    private static readonly Brush FieldLine = new SolidColorBrush(Color.FromRgb(0x99, 0x99, 0x99));
+    private static readonly Brush StampHint = new SolidColorBrush(Color.FromRgb(0x90, 0xA4, 0xC0));
+    private static readonly Brush FilledValue = new SolidColorBrush(Color.FromRgb(0xC6, 0x28, 0x28));
 
     private static readonly string[] ContractClauses =
     [
@@ -32,330 +41,468 @@ public sealed class ShowroomSaleContractPrintService : IShowroomSaleContractPrin
     public void PrintContract(ShowroomSaleContractPrintModel model, int copies = 1)
     {
         var document = BuildFlowDocument(model);
-        DocumentPrintHelper.PrintWithPreview(document, $"عقد بيع وشراء {model.ContractNumber}", defaultCopies: copies);
+        DocumentPrintHelper.PrintWithPreview(
+            document,
+            $"عقد بيع وشراء {model.ContractNumber}",
+            pageSize: new Size(A4Width, A4Height),
+            defaultCopies: copies);
     }
 
     private static FlowDocument BuildFlowDocument(ShowroomSaleContractPrintModel model)
     {
+        // نفس هوامش/آلية الهيدر المستخدمة في فاتورة المبيعات
+        var pagePadding = new Thickness(44, 20, 44, 20);
+        var contentWidth = A4Width - pagePadding.Left - pagePadding.Right;
+
         var doc = new FlowDocument
         {
             FontFamily = new FontFamily("Segoe UI, Tahoma, Arial"),
             FontSize = 12,
             FlowDirection = FlowDirection.RightToLeft,
-            PagePadding = new Thickness(28, 12, 28, 18)
+            PageWidth = A4Width,
+            PageHeight = A4Height,
+            PagePadding = pagePadding,
+            ColumnWidth = contentWidth
         };
 
+        // بدون ضغط ارتفاع — نفس PrependBrandingHeader لفاتورة المبيعات
         PrintBrandingFlowDocumentHelper.PrependBrandingHeader(doc);
 
-        doc.Blocks.Add(BuildTitleBlock(model));
-        doc.Blocks.Add(BuildPartiesBlock(model));
-        doc.Blocks.Add(BuildContractBodyBlock(model));
-        doc.Blocks.Add(BuildSignaturesBlock(model));
-        doc.Blocks.Add(BuildStampWarningBlock());
+        var contractBody = BuildContractContent(model, contentWidth);
+        doc.Blocks.Add(new BlockUIContainer(contractBody) { Margin = new Thickness(0, 4, 0, 0) });
 
         PrintBrandingFlowDocumentHelper.AppendBrandingFooter(doc);
 
         return doc;
     }
 
-    private static Block BuildTitleBlock(ShowroomSaleContractPrintModel model)
+    private static FrameworkElement BuildContractContent(ShowroomSaleContractPrintModel model, double designWidth)
     {
-        var table = CreateTable(2, [3.5, 1.5]);
-        var row = new TableRow();
+        var root = new StackPanel
+        {
+            Width = designWidth,
+            FlowDirection = FlowDirection.RightToLeft
+        };
 
-        row.Cells.Add(new TableCell(new Paragraph(new Run("عقد بيع وشراء"))
-        {
-            FontSize = 20,
-            FontWeight = FontWeights.Bold,
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 4, 0, 4)
-        })
-        {
-            BorderBrush = BorderBrush,
-            BorderThickness = new Thickness(1),
-            Padding = new Thickness(8, 8, 8, 8),
-            TextAlignment = TextAlignment.Center
-        });
+        root.Children.Add(BuildTitleBlock(model));
+        root.Children.Add(BuildPartySection(
+            "الطرف الأول",
+            PrimaryBlue,
+            rightFields:
+            [
+                ("البائع", model.SellerName),
+                ("رقم الهوية", model.SellerIdNumber),
+                ("العنوان", model.SellerAddress)
+            ],
+            leftFields:
+            [
+                ("رقم الموبايل", model.SellerPhone),
+                ("جهة الإصدار", model.SellerIdIssuer)
+            ]));
+        root.Children.Add(BuildPartySection(
+            "الطرف الثاني",
+            PrimaryBlue,
+            rightFields:
+            [
+                ("المشتري", model.BuyerName),
+                ("رقم الهوية", model.BuyerIdNumber),
+                ("العنوان", model.BuyerAddress)
+            ],
+            leftFields:
+            [
+                ("رقم الموبايل", model.BuyerPhone),
+                ("جهة الإصدار", model.BuyerIdIssuer)
+            ]));
+        root.Children.Add(BuildContractBodyBlock(model));
+        root.Children.Add(BuildSignaturesBlock(model));
+        root.Children.Add(BuildStampWarningBlock());
 
-        var numberSection = new Section();
-        numberSection.Blocks.Add(new Paragraph(new Run("الرقم"))
-        {
-            FontSize = 11,
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 2)
-        });
-        numberSection.Blocks.Add(new Paragraph(new Run(OrDots(model.ContractNumber)))
-        {
-            FontSize = 16,
-            FontWeight = FontWeights.Bold,
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0)
-        });
-
-        row.Cells.Add(new TableCell(numberSection)
-        {
-            BorderBrush = BorderBrush,
-            BorderThickness = new Thickness(1),
-            Padding = new Thickness(6, 6, 6, 6),
-            Background = LightBg
-        });
-
-        table.RowGroups[0].Rows.Add(row);
-        table.Margin = new Thickness(0, 6, 0, 10);
-        return table;
+        return root;
     }
 
-    private static Block BuildPartiesBlock(ShowroomSaleContractPrintModel model)
+    private static UIElement BuildTitleBlock(ShowroomSaleContractPrintModel model)
     {
-        var table = CreateTable(2, [1, 1]);
-        var row = new TableRow();
+        var root = new Grid { Margin = new Thickness(0, 0, 0, 6) };
+        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.2, GridUnitType.Star) });
+        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3.2, GridUnitType.Star) });
+        root.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.2, GridUnitType.Star) });
 
-        row.Cells.Add(WrapPartyCell("الطرف الأول", [
-            Field("البائع", model.SellerName),
-            Field("رقم الموبايل", model.SellerPhone),
-            Field("رقم الهوية", model.SellerIdNumber),
-            Field("جهة الإصدار", model.SellerIdIssuer),
-            Field("العنوان", model.SellerAddress),
-            Field("رقم السنوية", model.AnnualRegistrationNote)
-        ]));
+        var numberPanel = new StackPanel
+        {
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Margin = new Thickness(4, 0, 0, 0)
+        };
+        numberPanel.Children.Add(new TextBlock
+        {
+            Text = "الرقم",
+            FontSize = 12,
+            Foreground = LabelBlue,
+            FontWeight = FontWeights.Bold,
+            FlowDirection = FlowDirection.RightToLeft
+        });
+        numberPanel.Children.Add(new TextBlock
+        {
+            Text = OrDots(model.ContractNumber),
+            FontSize = 15,
+            FontWeight = FontWeights.Bold,
+            Foreground = PrimaryBlue,
+            FlowDirection = FlowDirection.RightToLeft,
+            Margin = new Thickness(0, 1, 0, 0)
+        });
+        Grid.SetColumn(numberPanel, 0);
+        root.Children.Add(numberPanel);
 
-        row.Cells.Add(WrapPartyCell("الطرف الثاني", [
-            Field("المشتري", model.BuyerName),
-            Field("رقم الموبايل", model.BuyerPhone),
-            Field("رقم الهوية", model.BuyerIdNumber),
-            Field("جهة الإصدار", model.BuyerIdIssuer),
-            Field("العنوان", model.BuyerAddress)
-        ]));
+        var title = new TextBlock
+        {
+            Text = "عقد بيع وشراء",
+            FontSize = 26,
+            FontWeight = FontWeights.Bold,
+            Foreground = TitleGold,
+            TextAlignment = TextAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            FlowDirection = FlowDirection.RightToLeft
+        };
+        Grid.SetColumn(title, 1);
+        root.Children.Add(title);
 
-        table.RowGroups[0].Rows.Add(row);
-        table.Margin = new Thickness(0, 0, 0, 10);
-        return table;
+        return root;
     }
 
-    private static TableCell WrapPartyCell(string title, IEnumerable<Paragraph> fields)
+    private static UIElement BuildPartySection(
+        string title,
+        Brush headerBrush,
+        (string Label, string? Value)[] rightFields,
+        (string Label, string? Value)[] leftFields)
     {
-        var section = new Section { Margin = new Thickness(0) };
-        section.Blocks.Add(new Paragraph(new Run(title))
+        var fieldsGrid = new Grid
         {
-            FontWeight = FontWeights.Bold,
+            Margin = new Thickness(12, 8, 12, 8),
+            FlowDirection = FlowDirection.RightToLeft
+        };
+        fieldsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        fieldsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var rightPanel = new StackPanel { Margin = new Thickness(0, 0, 10, 0) };
+        foreach (var (label, value) in rightFields)
+            rightPanel.Children.Add(LabeledField(label, value, partyStyle: true));
+
+        var leftPanel = new StackPanel { Margin = new Thickness(10, 0, 0, 0) };
+        foreach (var (label, value) in leftFields)
+            leftPanel.Children.Add(LabeledField(label, value, partyStyle: true));
+
+        Grid.SetColumn(rightPanel, 0);
+        Grid.SetColumn(leftPanel, 1);
+        fieldsGrid.Children.Add(rightPanel);
+        fieldsGrid.Children.Add(leftPanel);
+
+        return SectionChrome(title, headerBrush, fieldsGrid, new Thickness(0, 0, 0, 8), headerFontSize: 15);
+    }
+
+    private static UIElement BuildContractBodyBlock(ShowroomSaleContractPrintModel model)
+    {
+        var content = new StackPanel { Margin = new Thickness(12, 10, 12, 10) };
+
+        var saleLine = new TextBlock
+        {
             FontSize = 13.5,
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 6)
-        });
-        foreach (var field in fields)
-            section.Blocks.Add(field);
-
-        return new TableCell(section)
-        {
-            BorderBrush = BorderBrush,
-            BorderThickness = new Thickness(1),
-            Background = LightBg,
-            Padding = new Thickness(10, 8, 10, 8)
-        };
-    }
-
-    private static Block BuildContractBodyBlock(ShowroomSaleContractPrintModel model)
-    {
-        var section = new Section { Margin = new Thickness(0) };
-
-        var header = new Paragraph(new Run("العقد"))
-        {
-            FontWeight = FontWeights.Bold,
-            FontSize = 14,
-            TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 8)
-        };
-
-        var saleLine = new Paragraph
-        {
-            FontSize = 12.2,
             TextAlignment = TextAlignment.Justify,
-            LineHeight = 22,
-            Margin = new Thickness(0, 0, 0, 8)
+            TextWrapping = TextWrapping.Wrap,
+            LineHeight = 24,
+            Margin = new Thickness(0, 0, 0, 8),
+            FlowDirection = FlowDirection.RightToLeft
         };
         saleLine.Inlines.Add(new Run("1- باع الطرف الأول للطرف الثاني السيارة "));
-        saleLine.Inlines.Add(BoldValue(OrDots(model.VehicleName)));
+        saleLine.Inlines.Add(HighlightRun(model.VehicleName));
         saleLine.Inlines.Add(new Run(" المرقمة ") { FontWeight = FontWeights.SemiBold });
-        saleLine.Inlines.Add(BoldValue(model.PlateNumber));
+        saleLine.Inlines.Add(HighlightRun(model.PlateNumber));
         if (!string.IsNullOrWhiteSpace(model.PlateType))
         {
             saleLine.Inlines.Add(new Run(" (نوع اللوحة: "));
-            saleLine.Inlines.Add(BoldValue(model.PlateType));
+            saleLine.Inlines.Add(HighlightRun(model.PlateType));
             saleLine.Inlines.Add(new Run(")"));
         }
 
         saleLine.Inlines.Add(new Run(" صنف السيارة "));
-        saleLine.Inlines.Add(BoldValue(model.ChassisNumber));
+        saleLine.Inlines.Add(HighlightRun(model.ChassisNumber));
         saleLine.Inlines.Add(new Run(" الموديل "));
-        saleLine.Inlines.Add(BoldValue(model.VehicleModel));
+        saleLine.Inlines.Add(HighlightRun(model.VehicleModel));
         saleLine.Inlines.Add(new Run(" اللون "));
-        saleLine.Inlines.Add(BoldValue(model.VehicleColor));
+        saleLine.Inlines.Add(HighlightRun(model.VehicleColor));
         saleLine.Inlines.Add(new Run(" النوع "));
-        saleLine.Inlines.Add(BoldValue(model.VehicleType));
+        saleLine.Inlines.Add(HighlightRun(model.VehicleType));
         saleLine.Inlines.Add(new Run(" الحجم "));
-        saleLine.Inlines.Add(BoldValue(model.VehicleSize));
+        saleLine.Inlines.Add(HighlightRun(model.VehicleSize));
         saleLine.Inlines.Add(new Run(" بمبلغ قدره رقماً "));
-        saleLine.Inlines.Add(BoldValue(FormatMoney(model.TotalAmount)));
+        saleLine.Inlines.Add(HighlightText(FormatMoney(model.TotalAmount), filled: true));
         saleLine.Inlines.Add(new Run(" كتابة "));
-        saleLine.Inlines.Add(BoldValue(OrDots(model.TotalAmountInWords)));
+        saleLine.Inlines.Add(HighlightRun(model.TotalAmountInWords));
         saleLine.Inlines.Add(new Run(" وقد قبض البائع "));
-        saleLine.Inlines.Add(BoldValue(FormatMoney(model.PaidAmount)));
+        saleLine.Inlines.Add(HighlightText(FormatMoney(model.PaidAmount), filled: true));
         saleLine.Inlines.Add(new Run(" والباقي "));
-        saleLine.Inlines.Add(BoldValue(FormatMoney(model.RemainingAmount)));
+        saleLine.Inlines.Add(HighlightText(FormatMoney(model.RemainingAmount), filled: true));
         if (model.DueDate.HasValue)
         {
             saleLine.Inlines.Add(new Run(" تاريخ الاستحقاق "));
-            saleLine.Inlines.Add(BoldValue(model.DueDate.Value.ToString("yyyy/MM/dd", ArabicCulture)));
+            saleLine.Inlines.Add(HighlightText(
+                model.DueDate.Value.ToString("yyyy/MM/dd", ArabicCulture),
+                filled: true));
         }
 
         saleLine.Inlines.Add(new Run("."));
-
-        var bodyCellContent = new Section();
-        bodyCellContent.Blocks.Add(header);
-        bodyCellContent.Blocks.Add(saleLine);
+        content.Children.Add(saleLine);
 
         for (var i = 0; i < ContractClauses.Length; i++)
         {
-            bodyCellContent.Blocks.Add(new Paragraph
+            var clause = new TextBlock
             {
-                FontSize = 11.8,
+                FontSize = 13.5,
                 TextAlignment = TextAlignment.Justify,
-                LineHeight = 20,
+                TextWrapping = TextWrapping.Wrap,
+                LineHeight = 23,
                 Margin = new Thickness(0, 0, 0, 6),
-                Inlines =
-                {
-                    new Run($"{i + 2}- ") { FontWeight = FontWeights.Bold },
-                    new Run(ContractClauses[i])
-                }
-            });
+                FlowDirection = FlowDirection.RightToLeft
+            };
+            clause.Inlines.Add(new Run($"{i + 2}- ") { FontWeight = FontWeights.Bold, Foreground = LabelBlue });
+            clause.Inlines.Add(new Run(ContractClauses[i]));
+            content.Children.Add(clause);
         }
 
         var city = string.IsNullOrWhiteSpace(model.City) ? "........" : model.City.Trim();
-        var written = new Paragraph
+        var written = new TextBlock
         {
-            FontSize = 12,
-            Margin = new Thickness(0, 10, 0, 0),
-            TextAlignment = TextAlignment.Right
+            FontSize = 13,
+            Margin = new Thickness(0, 8, 0, 0),
+            TextAlignment = TextAlignment.Right,
+            FlowDirection = FlowDirection.RightToLeft
         };
-        written.Inlines.Add(new Run("كتبت في "));
-        written.Inlines.Add(BoldValue(city));
-        written.Inlines.Add(new Run(" بتاريخ "));
-        written.Inlines.Add(BoldValue(model.ContractDate.ToString("yyyy/MM/dd", ArabicCulture)));
-        written.Inlines.Add(new Run(" الساعة "));
-        written.Inlines.Add(BoldValue(model.ContractDate.ToString("HH:mm", ArabicCulture)));
-        bodyCellContent.Blocks.Add(written);
+        written.Inlines.Add(new Run("كتبت في ") { Foreground = LabelBlue, FontWeight = FontWeights.SemiBold });
+        written.Inlines.Add(HighlightText(city, filled: HasValue(model.City)));
+        written.Inlines.Add(new Run(" بتاريخ ") { Foreground = LabelBlue, FontWeight = FontWeights.SemiBold });
+        written.Inlines.Add(HighlightText(model.ContractDate.ToString("yyyy/MM/dd", ArabicCulture), filled: true));
+        written.Inlines.Add(new Run(" الساعة ") { Foreground = LabelBlue, FontWeight = FontWeights.SemiBold });
+        written.Inlines.Add(HighlightText(model.ContractDate.ToString("HH:mm", ArabicCulture), filled: true));
+        content.Children.Add(written);
 
-        var table = CreateTable(1, [1]);
-        var row = new TableRow();
-        row.Cells.Add(new TableCell(bodyCellContent)
+        return SectionChrome("العقد", ContractHeader, content, new Thickness(0, 0, 0, 8), headerFontSize: 15);
+    }
+
+    private static UIElement BuildSignaturesBlock(ShowroomSaleContractPrintModel model)
+    {
+        var grid = new Grid { Margin = new Thickness(2, 6, 2, 6), MinHeight = 88 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var seller = SignaturePanel("الطرف الأول البائع", model.SellerName);
+        var stamp = new StackPanel
         {
-            BorderBrush = BorderBrush,
-            BorderThickness = new Thickness(1),
-            Padding = new Thickness(12, 10, 12, 10),
-            Background = LightBg
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        stamp.Children.Add(new Border
+        {
+            Width = 78,
+            Height = 78,
+            CornerRadius = new CornerRadius(39),
+            BorderBrush = StampHint,
+            BorderThickness = new Thickness(1.5),
+            Background = Brushes.Transparent,
+            Child = new TextBlock
+            {
+                Text = "الختم",
+                Foreground = StampHint,
+                FontSize = 11,
+                FontWeight = FontWeights.SemiBold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextAlignment = TextAlignment.Center
+            }
         });
-        table.RowGroups[0].Rows.Add(row);
-        table.Margin = new Thickness(0, 0, 0, 12);
-        return table;
+        var buyer = SignaturePanel("الطرف الثاني المشتري", model.BuyerName);
+
+        Grid.SetColumn(buyer, 0);
+        Grid.SetColumn(stamp, 1);
+        Grid.SetColumn(seller, 2);
+        grid.Children.Add(buyer);
+        grid.Children.Add(stamp);
+        grid.Children.Add(seller);
+
+        return grid;
     }
 
-    private static Block BuildSignaturesBlock(ShowroomSaleContractPrintModel model)
+    private static StackPanel SignaturePanel(string label, string name)
     {
-        var table = CreateTable(2, [1, 1]);
-        var row = new TableRow();
-        row.Cells.Add(SignatureCell("الطرف الأول البائع", model.SellerName));
-        row.Cells.Add(SignatureCell("الطرف الثاني المشتري", model.BuyerName));
-        table.RowGroups[0].Rows.Add(row);
-        table.Margin = new Thickness(0, 8, 0, 10);
-        return table;
-    }
-
-    private static TableCell SignatureCell(string label, string name)
-    {
-        var panel = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
+        var panel = new StackPanel
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Top,
+            Margin = new Thickness(4, 0, 4, 0)
+        };
         panel.Children.Add(new TextBlock
         {
             Text = label,
-            FontWeight = FontWeights.SemiBold,
-            FontSize = 12,
+            FontWeight = FontWeights.Bold,
+            FontSize = 13.5,
+            Foreground = PrimaryBlue,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 8)
+            FlowDirection = FlowDirection.RightToLeft,
+            Margin = new Thickness(0, 0, 0, 4)
         });
         panel.Children.Add(new TextBlock
         {
             Text = OrDots(name, 22),
-            FontSize = 12,
+            FontSize = 13,
+            FontWeight = FontWeights.Bold,
             TextAlignment = TextAlignment.Center,
-            Margin = new Thickness(0, 0, 0, 28)
+            FlowDirection = FlowDirection.RightToLeft,
+            Margin = new Thickness(0, 0, 0, 22)
         });
         panel.Children.Add(new Border
         {
-            BorderBrush = BorderBrush,
-            BorderThickness = new Thickness(0, 0, 0, 1),
-            Width = 160,
-            Height = 1
+            BorderBrush = FieldLine,
+            BorderThickness = new Thickness(0, 0, 0, 1.2),
+            Width = 150,
+            Height = 1,
+            HorizontalAlignment = HorizontalAlignment.Center
         });
+        return panel;
+    }
 
-        return new TableCell(new BlockUIContainer(panel))
+    private static UIElement BuildStampWarningBlock()
+    {
+        return new Border
         {
-            BorderBrush = BorderBrush,
-            BorderThickness = new Thickness(1),
-            Padding = new Thickness(8, 12, 8, 12),
-            TextAlignment = TextAlignment.Center
+            Background = FooterBar,
+            Padding = new Thickness(10, 8, 10, 8),
+            CornerRadius = new CornerRadius(2),
+            Margin = new Thickness(0, 4, 0, 0),
+            Child = new TextBlock
+            {
+                Text = "أي عقد غير مختوم بختم المعرض يعتبر باطل",
+                FontWeight = FontWeights.Bold,
+                FontSize = 13.5,
+                Foreground = Brushes.White,
+                TextAlignment = TextAlignment.Center,
+                FlowDirection = FlowDirection.RightToLeft
+            }
         };
     }
 
-    private static Block BuildStampWarningBlock()
+    private static UIElement SectionChrome(
+        string title,
+        Brush headerBrush,
+        UIElement content,
+        Thickness margin,
+        double headerFontSize = 13.5)
     {
-        var paragraph = new Paragraph(new Run("أي عقد غير مختوم بختم المعرض يعتبر باطل"))
-        {
-            FontWeight = FontWeights.Bold,
-            FontSize = 12.5,
-            TextAlignment = TextAlignment.Center,
-            Foreground = WarningFg,
-            Margin = new Thickness(0, 4, 0, 4)
-        };
+        var stack = new StackPanel { Margin = margin };
 
-        var table = CreateTable(1, [1]);
-        var row = new TableRow();
-        row.Cells.Add(new TableCell(paragraph)
+        stack.Children.Add(new Border
         {
-            BorderBrush = WarningFg,
+            Background = headerBrush,
+            CornerRadius = new CornerRadius(14, 0, 0, 14),
+            Padding = new Thickness(16, 5, 16, 5),
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Child = new TextBlock
+            {
+                Text = title,
+                Foreground = Brushes.White,
+                FontWeight = FontWeights.Bold,
+                FontSize = headerFontSize,
+                FlowDirection = FlowDirection.RightToLeft,
+                TextAlignment = TextAlignment.Center
+            }
+        });
+
+        stack.Children.Add(new Border
+        {
+            BorderBrush = SectionBorder,
             BorderThickness = new Thickness(1.5),
-            Background = WarningBg,
-            Padding = new Thickness(10, 8, 10, 8)
+            Background = Brushes.White,
+            Margin = new Thickness(0, -1, 0, 0),
+            Child = content
         });
-        table.RowGroups[0].Rows.Add(row);
-        table.Margin = new Thickness(0, 4, 0, 8);
-        return table;
+
+        return stack;
     }
 
-    private static Table CreateTable(int columns, double[] starWidths)
+    private static UIElement LabeledField(string label, string? value, bool partyStyle = false)
     {
-        var table = new Table { CellSpacing = 4, Margin = new Thickness(0) };
-        for (var i = 0; i < columns; i++)
+        var fontSize = partyStyle ? 14 : 12.5;
+
+        // RTL: التسمية يميناً ثم القيمة مباشرة بعدها، ثم خط يكمل الفراغ يساراً
+        var panel = new Grid
         {
-            var w = i < starWidths.Length ? starWidths[i] : 1;
-            table.Columns.Add(new TableColumn { Width = new GridLength(w, GridUnitType.Star) });
-        }
+            Margin = new Thickness(0, 0, 0, 6),
+            FlowDirection = FlowDirection.RightToLeft
+        };
+        panel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        panel.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        panel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        table.RowGroups.Add(new TableRowGroup());
-        return table;
+        var labelBlock = new TextBlock
+        {
+            Text = $"{label} : ",
+            FontWeight = FontWeights.Bold,
+            FontSize = fontSize,
+            Foreground = LabelBlue,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            FlowDirection = FlowDirection.RightToLeft
+        };
+        Grid.SetColumn(labelBlock, 0);
+
+        var valueBlock = new TextBlock
+        {
+            Text = OrDots(value),
+            FontSize = fontSize,
+            FontWeight = FontWeights.Bold,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            FlowDirection = FlowDirection.RightToLeft,
+            Padding = new Thickness(2, 0, 2, 1)
+        };
+
+        var valueUnderline = new Border
+        {
+            BorderBrush = FieldLine,
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Child = valueBlock,
+            VerticalAlignment = VerticalAlignment.Bottom,
+            MinWidth = 48,
+            Margin = new Thickness(0, 0, 2, 0)
+        };
+        Grid.SetColumn(valueUnderline, 1);
+
+        var fillerLine = new Border
+        {
+            BorderBrush = FieldLine,
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Height = 1,
+            Margin = new Thickness(0, 0, 0, 3),
+            VerticalAlignment = VerticalAlignment.Bottom
+        };
+        Grid.SetColumn(fillerLine, 2);
+
+        panel.Children.Add(labelBlock);
+        panel.Children.Add(valueUnderline);
+        panel.Children.Add(fillerLine);
+        return panel;
     }
 
-    private static Paragraph Field(string label, string? value)
+    private static Run HighlightRun(string? value)
     {
-        var p = new Paragraph { Margin = new Thickness(0, 0, 0, 3), LineHeight = 18 };
-        p.Inlines.Add(new Run($"{label} : ") { FontWeight = FontWeights.SemiBold, FontSize = 11.5 });
-        p.Inlines.Add(new Run(OrDots(value)) { FontSize = 11.5 });
-        return p;
+        var filled = HasValue(value);
+        return HighlightText(OrDots(value), filled);
     }
 
-    private static Run BoldValue(string? value) => new(OrDots(value))
+    private static Run HighlightText(string text, bool filled) => new(text)
     {
         FontWeight = FontWeights.Bold,
-        FontSize = 12.5
+        FontSize = 14,
+        Foreground = filled ? FilledValue : Brushes.Black
     };
+
+    private static bool HasValue(string? value) => !string.IsNullOrWhiteSpace(value);
 
     private static string FormatMoney(decimal amount) =>
         $"{amount.ToString("N0", ArabicCulture)} دينار";

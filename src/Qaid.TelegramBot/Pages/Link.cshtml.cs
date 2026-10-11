@@ -67,6 +67,7 @@ public sealed class LinkModel : PageModel
                 TempData["ptid"] = login.TenantId.ToString();
                 TempData["pun"] = PendingUsername;
                 TempData["pcn"] = login.CompanyName;
+                TempData["pst"] = login.ApplicationSystemType.ToString();
                 return Page();
             }
 
@@ -90,6 +91,7 @@ public sealed class LinkModel : PageModel
                 CompanyName = login.CompanyName,
                 Username = login.UsernameOrFallback(Input.Username),
                 CurrentBranchId = branchId,
+                ApplicationSystemType = login.ApplicationSystemType,
                 AccessToken = access,
                 RefreshToken = refresh,
                 AccessTokenExpiresAt = expires
@@ -126,8 +128,10 @@ public sealed class LinkModel : PageModel
         var refresh = TempData["prt"] as string;
         var expiresRaw = TempData["pae"] as string;
         var tenantRaw = TempData["ptid"] as string;
+        var systemRaw = TempData["pst"] as string;
         var username = TempData["pun"] as string ?? Input.Username;
         var company = TempData["pcn"] as string ?? string.Empty;
+        _ = int.TryParse(systemRaw, out var systemType);
 
         if (string.IsNullOrWhiteSpace(access) || string.IsNullOrWhiteSpace(refresh)
             || !DateTime.TryParse(expiresRaw, null, System.Globalization.DateTimeStyles.RoundtripKind, out var expires)
@@ -148,6 +152,7 @@ public sealed class LinkModel : PageModel
                 CompanyName = company,
                 Username = username,
                 CurrentBranchId = selected.CurrentBranchId,
+                ApplicationSystemType = systemType,
                 AccessToken = selected.AccessToken,
                 RefreshToken = refresh,
                 AccessTokenExpiresAt = selected.AccessTokenExpiresAt

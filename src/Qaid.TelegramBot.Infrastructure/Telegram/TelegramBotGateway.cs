@@ -71,8 +71,15 @@ public sealed class TelegramBotGateway : ITelegramBotGateway
             return null;
 
         var rows = keyboard
-            .Select(row => row.Select(b => InlineKeyboardButton.WithCallbackData(b.Text, b.CallbackData)).ToArray())
+            .Select(row => row.Select(ToButton).ToArray())
             .ToArray();
         return new InlineKeyboardMarkup(rows);
+    }
+
+    private static InlineKeyboardButton ToButton(BotButton b)
+    {
+        if (!string.IsNullOrWhiteSpace(b.Url))
+            return InlineKeyboardButton.WithUrl(b.Text, b.Url);
+        return InlineKeyboardButton.WithCallbackData(b.Text, b.CallbackData ?? "m");
     }
 }

@@ -62,5 +62,5 @@ public sealed class SessionTokenService : ISessionTokenService
 public static class ArabicSessionMessages
 {
     public const string NotLinked = "الحساب غير مربوط.";
-    public const string Expired = "انتهت الجلسة. أعد الربط عبر /link.";
+    public const string Expired = "انتهت صلاحية الربط (10 أيام). أعد التسجيل من صفحة الربط.";
 }

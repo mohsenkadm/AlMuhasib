@@ -14,6 +14,8 @@ public interface ILinkService
     Task<(bool Ok, string Message, TelegramLinkInfo? Link)> ConsumeLinkCodeAsync(string plainCode, long telegramUserId, CancellationToken ct);
     Task<TelegramLinkInfo?> GetActiveLinkAsync(long telegramUserId, CancellationToken ct);
     Task UpdateTokensAsync(long telegramUserId, StoredSessionTokens tokens, CancellationToken ct);
+    Task UpdateBranchAsync(long telegramUserId, int branchId, StoredSessionTokens tokens, CancellationToken ct);
+    Task UpdateApplicationSystemTypeAsync(long telegramUserId, int applicationSystemType, CancellationToken ct);
     Task<bool> UnlinkAsync(long telegramUserId, CancellationToken ct);
     Task MarkSessionInvalidAsync(long telegramUserId, CancellationToken ct);
 }
@@ -30,6 +32,34 @@ public interface IQaidApiClient
     Task<CashBalancesSummaryReportResult> GetCashBalancesAsync(string accessToken, CancellationToken ct);
     Task<CashFlowResult> GetCashFlowAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct);
     Task<CustomersOverviewReportResult> GetCustomersOverviewAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct);
+    Task<DailyOperationsReportResult> GetDailyOperationsAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct);
+    Task<OverdueResult> GetInstallmentsOverdueAsync(string accessToken, CancellationToken ct);
+    Task<InstallmentsSummaryResult> GetInstallmentsSummaryAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct);
+    Task<OverdueCustomersReportResult> GetOverdueCustomersAsync(string accessToken, CancellationToken ct);
+    Task<ReceivablesAgingReportResult> GetReceivablesAgingAsync(string accessToken, CancellationToken ct);
+    Task<MinimumQuantityReportResult> GetMinimumQuantityAsync(string accessToken, CancellationToken ct);
+    Task<StockHealthReportResult> GetStockHealthAsync(string accessToken, CancellationToken ct);
+    Task<TopProductsReportResult> GetTopProductsAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct);
+    Task<PurchasesReportResult> GetPurchasesAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct);
+    Task<SuppliersOverviewReportResult> GetSuppliersOverviewAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct);
+    Task<SalesByPaymentMethodReportResult> GetSalesByPaymentMethodAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct);
+    Task<PayablesAgingReportResult> GetPayablesAgingAsync(string accessToken, CancellationToken ct);
+    Task<CustomerCollectionsReportResult> GetCustomerCollectionsAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct);
+    Task<SupplierPaymentsReportResult> GetSupplierPaymentsAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct);
+    Task<FinancialPositionSummaryReportResult> GetFinancialPositionAsync(string accessToken, CancellationToken ct);
+    Task<CogsReportResult> GetCogsAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct);
+    Task<InventoryValuationReportResult> GetInventoryValuationAsync(string accessToken, CancellationToken ct);
+    Task<TransfersReportResult> GetTransfersAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct);
+    Task<GrossProfitMarginReportResult> GetGrossProfitMarginAsync(string accessToken, DateTime? from, DateTime? to, CancellationToken ct);
+    Task<List<LookupItemDto>> SearchCustomersAsync(string accessToken, string search, CancellationToken ct);
+    Task<List<LookupItemDto>> SearchSuppliersAsync(string accessToken, string search, CancellationToken ct);
+    Task<CustomerStatementResult> GetCustomerStatementAsync(string accessToken, Guid customerSyncId, CancellationToken ct);
+    Task<SupplierStatementResult> GetSupplierStatementAsync(string accessToken, Guid supplierSyncId, CancellationToken ct);
+    Task<CarDashboardDto> GetCarDashboardAsync(string accessToken, CancellationToken ct);
+    Task<CarTradeDashboardDto> GetCarTradeDashboardAsync(string accessToken, CancellationToken ct);
+    Task<RealEstateDashboardDto> GetRealEstateDashboardAsync(string accessToken, CancellationToken ct);
+    Task<HotelRestaurantSummaryDto> GetHotelRestaurantSummaryAsync(string accessToken, CancellationToken ct);
+    Task<GoldStockReportDto> GetGoldStockAsync(string accessToken, CancellationToken ct);
 }
 
 public interface ISessionTokenService
@@ -47,7 +77,8 @@ public interface ITelegramBotGateway
 public sealed class BotButton
 {
     public required string Text { get; init; }
-    public required string CallbackData { get; init; }
+    public string? CallbackData { get; init; }
+    public string? Url { get; init; }
 }
 
 public interface IBotUpdateProcessor

@@ -39,7 +39,6 @@ public static class ShowroomSaleContractPrintModelFactory
             SellerAddress = branding.Address,
             SellerIdNumber = branding.CompanyIdNumber,
             SellerIdIssuer = branding.CompanyIdIssuer,
-            AnnualRegistrationNote = "مطابق",
             BuyerName = customer?.Name ?? string.Empty,
             BuyerPhone = customer?.Phone ?? string.Empty,
             BuyerAddress = customer?.Address ?? string.Empty,

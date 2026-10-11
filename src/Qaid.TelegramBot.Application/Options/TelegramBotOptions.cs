@@ -25,4 +25,7 @@ public sealed class LinkOptions
 
     public int CodeLifetimeMinutes { get; set; } = 5;
     public int CodeLength { get; set; } = 8;
+
+    /// <summary>مدة صلاحية ربط التيليجرام بالأيام قبل إعادة تسجيل الدخول.</summary>
+    public int SessionDays { get; set; } = 10;
 }

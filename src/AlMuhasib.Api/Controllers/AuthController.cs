@@ -70,7 +70,7 @@ public sealed class AuthController : ControllerBase
         response.CurrentBranchId = branches.Count == 1 ? autoBranchId : null;
 
         account.RefreshToken = response.RefreshToken;
-        account.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
+        account.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(10);
         await _db.SaveChangesAsync(ct);
         return Ok(response);
     }
@@ -178,7 +178,7 @@ public sealed class AuthController : ControllerBase
         response.CurrentBranchId = branches.Count == 1 ? branches[0].BranchId : null;
 
         account.RefreshToken = response.RefreshToken;
-        account.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(7);
+        account.RefreshTokenExpiresAt = DateTime.UtcNow.AddDays(10);
         await _db.SaveChangesAsync(ct);
         return Ok(response);
     }

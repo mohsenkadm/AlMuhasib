@@ -9,6 +9,7 @@ public sealed class LinkCodeEntity
     public string CompanyName { get; set; } = string.Empty;
     public string Username { get; set; } = string.Empty;
     public int? CurrentBranchId { get; set; }
+    public int ApplicationSystemType { get; set; }
     public string ProtectedAccessToken { get; set; } = string.Empty;
     public string ProtectedRefreshToken { get; set; } = string.Empty;
     public DateTime AccessTokenExpiresAt { get; set; }
@@ -26,6 +27,7 @@ public sealed class TelegramLinkEntity
     public string CompanyName { get; set; } = string.Empty;
     public string Username { get; set; } = string.Empty;
     public int? CurrentBranchId { get; set; }
+    public int ApplicationSystemType { get; set; }
     public string ProtectedAccessToken { get; set; } = string.Empty;
     public string ProtectedRefreshToken { get; set; } = string.Empty;
     public DateTime AccessTokenExpiresAt { get; set; }

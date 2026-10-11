@@ -13,7 +13,6 @@ public sealed class ShowroomSaleContractPrintModel
     public string SellerAddress { get; init; } = string.Empty;
     public string SellerIdNumber { get; init; } = string.Empty;
     public string SellerIdIssuer { get; init; } = string.Empty;
-    public string AnnualRegistrationNote { get; init; } = "مطابق";
 
     // الطرف الثاني — زبون الفاتورة
     public string BuyerName { get; init; } = string.Empty;

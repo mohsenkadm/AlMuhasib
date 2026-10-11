@@ -45,15 +45,55 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
         }
 
         var trimmed = (text ?? string.Empty).Trim();
-        if (trimmed.StartsWith("/start", StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("/start", StringComparison.OrdinalIgnoreCase))
         {
             await HandleStartAsync(telegramUserId, chatId, ct);
+            return;
+        }
+
+        if (trimmed.StartsWith("/help", StringComparison.OrdinalIgnoreCase))
+        {
+            await _bot.SendTextAsync(chatId, BotCommands.HelpText(), null, ct);
             return;
         }
 
         if (trimmed.StartsWith("/unlink", StringComparison.OrdinalIgnoreCase))
         {
             await PromptUnlinkAsync(chatId, ct);
+            return;
+        }
+
+        if (trimmed.StartsWith("/branch", StringComparison.OrdinalIgnoreCase))
+        {
+            await ShowBranchPickerAsync(telegramUserId, chatId, messageId: null, ct);
+            return;
+        }
+
+        if (trimmed.StartsWith("/system", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("/dash", StringComparison.OrdinalIgnoreCase))
+        {
+            await ShowSystemDashboardAsync(telegramUserId, chatId, messageId: null, ct);
+            return;
+        }
+
+        if (trimmed.StartsWith("/customer", StringComparison.OrdinalIgnoreCase)
+            || trimmed.StartsWith("/supplier", StringComparison.OrdinalIgnoreCase))
+        {
+            var parts = trimmed.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var isCustomer = trimmed.StartsWith("/customer", StringComparison.OrdinalIgnoreCase);
+            if (parts.Length < 2)
+            {
+                await _bot.SendTextAsync(
+                    chatId,
+                    isCustomer
+                        ? "ابحث عن زبون هكذا:\n/customer اسم الزبون"
+                        : "ابحث عن مورد هكذا:\n/supplier اسم المورد",
+                    null,
+                    ct);
+                return;
+            }
+
+            await SearchLookupAsync(telegramUserId, chatId, messageId: null, parts[1], isCustomer, ct);
             return;
         }
 
@@ -66,11 +106,16 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
                 return;
             }
 
-            await SendNotLinkedOrMenuAsync(telegramUserId, chatId, ct);
+            await SendNotLinkedAsync(chatId, ct);
             return;
         }
 
-        // Treat bare link codes (8+ alphanumeric) as link attempts when not already linked.
+        if (ReportCatalog.TryGetByCommand(trimmed, out var kind))
+        {
+            await HandleReportCommandAsync(telegramUserId, chatId, kind, ct);
+            return;
+        }
+
         if (LooksLikeLinkCode(trimmed))
         {
             var link = await _links.GetActiveLinkAsync(telegramUserId, ct);
@@ -81,7 +126,7 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
             }
         }
 
-        await SendNotLinkedOrMenuAsync(telegramUserId, chatId, ct);
+        await HandleStartAsync(telegramUserId, chatId, ct);
     }
 
     public async Task ProcessCallbackAsync(
@@ -115,12 +160,46 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
                 case CallbackActionType.RunReport:
                     await RunReportAsync(telegramUserId, chatId, messageId, action.Kind!.Value, action.Period!.Value, ct);
                     break;
+                case CallbackActionType.BranchList:
+                    await ShowBranchPickerAsync(telegramUserId, chatId, messageId, ct);
+                    break;
+                case CallbackActionType.SelectBranch:
+                    await SelectBranchAsync(telegramUserId, chatId, messageId, action.BranchId!.Value, ct);
+                    break;
+                case CallbackActionType.PromptCustomerSearch:
+                    await _bot.EditTextAsync(
+                        chatId, messageId,
+                        "ابحث عن زبون بإرسال:\n/customer اسم الزبون",
+                        BotMenus.AfterResult(ReportKind.LastSync, false),
+                        ct);
+                    break;
+                case CallbackActionType.PromptSupplierSearch:
+                    await _bot.EditTextAsync(
+                        chatId, messageId,
+                        "ابحث عن مورد بإرسال:\n/supplier اسم المورد",
+                        BotMenus.AfterResult(ReportKind.LastSync, false),
+                        ct);
+                    break;
+                case CallbackActionType.ShowCustomerStatement:
+                    await ShowStatementAsync(telegramUserId, chatId, messageId, action.EntitySyncId!.Value, customers: true, ct);
+                    break;
+                case CallbackActionType.ShowSupplierStatement:
+                    await ShowStatementAsync(telegramUserId, chatId, messageId, action.EntitySyncId!.Value, customers: false, ct);
+                    break;
+                case CallbackActionType.SystemDashboard:
+                    await ShowSystemDashboardAsync(telegramUserId, chatId, messageId, ct);
+                    break;
                 case CallbackActionType.UnlinkPrompt:
                     await _bot.EditTextAsync(chatId, messageId, "هل تريد إلغاء ربط حساب قيد؟", BotMenus.UnlinkConfirm(), ct);
                     break;
                 case CallbackActionType.UnlinkConfirm:
                     await _links.UnlinkAsync(telegramUserId, ct);
-                    await _bot.EditTextAsync(chatId, messageId, "تم إلغاء الربط. لن تُعرض أي بيانات حتى تعيد الربط.", null, ct);
+                    await _bot.EditTextAsync(
+                        chatId,
+                        messageId,
+                        "تم إلغاء الربط. لن تُعرض أي بيانات حتى تعيد الربط.",
+                        BotMenus.NotLinked(LinkUrl()),
+                        ct);
                     break;
             }
         }
@@ -136,27 +215,55 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
         var link = await _links.GetActiveLinkAsync(telegramUserId, ct);
         if (link is null || !link.IsActive)
         {
-            await _bot.SendTextAsync(chatId, ArabicReportFormatter.NotLinked(LinkUrl()), null, ct);
+            await SendNotLinkedAsync(chatId, ct);
+            return;
+        }
+
+        if (await NeedsBranchAsync(link, ct))
+        {
+            await ShowBranchPickerAsync(telegramUserId, chatId, messageId: null, ct);
             return;
         }
 
         await _bot.SendTextAsync(
             chatId,
-            $"مرحباً بك في بوت تقارير قيد.\nالشركة: {link.CompanyName}\nاختر تقريراً:",
+            $"مرحباً بك في بوت تقارير قيد.\nالشركة: {link.CompanyName}\nاختر تقريراً من الأزرار:",
             BotMenus.MainMenu(link.CompanyName),
             ct);
     }
 
-    private async Task SendNotLinkedOrMenuAsync(long telegramUserId, long chatId, CancellationToken ct)
+    private async Task HandleReportCommandAsync(long telegramUserId, long chatId, ReportKind kind, CancellationToken ct)
     {
         var link = await _links.GetActiveLinkAsync(telegramUserId, ct);
         if (link is null || !link.IsActive)
         {
-            await _bot.SendTextAsync(chatId, ArabicReportFormatter.NotLinked(LinkUrl()), null, ct);
+            await SendNotLinkedAsync(chatId, ct);
             return;
         }
 
-        await _bot.SendTextAsync(chatId, $"الشركة: {link.CompanyName}\nاختر تقريراً:", BotMenus.MainMenu(link.CompanyName), ct);
+        if (await NeedsBranchAsync(link, ct))
+        {
+            await ShowBranchPickerAsync(telegramUserId, chatId, messageId: null, ct);
+            return;
+        }
+
+        if (ReportCatalog.NeedsPeriod(kind))
+        {
+            await _bot.SendTextAsync(
+                chatId,
+                $"تقرير: {ReportCatalog.TitleOf(kind)}\nاختر الفترة الزمنية:",
+                BotMenus.PeriodMenu(kind),
+                ct);
+            return;
+        }
+
+        await RunReportAsync(telegramUserId, chatId, messageId: null, kind, ReportPeriod.Today, ct);
+    }
+
+    private async Task SendNotLinkedAsync(long chatId, CancellationToken ct)
+    {
+        var url = LinkUrl();
+        await _bot.SendTextAsync(chatId, ArabicReportFormatter.NotLinked(url), BotMenus.NotLinked(url), ct);
     }
 
     private async Task TryConsumeCodeAsync(long telegramUserId, long chatId, string code, CancellationToken ct)
@@ -164,13 +271,24 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
         var (ok, message, link) = await _links.ConsumeLinkCodeAsync(code, telegramUserId, ct);
         if (!ok || link is null)
         {
-            await _bot.SendTextAsync(chatId, message, null, ct);
+            await _bot.SendTextAsync(chatId, message, BotMenus.NotLinked(LinkUrl()), ct);
+            return;
+        }
+
+        if (await NeedsBranchAsync(link, ct))
+        {
+            await _bot.SendTextAsync(
+                chatId,
+                $"تم الربط بنجاح.\nالشركة: {link.CompanyName}\n{ArabicReportFormatter.NeedBranch()}",
+                null,
+                ct);
+            await ShowBranchPickerAsync(telegramUserId, chatId, messageId: null, ct);
             return;
         }
 
         await _bot.SendTextAsync(
             chatId,
-            $"تم الربط بنجاح.\nالشركة: {link.CompanyName}\nاختر تقريراً:",
+            $"تم الربط بنجاح.\nالشركة: {link.CompanyName}\nصلاحية الربط حتى: {link.SessionExpiresAtUtc:yyyy/MM/dd} UTC\nاختر تقريراً:",
             BotMenus.MainMenu(link.CompanyName),
             ct);
     }
@@ -183,16 +301,231 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
         var link = await _links.GetActiveLinkAsync(telegramUserId, ct);
         if (link is null || !link.IsActive)
         {
-            await _bot.EditTextAsync(chatId, messageId, ArabicReportFormatter.NotLinked(LinkUrl()), null, ct);
+            await _bot.EditTextAsync(chatId, messageId, ArabicReportFormatter.NotLinked(LinkUrl()), BotMenus.NotLinked(LinkUrl()), ct);
+            return;
+        }
+
+        if (await NeedsBranchAsync(link, ct))
+        {
+            await ShowBranchPickerAsync(telegramUserId, chatId, messageId, ct);
             return;
         }
 
         await _bot.EditTextAsync(chatId, messageId, $"الشركة: {link.CompanyName}\nاختر تقريراً:", BotMenus.MainMenu(link.CompanyName), ct);
     }
 
+    private async Task ShowBranchPickerAsync(long telegramUserId, long chatId, int? messageId, CancellationToken ct)
+    {
+        var link = await _links.GetActiveLinkAsync(telegramUserId, ct);
+        if (link is null || !link.IsActive)
+        {
+            await ReplyAsync(chatId, messageId, ArabicReportFormatter.NotLinked(LinkUrl()), BotMenus.NotLinked(LinkUrl()), ct);
+            return;
+        }
+
+        var (ok, accessToken, _) = await _sessions.GetValidAccessTokenAsync(link, ct);
+        if (!ok || accessToken is null)
+        {
+            await ReplyAsync(chatId, messageId, ArabicReportFormatter.SessionExpired(), BotMenus.NotLinked(LinkUrl()), ct);
+            return;
+        }
+
+        try
+        {
+            var refreshed = await _api.RefreshAsync(link.Tokens.RefreshToken, ct);
+            var branches = refreshed.AllowedBranches;
+            if (branches.Count == 0)
+            {
+                await ReplyAsync(chatId, messageId, "لا توجد فروع متاحة لهذا الحساب.", BotMenus.MainMenu(link.CompanyName), ct);
+                return;
+            }
+
+            if (branches.Count == 1)
+            {
+                await ApplyBranchAsync(telegramUserId, chatId, messageId, link, branches[0].BranchId, accessToken, ct);
+                return;
+            }
+
+            await ReplyAsync(
+                chatId,
+                messageId,
+                $"الشركة: {link.CompanyName}\nاختر الفرع:",
+                BotMenus.BranchPicker(branches),
+                ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load branches");
+            await ReplyAsync(chatId, messageId, ArabicReportFormatter.GenericError(), null, ct);
+        }
+    }
+
+    private async Task SelectBranchAsync(long telegramUserId, long chatId, int messageId, int branchId, CancellationToken ct)
+    {
+        var link = await _links.GetActiveLinkAsync(telegramUserId, ct);
+        if (link is null || !link.IsActive)
+        {
+            await _bot.EditTextAsync(chatId, messageId, ArabicReportFormatter.NotLinked(LinkUrl()), BotMenus.NotLinked(LinkUrl()), ct);
+            return;
+        }
+
+        var (ok, accessToken, _) = await _sessions.GetValidAccessTokenAsync(link, ct);
+        if (!ok || accessToken is null)
+        {
+            await _bot.EditTextAsync(chatId, messageId, ArabicReportFormatter.SessionExpired(), BotMenus.NotLinked(LinkUrl()), ct);
+            return;
+        }
+
+        await ApplyBranchAsync(telegramUserId, chatId, messageId, link, branchId, accessToken, ct);
+    }
+
+    private async Task ApplyBranchAsync(
+        long telegramUserId, long chatId, int? messageId, TelegramLinkInfo link, int branchId, string accessToken, CancellationToken ct)
+    {
+        try
+        {
+            var selected = await _api.SelectBranchAsync(accessToken, branchId, ct);
+            await _links.UpdateBranchAsync(telegramUserId, branchId, new StoredSessionTokens
+            {
+                AccessToken = selected.AccessToken,
+                RefreshToken = link.Tokens.RefreshToken,
+                AccessTokenExpiresAt = selected.AccessTokenExpiresAt
+            }, ct);
+
+            var name = selected.Branch?.Name ?? $"#{branchId}";
+            await ReplyAsync(
+                chatId,
+                messageId,
+                $"تم اختيار الفرع: {name}\nالشركة: {link.CompanyName}\nاختر تقريراً:",
+                BotMenus.MainMenu(link.CompanyName),
+                ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Branch selection failed");
+            await ReplyAsync(chatId, messageId, "تعذّر اختيار الفرع. حاول مجدداً.", null, ct);
+        }
+    }
+
+    private async Task SearchLookupAsync(
+        long telegramUserId, long chatId, int? messageId, string search, bool customers, CancellationToken ct)
+    {
+        var link = messageId is int mid
+            ? await RequireReadyLinkAsync(telegramUserId, chatId, mid, ct)
+            : await RequireReadyLinkForSendAsync(telegramUserId, chatId, ct);
+        if (link is null)
+            return;
+
+        var (ok, accessToken, _) = await _sessions.GetValidAccessTokenAsync(link, ct);
+        if (!ok || accessToken is null)
+        {
+            await ReplyAsync(chatId, messageId, ArabicReportFormatter.SessionExpired(), BotMenus.NotLinked(LinkUrl()), ct);
+            return;
+        }
+
+        try
+        {
+            var items = customers
+                ? await _api.SearchCustomersAsync(accessToken, search, ct)
+                : await _api.SearchSuppliersAsync(accessToken, search, ct);
+
+            if (items.Count == 0)
+            {
+                await ReplyAsync(chatId, messageId, $"لا نتائج لـ «{search}».", BotMenus.MainMenu(link.CompanyName), ct);
+                return;
+            }
+
+            if (items.Count == 1)
+            {
+                await ShowStatementAsync(telegramUserId, chatId, messageId, items[0].SyncId, customers, ct);
+                return;
+            }
+
+            await ReplyAsync(
+                chatId,
+                messageId,
+                $"نتائج البحث عن «{search}» — اختر:",
+                BotMenus.LookupResults(items, customers),
+                ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Lookup search failed");
+            await ReplyAsync(chatId, messageId, ArabicReportFormatter.GenericError(), null, ct);
+        }
+    }
+
+    private async Task ShowStatementAsync(
+        long telegramUserId, long chatId, int? messageId, Guid syncId, bool customers, CancellationToken ct)
+    {
+        var link = messageId is int mid
+            ? await RequireReadyLinkAsync(telegramUserId, chatId, mid, ct)
+            : await RequireReadyLinkForSendAsync(telegramUserId, chatId, ct);
+        if (link is null)
+            return;
+
+        var (ok, accessToken, _) = await _sessions.GetValidAccessTokenAsync(link, ct);
+        if (!ok || accessToken is null)
+        {
+            await ReplyAsync(chatId, messageId, ArabicReportFormatter.SessionExpired(), BotMenus.NotLinked(LinkUrl()), ct);
+            return;
+        }
+
+        try
+        {
+            var text = customers
+                ? ArabicReportFormatter.FormatCustomerStatement(
+                    await _api.GetCustomerStatementAsync(accessToken, syncId, ct))
+                : ArabicReportFormatter.FormatSupplierStatement(
+                    await _api.GetSupplierStatementAsync(accessToken, syncId, ct));
+            await ReplyAsync(chatId, messageId, text, BotMenus.MainMenu(link.CompanyName), ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Statement fetch failed");
+            await ReplyAsync(chatId, messageId, ArabicReportFormatter.GenericError(), BotMenus.MainMenu(link.CompanyName), ct);
+        }
+    }
+
+    private async Task ShowSystemDashboardAsync(long telegramUserId, long chatId, int? messageId, CancellationToken ct)
+    {
+        var link = messageId is int mid
+            ? await RequireReadyLinkAsync(telegramUserId, chatId, mid, ct)
+            : await RequireReadyLinkForSendAsync(telegramUserId, chatId, ct);
+        if (link is null)
+            return;
+
+        var (ok, accessToken, _) = await _sessions.GetValidAccessTokenAsync(link, ct);
+        if (!ok || accessToken is null)
+        {
+            await ReplyAsync(chatId, messageId, ArabicReportFormatter.SessionExpired(), BotMenus.NotLinked(LinkUrl()), ct);
+            return;
+        }
+
+        var systemType = link.ApplicationSystemType;
+        try
+        {
+            var text = systemType switch
+            {
+                1 => ArabicReportFormatter.FormatCarDashboard(await _api.GetCarDashboardAsync(accessToken, ct)),
+                2 => ArabicReportFormatter.FormatHotelSummary(await _api.GetHotelRestaurantSummaryAsync(accessToken, ct)),
+                3 => ArabicReportFormatter.FormatCarTradeDashboard(await _api.GetCarTradeDashboardAsync(accessToken, ct)),
+                4 => ArabicReportFormatter.FormatRealEstateDashboard(await _api.GetRealEstateDashboardAsync(accessToken, ct)),
+                5 => ArabicReportFormatter.FormatGoldStock(await _api.GetGoldStockAsync(accessToken, ct)),
+                _ => "نظام المحاسبة العام — استخدم تقارير القائمة الرئيسية.\n(لوحة النظام الخاصة تظهر لأنظمة السيارات/الفندق/العقار/الذهب)"
+            };
+            await ReplyAsync(chatId, messageId, text, BotMenus.MainMenu(link.CompanyName), ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "System dashboard failed for type {Type}", systemType);
+            await ReplyAsync(chatId, messageId, ArabicReportFormatter.GenericError(), BotMenus.MainMenu(link.CompanyName), ct);
+        }
+    }
+
     private async Task HandleSelectReportAsync(long telegramUserId, long chatId, int messageId, ReportKind kind, CancellationToken ct)
     {
-        var link = await RequireLinkAsync(telegramUserId, chatId, messageId, ct);
+        var link = await RequireReadyLinkAsync(telegramUserId, chatId, messageId, ct);
         if (link is null)
             return;
 
@@ -211,42 +544,26 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
     }
 
     private async Task RunReportAsync(
-        long telegramUserId, long chatId, int messageId, ReportKind kind, ReportPeriod period, CancellationToken ct)
+        long telegramUserId, long chatId, int? messageId, ReportKind kind, ReportPeriod period, CancellationToken ct)
     {
-        var link = await RequireLinkAsync(telegramUserId, chatId, messageId, ct);
+        var link = messageId is int mid
+            ? await RequireReadyLinkAsync(telegramUserId, chatId, mid, ct)
+            : await RequireReadyLinkForSendAsync(telegramUserId, chatId, ct);
         if (link is null)
             return;
 
-        var (ok, accessToken, error) = await _sessions.GetValidAccessTokenAsync(link, ct);
+        var (ok, accessToken, _) = await _sessions.GetValidAccessTokenAsync(link, ct);
         if (!ok || accessToken is null)
         {
-            await _bot.EditTextAsync(chatId, messageId, ArabicReportFormatter.SessionExpired(), null, ct);
+            await ReplyAsync(chatId, messageId, ArabicReportFormatter.SessionExpired(), BotMenus.NotLinked(LinkUrl()), ct);
             return;
         }
 
         var range = ReportPeriodHelper.Resolve(period);
         try
         {
-            var text = kind switch
-            {
-                ReportKind.DailySales => ArabicReportFormatter.FormatDailySales(
-                    await _api.GetDailySalesAsync(accessToken, range.From, range.To, ct), range.Label),
-                ReportKind.Expenses => ArabicReportFormatter.FormatExpenses(
-                    await _api.GetExpensesAsync(accessToken, range.From, range.To, ct), range.Label),
-                ReportKind.ProfitAndLoss => ArabicReportFormatter.FormatProfitAndLoss(
-                    await _api.GetProfitAndLossAsync(accessToken, range.From, range.To, ct), range.Label),
-                ReportKind.CashBalances => ArabicReportFormatter.FormatCashBalances(
-                    await _api.GetCashBalancesAsync(accessToken, ct)),
-                ReportKind.CashFlow => ArabicReportFormatter.FormatCashFlow(
-                    await _api.GetCashFlowAsync(accessToken, range.From, range.To, ct), range.Label),
-                ReportKind.CustomersOverview => ArabicReportFormatter.FormatCustomers(
-                    await _api.GetCustomersOverviewAsync(accessToken, range.From, range.To, ct), range.Label),
-                ReportKind.LastSync => ArabicReportFormatter.FormatSyncStatus(
-                    await _api.GetSyncStatusAsync(accessToken, ct)),
-                _ => ArabicReportFormatter.GenericError()
-            };
+            var text = await BuildReportTextAsync(kind, accessToken, range, ct);
 
-            // Append last sync footer when available (best-effort, ignore failures).
             if (kind != ReportKind.LastSync)
             {
                 try
@@ -260,7 +577,7 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
                 }
             }
 
-            await _bot.EditTextAsync(
+            await ReplyAsync(
                 chatId,
                 messageId,
                 text,
@@ -270,35 +587,158 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
         catch (UnauthorizedAccessException)
         {
             await _links.MarkSessionInvalidAsync(telegramUserId, ct);
-            await _bot.EditTextAsync(chatId, messageId, ArabicReportFormatter.SessionExpired(), null, ct);
+            await ReplyAsync(chatId, messageId, ArabicReportFormatter.SessionExpired(), BotMenus.NotLinked(LinkUrl()), ct);
         }
-        catch (HttpRequestException ex)
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            _logger.LogWarning(ex, "Network error fetching report");
-            await _bot.EditTextAsync(chatId, messageId, ArabicReportFormatter.GenericError(), BotMenus.AfterResult(kind, ReportCatalog.NeedsPeriod(kind)), ct);
-        }
-        catch (TaskCanceledException ex)
-        {
-            _logger.LogWarning(ex, "Timeout fetching report");
-            await _bot.EditTextAsync(chatId, messageId, ArabicReportFormatter.GenericError(), BotMenus.AfterResult(kind, ReportCatalog.NeedsPeriod(kind)), ct);
+            _logger.LogWarning(ex, "Network/timeout fetching report");
+            await ReplyAsync(chatId, messageId, ArabicReportFormatter.GenericError(), BotMenus.AfterResult(kind, ReportCatalog.NeedsPeriod(kind)), ct);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected report error");
-            await _bot.EditTextAsync(chatId, messageId, ArabicReportFormatter.GenericError(), BotMenus.AfterResult(kind, ReportCatalog.NeedsPeriod(kind)), ct);
+            await ReplyAsync(chatId, messageId, ArabicReportFormatter.GenericError(), BotMenus.AfterResult(kind, ReportCatalog.NeedsPeriod(kind)), ct);
         }
     }
 
-    private async Task<TelegramLinkInfo?> RequireLinkAsync(long telegramUserId, long chatId, int messageId, CancellationToken ct)
+    private async Task<string> BuildReportTextAsync(ReportKind kind, string accessToken, DateRange range, CancellationToken ct)
+        => kind switch
+        {
+            ReportKind.DailySales => ArabicReportFormatter.FormatDailySales(
+                await _api.GetDailySalesAsync(accessToken, range.From, range.To, ct), range.Label),
+            ReportKind.Expenses => ArabicReportFormatter.FormatExpenses(
+                await _api.GetExpensesAsync(accessToken, range.From, range.To, ct), range.Label),
+            ReportKind.ProfitAndLoss => ArabicReportFormatter.FormatProfitAndLoss(
+                await _api.GetProfitAndLossAsync(accessToken, range.From, range.To, ct), range.Label),
+            ReportKind.CashBalances => ArabicReportFormatter.FormatCashBalances(
+                await _api.GetCashBalancesAsync(accessToken, ct)),
+            ReportKind.CashFlow => ArabicReportFormatter.FormatCashFlow(
+                await _api.GetCashFlowAsync(accessToken, range.From, range.To, ct), range.Label),
+            ReportKind.CustomersOverview => ArabicReportFormatter.FormatCustomers(
+                await _api.GetCustomersOverviewAsync(accessToken, range.From, range.To, ct), range.Label),
+            ReportKind.LastSync => ArabicReportFormatter.FormatSyncStatus(
+                await _api.GetSyncStatusAsync(accessToken, ct)),
+            ReportKind.DailyOperations => ArabicReportFormatter.FormatDailyOperations(
+                await _api.GetDailyOperationsAsync(accessToken, range.From, range.To, ct), range.Label),
+            ReportKind.InstallmentsOverdue => ArabicReportFormatter.FormatInstallmentsOverdue(
+                await _api.GetInstallmentsOverdueAsync(accessToken, ct)),
+            ReportKind.InstallmentsSummary => ArabicReportFormatter.FormatInstallmentsSummary(
+                await _api.GetInstallmentsSummaryAsync(accessToken, range.From, range.To, ct), range.Label),
+            ReportKind.OverdueCustomers => ArabicReportFormatter.FormatOverdueCustomers(
+                await _api.GetOverdueCustomersAsync(accessToken, ct)),
+            ReportKind.ReceivablesAging => ArabicReportFormatter.FormatReceivablesAging(
+                await _api.GetReceivablesAgingAsync(accessToken, ct)),
+            ReportKind.MinimumQuantity => ArabicReportFormatter.FormatMinimumQuantity(
+                await _api.GetMinimumQuantityAsync(accessToken, ct)),
+            ReportKind.StockHealth => ArabicReportFormatter.FormatStockHealth(
+                await _api.GetStockHealthAsync(accessToken, ct)),
+            ReportKind.TopProducts => ArabicReportFormatter.FormatTopProducts(
+                await _api.GetTopProductsAsync(accessToken, range.From, range.To, ct), range.Label),
+            ReportKind.Purchases => ArabicReportFormatter.FormatPurchases(
+                await _api.GetPurchasesAsync(accessToken, range.From, range.To, ct), range.Label),
+            ReportKind.SuppliersOverview => ArabicReportFormatter.FormatSuppliers(
+                await _api.GetSuppliersOverviewAsync(accessToken, range.From, range.To, ct), range.Label),
+            ReportKind.SalesByPaymentMethod => ArabicReportFormatter.FormatSalesByPayment(
+                await _api.GetSalesByPaymentMethodAsync(accessToken, range.From, range.To, ct), range.Label),
+            ReportKind.PayablesAging => ArabicReportFormatter.FormatPayablesAging(
+                await _api.GetPayablesAgingAsync(accessToken, ct)),
+            ReportKind.CustomerCollections => ArabicReportFormatter.FormatCustomerCollections(
+                await _api.GetCustomerCollectionsAsync(accessToken, range.From, range.To, ct), range.Label),
+            ReportKind.SupplierPayments => ArabicReportFormatter.FormatSupplierPayments(
+                await _api.GetSupplierPaymentsAsync(accessToken, range.From, range.To, ct), range.Label),
+            ReportKind.FinancialPosition => ArabicReportFormatter.FormatFinancialPosition(
+                await _api.GetFinancialPositionAsync(accessToken, ct)),
+            ReportKind.Cogs => ArabicReportFormatter.FormatCogs(
+                await _api.GetCogsAsync(accessToken, range.From, range.To, ct), range.Label),
+            ReportKind.InventoryValuation => ArabicReportFormatter.FormatInventoryValuation(
+                await _api.GetInventoryValuationAsync(accessToken, ct)),
+            ReportKind.Transfers => ArabicReportFormatter.FormatTransfers(
+                await _api.GetTransfersAsync(accessToken, range.From, range.To, ct), range.Label),
+            ReportKind.GrossProfitMargin => ArabicReportFormatter.FormatGrossProfitMargin(
+                await _api.GetGrossProfitMarginAsync(accessToken, range.From, range.To, ct), range.Label),
+            _ => ArabicReportFormatter.GenericError()
+        };
+
+    private async Task<bool> NeedsBranchAsync(TelegramLinkInfo link, CancellationToken ct)
+    {
+        if (link.CurrentBranchId is > 0)
+            return false;
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(link.Tokens.RefreshToken))
+                return true;
+
+            var refreshed = await _api.RefreshAsync(link.Tokens.RefreshToken, ct);
+            if (refreshed.AllowedBranches.Count <= 1)
+            {
+                if (refreshed.AllowedBranches.Count == 1)
+                {
+                    var b = refreshed.AllowedBranches[0];
+                    var selected = await _api.SelectBranchAsync(refreshed.AccessToken, b.BranchId, ct);
+                    await _links.UpdateBranchAsync(link.TelegramUserId, b.BranchId, new StoredSessionTokens
+                    {
+                        AccessToken = selected.AccessToken,
+                        RefreshToken = string.IsNullOrWhiteSpace(refreshed.RefreshToken)
+                            ? link.Tokens.RefreshToken
+                            : refreshed.RefreshToken,
+                        AccessTokenExpiresAt = selected.AccessTokenExpiresAt
+                    }, ct);
+                }
+                return false;
+            }
+
+            return true;
+        }
+        catch
+        {
+            return link.CurrentBranchId is null or <= 0;
+        }
+    }
+
+    private async Task<TelegramLinkInfo?> RequireReadyLinkAsync(long telegramUserId, long chatId, int messageId, CancellationToken ct)
     {
         var link = await _links.GetActiveLinkAsync(telegramUserId, ct);
         if (link is null || !link.IsActive)
         {
-            await _bot.EditTextAsync(chatId, messageId, ArabicReportFormatter.NotLinked(LinkUrl()), null, ct);
+            await _bot.EditTextAsync(chatId, messageId, ArabicReportFormatter.NotLinked(LinkUrl()), BotMenus.NotLinked(LinkUrl()), ct);
             return null;
         }
 
-        return link;
+        if (await NeedsBranchAsync(link, ct))
+        {
+            await ShowBranchPickerAsync(telegramUserId, chatId, messageId, ct);
+            return null;
+        }
+
+        return await _links.GetActiveLinkAsync(telegramUserId, ct);
+    }
+
+    private async Task<TelegramLinkInfo?> RequireReadyLinkForSendAsync(long telegramUserId, long chatId, CancellationToken ct)
+    {
+        var link = await _links.GetActiveLinkAsync(telegramUserId, ct);
+        if (link is null || !link.IsActive)
+        {
+            await SendNotLinkedAsync(chatId, ct);
+            return null;
+        }
+
+        if (await NeedsBranchAsync(link, ct))
+        {
+            await ShowBranchPickerAsync(telegramUserId, chatId, messageId: null, ct);
+            return null;
+        }
+
+        return await _links.GetActiveLinkAsync(telegramUserId, ct);
+    }
+
+    private async Task ReplyAsync(
+        long chatId, int? messageId, string text, IReadOnlyList<IReadOnlyList<BotButton>>? keyboard, CancellationToken ct)
+    {
+        if (messageId is int mid)
+            await _bot.EditTextAsync(chatId, mid, text, keyboard, ct);
+        else
+            await _bot.SendTextAsync(chatId, text, keyboard, ct);
     }
 
     private string LinkUrl()
