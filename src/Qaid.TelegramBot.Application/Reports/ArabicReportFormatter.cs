@@ -480,7 +480,10 @@ public static class ArabicReportFormatter
         => "يجب اختيار الفرع أولاً قبل عرض التقارير.";
 
     public static string NotLinked(string linkUrl)
-        => $"حسابك غير مربوط بنظام قيد.\nاضغط الزر أدناه للربط الآمن، ثم أرسل الرمز هنا.\n{linkUrl}";
+        => "مرحباً بك في بوت تقارير قيد.\n\nحسابك غير مربوط بعد.\nاضغط «تسجيل الدخول إلى قيد» لتسجيل الدخول بحسابك، ثم أرسل رمز الربط هنا.";
+
+    public static string WelcomeLogin(string linkUrl)
+        => $"مرحباً بك في بوت تقارير قيد.\n\nللبدء: اضغط الزر أدناه لتسجيل الدخول بحساب قيد، ثم أرسل رمز الربط الذي يظهر لك.\n\n{linkUrl}";
 
     private static void AppendRows<T>(StringBuilder sb, IReadOnlyList<T> rows, Func<T, string> format)
     {

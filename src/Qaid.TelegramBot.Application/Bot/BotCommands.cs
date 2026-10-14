@@ -5,7 +5,7 @@ public static class BotCommands
 {
     public static IReadOnlyList<(string Command, string Description)> All { get; } =
     [
-        ("start", "القائمة الرئيسية"),
+        ("start", "تسجيل الدخول / القائمة"),
         ("today", "ملخص اليوم"),
         ("cash", "أرصدة النقد والبنوك"),
         ("sales", "المبيعات اليومية"),

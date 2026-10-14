@@ -14,6 +14,7 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
     private readonly IQaidApiClient _api;
     private readonly ISessionTokenService _sessions;
     private readonly ITelegramBotGateway _bot;
+    private readonly IReportPdfService _pdfReports;
     private readonly IRateLimiter _rateLimiter;
     private readonly TelegramBotOptions _options;
     private readonly ILogger<BotUpdateProcessor> _logger;
@@ -23,6 +24,7 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
         IQaidApiClient api,
         ISessionTokenService sessions,
         ITelegramBotGateway bot,
+        IReportPdfService pdfReports,
         IRateLimiter rateLimiter,
         IOptions<TelegramBotOptions> options,
         ILogger<BotUpdateProcessor> logger)
@@ -31,6 +33,7 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
         _api = api;
         _sessions = sessions;
         _bot = bot;
+        _pdfReports = pdfReports;
         _rateLimiter = rateLimiter;
         _options = options.Value;
         _logger = logger;
@@ -47,6 +50,17 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
         var trimmed = (text ?? string.Empty).Trim();
         if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("/start", StringComparison.OrdinalIgnoreCase))
         {
+            // /start <code> — consume deep-link code if present
+            if (trimmed.StartsWith("/start", StringComparison.OrdinalIgnoreCase))
+            {
+                var startParts = trimmed.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (startParts.Length >= 2 && LooksLikeLinkCode(startParts[1]))
+                {
+                    await TryConsumeCodeAsync(telegramUserId, chatId, startParts[1], ct);
+                    return;
+                }
+            }
+
             await HandleStartAsync(telegramUserId, chatId, ct);
             return;
         }
@@ -153,6 +167,9 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
                 case CallbackActionType.MainMenu:
                     await ShowMainMenuAsync(telegramUserId, chatId, messageId, ct);
                     break;
+                case CallbackActionType.OpenGroup:
+                    await ShowGroupMenuAsync(telegramUserId, chatId, messageId, action.Group!.Value, ct);
+                    break;
                 case CallbackActionType.SelectReport:
                 case CallbackActionType.PeriodMenu:
                     await HandleSelectReportAsync(telegramUserId, chatId, messageId, action.Kind!.Value, ct);
@@ -215,7 +232,12 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
         var link = await _links.GetActiveLinkAsync(telegramUserId, ct);
         if (link is null || !link.IsActive)
         {
-            await SendNotLinkedAsync(chatId, ct);
+            var url = LinkUrl();
+            await _bot.SendTextAsync(
+                chatId,
+                ArabicReportFormatter.WelcomeLogin(url),
+                BotMenus.NotLinked(url),
+                ct);
             return;
         }
 
@@ -227,7 +249,7 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
 
         await _bot.SendTextAsync(
             chatId,
-            $"مرحباً بك في بوت تقارير قيد.\nالشركة: {link.CompanyName}\nاختر تقريراً من الأزرار:",
+            $"مرحباً بك في بوت تقارير قيد.\nالشركة: {link.CompanyName}\nاختر مجموعة تقارير، ثم التقرير المطلوب.\nالتقارير تُرسل كملف PDF بحجم A4.",
             BotMenus.MainMenu(link.CompanyName),
             ct);
     }
@@ -251,7 +273,7 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
         {
             await _bot.SendTextAsync(
                 chatId,
-                $"تقرير: {ReportCatalog.TitleOf(kind)}\nاختر الفترة الزمنية:",
+                $"تقرير: {ReportCatalog.TitleOf(kind)}\nاختر الفترة الزمنية ثم يُجهَّز ملف PDF:",
                 BotMenus.PeriodMenu(kind),
                 ct);
             return;
@@ -288,7 +310,7 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
 
         await _bot.SendTextAsync(
             chatId,
-            $"تم الربط بنجاح.\nالشركة: {link.CompanyName}\nصلاحية الربط حتى: {link.SessionExpiresAtUtc:yyyy/MM/dd} UTC\nاختر تقريراً:",
+            $"تم الربط بنجاح.\nالشركة: {link.CompanyName}\nصلاحية الربط حتى: {link.SessionExpiresAtUtc:yyyy/MM/dd} UTC\nاختر مجموعة التقارير:",
             BotMenus.MainMenu(link.CompanyName),
             ct);
     }
@@ -311,7 +333,29 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
             return;
         }
 
-        await _bot.EditTextAsync(chatId, messageId, $"الشركة: {link.CompanyName}\nاختر تقريراً:", BotMenus.MainMenu(link.CompanyName), ct);
+        await _bot.EditTextAsync(
+            chatId,
+            messageId,
+            $"الشركة: {link.CompanyName}\nاختر مجموعة التقارير:",
+            BotMenus.MainMenu(link.CompanyName),
+            ct);
+    }
+
+    private async Task ShowGroupMenuAsync(long telegramUserId, long chatId, int messageId, ReportGroup group, CancellationToken ct)
+    {
+        var link = await _links.GetActiveLinkAsync(telegramUserId, ct);
+        if (link is null || !link.IsActive)
+        {
+            await _bot.EditTextAsync(chatId, messageId, ArabicReportFormatter.NotLinked(LinkUrl()), BotMenus.NotLinked(LinkUrl()), ct);
+            return;
+        }
+
+        await _bot.EditTextAsync(
+            chatId,
+            messageId,
+            $"{ReportCatalog.GroupTitle(group)}\nاختر تقريراً (يُجهَّز PDF):",
+            BotMenus.GroupMenu(group),
+            ct);
     }
 
     private async Task ShowBranchPickerAsync(long telegramUserId, long chatId, int? messageId, CancellationToken ct)
@@ -396,7 +440,7 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
             await ReplyAsync(
                 chatId,
                 messageId,
-                $"تم اختيار الفرع: {name}\nالشركة: {link.CompanyName}\nاختر تقريراً:",
+                $"تم اختيار الفرع: {name}\nالشركة: {link.CompanyName}\nاختر مجموعة التقارير:",
                 BotMenus.MainMenu(link.CompanyName),
                 ct);
         }
@@ -473,17 +517,14 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
 
         try
         {
-            var text = customers
-                ? ArabicReportFormatter.FormatCustomerStatement(
-                    await _api.GetCustomerStatementAsync(accessToken, syncId, ct))
-                : ArabicReportFormatter.FormatSupplierStatement(
-                    await _api.GetSupplierStatementAsync(accessToken, syncId, ct));
-            await ReplyAsync(chatId, messageId, text, BotMenus.MainMenu(link.CompanyName), ct);
+            await ReplyAsync(chatId, messageId, "جاري تجهيز كشف الحساب PDF...", null, ct);
+            var pdf = await _pdfReports.BuildStatementPdfAsync(customers, syncId, accessToken, link.CompanyName, ct);
+            await _bot.SendDocumentAsync(chatId, pdf.Content, pdf.FileName, pdf.Caption, BotMenus.MainMenu(link.CompanyName), ct);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Statement fetch failed");
-            await ReplyAsync(chatId, messageId, ArabicReportFormatter.GenericError(), BotMenus.MainMenu(link.CompanyName), ct);
+            _logger.LogWarning(ex, "Statement PDF failed");
+            await _bot.SendTextAsync(chatId, ArabicReportFormatter.GenericError(), BotMenus.MainMenu(link.CompanyName), ct);
         }
     }
 
@@ -505,21 +546,14 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
         var systemType = link.ApplicationSystemType;
         try
         {
-            var text = systemType switch
-            {
-                1 => ArabicReportFormatter.FormatCarDashboard(await _api.GetCarDashboardAsync(accessToken, ct)),
-                2 => ArabicReportFormatter.FormatHotelSummary(await _api.GetHotelRestaurantSummaryAsync(accessToken, ct)),
-                3 => ArabicReportFormatter.FormatCarTradeDashboard(await _api.GetCarTradeDashboardAsync(accessToken, ct)),
-                4 => ArabicReportFormatter.FormatRealEstateDashboard(await _api.GetRealEstateDashboardAsync(accessToken, ct)),
-                5 => ArabicReportFormatter.FormatGoldStock(await _api.GetGoldStockAsync(accessToken, ct)),
-                _ => "نظام المحاسبة العام — استخدم تقارير القائمة الرئيسية.\n(لوحة النظام الخاصة تظهر لأنظمة السيارات/الفندق/العقار/الذهب)"
-            };
-            await ReplyAsync(chatId, messageId, text, BotMenus.MainMenu(link.CompanyName), ct);
+            await ReplyAsync(chatId, messageId, "جاري تجهيز لوحة النظام PDF...", null, ct);
+            var pdf = await _pdfReports.BuildDashboardPdfAsync(systemType, accessToken, link.CompanyName, ct);
+            await _bot.SendDocumentAsync(chatId, pdf.Content, pdf.FileName, pdf.Caption, BotMenus.MainMenu(link.CompanyName), ct);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "System dashboard failed for type {Type}", systemType);
-            await ReplyAsync(chatId, messageId, ArabicReportFormatter.GenericError(), BotMenus.MainMenu(link.CompanyName), ct);
+            _logger.LogWarning(ex, "System dashboard PDF failed for type {Type}", systemType);
+            await _bot.SendTextAsync(chatId, ArabicReportFormatter.GenericError(), BotMenus.MainMenu(link.CompanyName), ct);
         }
     }
 
@@ -534,7 +568,7 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
             await _bot.EditTextAsync(
                 chatId,
                 messageId,
-                $"تقرير: {ReportCatalog.TitleOf(kind)}\nاختر الفترة الزمنية:",
+                $"تقرير: {ReportCatalog.TitleOf(kind)}\nاختر الفترة الزمنية ثم يُجهَّز ملف PDF:",
                 BotMenus.PeriodMenu(kind),
                 ct);
             return;
@@ -560,104 +594,29 @@ public sealed class BotUpdateProcessor : IBotUpdateProcessor
         }
 
         var range = ReportPeriodHelper.Resolve(period);
+        var keyboard = BotMenus.AfterResult(kind, ReportCatalog.NeedsPeriod(kind));
         try
         {
-            var text = await BuildReportTextAsync(kind, accessToken, range, ct);
-
-            if (kind != ReportKind.LastSync)
-            {
-                try
-                {
-                    var sync = await _api.GetSyncStatusAsync(accessToken, ct);
-                    text += $"\n\nآخر مزامنة: {ArabicReportFormatter.FormatDateTime(sync.LastSyncAt)}";
-                }
-                catch
-                {
-                    // ignored
-                }
-            }
-
-            await ReplyAsync(
-                chatId,
-                messageId,
-                text,
-                BotMenus.AfterResult(kind, ReportCatalog.NeedsPeriod(kind)),
-                ct);
+            await ReplyAsync(chatId, messageId, $"جاري تجهيز PDF: {ReportCatalog.TitleOf(kind)}...", null, ct);
+            var pdf = await _pdfReports.BuildReportPdfAsync(kind, accessToken, link.CompanyName, range, ct);
+            await _bot.SendDocumentAsync(chatId, pdf.Content, pdf.FileName, pdf.Caption, keyboard, ct);
         }
         catch (UnauthorizedAccessException)
         {
             await _links.MarkSessionInvalidAsync(telegramUserId, ct);
-            await ReplyAsync(chatId, messageId, ArabicReportFormatter.SessionExpired(), BotMenus.NotLinked(LinkUrl()), ct);
+            await _bot.SendTextAsync(chatId, ArabicReportFormatter.SessionExpired(), BotMenus.NotLinked(LinkUrl()), ct);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            _logger.LogWarning(ex, "Network/timeout fetching report");
-            await ReplyAsync(chatId, messageId, ArabicReportFormatter.GenericError(), BotMenus.AfterResult(kind, ReportCatalog.NeedsPeriod(kind)), ct);
+            _logger.LogWarning(ex, "Network/timeout fetching report PDF");
+            await _bot.SendTextAsync(chatId, ArabicReportFormatter.GenericError(), keyboard, ct);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected report error");
-            await ReplyAsync(chatId, messageId, ArabicReportFormatter.GenericError(), BotMenus.AfterResult(kind, ReportCatalog.NeedsPeriod(kind)), ct);
+            _logger.LogError(ex, "Unexpected report PDF error");
+            await _bot.SendTextAsync(chatId, ArabicReportFormatter.GenericError(), keyboard, ct);
         }
     }
-
-    private async Task<string> BuildReportTextAsync(ReportKind kind, string accessToken, DateRange range, CancellationToken ct)
-        => kind switch
-        {
-            ReportKind.DailySales => ArabicReportFormatter.FormatDailySales(
-                await _api.GetDailySalesAsync(accessToken, range.From, range.To, ct), range.Label),
-            ReportKind.Expenses => ArabicReportFormatter.FormatExpenses(
-                await _api.GetExpensesAsync(accessToken, range.From, range.To, ct), range.Label),
-            ReportKind.ProfitAndLoss => ArabicReportFormatter.FormatProfitAndLoss(
-                await _api.GetProfitAndLossAsync(accessToken, range.From, range.To, ct), range.Label),
-            ReportKind.CashBalances => ArabicReportFormatter.FormatCashBalances(
-                await _api.GetCashBalancesAsync(accessToken, ct)),
-            ReportKind.CashFlow => ArabicReportFormatter.FormatCashFlow(
-                await _api.GetCashFlowAsync(accessToken, range.From, range.To, ct), range.Label),
-            ReportKind.CustomersOverview => ArabicReportFormatter.FormatCustomers(
-                await _api.GetCustomersOverviewAsync(accessToken, range.From, range.To, ct), range.Label),
-            ReportKind.LastSync => ArabicReportFormatter.FormatSyncStatus(
-                await _api.GetSyncStatusAsync(accessToken, ct)),
-            ReportKind.DailyOperations => ArabicReportFormatter.FormatDailyOperations(
-                await _api.GetDailyOperationsAsync(accessToken, range.From, range.To, ct), range.Label),
-            ReportKind.InstallmentsOverdue => ArabicReportFormatter.FormatInstallmentsOverdue(
-                await _api.GetInstallmentsOverdueAsync(accessToken, ct)),
-            ReportKind.InstallmentsSummary => ArabicReportFormatter.FormatInstallmentsSummary(
-                await _api.GetInstallmentsSummaryAsync(accessToken, range.From, range.To, ct), range.Label),
-            ReportKind.OverdueCustomers => ArabicReportFormatter.FormatOverdueCustomers(
-                await _api.GetOverdueCustomersAsync(accessToken, ct)),
-            ReportKind.ReceivablesAging => ArabicReportFormatter.FormatReceivablesAging(
-                await _api.GetReceivablesAgingAsync(accessToken, ct)),
-            ReportKind.MinimumQuantity => ArabicReportFormatter.FormatMinimumQuantity(
-                await _api.GetMinimumQuantityAsync(accessToken, ct)),
-            ReportKind.StockHealth => ArabicReportFormatter.FormatStockHealth(
-                await _api.GetStockHealthAsync(accessToken, ct)),
-            ReportKind.TopProducts => ArabicReportFormatter.FormatTopProducts(
-                await _api.GetTopProductsAsync(accessToken, range.From, range.To, ct), range.Label),
-            ReportKind.Purchases => ArabicReportFormatter.FormatPurchases(
-                await _api.GetPurchasesAsync(accessToken, range.From, range.To, ct), range.Label),
-            ReportKind.SuppliersOverview => ArabicReportFormatter.FormatSuppliers(
-                await _api.GetSuppliersOverviewAsync(accessToken, range.From, range.To, ct), range.Label),
-            ReportKind.SalesByPaymentMethod => ArabicReportFormatter.FormatSalesByPayment(
-                await _api.GetSalesByPaymentMethodAsync(accessToken, range.From, range.To, ct), range.Label),
-            ReportKind.PayablesAging => ArabicReportFormatter.FormatPayablesAging(
-                await _api.GetPayablesAgingAsync(accessToken, ct)),
-            ReportKind.CustomerCollections => ArabicReportFormatter.FormatCustomerCollections(
-                await _api.GetCustomerCollectionsAsync(accessToken, range.From, range.To, ct), range.Label),
-            ReportKind.SupplierPayments => ArabicReportFormatter.FormatSupplierPayments(
-                await _api.GetSupplierPaymentsAsync(accessToken, range.From, range.To, ct), range.Label),
-            ReportKind.FinancialPosition => ArabicReportFormatter.FormatFinancialPosition(
-                await _api.GetFinancialPositionAsync(accessToken, ct)),
-            ReportKind.Cogs => ArabicReportFormatter.FormatCogs(
-                await _api.GetCogsAsync(accessToken, range.From, range.To, ct), range.Label),
-            ReportKind.InventoryValuation => ArabicReportFormatter.FormatInventoryValuation(
-                await _api.GetInventoryValuationAsync(accessToken, ct)),
-            ReportKind.Transfers => ArabicReportFormatter.FormatTransfers(
-                await _api.GetTransfersAsync(accessToken, range.From, range.To, ct), range.Label),
-            ReportKind.GrossProfitMargin => ArabicReportFormatter.FormatGrossProfitMargin(
-                await _api.GetGrossProfitMarginAsync(accessToken, range.From, range.To, ct), range.Label),
-            _ => ArabicReportFormatter.GenericError()
-        };
 
     private async Task<bool> NeedsBranchAsync(TelegramLinkInfo link, CancellationToken ct)
     {

@@ -414,8 +414,42 @@ window.LOCALES = {
             "اكتشاف فرق الصندوق فوراً",
             "يعمل بدون إنترنت — مجاني بالكامل"
           ],
-          playStore: "",
+          playStore: "https://play.google.com/store/apps/details?id=com.qaid.sandooki",
           appStore: "https://apps.apple.com/iq/app/%D8%B5%D9%86%D8%AF%D9%88%D9%82%D9%8A-%D9%83%D8%A7%D8%B4/id6814638729"
+        },
+        {
+          id: "masar",
+          name: "مسار",
+          tagline: "إدارة دورة حياة الطلبات",
+          desc: "أنشئ الطلب خلال ثوانٍ، تابع حالته خطوة بخطوة من التجهيز حتى التسليم، وشارك بطاقة الطلب عبر واتساب — مثالي للمحلات والمطاعم وخدمة التوصيل. مجاني بالكامل ويعمل بدون إنترنت.",
+          icon: "assets/masar-icon.png",
+          accent: "masar",
+          features: [
+            "إنشاء طلب سريع: زبون، منتجات، دفع وملاحظات",
+            "حالات واضحة من جديد حتى تم التسليم",
+            "شاشة توصيل لمتابعة الطلبات الجاهزة",
+            "تقارير بقيمة الطلبات وأداء اليوم",
+            "يعمل بدون إنترنت — مجاني بالكامل"
+          ],
+          playStore: "https://play.google.com/store/apps/details?id=com.qaid.masar",
+          appStore: "https://apps.apple.com/iq/app/masar%D9%85%D8%B3%D8%A7%D8%B1%D9%80/id6819087864"
+        },
+        {
+          id: "saerha",
+          name: "سعّرها",
+          tagline: "حاسبة تسعير وهامش الربح",
+          desc: "احسب التكلفة الحقيقية وسعر البيع المقترح والربح وهامش الربح فوراً — لا تسعّر على التخمين. احفظ المنتجات وقارن سيناريوهات الأسعار. مجاني بالكامل ويعمل بدون إنترنت.",
+          icon: "assets/saerha-icon.png",
+          accent: "saerha",
+          features: [
+            "حاسبة تسعير فورية حسب هامش الربح",
+            "حساب التكلفة مع مصاريف إضافية",
+            "معرفة الربح قبل البيع",
+            "حفظ المنتجات ومشاركة نتيجة التسعير",
+            "يعمل بدون إنترنت — مجاني بالكامل"
+          ],
+          playStore: "https://play.google.com/store/apps/details?id=com.qaid.saerha",
+          appStore: "https://apps.apple.com/iq/app/%D8%B3%D8%B9-%D8%B1%D9%87%D8%A7/id6819088266"
         }
       ]
     },
@@ -516,7 +550,7 @@ window.LOCALES = {
         { q: "ما هو نظام الذهب؟", a: "نظام مستقل لمحلات الذهب العراقية: أسعار المثقال، مخزون القطع والمثاقيل، بيع وشراء نقدي وآجل، ميزان، لوحة تنافسية، وتقارير حركة المحل." },
         { q: "ما الفرق بين عقود السيارات وتجارة السيارات؟", a: "عقود السيارات لإبرام عقود بيع بين بائع ومشتري مع طباعة وشهود. تجارة السيارات لإدارة مخزون المعرض: شراء ثم بيع مع دفعات وتقارير." },
         { q: "ما هو نظام عقود العقارات؟", a: "نظام لإدارة العقود العقارية والزبائن والمدينين والمصاريف وبنود العقد مع تقارير أرباح — متزامن مع الجوال والسحابة." },
-        { q: "ما هي التطبيقات المجانية؟", a: "منصة قيد تدعم تطبيقات مجانية 100%: «دَيني» لإدارة الديون والمستحقات، و«صندوقي كاش» لتسجيل مبيعات ومصاريف الصندوق وجرد نهاية اليوم. دَيني على Google Play و App Store، وصندوقي كاش على App Store حالياً." },
+        { q: "ما هي التطبيقات المجانية؟", a: "منصة قيد تدعم تطبيقات مجانية 100%: «دَيني» للديون والمستحقات، و«صندوقي كاش» لصندوق المحل، و«مسار» لإدارة الطلبات والتوصيل، و«سعّرها» لحاسبة التسعير وهامش الربح. كلها متاحة على Google Play و App Store." },
         { q: "ما هو نظام الولاء؟", a: "ميزة في المحاسبة تُكسب العميل نقاطاً من فواتير البيع ويمكن استبدالها خصماً. تُفعَّل من إعدادات ميزات النشاط وتظهر في الفواتير وPOS وتقارير الولاء." },
         { q: "ما هي الحقول المخصصة؟", a: "إعدادات لإضافة حتى 8 حقول إضافية (نص، رقم، نعم/لا، اختيارات) للمنتجات والعملاء والموردين والمستثمرين — تظهر في الجداول والنماذج." },
         { q: "ما هو فحص الربح وبحث المواد الذكي؟", a: "في فاتورة البيع والأقساط: بحث منتج بالاسم مع تمييز وكميات المخازن والأسعار، وزر فحص الربح يعرض التكلفة وسعر البيع والربح والخصم فوراً." },
@@ -932,8 +966,42 @@ window.LOCALES = {
             "Spot cash differences instantly",
             "Works offline — completely free"
           ],
-          playStore: "",
+          playStore: "https://play.google.com/store/apps/details?id=com.qaid.sandooki",
           appStore: "https://apps.apple.com/iq/app/%D8%B5%D9%86%D8%AF%D9%88%D9%82%D9%8A-%D9%83%D8%A7%D8%B4/id6814638729"
+        },
+        {
+          id: "masar",
+          name: "Masar",
+          tagline: "Order lifecycle management",
+          desc: "Create orders in seconds, track status step by step from prep to delivery, and share order cards on WhatsApp — ideal for shops, cafes, and delivery. Completely free and works offline.",
+          icon: "assets/masar-icon.png",
+          accent: "masar",
+          features: [
+            "Quick orders: customer, products, payment, notes",
+            "Clear statuses from new to delivered",
+            "Delivery screen for ready-to-ship orders",
+            "Reports on order value and daily performance",
+            "Works offline — completely free"
+          ],
+          playStore: "https://play.google.com/store/apps/details?id=com.qaid.masar",
+          appStore: "https://apps.apple.com/iq/app/masar%D9%85%D8%B3%D8%A7%D8%B1%D9%80/id6819087864"
+        },
+        {
+          id: "saerha",
+          name: "Saerha",
+          tagline: "Pricing & profit margin calculator",
+          desc: "Calculate true cost, suggested sell price, profit, and margin instantly — price for profit, not guesswork. Save products and compare pricing scenarios. Completely free and works offline.",
+          icon: "assets/saerha-icon.png",
+          accent: "saerha",
+          features: [
+            "Instant pricing by target margin",
+            "True cost with extra expenses",
+            "Know profit before you sell",
+            "Save products and share pricing results",
+            "Works offline — completely free"
+          ],
+          playStore: "https://play.google.com/store/apps/details?id=com.qaid.saerha",
+          appStore: "https://apps.apple.com/iq/app/%D8%B3%D8%B9-%D8%B1%D9%87%D8%A7/id6819088266"
         }
       ]
     },
@@ -1033,7 +1101,7 @@ window.LOCALES = {
         { q: "What is the Gold system?", a: "A standalone system for Iraqi gold shops: mithqal prices, piece/mithqal inventory, cash & credit buy/sell, scale, market board, and shop movement reports." },
         { q: "Contracts vs car trading?", a: "Contracts formalize a sale between seller and buyer with print and witnesses. Car trading manages showroom inventory: purchase then sell with payments and reports." },
         { q: "What is real estate contracts?", a: "A system for property contracts, parties, debtors, expenses, and clause templates with profit reports — synced to mobile and cloud." },
-        { q: "What are the free apps?", a: "Qayd powers 100% free companion apps: Dayni for debts and receivables, and Sundooqi Cash for daily cash-box sales, expenses, and end-of-day counts. Dayni is on Google Play and the App Store; Sundooqi Cash is on the App Store for now." },
+        { q: "What are the free apps?", a: "Qayd powers 100% free companion apps: Dayni for debts, Sundooqi Cash for the daily cash box, Masar for order and delivery tracking, and Saerha for pricing and profit margins. All are on Google Play and the App Store." },
         { q: "What is the loyalty system?", a: "An accounting feature that earns customers points on sales invoices and lets them redeem discounts. Enable it in business feature settings; it appears in invoices, POS, and loyalty reports." },
         { q: "What are custom fields?", a: "Settings to add up to 8 extra fields (text, number, yes/no, choices) for products, customers, suppliers, and investors — shown in grids and forms." },
         { q: "What are smart search and profit check?", a: "On sales and installment invoices: search products by name with highlight, stock quantities and prices, plus a profit-check button for cost, sell price, margin, and discount." },

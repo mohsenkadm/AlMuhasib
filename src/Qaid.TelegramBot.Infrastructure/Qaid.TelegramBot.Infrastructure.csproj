@@ -15,6 +15,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
+    <PackageReference Include="QuestPDF" Version="2026.7.2" />
     <PackageReference Include="Telegram.Bot" Version="22.10.3.3" />
   </ItemGroup>
 

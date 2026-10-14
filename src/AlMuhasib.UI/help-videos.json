@@ -1,6 +1,11 @@
 {
   "supportWhatsApp": "07505496065",
   "supportMessage": "السلام عليكم، أحتاج مساعدة في نظام قيد.",
+  "telegramBotUrl": "https://t.me/qaidsystem_bot",
+  "telegramSubscribeMessage": "السلام عليكم، أرغب بالاشتراك في بوت تقارير تيليجرام لنظام قيد — 10 دولار سنوياً.",
+  "appStoreUrl": "https://apps.apple.com/sa/app/%D9%82%D9%8A%D8%AF-%D8%A7%D9%84%D9%85%D8%AD%D8%A7%D8%B3%D8%A8%D9%8A/id6804299551?l=ar",
+  "playStoreUrl": "https://play.google.com/store/apps/details?id=com.almuhasib.almuhasib_mobile&hl=ar",
+  "mobileSubscribeMessage": "السلام عليكم، أرغب بالاشتراك في تطبيق قيد المحاسبي للجوال — 10 دولار سنوياً.",
   "defaultYoutubeUrl": "https://youtu.be/8f2BzHMGhhg",
   "categories": [
     {

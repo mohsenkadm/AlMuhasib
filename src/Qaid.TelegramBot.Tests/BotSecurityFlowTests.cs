@@ -129,16 +129,37 @@ public class BotSecurityFlowTests
         var api = TestHelpers.CreateApiClient(mockHttp);
         var sentA = new List<string>();
         var sentB = new List<string>();
-        var pA = TestHelpers.CreateProcessor(linksA, api, TestHelpers.CreateBotMock(sentA).Object);
-        var pB = TestHelpers.CreateProcessor(linksB, api, TestHelpers.CreateBotMock(sentB).Object);
+
+        static IReportPdfService PdfProbe(IQaidApiClient client)
+        {
+            var mock = new Mock<IReportPdfService>();
+            mock.Setup(p => p.BuildReportPdfAsync(
+                    It.IsAny<ReportKind>(), It.IsAny<string>(), It.IsAny<string>(),
+                    It.IsAny<DateRange>(), It.IsAny<CancellationToken>()))
+                .Returns(async (ReportKind kind, string token, string company, DateRange _, CancellationToken ct) =>
+                {
+                    var json = await client.GetJsonAsync("api/reports/cash-balances-summary", token, null, ct);
+                    var total = json.GetProperty("cashBoxesTotal").GetDecimal();
+                    return new Qaid.TelegramBot.Application.Reports.ReportPdfFile
+                    {
+                        Content = [0x25, 0x50, 0x44, 0x46],
+                        FileName = "probe.pdf",
+                        Caption = $"TOTAL:{total}|COMPANY:{company}"
+                    };
+                });
+            return mock.Object;
+        }
+
+        var pA = TestHelpers.CreateProcessor(linksA, api, TestHelpers.CreateBotMock(sentA).Object, pdf: PdfProbe(api));
+        var pB = TestHelpers.CreateProcessor(linksB, api, TestHelpers.CreateBotMock(sentB).Object, pdf: PdfProbe(api));
 
         await Task.WhenAll(
             pA.ProcessCallbackAsync(100, 100, 1, "a", CallbackData.Report(ReportKind.CashBalances), CancellationToken.None),
             pB.ProcessCallbackAsync(200, 200, 1, "b", CallbackData.Report(ReportKind.CashBalances), CancellationToken.None));
 
-        Assert.Contains(sentA, t => t.Contains("111"));
-        Assert.Contains(sentB, t => t.Contains("222"));
-        Assert.DoesNotContain(sentA, t => t.Contains("222"));
-        Assert.DoesNotContain(sentB, t => t.Contains("111"));
+        Assert.Contains(sentA, t => t.Contains("TOTAL:111"));
+        Assert.Contains(sentB, t => t.Contains("TOTAL:222"));
+        Assert.DoesNotContain(sentA, t => t.Contains("TOTAL:222"));
+        Assert.DoesNotContain(sentB, t => t.Contains("TOTAL:111"));
     }
 }

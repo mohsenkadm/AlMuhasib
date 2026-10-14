@@ -356,6 +356,68 @@ public partial class DashboardViewModel : ViewModelBase
         await _mainWindow.OpenTabAsync(typeof(SalesInvoiceViewModel), "فاتورة مبيعات", PackIconKind.CashRegister);
 
     [RelayCommand]
+    private async Task OpenWarehouseReportAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(WarehouseReportViewModel), "تقرير المخازن", PackIconKind.Warehouse);
+
+    [RelayCommand]
+    private async Task OpenProductsAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(ProductsViewModel), "المنتجات", PackIconKind.PackageVariantClosed);
+
+    [RelayCommand]
+    private async Task OpenAddProductAsync()
+    {
+        ProductFormNavigationBridge.PendingEditProductId = null;
+        await _mainWindow.OpenTabAsync(
+            typeof(ProductFormViewModel),
+            "إضافة منتج",
+            PackIconKind.PackageVariantPlus,
+            activateIfExists: false,
+            permissionScreenName: "Products");
+    }
+
+    [RelayCommand]
+    private async Task OpenCustomersAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(CustomersViewModel), "العملاء", PackIconKind.AccountGroup);
+
+    [RelayCommand]
+    private async Task OpenAddCustomerAsync()
+    {
+        PartnerListNavigationBridge.PendingOpenAddForCustomers = true;
+        await _mainWindow.OpenTabAsync(typeof(CustomersViewModel), "العملاء", PackIconKind.AccountPlus);
+        PartnerListNavigationBridge.PendingOpenAddForCustomers = false;
+    }
+
+    [RelayCommand]
+    private async Task OpenSuppliersAsync() =>
+        await _mainWindow.OpenTabAsync(typeof(SuppliersViewModel), "الموردون", PackIconKind.Factory);
+
+    [RelayCommand]
+    private async Task OpenAddSupplierAsync()
+    {
+        PartnerListNavigationBridge.PendingOpenAddForSuppliers = true;
+        await _mainWindow.OpenTabAsync(typeof(SuppliersViewModel), "الموردون", PackIconKind.TruckDelivery);
+        PartnerListNavigationBridge.PendingOpenAddForSuppliers = false;
+    }
+
+    [RelayCommand]
+    private async Task OpenDailySalesReportAsync() =>
+        await _mainWindow.OpenTabAsync(
+            typeof(DailySalesReportViewModel),
+            "يومية المبيعات",
+            PackIconKind.CalendarClock,
+            activateIfExists: false,
+            permissionScreenName: ScreenPermissionRegistry.Reports);
+
+    [RelayCommand]
+    private async Task OpenDailyOperationsReportAsync() =>
+        await _mainWindow.OpenTabAsync(
+            typeof(DailyOperationsReportViewModel),
+            "التقرير اليومي",
+            PackIconKind.ClipboardTextClock,
+            activateIfExists: false,
+            permissionScreenName: ScreenPermissionRegistry.Reports);
+
+    [RelayCommand]
     private async Task OpenMigrationWizardAsync() =>
         await _mainWindow.OpenTabAsync(
             typeof(MigrationWizardViewModel),

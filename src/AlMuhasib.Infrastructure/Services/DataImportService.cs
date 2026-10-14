@@ -209,6 +209,8 @@ public class DataImportService : IDataImportService
                 if (minQty > 0)
                     await ApplyMinQuantityToAllWarehousesAsync(context, product.Id, minQty);
 
+                await ApplyProductBranchesFromImportAsync(context, product.Id, row, headerMap, options);
+
                 result.ImportedCount++;
             }
             catch (Exception ex)
@@ -341,6 +343,71 @@ public class DataImportService : IDataImportService
             || int.TryParse(value, NumberStyles.Any, CultureInfo.CurrentCulture, out n))
             return n;
         return null;
+    }
+
+    private static async Task ApplyProductBranchesFromImportAsync(
+        AppDbContext context,
+        int productId,
+        IXLRow row,
+        Dictionary<string, int> headerMap,
+        ProductImportOptions options)
+    {
+        var selected = new List<int>();
+
+        if (options.IncludeBranchColumns && options.Branches.Count > 0)
+        {
+            foreach (var branch in options.Branches)
+            {
+                var header = string.IsNullOrWhiteSpace(branch.Header)
+                    ? ProductImportSchema.BuildBranchHeader(branch.BranchName)
+                    : branch.Header.Trim();
+                if (!headerMap.ContainsKey(header))
+                    continue;
+
+                if (ProductImportSchema.IsBranchVisibleCell(GetCell(row, headerMap, header)))
+                    selected.Add(branch.BranchId);
+            }
+        }
+
+        // أعمدة الفروع فارغة/لا أو غير مضمّنة → ربط افتراضي بالفرع الرئيسي
+        if (selected.Count == 0)
+        {
+            var mainId = await context.Branches.AsNoTracking()
+                .Where(b => b.IsMain && b.IsActive)
+                .Select(b => (int?)b.Id)
+                .FirstOrDefaultAsync();
+            if (mainId is null)
+            {
+                mainId = await context.Branches.AsNoTracking()
+                    .Where(b => b.IsActive)
+                    .OrderBy(b => b.Id)
+                    .Select(b => (int?)b.Id)
+                    .FirstOrDefaultAsync();
+            }
+
+            if (mainId is int id)
+                selected.Add(id);
+        }
+
+        if (selected.Count == 0)
+            return;
+
+        var existing = await context.ProductBranches.Where(pb => pb.ProductId == productId).ToListAsync();
+        if (existing.Count > 0)
+            context.ProductBranches.RemoveRange(existing);
+
+        var now = DateTime.UtcNow;
+        foreach (var branchId in selected.Distinct())
+        {
+            context.ProductBranches.Add(new ProductBranch
+            {
+                ProductId = productId,
+                BranchId = branchId,
+                CreatedAt = now
+            });
+        }
+
+        await context.SaveChangesAsync();
     }
 
     private static async Task ApplyMinQuantityToAllWarehousesAsync(AppDbContext context, int productId, decimal minQuantity)

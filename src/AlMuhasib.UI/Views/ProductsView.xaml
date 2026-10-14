@@ -168,6 +168,15 @@
                             </StackPanel>
                         </Button>
 
+                        <!-- Branch columns in Excel template -->
+                        <CheckBox IsChecked="{Binding IncludeBranchColumnsInImport}"
+                                  Content="أعمدة الفروع"
+                                  Margin="4,0"
+                                  VerticalAlignment="Center"
+                                  FontSize="12"
+                                  ToolTip="إظهار عمود لكل فرع في قالب واستيراد Excel (نعم/لا)"
+                                  Visibility="{Binding ShowBranchColumnsImportToggle, Converter={StaticResource BoolToVis}}" />
+
                         <!-- Excel template -->
                         <Button Command="{Binding DownloadImportTemplateCommand}"
                                 Style="{StaticResource OutlinedButton}"
@@ -994,6 +1003,20 @@
                         <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="14" Padding="18,16" Margin="0,0,0,16"
                                 BorderBrush="#E3EAF0" BorderThickness="1">
                             <StackPanel>
+                                <TextBlock Text="{Binding BarcodePrintCompanyName}" FontSize="13" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" HorizontalAlignment="Center"
+                                           Margin="0,0,0,4">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding BarcodePrintCompanyName}" Value="">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                                 <TextBlock Text="{Binding BarcodePrintProductName}" FontSize="16" FontWeight="Bold"
                                            Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap" HorizontalAlignment="Center"
                                            Margin="0,0,0,10"/>

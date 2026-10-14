@@ -256,6 +256,7 @@ public partial class ProductsViewModel : ViewModelBase
         {
             LoadPermissions(_currentUserService, "Products");
             await LoadCategoriesAsync();
+            await RefreshImportBranchOptionsAsync();
             await RefreshFeatureFilterOptionsAsync();
             await LoadCustomFieldDefinitionsAsync();
             await LoadProductsAsync();

@@ -24,6 +24,12 @@ public partial class PosQuickSaleViewModel
     [ObservableProperty] private Customer? _selectedPosCustomer;
     [ObservableProperty] private int _installmentCount = 3;
 
+    [ObservableProperty] private bool _isQuickAddCustomerOpen;
+    [ObservableProperty] private string _quickCustomerName = string.Empty;
+    [ObservableProperty] private string _quickCustomerPhone = string.Empty;
+    [ObservableProperty] private string _quickCustomerAddress = string.Empty;
+    [ObservableProperty] private string _quickCustomerError = string.Empty;
+
     partial void OnIsInstallmentModeChanged(bool value)
     {
         if (value && !_featureFlags.Installments)
@@ -46,6 +52,53 @@ public partial class PosQuickSaleViewModel
         PosCustomers.Clear();
         foreach (var c in await _unitOfWork.Customers.GetAllAsync())
             PosCustomers.Add(c);
+    }
+
+    [RelayCommand]
+    private void OpenQuickAddCustomer()
+    {
+        QuickCustomerName = string.Empty;
+        QuickCustomerPhone = string.Empty;
+        QuickCustomerAddress = string.Empty;
+        QuickCustomerError = string.Empty;
+        IsQuickAddCustomerOpen = true;
+    }
+
+    [RelayCommand]
+    private void CancelQuickAddCustomer() => IsQuickAddCustomerOpen = false;
+
+    [RelayCommand]
+    private async Task SaveQuickCustomerAsync()
+    {
+        if (string.IsNullOrWhiteSpace(QuickCustomerName))
+        {
+            QuickCustomerError = "اسم العميل مطلوب";
+            return;
+        }
+
+        try
+        {
+            var newCustomer = new Customer
+            {
+                Name = QuickCustomerName.Trim(),
+                Phone = string.IsNullOrWhiteSpace(QuickCustomerPhone) ? null : QuickCustomerPhone.Trim(),
+                Address = string.IsNullOrWhiteSpace(QuickCustomerAddress) ? null : QuickCustomerAddress.Trim(),
+                CreatedBy = _currentUserService.Username,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.Customers.AddAsync(newCustomer);
+            await _unitOfWork.SaveChangesAsync();
+
+            await LoadPosCustomersAsync();
+            SelectedPosCustomer = PosCustomers.FirstOrDefault(c => c.Id == newCustomer.Id);
+            IsQuickAddCustomerOpen = false;
+            StatusMessage = $"تم إضافة العميل «{newCustomer.Name}»";
+        }
+        catch (Exception ex)
+        {
+            QuickCustomerError = $"خطأ: {ex.Message}";
+        }
     }
 
     [RelayCommand]

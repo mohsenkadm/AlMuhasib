@@ -1551,6 +1551,7 @@ html[dir="rtl"] .tg-visible .tg-phone {
   background:
     radial-gradient(ellipse 60% 50% at 80% 10%, rgba(41, 121, 255, 0.18), transparent 55%),
     radial-gradient(ellipse 50% 45% at 10% 90%, rgba(240, 193, 75, 0.12), transparent 55%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(76, 175, 80, 0.08), transparent 60%),
     linear-gradient(180deg, rgba(10, 26, 63, 0.35), transparent 40%, rgba(10, 26, 63, 0.25));
 }
 .free-apps-eyebrow {
@@ -1614,6 +1615,9 @@ html[dir="rtl"] .tg-visible .tg-phone {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
 }
+.free-app-card:nth-child(2) .free-app-icon-wrap { animation-delay: 0.35s; }
+.free-app-card:nth-child(3) .free-app-icon-wrap { animation-delay: 0.7s; }
+.free-app-card:nth-child(4) .free-app-icon-wrap { animation-delay: 1.05s; }
 .free-app-icon {
   width: 100%; height: 100%; object-fit: contain; display: block; background: transparent;
 }
@@ -1699,6 +1703,30 @@ html[dir="rtl"] .tg-visible .tg-phone {
   background: radial-gradient(circle, rgba(0, 200, 120, 0.18), transparent 70%);
 }
 .free-app-card.accent-sundooqi .free-app-tagline { color: #80cbc4; }
+.free-app-card.accent-masar {
+  background: linear-gradient(160deg, rgba(12, 32, 78, 0.82), rgba(8, 18, 42, 0.94));
+  border-color: rgba(255, 214, 64, 0.28);
+}
+.free-app-card.accent-masar .free-app-glow {
+  background: radial-gradient(circle, rgba(255, 196, 0, 0.22), transparent 70%);
+}
+.free-app-card.accent-masar .free-app-tagline { color: #ffe082; }
+.free-app-card.accent-masar:hover {
+  border-color: rgba(76, 175, 80, 0.4);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 196, 0, 0.15);
+}
+.free-app-card.accent-saerha {
+  background: linear-gradient(160deg, rgba(14, 36, 70, 0.82), rgba(10, 22, 44, 0.94));
+  border-color: rgba(255, 183, 77, 0.28);
+}
+.free-app-card.accent-saerha .free-app-glow {
+  background: radial-gradient(circle, rgba(102, 187, 106, 0.22), transparent 70%);
+}
+.free-app-card.accent-saerha .free-app-tagline { color: #a5d6a7; }
+.free-app-card.accent-saerha:hover {
+  border-color: rgba(255, 183, 77, 0.45);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(102, 187, 106, 0.15);
+}
 
 /* Organizational branches */
 .branches-badge {

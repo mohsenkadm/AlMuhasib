@@ -25,8 +25,8 @@
         mc:Ignorable="d"
         behaviors:ScrollViewerMouseWheel.IsEnabled="True"
         d:DataContext="{d:DesignInstance vm:MainWindowViewModel, IsDesignTimeCreatable=False}"
-        Icon="pack://application:,,,/Assets/Brand/qayd-icon.ico"
-        Title="قيد - Qayd"
+        Icon="{DynamicResource BrandWindowIcon}"
+        Title="{x:Static helpers:AppInfo.AppNameAr}"
         Height="768" Width="1366"
         MinHeight="600" MinWidth="900"
         WindowStartupLocation="CenterScreen"
@@ -472,7 +472,7 @@
                         <Border Grid.Column="0" Width="44" Height="44" CornerRadius="12"
                                 VerticalAlignment="Center"
                                 Background="Transparent">
-                            <Image Source="pack://application:,,,/Assets/Brand/qayd-mark.png"
+                            <Image Source="{DynamicResource BrandMarkImage}"
                                    Width="44" Height="44"
                                    Stretch="Uniform"
                                    RenderOptions.BitmapScalingMode="HighQuality"/>
@@ -482,7 +482,7 @@
                                     Margin="12,0,0,0"
                                     VerticalAlignment="Center"
                                     Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <TextBlock Text="قيد"
+                            <TextBlock Text="{x:Static helpers:AppInfo.AppNameAr}"
                                        FontSize="20"
                                        FontWeight="Bold"
                                        Foreground="White" />
@@ -2074,6 +2074,38 @@
                 </Border.Style>
             </Border>
 
+            <!-- Mobile App FAB (above Telegram) -->
+            <Grid HorizontalAlignment="Right"
+                  VerticalAlignment="Bottom"
+                  Margin="0,0,16,188"
+                  Panel.ZIndex="102">
+                <Button Style="{StaticResource MobileAppFab}"
+                        Command="{Binding OpenMobileAppFabCommand}"
+                        IsEnabled="{Binding IsMobileFabBusy, Converter={StaticResource InverseBooleanConverter}}"
+                        ToolTip="تطبيق قيد للجوال — App Store و Google Play"/>
+            </Grid>
+
+            <!-- Telegram FAB (above Quick Assist) -->
+            <Grid HorizontalAlignment="Right"
+                  VerticalAlignment="Bottom"
+                  Margin="0,0,16,128"
+                  Panel.ZIndex="101">
+                <Button Style="{StaticResource TelegramFab}"
+                        Command="{Binding OpenTelegramFabCommand}"
+                        IsEnabled="{Binding IsTelegramFabBusy, Converter={StaticResource InverseBooleanConverter}}"
+                        ToolTip="بوت تقارير تيليجرام — اضغط للفتح أو الاشتراك">
+                    <materialDesign:PackIcon Kind="Send"
+                                             Width="24" Height="24"
+                                             Foreground="White"
+                                             FlowDirection="LeftToRight"
+                                             RenderTransformOrigin="0.5,0.5">
+                        <materialDesign:PackIcon.RenderTransform>
+                            <RotateTransform Angle="-45"/>
+                        </materialDesign:PackIcon.RenderTransform>
+                    </materialDesign:PackIcon>
+                </Button>
+            </Grid>
+
             <!-- Quick Assist FAB (bottom-right — away from invoice action buttons on the left) -->
             <Grid HorizontalAlignment="Right"
                   VerticalAlignment="Bottom"
@@ -2304,6 +2336,659 @@
         </Grid><!-- end main column -->
 
         </Grid><!-- end body grid -->
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- MOBILE APP DOWNLOAD DIALOG                   -->
+        <!-- ═══════════════════════════════════════════ -->
+        <Grid Grid.Row="0" Grid.RowSpan="3"
+              Visibility="{Binding IsMobileDownloadDialogOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
+              Panel.ZIndex="1006">
+            <Border Background="#9900122B" MouseLeftButtonDown="MobileDownloadBackdrop_Click">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMobileDownloadDialogOpen}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             From="0" To="1" Duration="0:0:0.28"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+            </Border>
+
+            <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+                    MinWidth="420" MaxWidth="480"
+                    Background="{DynamicResource CardBrush}" CornerRadius="24"
+                    Padding="0" RenderTransformOrigin="0.5,0.5">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="48" ShadowDepth="10" Opacity="0.28" Color="#1A237E"/>
+                </Border.Effect>
+                <Border.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        <TranslateTransform Y="0"/>
+                    </TransformGroup>
+                </Border.RenderTransform>
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMobileDownloadDialogOpen}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)"
+                                                             From="0.84" To="1" Duration="0:0:0.4">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.4"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)"
+                                                             From="0.84" To="1" Duration="0:0:0.4">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.4"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             From="0" To="1" Duration="0:0:0.28"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" CornerRadius="24,24,0,0" Padding="28,26" ClipToBounds="True">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#1A237E" Offset="0"/>
+                                <GradientStop Color="#283593" Offset="0.5"/>
+                                <GradientStop Color="#3949AB" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Grid Width="88" Height="88" HorizontalAlignment="Center">
+                                <Ellipse Stroke="#55FFFFFF" StrokeThickness="2"
+                                         RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.RenderTransform>
+                                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                    </Ellipse.RenderTransform>
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Style.Triggers>
+                                                <EventTrigger RoutedEvent="Loaded">
+                                                    <BeginStoryboard>
+                                                        <Storyboard RepeatBehavior="Forever">
+                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                                             From="1" To="1.28" Duration="0:0:1.7"/>
+                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                                             From="1" To="1.28" Duration="0:0:1.7"/>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                             From="0.75" To="0" Duration="0:0:1.7"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+                                <Ellipse Width="72" Height="72"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                                         Stroke="#AAFFFFFF" StrokeThickness="2.5">
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect Color="#000000" BlurRadius="18" ShadowDepth="3" Opacity="0.3"/>
+                                    </Ellipse.Effect>
+                                    <Ellipse.Fill>
+                                        <ImageBrush ImageSource="pack://application:,,,/Assets/Brand/qayd-icon.png"
+                                                    Stretch="UniformToFill"/>
+                                    </Ellipse.Fill>
+                                </Ellipse>
+                            </Grid>
+                            <TextBlock Text="تطبيق قيد المحاسبي"
+                                       FontSize="22" FontWeight="Bold" Foreground="White"
+                                       HorizontalAlignment="Center" Margin="0,14,0,0"/>
+                            <TextBlock Text="نظامك المحاسبي في جيبك — تقارير وفواتير وكشوفات لحظياً"
+                                       FontSize="13" Foreground="#D9FFFFFF"
+                                       HorizontalAlignment="Center" TextWrapping="Wrap"
+                                       TextAlignment="Center" Margin="8,8,8,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Grid.Row="1" Margin="28,22,28,8">
+                        <TextBlock Text="اختر متجر التحميل"
+                                   FontSize="14" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,14"/>
+
+                        <Button Command="{Binding OpenMobileAppStoreCommand}"
+                                Height="52" Margin="0,0,0,10" Cursor="Hand" BorderThickness="0"
+                                materialDesign:ButtonAssist.CornerRadius="14">
+                            <Button.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#111111" Offset="0"/>
+                                    <GradientStop Color="#333333" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Button.Background>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="Apple" Width="24" Height="24"
+                                                         Foreground="White" VerticalAlignment="Center"/>
+                                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="App Store" FontSize="15" FontWeight="SemiBold" Foreground="White"/>
+                                    <TextBlock Text="لـ iPhone و iPad" FontSize="11" Foreground="#BDBDBD"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding OpenMobilePlayStoreCommand}"
+                                Height="52" Cursor="Hand" BorderThickness="0"
+                                materialDesign:ButtonAssist.CornerRadius="14">
+                            <Button.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#01875F" Offset="0"/>
+                                    <GradientStop Color="#34A853" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Button.Background>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <materialDesign:PackIcon Kind="GooglePlay" Width="24" Height="24"
+                                                         Foreground="White" VerticalAlignment="Center"/>
+                                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="Google Play" FontSize="15" FontWeight="SemiBold" Foreground="White"/>
+                                    <TextBlock Text="لأجهزة Android" FontSize="11" Foreground="#E8F5E9"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <Button Grid.Row="2" Command="{Binding CloseMobileDownloadDialogCommand}"
+                            Content="إغلاق"
+                            Style="{StaticResource OutlinedButton}"
+                            Height="44" MinWidth="120" Margin="24,4,24,22"
+                            HorizontalAlignment="Center"
+                            materialDesign:ButtonAssist.CornerRadius="14"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- MOBILE APP SUBSCRIBE DIALOG                  -->
+        <!-- ═══════════════════════════════════════════ -->
+        <Grid Grid.Row="0" Grid.RowSpan="3"
+              Visibility="{Binding IsMobileSubscribeDialogOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
+              Panel.ZIndex="1007">
+            <Border Background="#9900122B" MouseLeftButtonDown="MobileSubscribeBackdrop_Click">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMobileSubscribeDialogOpen}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             From="0" To="1" Duration="0:0:0.28"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+            </Border>
+
+            <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+                    MinWidth="420" MaxWidth="480"
+                    Background="{DynamicResource CardBrush}" CornerRadius="24"
+                    Padding="0" RenderTransformOrigin="0.5,0.5">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="48" ShadowDepth="10" Opacity="0.28" Color="#1A237E"/>
+                </Border.Effect>
+                <Border.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        <TranslateTransform Y="0"/>
+                    </TransformGroup>
+                </Border.RenderTransform>
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsMobileSubscribeDialogOpen}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)"
+                                                             From="0.82" To="1" Duration="0:0:0.42">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.45"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)"
+                                                             From="0.82" To="1" Duration="0:0:0.42">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.45"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)"
+                                                             From="28" To="0" Duration="0:0:0.4">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             From="0" To="1" Duration="0:0:0.3"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" CornerRadius="24,24,0,0" Padding="28,26" ClipToBounds="True">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#1A237E" Offset="0"/>
+                                <GradientStop Color="#283593" Offset="0.45"/>
+                                <GradientStop Color="#5C6BC0" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <StackPanel HorizontalAlignment="Center">
+                            <Grid Width="88" Height="88" HorizontalAlignment="Center">
+                                <Ellipse Stroke="#60FFFFFF" StrokeThickness="2"
+                                         RenderTransformOrigin="0.5,0.5">
+                                    <Ellipse.RenderTransform>
+                                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                    </Ellipse.RenderTransform>
+                                    <Ellipse.Style>
+                                        <Style TargetType="Ellipse">
+                                            <Style.Triggers>
+                                                <EventTrigger RoutedEvent="Loaded">
+                                                    <BeginStoryboard>
+                                                        <Storyboard RepeatBehavior="Forever">
+                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                                             From="1" To="1.32" Duration="0:0:1.7"/>
+                                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                                             From="1" To="1.32" Duration="0:0:1.7"/>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                             From="0.75" To="0" Duration="0:0:1.7"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Ellipse.Style>
+                                </Ellipse>
+                                <Ellipse Width="68" Height="68"
+                                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                                         Stroke="#AAFFFFFF" StrokeThickness="2.5">
+                                    <Ellipse.Effect>
+                                        <DropShadowEffect Color="#000000" BlurRadius="16" ShadowDepth="3" Opacity="0.28"/>
+                                    </Ellipse.Effect>
+                                    <Ellipse.Fill>
+                                        <ImageBrush ImageSource="pack://application:,,,/Assets/Brand/qayd-icon.png"
+                                                    Stretch="UniformToFill"/>
+                                    </Ellipse.Fill>
+                                </Ellipse>
+                            </Grid>
+                            <TextBlock Text="تطبيق قيد للجوال"
+                                       FontSize="22" FontWeight="Bold" Foreground="White"
+                                       HorizontalAlignment="Center" Margin="0,14,0,0"/>
+                            <TextBlock Text="تابع أعمالك من هاتفك في أي وقت ومن أي مكان"
+                                       FontSize="13" Foreground="#D9FFFFFF"
+                                       HorizontalAlignment="Center" TextWrapping="Wrap"
+                                       TextAlignment="Center" Margin="8,8,8,0"/>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Grid.Row="1" Margin="28,22,28,8">
+                        <Border Background="{DynamicResource BackgroundBrush}"
+                                CornerRadius="16" Padding="16,14" Margin="0,0,0,14"
+                                BorderBrush="#333945AB" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="ماذا تحصل؟" FontWeight="SemiBold" FontSize="14"
+                                           Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,10"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <materialDesign:PackIcon Kind="CheckCircle" Width="18" Height="18"
+                                                             Foreground="#3949AB" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="لوحة تحكم وتقارير وكشوفات لحظية" FontSize="13"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <materialDesign:PackIcon Kind="CheckCircle" Width="18" Height="18"
+                                                             Foreground="#3949AB" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="متوفر على App Store و Google Play" FontSize="13"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="CheckCircle" Width="18" Height="18"
+                                                             Foreground="#3949AB" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="يتطلب حساب مزامنة سحابية نشط" FontSize="13"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border CornerRadius="14" Padding="14,12" HorizontalAlignment="Center" MinWidth="200">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#E8EAF6" Offset="0"/>
+                                    <GradientStop Color="#C5CAE9" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="الاشتراك السنوي" FontSize="12"
+                                           Foreground="#283593" HorizontalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                    <TextBlock Text="10" FontSize="32" FontWeight="Bold" Foreground="#1A237E"/>
+                                    <TextBlock Text="$" FontSize="18" FontWeight="SemiBold"
+                                               Foreground="#3949AB" Margin="4,10,0,0"/>
+                                    <TextBlock Text="/ سنة" FontSize="14"
+                                               Foreground="#5C6BC0" Margin="8,14,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="ليس لديك يوزر مزامنة بعد — تواصل مع الدعم لتفعيل الاشتراك."
+                                   FontSize="12.5"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap" TextAlignment="Center"
+                                   HorizontalAlignment="Center" Margin="0,16,0,0"/>
+                    </StackPanel>
+
+                    <StackPanel Grid.Row="2" Orientation="Horizontal"
+                                HorizontalAlignment="Center" Margin="24,8,24,24">
+                        <Button Command="{Binding ConfirmMobileSubscribeCommand}"
+                                Height="46" MinWidth="168" Padding="20,0" Margin="0,0,10,0"
+                                Cursor="Hand" BorderThickness="0"
+                                materialDesign:ButtonAssist.CornerRadius="14">
+                            <Button.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#3949AB" Offset="0"/>
+                                    <GradientStop Color="#1A237E" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Button.Background>
+                            <Button.Effect>
+                                <DropShadowEffect Color="#3949AB" BlurRadius="14" ShadowDepth="2" Opacity="0.4"/>
+                            </Button.Effect>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Whatsapp" Width="20" Height="20"
+                                                         Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock Text="أريد الاشتراك" Margin="8,0,0,0"
+                                           FontWeight="SemiBold" FontSize="14"
+                                           Foreground="White" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding CloseMobileSubscribeDialogCommand}"
+                                Content="لاحقاً"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="46" MinWidth="110" Padding="18,0"
+                                materialDesign:ButtonAssist.CornerRadius="14"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ═══════════════════════════════════════════ -->
+        <!-- TELEGRAM SUBSCRIBE DIALOG                    -->
+        <!-- ═══════════════════════════════════════════ -->
+        <Grid Grid.Row="0" Grid.RowSpan="3"
+              Visibility="{Binding IsTelegramSubscribeDialogOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
+              Panel.ZIndex="1005">
+            <Border Background="#9900182A" MouseLeftButtonDown="TelegramSubscribeBackdrop_Click">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsTelegramSubscribeDialogOpen}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             From="0" To="1" Duration="0:0:0.28"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+            </Border>
+
+            <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+                    MinWidth="420" MaxWidth="480"
+                    Background="{DynamicResource CardBrush}" CornerRadius="24"
+                    Padding="0"
+                    RenderTransformOrigin="0.5,0.5">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="48" ShadowDepth="10" Opacity="0.28" Color="#0D47A1"/>
+                </Border.Effect>
+                <Border.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        <TranslateTransform Y="0"/>
+                    </TransformGroup>
+                </Border.RenderTransform>
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsTelegramSubscribeDialogOpen}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)"
+                                                             From="0.82" To="1" Duration="0:0:0.42">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.45"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)"
+                                                             From="0.82" To="1" Duration="0:0:0.42">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <BackEase EasingMode="EaseOut" Amplitude="0.45"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)"
+                                                             From="28" To="0" Duration="0:0:0.4">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                             From="0" To="1" Duration="0:0:0.3"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header -->
+                    <Border Grid.Row="0" CornerRadius="24,24,0,0" Padding="28,26" ClipToBounds="True">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#0D47A1" Offset="0"/>
+                                <GradientStop Color="#1565C0" Offset="0.45"/>
+                                <GradientStop Color="#229ED9" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                        <Grid>
+                            <Ellipse Width="160" Height="160" Opacity="0.12" Fill="White"
+                                     HorizontalAlignment="Left" VerticalAlignment="Top"
+                                     Margin="-40,-50,0,0"/>
+                            <Ellipse Width="100" Height="100" Opacity="0.1" Fill="White"
+                                     HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                     Margin="0,0,-30,-40"/>
+                            <StackPanel HorizontalAlignment="Center">
+                                <Grid Width="78" Height="78" HorizontalAlignment="Center">
+                                    <Ellipse Stroke="#60FFFFFF" StrokeThickness="2"
+                                             RenderTransformOrigin="0.5,0.5">
+                                        <Ellipse.RenderTransform>
+                                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                        </Ellipse.RenderTransform>
+                                        <Ellipse.Style>
+                                            <Style TargetType="Ellipse">
+                                                <Style.Triggers>
+                                                    <EventTrigger RoutedEvent="Loaded">
+                                                        <BeginStoryboard>
+                                                            <Storyboard RepeatBehavior="Forever">
+                                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                                                 From="1" To="1.35" Duration="0:0:1.6"/>
+                                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                                                 From="1" To="1.35" Duration="0:0:1.6"/>
+                                                                <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                                                                 From="0.7" To="0" Duration="0:0:1.6"/>
+                                                            </Storyboard>
+                                                        </BeginStoryboard>
+                                                    </EventTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Ellipse.Style>
+                                    </Ellipse>
+                                    <Border Width="64" Height="64" CornerRadius="32"
+                                            Background="#35FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="Send" Width="30" Height="30"
+                                                                 Foreground="White"
+                                                                 FlowDirection="LeftToRight"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                 RenderTransformOrigin="0.5,0.5">
+                                            <materialDesign:PackIcon.RenderTransform>
+                                                <RotateTransform Angle="-45"/>
+                                            </materialDesign:PackIcon.RenderTransform>
+                                        </materialDesign:PackIcon>
+                                    </Border>
+                                </Grid>
+                                <TextBlock Text="بوت تقارير تيليجرام"
+                                           FontSize="22" FontWeight="Bold"
+                                           Foreground="White"
+                                           HorizontalAlignment="Center"
+                                           Margin="0,14,0,0"/>
+                                <TextBlock Text="تقاريرك أونلاين داخل تيليجرام — في أي وقت ومن أي مكان"
+                                           FontSize="13"
+                                           Foreground="#D9FFFFFF"
+                                           HorizontalAlignment="Center"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center"
+                                           Margin="8,8,8,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Body -->
+                    <StackPanel Grid.Row="1" Margin="28,22,28,8">
+                        <Border Background="{DynamicResource BackgroundBrush}"
+                                CornerRadius="16" Padding="16,14" Margin="0,0,0,14"
+                                BorderBrush="#33229ED9" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Text="لماذا تشترك؟" FontWeight="SemiBold" FontSize="14"
+                                           Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,10"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <materialDesign:PackIcon Kind="CheckCircle" Width="18" Height="18"
+                                                             Foreground="#229ED9" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="تقارير وكشوفات PDF مباشرة على هاتفك" FontSize="13"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <materialDesign:PackIcon Kind="CheckCircle" Width="18" Height="18"
+                                                             Foreground="#229ED9" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="يعمل أونلاين داخل تيليجرام بدون فتح النظام" FontSize="13"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="CheckCircle" Width="18" Height="18"
+                                                             Foreground="#229ED9" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="يتطلب حساب مزامنة سحابية نشط" FontSize="13"
+                                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <Border CornerRadius="14" Padding="14,12" HorizontalAlignment="Center" MinWidth="200">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#E3F2FD" Offset="0"/>
+                                    <GradientStop Color="#BBDEFB" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="الاشتراك السنوي" FontSize="12"
+                                           Foreground="#1565C0" HorizontalAlignment="Center"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+                                    <TextBlock Text="10" FontSize="32" FontWeight="Bold" Foreground="#0D47A1"/>
+                                    <TextBlock Text="$" FontSize="18" FontWeight="SemiBold"
+                                               Foreground="#1565C0" Margin="4,10,0,0"/>
+                                    <TextBlock Text="/ سنة" FontSize="14"
+                                               Foreground="#547792" Margin="8,14,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="ليس لديك يوزر مزامنة بعد — تواصل مع الدعم لتفعيل الاشتراك."
+                                   FontSize="12.5"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   TextWrapping="Wrap"
+                                   TextAlignment="Center"
+                                   HorizontalAlignment="Center"
+                                   Margin="0,16,0,0"/>
+                    </StackPanel>
+
+                    <!-- Actions -->
+                    <StackPanel Grid.Row="2" Orientation="Horizontal"
+                                HorizontalAlignment="Center" Margin="24,8,24,24">
+                        <Button Command="{Binding ConfirmTelegramSubscribeCommand}"
+                                Height="46" MinWidth="168" Padding="20,0" Margin="0,0,10,0"
+                                Cursor="Hand" BorderThickness="0"
+                                materialDesign:ButtonAssist.CornerRadius="14">
+                            <Button.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#229ED9" Offset="0"/>
+                                    <GradientStop Color="#1E88E5" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Button.Background>
+                            <Button.Effect>
+                                <DropShadowEffect Color="#229ED9" BlurRadius="14" ShadowDepth="2" Opacity="0.4"/>
+                            </Button.Effect>
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Whatsapp" Width="20" Height="20"
+                                                         Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock Text="أريد الاشتراك" Margin="8,0,0,0"
+                                           FontWeight="SemiBold" FontSize="14"
+                                           Foreground="White" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding CloseTelegramSubscribeDialogCommand}"
+                                Content="لاحقاً"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="46" MinWidth="110" Padding="18,0"
+                                materialDesign:ButtonAssist.CornerRadius="14"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
 
         <!-- ═══════════════════════════════════════════ -->
         <!-- EXIT DIALOG OVERLAY                          -->

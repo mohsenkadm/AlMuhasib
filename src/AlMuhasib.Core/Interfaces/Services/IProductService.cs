@@ -36,6 +36,9 @@ public interface IProductService
     /// <summary>استبدال فروع ظهور المنتج بالكامل.</summary>
     Task SetProductBranchesAsync(int productId, IEnumerable<int> branchIds, CancellationToken ct = default);
 
+    /// <summary>دمج فروع ظهور إضافية دون حذف الروابط الحالية (مفيد لمعالج النقل متعدد الفروع).</summary>
+    Task AddProductBranchesAsync(int productId, IEnumerable<int> branchIds, CancellationToken ct = default);
+
     /// <summary>منتجات ظاهرة في فرع معيّن (للفواتير والبحث).</summary>
     Task<IReadOnlyList<Product>> GetVisibleInBranchAsync(int branchId, CancellationToken ct = default);
 

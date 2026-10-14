@@ -77,10 +77,11 @@ public partial class WarehouseReportViewModel : ReportViewModelBase
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "تقرير_المخازن.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "المنتج", "المخزن", "الكمية", "متوسط التكلفة", "القيمة الإجمالية", "كمية التلف", "تكلفة التلف" };
+        var cols = new[] { "المنتج", "الباركود", "المخزن", "الكمية", "متوسط التكلفة", "القيمة الإجمالية", "كمية التلف", "تكلفة التلف" };
         var rows = _allRows.Select(r => new object[]
         {
             r.ProductName,
+            r.Barcode ?? "",
             r.WarehouseName,
             r.Quantity.ToString("N0"),
             r.AverageCost.ToString("N0"),
@@ -95,10 +96,11 @@ public partial class WarehouseReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "المنتج", "المخزن", "الكمية", "متوسط التكلفة", "القيمة الإجمالية", "كمية التلف", "تكلفة التلف" };
+        var cols = new[] { "المنتج", "الباركود", "المخزن", "الكمية", "متوسط التكلفة", "القيمة الإجمالية", "كمية التلف", "تكلفة التلف" };
         var rows = _allRows.Select(r => new object[]
         {
             r.ProductName,
+            r.Barcode ?? "",
             r.WarehouseName,
             r.Quantity.ToString("N0"),
             r.AverageCost.ToString("N0"),

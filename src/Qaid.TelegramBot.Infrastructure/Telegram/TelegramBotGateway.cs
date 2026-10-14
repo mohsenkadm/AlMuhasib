@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Qaid.TelegramBot.Application.Abstractions;
 using Telegram.Bot;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
@@ -31,6 +32,27 @@ public sealed class TelegramBotGateway : ITelegramBotGateway
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to send Telegram message");
+        }
+    }
+
+    public async Task SendDocumentAsync(
+        long chatId, byte[] pdfContent, string fileName, string caption,
+        IReadOnlyList<IReadOnlyList<BotButton>>? keyboard, CancellationToken ct)
+    {
+        try
+        {
+            await using var stream = new MemoryStream(pdfContent);
+            await _client.SendDocument(
+                chatId: chatId,
+                document: InputFile.FromStream(stream, fileName),
+                caption: caption.Length > 1024 ? caption[..1024] : caption,
+                replyMarkup: ToMarkup(keyboard),
+                cancellationToken: ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send Telegram PDF document");
+            throw;
         }
     }
 

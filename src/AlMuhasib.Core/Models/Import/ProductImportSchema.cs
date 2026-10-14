@@ -73,17 +73,72 @@ public static class ProductImportSchema
                 headers.Add(header);
         }
 
+        if (options.IncludeBranchColumns)
+        {
+            foreach (var branch in options.Branches)
+            {
+                var header = string.IsNullOrWhiteSpace(branch.Header)
+                    ? BuildBranchHeader(branch.BranchName)
+                    : branch.Header.Trim();
+                if (!headers.Contains(header, StringComparer.Ordinal))
+                    headers.Add(header);
+            }
+        }
+
         return headers;
+    }
+
+    public static string BuildBranchHeader(string branchName)
+    {
+        var sanitized = SanitizeHeader(branchName);
+        return string.IsNullOrEmpty(sanitized) ? "ظهور_فرع" : $"ظهور_فرع_{sanitized}";
+    }
+
+    public static string SanitizeHeader(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+        var chars = value.Trim().Select(c => char.IsWhiteSpace(c) || c is '/' or '\\' or ':' or '*' or '?' or '[' or ']'
+            ? '_'
+            : c).ToArray();
+        return new string(chars);
+    }
+
+    public static bool IsBranchVisibleCell(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+        var v = value.Trim();
+        return v is "1" or "نعم" or "yes" or "true" or "y" or "✓" or "✔"
+            || v.Equals("نعم", StringComparison.OrdinalIgnoreCase)
+            || v.Equals("yes", StringComparison.OrdinalIgnoreCase)
+            || v.Equals("true", StringComparison.OrdinalIgnoreCase);
     }
 
     public static object[] BuildSampleRow(ProductImportOptions? options = null)
     {
         options ??= new ProductImportOptions();
         var headers = BuildHeaders(options);
+        var branchHeaders = options.IncludeBranchColumns
+            ? options.Branches
+                .Select(b => string.IsNullOrWhiteSpace(b.Header) ? BuildBranchHeader(b.BranchName) : b.Header.Trim())
+                .ToHashSet(StringComparer.Ordinal)
+            : new HashSet<string>(StringComparer.Ordinal);
+
         var row = new object[headers.Count];
+        var firstBranchDone = false;
         for (var i = 0; i < headers.Count; i++)
         {
-            row[i] = headers[i] switch
+            var header = headers[i];
+            if (branchHeaders.Contains(header))
+            {
+                // عيّنة: نعم للفرع الأول، لا للبقية
+                row[i] = firstBranchDone ? "لا" : "نعم";
+                firstBranchDone = true;
+                continue;
+            }
+
+            row[i] = header switch
             {
                 Name => "منتج 1",
                 Barcode => "123456",

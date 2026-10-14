@@ -30,7 +30,10 @@ public partial class SetupWizardHostWindow : Window
     public NetworkConnectionProfile? SavedBranchProfile { get; private set; }
     public MainServerSettings? SavedMainServerSettings { get; private set; }
     public string? BranchDisplayName { get; private set; }
+    public bool IsDuhokBranchActivated { get; private set; }
     public SqlServerInstanceInfo? SelectedSqlServerInstance => _selectedSqlInstance;
+
+    private bool _suppressDuhokCheckEvent;
 
     public SetupWizardHostWindow()
     {
@@ -70,6 +73,38 @@ public partial class SetupWizardHostWindow : Window
         }
 
         ContinueButton.IsEnabled = false;
+    }
+
+    private void OnDuhokBranchChecked(object sender, RoutedEventArgs e)
+    {
+        if (_suppressDuhokCheckEvent || IsDuhokBranchActivated)
+            return;
+
+        var dialog = new DuhokBranchActivationDialog { Owner = this };
+        if (dialog.ShowDialog() == true)
+        {
+            IsDuhokBranchActivated = true;
+            return;
+        }
+
+        _suppressDuhokCheckEvent = true;
+        try
+        {
+            DuhokBranchCheckBox.IsChecked = false;
+            IsDuhokBranchActivated = false;
+        }
+        finally
+        {
+            _suppressDuhokCheckEvent = false;
+        }
+    }
+
+    private void OnDuhokBranchUnchecked(object sender, RoutedEventArgs e)
+    {
+        if (_suppressDuhokCheckEvent)
+            return;
+
+        IsDuhokBranchActivated = false;
     }
 
     private void OnAccountingSelected(object sender, MouseButtonEventArgs e) =>

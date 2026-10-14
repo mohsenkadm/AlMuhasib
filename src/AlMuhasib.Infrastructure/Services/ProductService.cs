@@ -359,6 +359,50 @@ public class ProductService : IProductService
         await context.SaveChangesAsync(ct);
     }
 
+    public async Task AddProductBranchesAsync(
+        int productId,
+        IEnumerable<int> branchIds,
+        CancellationToken ct = default)
+    {
+        var ids = branchIds.Distinct().Where(id => id > 0).ToList();
+        if (ids.Count == 0)
+            return;
+
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        var productExists = await context.Products.AnyAsync(p => p.Id == productId, ct);
+        if (!productExists)
+            throw new InvalidOperationException("المنتج غير موجود");
+
+        var validBranchIds = await context.Branches.AsNoTracking()
+            .Where(b => ids.Contains(b.Id) && b.IsActive)
+            .Select(b => b.Id)
+            .ToListAsync(ct);
+        if (validBranchIds.Count == 0)
+            return;
+
+        var existingIds = await context.ProductBranches
+            .Where(pb => pb.ProductId == productId)
+            .Select(pb => pb.BranchId)
+            .ToListAsync(ct);
+
+        var toAdd = validBranchIds.Except(existingIds).ToList();
+        if (toAdd.Count == 0)
+            return;
+
+        var now = DateTime.UtcNow;
+        foreach (var branchId in toAdd)
+        {
+            context.ProductBranches.Add(new ProductBranch
+            {
+                ProductId = productId,
+                BranchId = branchId,
+                CreatedAt = now
+            });
+        }
+
+        await context.SaveChangesAsync(ct);
+    }
+
     public async Task<IReadOnlyList<Product>> GetVisibleInBranchAsync(int branchId, CancellationToken ct = default)
     {
         await using var context = await _contextFactory.CreateDbContextAsync(ct);

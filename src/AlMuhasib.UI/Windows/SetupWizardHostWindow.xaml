@@ -103,7 +103,12 @@
             </StackPanel>
 
             <!-- Step 1: System Type -->
-            <ScrollViewer x:Name="Step1Panel" Grid.Row="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+            <Grid x:Name="Step1Panel" Grid.Row="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+            <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                 <Grid MinWidth="1600">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -192,6 +197,17 @@
                     </Border>
                 </Grid>
             </ScrollViewer>
+
+                <CheckBox x:Name="DuhokBranchCheckBox"
+                          Grid.Row="1"
+                          Content="فرع دهوك"
+                          FontSize="15"
+                          FontWeight="SemiBold"
+                          Margin="0,16,0,0"
+                          HorizontalAlignment="Center"
+                          Checked="OnDuhokBranchChecked"
+                          Unchecked="OnDuhokBranchUnchecked"/>
+            </Grid>
 
             <!-- Step 2: Deployment Mode -->
             <ScrollViewer x:Name="Step2Panel" Grid.Row="2" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">

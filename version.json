@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.36",
-  "releaseDate": "2026-10-12",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.36/AlMuhasib-1.14.36.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.36/Qayd-Setup-1.14.36.exe",
-  "sha256": "F70EE02A73DD3CFFDF70EB816B440B33DB0DD1877F86BA12712B7F875A45E139",
-  "sizeBytes": 159833235,
-  "releaseNotes": "تحسين طباعة عقد المعرض وبوت تيليجرام للموقع — تحديث اختياري آمن بدون تغيير قاعدة البيانات",
+  "version": "1.14.37",
+  "releaseDate": "2026-10-15",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.37/AlMuhasib-1.14.37.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.37/Qayd-Setup-1.14.37.exe",
+  "sha256": "75BDFBD613BBEB64430AE1EF14DB7F433AB581981424AB2551E52E5978A729FC",
+  "sizeBytes": 161962315,
+  "releaseNotes": "واجهة Express وPOS وتحسين الاستيراد والبوت — تحديث اختياري آمن بدون تغيير قاعدة البيانات",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

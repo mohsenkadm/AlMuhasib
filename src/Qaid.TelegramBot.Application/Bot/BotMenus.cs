@@ -9,16 +9,20 @@ public static class BotMenus
     public static IReadOnlyList<IReadOnlyList<BotButton>> NotLinked(string linkUrl)
         =>
         [
-            [new BotButton { Text = "🔗 ربط الحساب", Url = linkUrl }]
+            [new BotButton { Text = "تسجيل الدخول إلى قيد", Url = linkUrl }]
         ];
 
     public static IReadOnlyList<IReadOnlyList<BotButton>> MainMenu(string companyName)
     {
         var rows = new List<IReadOnlyList<BotButton>>();
         var buffer = new List<BotButton>();
-        foreach (var item in ReportCatalog.Items)
+        foreach (var (group, title, icon) in ReportCatalog.Groups)
         {
-            buffer.Add(new BotButton { Text = item.Title, CallbackData = CallbackData.Report(item.Kind) });
+            buffer.Add(new BotButton
+            {
+                Text = $"{icon} {title}",
+                CallbackData = CallbackData.Group(group)
+            });
             if (buffer.Count == 2)
             {
                 rows.Add(buffer);
@@ -27,17 +31,36 @@ public static class BotMenus
         }
         if (buffer.Count > 0)
             rows.Add(buffer);
+
         rows.Add(
         [
-            new BotButton { Text = "كشف زبون", CallbackData = CallbackData.PromptCustomer },
-            new BotButton { Text = "كشف مورد", CallbackData = CallbackData.PromptSupplier }
+            new BotButton { Text = "👤 كشف زبون", CallbackData = CallbackData.PromptCustomer },
+            new BotButton { Text = "🏭 كشف مورد", CallbackData = CallbackData.PromptSupplier }
         ]);
         rows.Add(
         [
-            new BotButton { Text = "لوحة النظام", CallbackData = CallbackData.SystemDashboard },
-            new BotButton { Text = "تغيير الفرع", CallbackData = CallbackData.BranchList }
+            new BotButton { Text = "📱 لوحة النظام", CallbackData = CallbackData.SystemDashboard },
+            new BotButton { Text = "🏢 تغيير الفرع", CallbackData = CallbackData.BranchList }
         ]);
-        rows.Add([new BotButton { Text = "إلغاء الربط", CallbackData = CallbackData.Unlink }]);
+        rows.Add([new BotButton { Text = "🔓 إلغاء الربط", CallbackData = CallbackData.Unlink }]);
+        return rows;
+    }
+
+    public static IReadOnlyList<IReadOnlyList<BotButton>> GroupMenu(ReportGroup group)
+    {
+        var rows = new List<IReadOnlyList<BotButton>>();
+        foreach (var item in ReportCatalog.ForGroup(group))
+        {
+            rows.Add(
+            [
+                new BotButton
+                {
+                    Text = $"{item.Icon} {item.Title}",
+                    CallbackData = CallbackData.Report(item.Kind)
+                }
+            ]);
+        }
+        rows.Add([new BotButton { Text = "🏠 القائمة الرئيسية", CallbackData = CallbackData.Main }]);
         return rows;
     }
 
@@ -63,7 +86,7 @@ public static class BotMenus
                 }
             ]);
         }
-        rows.Add([new BotButton { Text = "القائمة الرئيسية", CallbackData = CallbackData.Main }]);
+        rows.Add([new BotButton { Text = "🏠 القائمة الرئيسية", CallbackData = CallbackData.Main }]);
         return rows;
     }
 
@@ -75,7 +98,7 @@ public static class BotMenus
             var label = string.IsNullOrWhiteSpace(b.Code) ? b.Name : $"{b.Name} ({b.Code})";
             rows.Add([new BotButton { Text = label, CallbackData = CallbackData.SelectBranch(b.BranchId) }]);
         }
-        rows.Add([new BotButton { Text = "القائمة الرئيسية", CallbackData = CallbackData.Main }]);
+        rows.Add([new BotButton { Text = "🏠 القائمة الرئيسية", CallbackData = CallbackData.Main }]);
         return rows;
     }
 
@@ -91,10 +114,11 @@ public static class BotMenus
                 new BotButton { Text = "هذا الشهر", CallbackData = CallbackData.Period(kind, ReportPeriod.ThisMonth) }
             ],
             [
-                new BotButton { Text = "الشهر الماضي", CallbackData = CallbackData.Period(kind, ReportPeriod.LastMonth) }
+                new BotButton { Text = "الشهر الماضي", CallbackData = CallbackData.Period(kind, ReportPeriod.LastMonth) },
+                new BotButton { Text = "خلال هذه السنة", CallbackData = CallbackData.Period(kind, ReportPeriod.ThisYear) }
             ],
             [
-                new BotButton { Text = "القائمة الرئيسية", CallbackData = CallbackData.Main }
+                new BotButton { Text = "🏠 القائمة الرئيسية", CallbackData = CallbackData.Main }
             ]
         ];
 
@@ -102,8 +126,10 @@ public static class BotMenus
     {
         var rows = new List<IReadOnlyList<BotButton>>();
         if (needsPeriod)
-            rows.Add([new BotButton { Text = "تغيير الفترة", CallbackData = CallbackData.BackPeriod(kind) }]);
-        rows.Add([new BotButton { Text = "القائمة الرئيسية", CallbackData = CallbackData.Main }]);
+            rows.Add([new BotButton { Text = "📅 تغيير الفترة", CallbackData = CallbackData.BackPeriod(kind) }]);
+        if (ReportCatalog.TryGet(kind, out var def))
+            rows.Add([new BotButton { Text = "📂 مجموعة التقارير", CallbackData = CallbackData.Group(def.Group) }]);
+        rows.Add([new BotButton { Text = "🏠 القائمة الرئيسية", CallbackData = CallbackData.Main }]);
         return rows;
     }
 

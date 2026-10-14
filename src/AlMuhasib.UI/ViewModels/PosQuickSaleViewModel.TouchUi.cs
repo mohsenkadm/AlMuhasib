@@ -17,7 +17,6 @@ public partial class PosQuickSaleViewModel
 {
     private List<CashBox> _allCashBoxes = [];
     private int? _activeHeldInvoiceId;
-    private bool _suppressCashBoxCurrencySync;
 
     public ObservableCollection<CashBox> FilteredCashBoxes { get; } = [];
     public ObservableCollection<PricingType> BulkPricingTypes { get; } = [];
@@ -28,12 +27,20 @@ public partial class PosQuickSaleViewModel
     [ObservableProperty] private decimal _currentFxRate;
     [ObservableProperty] private string _fxRateText = string.Empty;
     [ObservableProperty] private string _iqdEquivalentText = string.Empty;
+    [ObservableProperty] private string _usdEquivalentText = string.Empty;
     [ObservableProperty] private bool _showFxInfo;
     [ObservableProperty] private PricingType? _selectedBulkPricingType;
     [ObservableProperty] private int _heldInvoiceCount;
 
     partial void OnSelectedPosCurrencyChanged(AccountingCurrency value)
     {
+        // POS is IQD-only; ignore attempts to switch document currency.
+        if (value != AccountingCurrency.IQD)
+        {
+            SelectedPosCurrency = AccountingCurrency.IQD;
+            return;
+        }
+
         RefreshCurrencyAmountSuffix();
         RefreshFilteredCashBoxes(preferKeepSelection: true);
         RefreshFilteredProducts();
@@ -51,9 +58,9 @@ public partial class PosQuickSaleViewModel
 
     private void RefreshMultiCurrencyVisibility()
     {
+        // Keep flag for IQD cash-box filtering only; POS sales are always IQD.
         ShowMultiCurrency = _featureFlags.MultiCurrency;
-        if (!ShowMultiCurrency)
-            SelectedPosCurrency = AccountingCurrency.IQD;
+        SelectedPosCurrency = AccountingCurrency.IQD;
     }
 
     private void SeedCashBoxes(IEnumerable<CashBox> boxes)
@@ -77,25 +84,17 @@ public partial class PosQuickSaleViewModel
         foreach (var c in query)
             FilteredCashBoxes.Add(c);
 
-        _suppressCashBoxCurrencySync = true;
-        try
+        if (preferKeepSelection && previousId is int id)
         {
-            if (preferKeepSelection && previousId is int id)
+            var keep = FilteredCashBoxes.FirstOrDefault(c => c.Id == id);
+            if (keep is not null)
             {
-                var keep = FilteredCashBoxes.FirstOrDefault(c => c.Id == id);
-                if (keep is not null)
-                {
-                    SelectedCashBox = keep;
-                    return;
-                }
+                SelectedCashBox = keep;
+                return;
             }
+        }
 
-            SelectedCashBox = FilteredCashBoxes.FirstOrDefault();
-        }
-        finally
-        {
-            _suppressCashBoxCurrencySync = false;
-        }
+        SelectedCashBox = FilteredCashBoxes.FirstOrDefault();
     }
 
     [RelayCommand]
@@ -115,10 +114,8 @@ public partial class PosQuickSaleViewModel
     [RelayCommand]
     private void SelectPosCurrency(string? currencyName)
     {
-        if (!ShowMultiCurrency) return;
-        if (!Enum.TryParse<AccountingCurrency>(currencyName, ignoreCase: true, out var currency))
-            return;
-        SelectedPosCurrency = currency;
+        // POS document currency is locked to IQD.
+        SelectedPosCurrency = AccountingCurrency.IQD;
     }
 
     [RelayCommand]
@@ -263,8 +260,7 @@ public partial class PosQuickSaleViewModel
             LoyaltyRedeemPoints = 0;
             LoyaltyDiscountAmount = 0m;
 
-            if (ShowMultiCurrency)
-                SelectedPosCurrency = inv.Currency;
+            SelectedPosCurrency = AccountingCurrency.IQD;
 
             SelectedWarehouse = Warehouses.FirstOrDefault(w => w.Id == inv.WarehouseId) ?? SelectedWarehouse;
             if (inv.CashBoxId is int cashId)
@@ -409,32 +405,38 @@ public partial class PosQuickSaleViewModel
 
     private async Task RefreshFxAndEquivalentAsync()
     {
-        if (!ShowMultiCurrency || SelectedPosCurrency != AccountingCurrency.USD)
+        try
+        {
+            CurrentFxRate = await _exchangeRateService.GetUsdToIqdForDateOrLatestAsync(DateTime.Today);
+        }
+        catch
+        {
+            CurrentFxRate = 0;
+        }
+
+        FxRateText = CurrentFxRate > 0
+            ? $"سعر الصرف: {CurrentFxRate:N0} د.ع / $"
+            : "سعر الصرف: غير متوفر";
+        RefreshUsdEquivalentOnly();
+    }
+
+    private void RefreshUsdEquivalentOnly()
+    {
+        if (CurrentFxRate <= 0)
         {
             ShowFxInfo = false;
-            CurrentFxRate = 0;
-            FxRateText = string.Empty;
+            UsdEquivalentText = string.Empty;
             IqdEquivalentText = string.Empty;
             return;
         }
 
-        CurrentFxRate = await ResolveFxRateAsync(AccountingCurrency.USD);
         ShowFxInfo = true;
-        FxRateText = CurrentFxRate > 0
-            ? $"سعر الصرف: {CurrentFxRate:N0} د.ع / $"
-            : "سعر الصرف: غير متوفر";
-        IqdEquivalentText = CurrentFxRate > 0
-            ? $"المعادل: {AccountingCurrencyHelper.Format(GrandTotal * CurrentFxRate, AccountingCurrency.IQD)}"
-            : "المعادل: —";
+        var usd = GrandTotal / CurrentFxRate;
+        UsdEquivalentText = $"≈ {AccountingCurrencyHelper.Format(usd, AccountingCurrency.USD)}";
+        IqdEquivalentText = UsdEquivalentText;
     }
 
-    private void RefreshIqdEquivalentOnly()
-    {
-        if (!ShowFxInfo || CurrentFxRate <= 0)
-            return;
-        IqdEquivalentText =
-            $"المعادل: {AccountingCurrencyHelper.Format(GrandTotal * CurrentFxRate, AccountingCurrency.IQD)}";
-    }
+    private void RefreshIqdEquivalentOnly() => RefreshUsdEquivalentOnly();
 
     private async Task LoadBulkPricingTypesAsync()
     {
@@ -443,6 +445,7 @@ public partial class PosQuickSaleViewModel
         foreach (var t in (await _unitOfWork.PricingTypes.GetAllAsync())
                  .OrderByDescending(t => t.IsDefault).ThenBy(t => t.Name))
             BulkPricingTypes.Add(t);
+        SelectedBulkPricingType ??= BulkPricingTypes.FirstOrDefault();
     }
 
     private void ApplyBulkPricingType(int pricingTypeId)

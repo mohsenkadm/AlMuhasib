@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.ViewModels;
 
 namespace AlMuhasib.UI;
@@ -18,6 +19,7 @@ public partial class LoginWindow : Window
     public LoginWindow(LoginViewModel viewModel)
     {
         InitializeComponent();
+        Title = $"تسجيل الدخول - {AppInfo.AppNameAr}";
         _viewModel = viewModel;
         DataContext = _viewModel;
 
@@ -37,14 +39,33 @@ public partial class LoginWindow : Window
 
     private void OnStepChanged()
     {
-        CloseNumericPad(animate: false);
-
         if (_viewModel.IsSelectingBranch)
+        {
+            CloseNumericPad(animate: false);
             AnimateToBranchStep();
+        }
         else if (_viewModel.IsEnteringPassword)
+        {
             AnimateToPasswordStep();
+            OpenNumericPadByDefault();
+        }
         else
+        {
+            CloseNumericPad(animate: false);
             AnimateToAdminStep();
+        }
+    }
+
+    private void OpenNumericPadByDefault()
+    {
+        if (NumericPadToggle.IsChecked == true)
+        {
+            if (NumericPadPanel.Visibility != Visibility.Visible)
+                ShowNumericPad();
+            return;
+        }
+
+        NumericPadToggle.IsChecked = true;
     }
 
     private void AnimateToBranchStep()

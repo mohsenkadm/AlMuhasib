@@ -11,8 +11,8 @@
         Background="Transparent"
         FlowDirection="RightToLeft"
         FontFamily="{DynamicResource AppFont}"
-        Width="360" Height="520"
-        MinWidth="340" MinHeight="480">
+        Width="400" Height="560"
+        MinWidth="380" MinHeight="520">
 
     <Window.Resources>
         <Style x:Key="PadKey" TargetType="Button">
@@ -109,17 +109,25 @@
                 </Button>
             </UniformGrid>
 
-            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="16,4,16,16">
-                <Button Content="تأكيد" Style="{StaticResource PrimaryButton}" Width="120" Height="44"
-                        Click="Confirm_Click" Margin="0,0,10,0" IsDefault="True"
+            <Grid Grid.Row="3" Margin="12,8,12,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Content="تأكيد" Style="{StaticResource PrimaryButton}" Height="44"
+                        Click="Confirm_Click" Margin="0,0,4,0" IsDefault="True"
+                        HorizontalAlignment="Stretch"
                         FontFamily="{DynamicResource AppFont}"/>
-                <Button Content="مسح" Style="{StaticResource OutlinedButton}" Width="80" Height="44"
-                        Click="Clear_Click" Margin="0,0,10,0"
+                <Button Grid.Column="1" Content="مسح" Style="{StaticResource OutlinedButton}" Height="44"
+                        Click="Clear_Click" Margin="4,0"
+                        HorizontalAlignment="Stretch"
                         FontFamily="{DynamicResource AppFont}"/>
-                <Button Content="إلغاء" Style="{StaticResource OutlinedButton}" Width="100" Height="44"
-                        Click="Cancel_Click" IsCancel="True"
+                <Button Grid.Column="2" Content="إلغاء" Style="{StaticResource OutlinedButton}" Height="44"
+                        Click="Cancel_Click" IsCancel="True" Margin="4,0,0,0"
+                        HorizontalAlignment="Stretch"
                         FontFamily="{DynamicResource AppFont}"/>
-            </StackPanel>
+            </Grid>
         </Grid>
     </Border>
 </Window>

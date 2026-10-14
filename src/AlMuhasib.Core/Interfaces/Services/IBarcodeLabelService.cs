@@ -10,6 +10,7 @@ public interface IBarcodeLabelService
 
 public class BarcodeLabelItem
 {
+    public string CompanyName { get; set; } = string.Empty;
     public string ProductName { get; set; } = string.Empty;
     public string Barcode { get; set; } = string.Empty;
     public decimal? Price { get; set; }

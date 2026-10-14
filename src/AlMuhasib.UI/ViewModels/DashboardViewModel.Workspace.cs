@@ -15,6 +15,15 @@ public partial class DashboardViewModel
     [ObservableProperty] private bool _showDashboardQuickSales = true;
     [ObservableProperty] private bool _showDashboardQuickPurchase = true;
     [ObservableProperty] private bool _showDashboardQuickInstallment = true;
+    [ObservableProperty] private bool _showDashboardQuickWarehouseReport;
+    [ObservableProperty] private bool _showDashboardQuickProducts;
+    [ObservableProperty] private bool _showDashboardQuickAddProduct;
+    [ObservableProperty] private bool _showDashboardQuickCustomers;
+    [ObservableProperty] private bool _showDashboardQuickAddCustomer;
+    [ObservableProperty] private bool _showDashboardQuickSuppliers;
+    [ObservableProperty] private bool _showDashboardQuickAddSupplier;
+    [ObservableProperty] private bool _showDashboardQuickDailySales;
+    [ObservableProperty] private bool _showDashboardQuickDailyOperations;
     [ObservableProperty] private bool _showCollectionDashboard;
     [ObservableProperty] private bool _showInstallmentStats = true;
     [ObservableProperty] private bool _showTodayPurchases = true;
@@ -40,6 +49,15 @@ public partial class DashboardViewModel
         ShowDashboardQuickSales = _currentUserService.CanView("SaleInvoice");
         ShowDashboardQuickPurchase = _currentUserService.CanView("PurchaseInvoice");
         ShowDashboardQuickInstallment = installmentsEnabled && _currentUserService.CanView("InstallmentInvoice");
+        ShowDashboardQuickWarehouseReport = _currentUserService.CanView("Reports");
+        ShowDashboardQuickProducts = _currentUserService.CanView("Products");
+        ShowDashboardQuickAddProduct = CanQuickAdd("Products");
+        ShowDashboardQuickCustomers = _currentUserService.CanView("Customers");
+        ShowDashboardQuickAddCustomer = CanQuickAdd("Customers");
+        ShowDashboardQuickSuppliers = _currentUserService.CanView("Suppliers");
+        ShowDashboardQuickAddSupplier = CanQuickAdd("Suppliers");
+        ShowDashboardQuickDailySales = _currentUserService.CanView("Reports");
+        ShowDashboardQuickDailyOperations = _currentUserService.CanView("Reports");
         ShowCollectionDashboard = installmentsEnabled && _currentUserService.CanView("Installments");
         ShowInstallmentStats = installmentsEnabled;
 
@@ -48,6 +66,11 @@ public partial class DashboardViewModel
         ShowInvestorStats = true;
         ShowFinanceCharts = true;
     }
+
+    private bool CanQuickAdd(string screenName) =>
+        _currentUserService.CanView(screenName)
+        && _currentUserService.CanAdd(screenName)
+        && !_currentUserService.IsViewOnly(screenName);
 
     /// <summary>
     /// يحسب تقدّم إعداد النظام بما يطابق خطوات معالج النقل (١١ خطوة).

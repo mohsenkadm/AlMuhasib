@@ -92,7 +92,8 @@ public class FormatterAndErrorTests
         await processor.ProcessCallbackAsync(
             44, 44, 1, "cq", CallbackData.Period(ReportKind.CashFlow, ReportPeriod.ThisMonth), CancellationToken.None);
 
-        Assert.Contains(sent, t => t.Contains("تعذّر"));
+        Assert.Contains(sent, t => t.Contains("تعذّر") || t.Contains("جاري تجهيز"));
+        Assert.DoesNotContain(sent, t => t.StartsWith("PDF:", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -102,5 +103,36 @@ public class FormatterAndErrorTests
         var range = ReportPeriodHelper.Resolve(ReportPeriod.Today, today);
         Assert.Equal(today, range.From);
         Assert.Equal("اليوم", range.Label);
+    }
+
+    [Fact]
+    public void Period_helper_resolves_this_year()
+    {
+        var today = new DateTime(2026, 10, 9);
+        var range = ReportPeriodHelper.Resolve(ReportPeriod.ThisYear, today);
+        Assert.Equal(new DateTime(2026, 1, 1), range.From);
+        Assert.Equal("خلال هذه السنة", range.Label);
+    }
+
+    [Fact]
+    public void Catalog_groups_cover_all_items()
+    {
+        Assert.Equal(ReportCatalog.Items.Count, ReportCatalog.Items.Select(i => i.Kind).Distinct().Count());
+        Assert.All(ReportCatalog.Items, i => Assert.False(string.IsNullOrWhiteSpace(i.Icon)));
+        Assert.Contains(ReportCatalog.Groups, g => g.Group == ReportGroup.InventoryFinance);
+        Assert.Contains(ReportCatalog.Groups, g => g.Title.Contains("المخزون"));
+    }
+
+    [Fact]
+    public void Json_mapper_builds_summary_and_table()
+    {
+        using var doc = System.Text.Json.JsonDocument.Parse("""
+            {"totalSales":1500,"invoiceCount":3,"rows":[{"date":"2026-01-01","totalSales":500}]}
+            """);
+        var model = JsonReportDocumentMapper.Map("اختبار", "شركة", "اليوم", doc.RootElement);
+        Assert.NotEmpty(model.Summary);
+        Assert.NotEmpty(model.Tables);
+        var pdf = new Qaid.TelegramBot.Infrastructure.Reports.QuestReportPdfGenerator().Generate(model);
+        Assert.True(pdf.Length > 100);
     }
 }

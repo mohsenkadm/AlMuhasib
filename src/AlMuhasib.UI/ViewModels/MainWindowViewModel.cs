@@ -100,6 +100,21 @@ public partial class MainWindowViewModel : ObservableObject
     private bool _isQuickAssistOpen;
 
     [ObservableProperty]
+    private bool _isTelegramSubscribeDialogOpen;
+
+    [ObservableProperty]
+    private bool _isTelegramFabBusy;
+
+    [ObservableProperty]
+    private bool _isMobileSubscribeDialogOpen;
+
+    [ObservableProperty]
+    private bool _isMobileDownloadDialogOpen;
+
+    [ObservableProperty]
+    private bool _isMobileFabBusy;
+
+    [ObservableProperty]
     private DocumentTab? _selectedTab;
 
     [ObservableProperty]
@@ -987,6 +1002,28 @@ public partial class MainWindowViewModel : ObservableObject
             _investorsLookupDirty = false;
             _ = RefreshInvestorsLookupSafeAsync(host);
         }
+
+        ConsumePartnerListPendingOpenAdd(viewModel);
+    }
+
+    private static void ConsumePartnerListPendingOpenAdd(ViewModelBase viewModel)
+    {
+        if (viewModel is CustomersViewModel customers
+            && PartnerListNavigationBridge.PendingOpenAddForCustomers)
+        {
+            PartnerListNavigationBridge.PendingOpenAddForCustomers = false;
+            if (customers.OpenAddDialogCommand.CanExecute(null))
+                _ = customers.OpenAddDialogCommand.ExecuteAsync(null);
+            return;
+        }
+
+        if (viewModel is SuppliersViewModel suppliers
+            && PartnerListNavigationBridge.PendingOpenAddForSuppliers)
+        {
+            PartnerListNavigationBridge.PendingOpenAddForSuppliers = false;
+            if (suppliers.OpenAddDialogCommand.CanExecute(null))
+                _ = suppliers.OpenAddDialogCommand.ExecuteAsync(null);
+        }
     }
 
     [RelayCommand]
@@ -1421,6 +1458,110 @@ public partial class MainWindowViewModel : ObservableObject
 
     [RelayCommand]
     private void OpenHelpWhatsApp() => _helpSupport.OpenWhatsAppSupport();
+
+    [RelayCommand]
+    private async Task OpenTelegramFabAsync()
+    {
+        if (IsTelegramFabBusy) return;
+
+        try
+        {
+            IsTelegramFabBusy = true;
+            IsQuickAssistOpen = false;
+
+            if (!await HasCloudSyncUserAsync())
+            {
+                IsTelegramSubscribeDialogOpen = true;
+                return;
+            }
+
+            _helpSupport.OpenTelegramBot();
+        }
+        catch
+        {
+            IsTelegramSubscribeDialogOpen = true;
+        }
+        finally
+        {
+            IsTelegramFabBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void CloseTelegramSubscribeDialog() => IsTelegramSubscribeDialogOpen = false;
+
+    [RelayCommand]
+    private void ConfirmTelegramSubscribe()
+    {
+        IsTelegramSubscribeDialogOpen = false;
+        _helpSupport.OpenWhatsAppTelegramSubscribe();
+    }
+
+    [RelayCommand]
+    private async Task OpenMobileAppFabAsync()
+    {
+        if (IsMobileFabBusy) return;
+
+        try
+        {
+            IsMobileFabBusy = true;
+            IsQuickAssistOpen = false;
+
+            if (!await HasCloudSyncUserAsync())
+            {
+                IsMobileSubscribeDialogOpen = true;
+                return;
+            }
+
+            IsMobileDownloadDialogOpen = true;
+        }
+        catch
+        {
+            IsMobileSubscribeDialogOpen = true;
+        }
+        finally
+        {
+            IsMobileFabBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void CloseMobileSubscribeDialog() => IsMobileSubscribeDialogOpen = false;
+
+    [RelayCommand]
+    private void CloseMobileDownloadDialog() => IsMobileDownloadDialogOpen = false;
+
+    [RelayCommand]
+    private void ConfirmMobileSubscribe()
+    {
+        IsMobileSubscribeDialogOpen = false;
+        _helpSupport.OpenWhatsAppMobileSubscribe();
+    }
+
+    [RelayCommand]
+    private void OpenMobileAppStore()
+    {
+        _helpSupport.OpenAppStore();
+    }
+
+    [RelayCommand]
+    private void OpenMobilePlayStore()
+    {
+        _helpSupport.OpenPlayStore();
+    }
+
+    private async Task<bool> HasCloudSyncUserAsync()
+    {
+        using var scope = _serviceProvider.CreateScope();
+        var settingsService = scope.ServiceProvider.GetService<ICloudSyncSettingsService>();
+        if (settingsService is null)
+            return false;
+
+        var settings = await settingsService.GetAsync();
+        return !string.IsNullOrWhiteSpace(settings.Username) &&
+               !string.IsNullOrWhiteSpace(settings.Password) &&
+               !string.IsNullOrWhiteSpace(settings.ApiBaseUrl);
+    }
 
     [RelayCommand]
     private void OpenHelpVideos()

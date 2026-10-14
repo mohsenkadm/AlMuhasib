@@ -667,6 +667,17 @@ public sealed class CreateLinkCodeResult
     public string CompanyName { get; set; } = string.Empty;
 }
 
+public enum ReportGroup
+{
+    SalesProfit = 1,
+    Installments = 2,
+    Partners = 3,
+    InventoryFinance = 4,
+    Financial = 5,
+    Supervisory = 6,
+    System = 7
+}
+
 public enum ReportKind
 {
     DailySales = 0,
@@ -694,7 +705,30 @@ public enum ReportKind
     Cogs = 22,
     InventoryValuation = 23,
     Transfers = 24,
-    GrossProfitMargin = 25
+    GrossProfitMargin = 25,
+    Sales = 26,
+    Profit = 27,
+    ProfitComparison = 28,
+    ProductMargin = 29,
+    SalesByWarehouseUser = 30,
+    OperatingProfit = 31,
+    InstallmentsAging = 32,
+    InstallmentsPaid = 33,
+    InstallmentsUnpaid = 34,
+    OpeningInstallmentBalances = 35,
+    CompanyFees = 36,
+    InstallmentSchedule = 37,
+    Warehouse = 38,
+    ProductMovement = 39,
+    InventoryReplenishment = 40,
+    StockTaking = 41,
+    IncomeExpense = 42,
+    BalanceSheet = 43,
+    StatementOfFinancialPosition = 44,
+    CapitalMovement = 45,
+    InvestorProfitDistributions = 46,
+    CashBoxMovement = 47,
+    BankAccountStatement = 48
 }
 
 public enum ReportPeriod
@@ -703,7 +737,8 @@ public enum ReportPeriod
     Yesterday,
     Last7Days,
     ThisMonth,
-    LastMonth
+    LastMonth,
+    ThisYear
 }
 
 public sealed class DateRange

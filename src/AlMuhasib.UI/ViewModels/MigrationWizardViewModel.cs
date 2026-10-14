@@ -27,6 +27,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
     private readonly IExpenseService _expenseService;
     private readonly IPricingTypeService _pricingTypeService;
     private readonly IProductPriceService _productPriceService;
+    private readonly IProductService _productService;
     private readonly IOpeningPartyBalanceService _openingPartyBalance;
     private readonly IOpeningCustomerBalanceExcelService _customerBalanceExcel;
     private readonly IOpeningSupplierBalanceExcelService _supplierBalanceExcel;
@@ -96,6 +97,12 @@ public partial class MigrationWizardViewModel : ViewModelBase
     [ObservableProperty] private bool _showProductWeightFields;
     [ObservableProperty] private bool _showProductDiscountFields;
     [ObservableProperty] private bool _showProductPurchasePriceColumns;
+
+    /// <summary>يظهر خيار أعمدة الفروع عند وجود أكثر من فرع نشط.</summary>
+    [ObservableProperty] private bool _showProductBranchColumnsToggle;
+
+    /// <summary>إظهار أعمدة ظهور الفروع في شبكة/قالب المنتجات.</summary>
+    [ObservableProperty] private bool _showProductBranchColumns = true;
 
     public IReadOnlyList<string> PlateTypeOptions { get; } =
     [
@@ -244,6 +251,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
         IExpenseService expenseService,
         IPricingTypeService pricingTypeService,
         IProductPriceService productPriceService,
+        IProductService productService,
         IOpeningPartyBalanceService openingPartyBalance,
         IOpeningCustomerBalanceExcelService customerBalanceExcel,
         IOpeningSupplierBalanceExcelService supplierBalanceExcel,
@@ -263,6 +271,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
         _expenseService = expenseService;
         _pricingTypeService = pricingTypeService;
         _productPriceService = productPriceService;
+        _productService = productService;
         _openingPartyBalance = openingPartyBalance;
         _customerBalanceExcel = customerBalanceExcel;
         _supplierBalanceExcel = supplierBalanceExcel;
@@ -319,6 +328,15 @@ public partial class MigrationWizardViewModel : ViewModelBase
         ShowProductWeightFields = flags.MenuWeight;
         ShowProductDiscountFields = flags.ProductDiscountEnabled;
         ShowProductPurchasePriceColumns = flags.ProductPricingEnabled;
+        ShowProductBranchColumnsToggle = AvailableBranches.Count > 1;
+        if (!ShowProductBranchColumnsToggle)
+            ShowProductBranchColumns = false;
+        ProductsGridVersion++;
+    }
+
+    partial void OnShowProductBranchColumnsChanged(bool value)
+    {
+        SyncAllProductRowStructures();
         ProductsGridVersion++;
     }
 
@@ -1071,6 +1089,10 @@ public partial class MigrationWizardViewModel : ViewModelBase
             ? AvailableWarehouses.ToList()
             : [];
         row.EnsureProductStructure(pricing, warehouses, EnableMultiCurrency);
+        row.EnsureBranchVisibility(
+            ShowProductBranchColumns && AvailableBranches.Count > 1
+                ? AvailableBranches.Select(b => (b.Id, b.Name, b.IsMain)).ToList()
+                : []);
     }
 
     public IReadOnlyList<string> GetProductPricingTypeNames()
@@ -1080,6 +1102,11 @@ public partial class MigrationWizardViewModel : ViewModelBase
 
     public IReadOnlyList<string> GetProductWarehouseNames()
         => AvailableWarehouses.ToList();
+
+    public IReadOnlyList<(int Id, string Name, bool IsMain)> GetProductBranchInfos()
+        => ShowProductBranchColumns && AvailableBranches.Count > 1
+            ? AvailableBranches.Select(b => (b.Id, b.Name, b.IsMain)).ToList()
+            : [];
 
     partial void OnNewRowCostCurrencyOptionChanged(CurrencyOption? value)
     {
@@ -1235,6 +1262,9 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 if (allowedBranchIds.Contains(b.Id))
                     AvailableBranches.Add(b);
             }
+            ShowProductBranchColumnsToggle = AvailableBranches.Count > 1;
+            if (!ShowProductBranchColumnsToggle)
+                ShowProductBranchColumns = false;
             // فرع الجلسة الحالي إن كان مسموحاً، وإلا فرع واحد تلقائياً
             if (SelectedBranchForWarehouse is null
                 && _branchContext.CurrentBranchId is int currentId
@@ -1615,10 +1645,13 @@ public partial class MigrationWizardViewModel : ViewModelBase
             var types = AvailablePricingTypes.Count > 0
                 ? AvailablePricingTypes.ToList()
                 : ["سعر مفرد", "جملة", "وكيل"];
+            var branchList = AvailableBranches.Select(b => (b.Id, b.Name)).ToList();
             return MigrationProductExcelHelper.BuildTemplate(
                 types,
                 AvailableWarehouses.ToList(),
-                EnableMultiCurrency);
+                EnableMultiCurrency,
+                branchList,
+                ShowProductBranchColumns && branchList.Count > 1);
         }
 
         return kind switch
@@ -1728,8 +1761,10 @@ public partial class MigrationWizardViewModel : ViewModelBase
                     if (string.IsNullOrWhiteSpace(CurrentRows[i].Name))
                         CurrentRows.RemoveAt(i);
                 }
+                var branchInfos = AvailableBranches.Select(b => (b.Id, b.Name, b.IsMain)).ToList();
                 foreach (var imported in MigrationProductExcelHelper.Parse(
-                             path, typeNames, AvailableWarehouses.ToList(), EnableMultiCurrency, InitialUsdToIqd))
+                             path, typeNames, AvailableWarehouses.ToList(), EnableMultiCurrency, InitialUsdToIqd,
+                             branchInfos))
                 {
                     SyncProductRowStructure(imported);
                     CurrentRows.Add(imported);
@@ -2718,6 +2753,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
         var prices = (await _unitOfWork.ProductPrices.GetAllAsync()).ToList();
         // مخزون متعدد الفروع: يُحفظ بعد المنتجات عبر سياق Bypass (مع التحقق من الصلاحية أدناه)
         var pendingStocks = new List<(int ProductId, int WarehouseId, int BranchId, decimal Qty, decimal UnitCost)>();
+        var pendingBranches = new List<(int ProductId, List<int> BranchIds)>();
 
         var pricingTypes = (await _pricingTypeService.GetActiveAsync()).ToList();
         if (pricingTypes.Count == 0)
@@ -2760,6 +2796,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
                     await _unitOfWork.Products.AddAsync(product);
                     await _unitOfWork.SaveChangesAsync();
                     products.Add(product);
+                    QueueProductBranches(pendingBranches, product.Id, row, allowedBranchIds);
                 }
                 else
                 {
@@ -2769,6 +2806,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
                         product.Description = row.Description.Trim();
                     ApplyProductFeatureFields(product, row);
                     _unitOfWork.Products.Update(product);
+                    QueueProductBranches(pendingBranches, product.Id, row, allowedBranchIds);
                 }
 
                 var warehouse = ResolveWarehouse(warehouses, row.WarehouseName)
@@ -2931,6 +2969,13 @@ public partial class MigrationWizardViewModel : ViewModelBase
             if (pendingStocks.Count > 0)
                 await PersistAllowedWarehouseStocksAsync(pendingStocks, allowedBranchIds);
 
+            // دمج الفروع — لا نستبدل حتى لا يمحو الفرع الثاني ظهور الفرع الرئيسي
+            foreach (var (productId, branchIds) in pendingBranches)
+            {
+                if (branchIds.Count > 0)
+                    await _productService.AddProductBranchesAsync(productId, branchIds);
+            }
+
             StatusMessage = EnableMultiCurrency
                 ? $"تم حفظ/تحديث {saved} منتجاً — حُدّثت {pricesUpdated} تسعيرة (دينار/دولار منفصلة)."
                 : $"تم حفظ/تحديث {saved} منتجاً — حُدّثت {pricesUpdated} تسعيرة بالدينار.";
@@ -2942,6 +2987,33 @@ public partial class MigrationWizardViewModel : ViewModelBase
             await _unitOfWork.RollbackTransactionAsync();
             throw;
         }
+    }
+
+    private void QueueProductBranches(
+        List<(int ProductId, List<int> BranchIds)> pending,
+        int productId,
+        MigrationNamedBalanceRow row,
+        HashSet<int> allowedBranchIds)
+    {
+        var toMerge = new List<int>();
+
+        if (ShowProductBranchColumns && AvailableBranches.Count > 1)
+        {
+            var mainId = AvailableBranches.FirstOrDefault(b => b.IsMain)?.Id
+                         ?? AvailableBranches.FirstOrDefault()?.Id;
+            toMerge.AddRange(row.ResolveSelectedBranchIds(mainId)
+                .Where(allowedBranchIds.Contains));
+        }
+
+        // دائماً أضف فروع المستخدم الحالي حتى يظهر المنتج في فرعه عند إدخال كميات مخازنه
+        toMerge.AddRange(allowedBranchIds);
+
+        if (_branchContext.CurrentBranchId is int currentId && allowedBranchIds.Contains(currentId))
+            toMerge.Add(currentId);
+
+        var distinct = toMerge.Where(id => id > 0).Distinct().ToList();
+        if (distinct.Count > 0)
+            pending.Add((productId, distinct));
     }
 
     /// <summary>

@@ -26,6 +26,9 @@ public sealed class QaidApiClient : IQaidApiClient
         _logger = logger;
     }
 
+    public Task<JsonElement> GetJsonAsync(string relativePath, string accessToken, string? query, CancellationToken ct)
+        => GetAsync<JsonElement>(relativePath, accessToken, query, ct);
+
     public Task<TenantLoginResponse> LoginAsync(string username, string password, CancellationToken ct)
         => PostAsync<TenantLoginResponse>(
             AllowedEndpoints.Login,
@@ -209,6 +212,8 @@ public sealed class QaidApiClient : IQaidApiClient
 
         var payload = await response.Content.ReadFromJsonAsync<T>(JsonOptions, ct);
         if (payload is null)
+            throw new InvalidOperationException("Empty API response.");
+        if (payload is JsonElement { ValueKind: JsonValueKind.Undefined or JsonValueKind.Null })
             throw new InvalidOperationException("Empty API response.");
         return payload;
     }

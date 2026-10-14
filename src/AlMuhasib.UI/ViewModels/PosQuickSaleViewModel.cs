@@ -39,6 +39,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     private Dictionary<int, decimal> _lastSalePrices = [];
     private Dictionary<int, (decimal SaleIqd, decimal SaleUsd)> _catalogListPrices = [];
     private Dictionary<int, int> _defaultPricingTypeByProduct = [];
+    private Dictionary<int, decimal> _warehouseQtyByProduct = [];
     private readonly bool _pricingEnabled;
 
     public ObservableCollection<PosProductTile> FilteredProducts { get; } = [];
@@ -180,6 +181,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 Warehouses.Add(w);
 
             RefreshMultiCurrencyVisibility();
+            SelectedPosCurrency = AccountingCurrency.IQD;
             SeedCashBoxes(await _unitOfWork.CashBoxes.GetAllAsync());
 
             var prefs = _userPreferences.Current;
@@ -187,12 +189,11 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                                 ?? Warehouses.FirstOrDefault();
 
             var preferredCash = _allCashBoxes.FirstOrDefault(c => c.Id == prefs.DefaultPosCashBoxId)
+                                ?? _allCashBoxes.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD)
                                 ?? _allCashBoxes.FirstOrDefault();
-            if (preferredCash is not null && ShowMultiCurrency)
-                SelectedPosCurrency = preferredCash.Currency;
             RefreshFilteredCashBoxes(preferKeepSelection: false);
             if (preferredCash is not null &&
-                (!ShowMultiCurrency || preferredCash.Currency == SelectedPosCurrency))
+                (!ShowMultiCurrency || preferredCash.Currency == AccountingCurrency.IQD))
                 SelectedCashBox = FilteredCashBoxes.FirstOrDefault(c => c.Id == preferredCash.Id)
                                   ?? FilteredCashBoxes.FirstOrDefault();
 
@@ -200,6 +201,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             await LoadHeldInvoicesAsync();
             await LoadBulkPricingTypesAsync();
             await LoadRecentInvoicesAsync();
+            await LoadWarehouseStockAsync();
 
             RefreshFilteredProducts();
             RefreshFavoriteProducts();
@@ -230,17 +232,17 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         _searchDebounce.Start();
     }
 
-    partial void OnSelectedWarehouseChanged(Warehouse? value) => PersistPosDefaults();
+    partial void OnSelectedWarehouseChanged(Warehouse? value)
+    {
+        PersistPosDefaults();
+        _ = ReloadWarehouseStockAndProductsAsync();
+    }
+
     partial void OnSelectedCashBoxChanged(CashBox? value)
     {
         PersistPosDefaults();
-        if (!_suppressCashBoxCurrencySync && value is not null && ShowMultiCurrency
-            && value.Currency != SelectedPosCurrency)
-        {
-            SelectedPosCurrency = value.Currency;
-            return;
-        }
-
+        // POS stays IQD; do not switch document currency from cash-box currency.
+        SelectedPosCurrency = AccountingCurrency.IQD;
         RefreshCurrencyAmountSuffix();
         RefreshFilteredProducts();
         RefreshFavoriteProducts();
@@ -250,8 +252,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
     partial void OnPaidAmountChanged(decimal value) => RecalcChange();
 
-    private AccountingCurrency PosDocumentCurrency =>
-        ShowMultiCurrency ? SelectedPosCurrency : AccountingCurrency.IQD;
+    private AccountingCurrency PosDocumentCurrency => AccountingCurrency.IQD;
 
     private void RefreshCurrencyAmountSuffix()
     {
@@ -716,6 +717,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             _sound.Play(SoundEffect.Success);
             _ = RefreshLoyaltyQuoteAsync();
             _ = LoadRecentInvoicesAsync();
+            _ = ReloadWarehouseStockAndProductsAsync();
 
             if (printReceipt)
             {
@@ -746,6 +748,25 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         }
     }
 
+    private async Task LoadWarehouseStockAsync()
+    {
+        _warehouseQtyByProduct = [];
+        if (SelectedWarehouse is null) return;
+
+        var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
+            s => s.WarehouseId == SelectedWarehouse.Id);
+        _warehouseQtyByProduct = stocks
+            .GroupBy(s => s.ProductId)
+            .ToDictionary(g => g.Key, g => g.Sum(s => s.Quantity));
+    }
+
+    private async Task ReloadWarehouseStockAndProductsAsync()
+    {
+        await LoadWarehouseStockAsync();
+        RefreshFilteredProducts();
+        RefreshFavoriteProducts();
+    }
+
     private void RefreshFilteredProducts()
     {
         var term = SearchText.Trim();
@@ -755,12 +776,13 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             query = query.Where(p => ProductSearchHelper.Matches(p, term));
 
         FilteredProducts.Clear();
-        foreach (var p in query.Take(48))
+        foreach (var p in query.Take(80))
         {
             FilteredProducts.Add(new PosProductTile
             {
                 Product = p,
                 Price = ResolveSuggestedPrice(p.Id),
+                AvailableQuantity = _warehouseQtyByProduct.GetValueOrDefault(p.Id),
                 IsFavorite = _favoriteProducts.IsFavorite(p.Id)
             });
         }
@@ -778,6 +800,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 {
                     Product = product,
                     Price = ResolveSuggestedPrice(product.Id),
+                    AvailableQuantity = _warehouseQtyByProduct.GetValueOrDefault(product.Id),
                     IsFavorite = true
                 });
             }

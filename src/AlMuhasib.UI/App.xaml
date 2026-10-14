@@ -15,6 +15,11 @@
                 <ResourceDictionary Source="/Styles/MasterDataCardTemplates.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
+            <!-- Branding placeholders (replaced at startup by ProductBranding.Apply) -->
+            <BitmapImage x:Key="BrandMarkImage" UriSource="pack://application:,,,/Assets/Brand/qayd-mark.png"/>
+            <BitmapImage x:Key="BrandIconImage" UriSource="pack://application:,,,/Assets/Brand/qayd-icon.png"/>
+            <BitmapImage x:Key="BrandWindowIcon" UriSource="pack://application:,,,/Assets/Brand/qayd-icon.ico"/>
+
             <!-- Converters -->
             <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
             <converters:InverseBooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" />

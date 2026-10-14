@@ -9,6 +9,7 @@ using Qaid.TelegramBot.Application.Models;
 using Qaid.TelegramBot.Application.Options;
 using Qaid.TelegramBot.Application.Services;
 using Qaid.TelegramBot.Infrastructure.Data;
+using Qaid.TelegramBot.Infrastructure.Reports;
 using Qaid.TelegramBot.Infrastructure.Security;
 using Qaid.TelegramBot.Infrastructure.Services;
 using RichardSzalay.MockHttp;
@@ -58,20 +59,23 @@ internal static class TestHelpers
         ILinkService links,
         IQaidApiClient api,
         ITelegramBotGateway bot,
-        TelegramBotOptions? options = null)
+        TelegramBotOptions? options = null,
+        IReportPdfService? pdf = null)
     {
         var sessions = new SessionTokenService(api, links, NullLogger<SessionTokenService>.Instance);
+        pdf ??= new ReportPdfService(api, new QuestReportPdfGenerator(), NullLogger<ReportPdfService>.Instance);
         return new BotUpdateProcessor(
             links,
             api,
             sessions,
             bot,
+            pdf,
             new InMemoryRateLimiter(Options.Create(new TelegramBotOptions { RateLimitPerMinute = 100 })),
             Options.Create(options ?? new TelegramBotOptions { PublicBaseUrl = "https://bot.test" }),
             NullLogger<BotUpdateProcessor>.Instance);
     }
 
-    public static Mock<ITelegramBotGateway> CreateBotMock(List<string> sentTexts)
+    public static Mock<ITelegramBotGateway> CreateBotMock(List<string> sentTexts, List<byte[]>? pdfBytes = null)
     {
         var mock = new Mock<ITelegramBotGateway>(MockBehavior.Loose);
         mock.Setup(b => b.SendTextAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<IReadOnlyList<BotButton>>?>(), It.IsAny<CancellationToken>()))
@@ -79,6 +83,16 @@ internal static class TestHelpers
             .Returns(Task.CompletedTask);
         mock.Setup(b => b.EditTextAsync(It.IsAny<long>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<IReadOnlyList<BotButton>>?>(), It.IsAny<CancellationToken>()))
             .Callback<long, int, string, IReadOnlyList<IReadOnlyList<BotButton>>?, CancellationToken>((_, _, text, _, _) => sentTexts.Add(text))
+            .Returns(Task.CompletedTask);
+        mock.Setup(b => b.SendDocumentAsync(
+                It.IsAny<long>(), It.IsAny<byte[]>(), It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<IReadOnlyList<IReadOnlyList<BotButton>>?>(), It.IsAny<CancellationToken>()))
+            .Callback<long, byte[], string, string, IReadOnlyList<IReadOnlyList<BotButton>>?, CancellationToken>(
+                (_, content, fileName, caption, _, _) =>
+                {
+                    sentTexts.Add($"PDF:{fileName}:{caption}");
+                    pdfBytes?.Add(content);
+                })
             .Returns(Task.CompletedTask);
         mock.Setup(b => b.AnswerCallbackAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);

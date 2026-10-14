@@ -80,6 +80,11 @@ public partial class MigrationWizardView
     {
         if (e.PropertyName is nameof(MigrationWizardViewModel.StepTransitionToken))
             TryAnimateStepEntrance(force: false);
+        else if (e.PropertyName is nameof(MigrationWizardViewModel.ShowProductBranchColumns))
+        {
+            _lastProductsGridVersion = -1;
+            RebuildProductsGridColumns();
+        }
         else if (e.PropertyName is nameof(MigrationWizardViewModel.ProductsGridVersion)
                  or nameof(MigrationWizardViewModel.ShowProductsGrid)
                  or nameof(MigrationWizardViewModel.EnableMultiCurrency)
@@ -185,6 +190,18 @@ public partial class MigrationWizardView
         ProductsGrid.Columns.Add(CreateTextColumn("الباركود", "Barcode", 140, minWidth: 110));
         ProductsGrid.Columns.Add(CreateCategoryComboColumn());
         ProductsGrid.Columns.Add(CreateTextColumn("الوصف", "Description", 160, minWidth: 120));
+
+        var branches = _vm.GetProductBranchInfos();
+        for (var i = 0; i < branches.Count; i++)
+        {
+            var (_, branchName, _) = branches[i];
+            ProductsGrid.Columns.Add(CreateCheckBoxColumn(
+                $"فرع\n{branchName}",
+                $"BranchVisibility[{i}].IsVisible",
+                100,
+                minWidth: 80,
+                toolTip: $"ظهور المنتج في فرع «{branchName}»"));
+        }
 
         if (_vm.ShowProductPharmacyFields)
         {
@@ -320,6 +337,29 @@ public partial class MigrationWizardView
                 }
             }
         }
+    }
+
+    private System.Windows.Controls.DataGridCheckBoxColumn CreateCheckBoxColumn(
+        string header,
+        string bindingPath,
+        double width,
+        double minWidth = 80,
+        string? toolTip = null)
+    {
+        var col = new System.Windows.Controls.DataGridCheckBoxColumn
+        {
+            Header = header,
+            Binding = new Binding(bindingPath)
+            {
+                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+                Mode = BindingMode.TwoWay
+            },
+            Width = new DataGridLength(width),
+            MinWidth = minWidth
+        };
+        if (!string.IsNullOrWhiteSpace(toolTip))
+            col.HeaderStyle = CreateHeaderStyle(toolTip);
+        return col;
     }
 
     private System.Windows.Controls.DataGridTextColumn CreateTextColumn(

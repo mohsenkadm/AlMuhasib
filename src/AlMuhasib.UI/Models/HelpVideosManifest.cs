@@ -4,6 +4,15 @@ public sealed class HelpVideosManifest
 {
     public string SupportWhatsApp { get; set; } = "07505496065";
     public string SupportMessage { get; set; } = "السلام عليكم، أحتاج مساعدة في نظام المحاسب.";
+    public string TelegramBotUrl { get; set; } = "https://t.me/qaidsystem_bot";
+    public string TelegramSubscribeMessage { get; set; } =
+        "السلام عليكم، أرغب بالاشتراك في بوت تقارير تيليجرام لنظام قيد — 10 دولار سنوياً.";
+    public string AppStoreUrl { get; set; } =
+        "https://apps.apple.com/sa/app/%D9%82%D9%8A%D8%AF-%D8%A7%D9%84%D9%85%D8%AD%D8%A7%D8%B3%D8%A8%D9%8A/id6804299551?l=ar";
+    public string PlayStoreUrl { get; set; } =
+        "https://play.google.com/store/apps/details?id=com.almuhasib.almuhasib_mobile&hl=ar";
+    public string MobileSubscribeMessage { get; set; } =
+        "السلام عليكم، أرغب بالاشتراك في تطبيق قيد المحاسبي للجوال — 10 دولار سنوياً.";
     public List<HelpVideoCategory> Categories { get; set; } = [];
 }
 

@@ -46,6 +46,13 @@
                             <TextBlock Text="صفوف إضافية" Margin="8,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
+                    <CheckBox IsChecked="{Binding ShowBranchColumns}"
+                              Content="أعمدة الفروع"
+                              Margin="0,0,12,0"
+                              VerticalAlignment="Center"
+                              FontSize="12"
+                              ToolTip="إظهار عمود اختيار ظهور المنتج لكل فرع"
+                              Visibility="{Binding ShowBranchColumnsToggle, Converter={StaticResource BoolToVis}}"/>
                     <Button Command="{Binding ClearRowsCommand}" Style="{StaticResource OutlinedButton}"
                             Height="36" Padding="12,0" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">

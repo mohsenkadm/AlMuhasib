@@ -17,7 +17,7 @@ public partial class PosFullscreenWindow : Window
         _sessionActivity = sessionActivity;
         _toast = toast;
         InitializeComponent();
-        PreviewKeyDown += (_, _) => TouchActivity();
+        PreviewKeyDown += OnPreviewKeyDown;
         PreviewMouseDown += (_, _) => TouchActivity();
         PreviewMouseMove += (_, _) => TouchActivity();
         PreviewMouseWheel += (_, _) => TouchActivity();
@@ -29,8 +29,19 @@ public partial class PosFullscreenWindow : Window
         DataContext = viewModel;
         PosView.DataContext = viewModel;
         Owner = Application.Current.MainWindow;
+        WindowState = WindowState.Maximized;
         _toast.AttachOverlayHost(PosToastHost);
         TouchActivity();
+    }
+
+    private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        TouchActivity();
+        if (e.Key == Key.Escape && DataContext is PosQuickSaleViewModel vm)
+        {
+            vm.ToggleFullscreenCommand.Execute(null);
+            e.Handled = true;
+        }
     }
 
     private void TouchActivity() => _sessionActivity.RecordActivity();

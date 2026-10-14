@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows.Media.Imaging;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
@@ -12,6 +13,7 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class ProductsViewModel
 {
     [ObservableProperty] private bool _isBarcodePrintDialogOpen;
+    [ObservableProperty] private string _barcodePrintCompanyName = string.Empty;
     [ObservableProperty] private string _barcodePrintProductName = string.Empty;
     [ObservableProperty] private string _barcodePrintCode = string.Empty;
     [ObservableProperty] private string _barcodePrintPriceText = "—";
@@ -50,6 +52,7 @@ public partial class ProductsViewModel
         }
 
         _barcodePrintProduct = product;
+        BarcodePrintCompanyName = PrintBrandingProvider.Current.CompanyName?.Trim() ?? string.Empty;
         BarcodePrintProductName = product.Name;
         BarcodePrintCode = product.Barcode!;
         BarcodePrintCopies = 1;
@@ -100,9 +103,14 @@ public partial class ProductsViewModel
         if (BarcodePrintCopies > 200)
             BarcodePrintCopies = 200;
 
+        var companyName = string.IsNullOrWhiteSpace(BarcodePrintCompanyName)
+            ? PrintBrandingProvider.Current.CompanyName
+            : BarcodePrintCompanyName;
+
         var items = Enumerable.Range(0, BarcodePrintCopies)
             .Select(_ => new BarcodeLabelItem
             {
+                CompanyName = companyName ?? string.Empty,
                 ProductName = BarcodePrintProductName,
                 Barcode = BarcodePrintCode,
                 Price = _barcodePrintPrice
@@ -116,9 +124,15 @@ public partial class ProductsViewModel
     [RelayCommand]
     private void PrintBarcodeLabels()
     {
+        var companyName = PrintBrandingProvider.Current.CompanyName ?? string.Empty;
         var items = Products
             .Where(p => !string.IsNullOrWhiteSpace(p.Barcode))
-            .Select(p => new BarcodeLabelItem { ProductName = p.Name, Barcode = p.Barcode! })
+            .Select(p => new BarcodeLabelItem
+            {
+                CompanyName = companyName,
+                ProductName = p.Name,
+                Barcode = p.Barcode!
+            })
             .ToList();
         if (items.Count == 0)
         {

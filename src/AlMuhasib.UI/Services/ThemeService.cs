@@ -370,6 +370,7 @@ public sealed class ThemeService
         SetBrush(res, "DashboardSuccessForegroundBrush", isDark ? "#81C784" : "#2E7D32");
         // Glass on hero: translucent dark navy in dark (not near-white).
         SetBrush(res, "DashboardQuickActionBrush", isDark ? "#D0121B42" : "#F5FFFFFF");
+        SetBrush(res, "DashboardQuickActionBorderBrush", isDark ? "#40FFFFFF" : "#22000000");
         SetBrush(res, "DashboardQuickActionTitleBrush", isDark ? DarkText : "#212121");
         SetBrush(res, "DashboardQuickActionSubtitleBrush", isDark ? DarkTextSecondary : "#616161");
         SetBrush(res, "DashboardAlertTitleBrush", isDark ? "#FFB74D" : "#E65100");
@@ -403,6 +404,8 @@ public sealed class ThemeService
         SetBrush(res, "DashboardKpiPinkLightBrush", isDark ? "#3D2230" : "#FCE4EC");
         SetBrush(res, "DashboardKpiTealBrush", isDark ? "#4DB6AC" : "#00695C");
         SetBrush(res, "DashboardKpiTealLightBrush", isDark ? "#1A3330" : "#E0F2F1");
+        SetBrush(res, "DashboardKpiPurpleBrush", isDark ? "#CE93D8" : "#6A1B9A");
+        SetBrush(res, "DashboardKpiPurpleLightBrush", isDark ? "#2E1A36" : "#F3E5F5");
 
         SetBrush(res, "DashboardPriorityHighBrush", isDark ? "#EF5350" : "#C62828");
         SetBrush(res, "DashboardPriorityHighLightBrush", isDark ? "#3D2226" : "#FFEBEE");

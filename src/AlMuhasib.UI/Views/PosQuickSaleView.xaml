@@ -63,6 +63,62 @@
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolVis"/>
         <converters:ObjectsEqualMultiConverter x:Key="ObjectsEqual"/>
         <converters:EnumToBoolConverter x:Key="EnumToBool"/>
+        <converters:NullToCollapsedConverter x:Key="NullToCollapsedConverter"/>
+        <!-- Touch-first POS chrome: readable, 40px+ targets, no microscopic UI -->
+        <Style x:Key="PosCompactCombo" TargetType="ComboBox" BasedOn="{StaticResource FilledComboBox}">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="MinHeight" Value="40"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="materialDesign:HintAssist.IsFloating" Value="True"/>
+        </Style>
+        <Style x:Key="PosToolbarIconButton" TargetType="Button" BasedOn="{StaticResource OutlinedButton}">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="MinWidth" Value="40"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="materialDesign:ButtonAssist.CornerRadius" Value="10"/>
+        </Style>
+        <Style x:Key="PosFullscreenCloseButton" TargetType="Button">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="MinWidth" Value="40"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="#E53935" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#C62828"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#B71C1C"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="PosCartColumnHeader" TargetType="DataGridColumnHeader"
+               BasedOn="{StaticResource ModernDataGridColumnHeader}">
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="Foreground" Value="#0D47A1"/>
+            <Setter Property="Background" Value="#E3F2FD"/>
+            <Setter Property="BorderBrush" Value="#BBDEFB"/>
+            <Setter Property="BorderThickness" Value="0,0,0,2"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
     </UserControl.Resources>
 
     <Grid x:Name="PosShell" Margin="0" MinHeight="0" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
@@ -88,116 +144,156 @@
         <!-- Proxy outside DataGrid columns to avoid x:Reference cyclical dependency -->
         <FrameworkElement x:Name="VmProxy" Visibility="Collapsed"/>
 
-        <!-- Compact toolbar (replaces large header) -->
+        <!-- Professional POS header: compact selectors, touch-sized actions -->
         <Border Grid.Row="0" Background="{DynamicResource CardBrush}"
                 BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
-                CornerRadius="10" Padding="10,8" Margin="0,0,0,8">
+                CornerRadius="12" Padding="12,10" Margin="0">
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding StatusMessage}"
-                           VerticalAlignment="Center"
-                           FontSize="12"
-                           Foreground="{DynamicResource TextSecondaryBrush}"
-                           TextTrimming="CharacterEllipsis"/>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,12,0"
-                            VerticalAlignment="Center">
-                    <materialDesign:PackIcon Kind="CartOutline" Width="16" Height="16"
-                                             VerticalAlignment="Center" Margin="0,0,6,0"
-                                             Foreground="{DynamicResource PrimaryHueMidBrush}"/>
-                    <TextBlock Text="{Binding CartLineCount, StringFormat='{}{0} بند'}"
-                               FontWeight="SemiBold" VerticalAlignment="Center"/>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <ComboBox Width="150"
+                              ItemsSource="{Binding Warehouses}"
+                              SelectedItem="{Binding SelectedWarehouse}"
+                              DisplayMemberPath="Name"
+                              Style="{StaticResource PosCompactCombo}"
+                              materialDesign:HintAssist.Hint="المخزن"
+                              ToolTip="المخزن"
+                              Margin="0,0,8,0"/>
+                    <ComboBox Width="150"
+                              ItemsSource="{Binding FilteredCashBoxes}"
+                              SelectedItem="{Binding SelectedCashBox}"
+                              DisplayMemberPath="Name"
+                              Style="{StaticResource PosCompactCombo}"
+                              materialDesign:HintAssist.Hint="القاصة"
+                              ToolTip="القاصة / الصندوق"
+                              Margin="0,0,8,0"/>
+                    <ComboBox Width="140"
+                              ItemsSource="{Binding BulkPricingTypes}"
+                              SelectedItem="{Binding SelectedBulkPricingType}"
+                              DisplayMemberPath="Name"
+                              Style="{StaticResource PosCompactCombo}"
+                              materialDesign:HintAssist.Hint="التسعير"
+                              ToolTip="نوع التسعير"
+                              Visibility="{Binding ShowProductPricing, Converter={StaticResource BoolVis}}"/>
                 </StackPanel>
-                <StackPanel Grid.Column="2" Orientation="Horizontal">
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0">
+                    <TextBlock Text="{Binding StatusMessage}"
+                               VerticalAlignment="Center"
+                               FontSize="13"
+                               Foreground="{DynamicResource TextSecondaryBrush}"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding FxRateText}" FontSize="12"
+                               VerticalAlignment="Center" Margin="12,0,0,0" Foreground="#1565C0"
+                               Visibility="{Binding ShowFxInfo, Converter={StaticResource BoolVis}}"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="10" Padding="10,0" Height="40"
+                            Margin="0,0,8,0" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="CartOutline" Width="18" Height="18"
+                                                     VerticalAlignment="Center" Margin="0,0,6,0"
+                                                     Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                            <TextBlock Text="{Binding CartLineCount, StringFormat='{}{0} بند'}"
+                                       FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
                     <Button Command="{Binding ShowHeldInvoicesCommand}"
-                            Style="{StaticResource OutlinedButton}"
-                            Height="36" Padding="10,0" Margin="0,0,6,0"
+                            Style="{StaticResource PosToolbarIconButton}"
                             ToolTip="الفواتير المعلقة">
                         <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="PlaylistPlay" Width="16" Height="16" VerticalAlignment="Center"/>
+                            <materialDesign:PackIcon Kind="PlaylistPlay" Width="18" Height="18" VerticalAlignment="Center"/>
                             <TextBlock Text="{Binding HeldInvoiceCount, StringFormat='معلقة ({0})'}" Margin="6,0,0,0"
                                        VerticalAlignment="Center" FontSize="12"/>
                         </StackPanel>
                     </Button>
                     <Button Command="{Binding ShowRecentInvoicesCommand}"
-                            Style="{StaticResource OutlinedButton}"
-                            Height="36" Padding="10,0" Margin="0,0,6,0"
-                            ToolTip="آخر 10 فواتير">
+                            Style="{StaticResource PosToolbarIconButton}"
+                            ToolTip="آخر الفواتير">
                         <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="ReceiptText" Width="16" Height="16" VerticalAlignment="Center"/>
+                            <materialDesign:PackIcon Kind="ReceiptText" Width="18" Height="18" VerticalAlignment="Center"/>
                             <TextBlock Text="آخر الفواتير" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12"/>
                         </StackPanel>
                     </Button>
                     <Button Command="{Binding ToggleFullscreenCommand}"
-                            Style="{StaticResource OutlinedButton}"
-                            Height="36" Padding="12,0"
+                            Style="{StaticResource PosToolbarIconButton}"
                             ToolTip="فتح الكاشير بملء الشاشة"
                             Visibility="{Binding IsFullscreenHost, ElementName=Root, Converter={StaticResource InverseBoolVis}}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Fullscreen" Width="18" Height="18" VerticalAlignment="Center"/>
-                            <TextBlock Text="ملء الشاشة" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12"/>
+                            <TextBlock Text="ملء الشاشة" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12"/>
                         </StackPanel>
                     </Button>
                     <Button Command="{Binding ToggleFullscreenCommand}"
-                            Style="{StaticResource OutlinedButton}"
-                            Height="36" Padding="12,0"
-                            ToolTip="إغلاق نافذة الكاشير والعودة داخل النظام"
+                            Style="{StaticResource PosToolbarIconButton}"
+                            ToolTip="الخروج من ملء الشاشة"
                             Visibility="{Binding IsFullscreenHost, ElementName=Root, Converter={StaticResource BoolVis}}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="FullscreenExit" Width="18" Height="18" VerticalAlignment="Center"/>
-                            <TextBlock Text="إغلاق الكاشير" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12"/>
+                            <TextBlock Text="ملء الشاشة" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding ToggleFullscreenCommand}"
+                            Style="{StaticResource PosFullscreenCloseButton}"
+                            ToolTip="إغلاق نافذة الكاشير والعودة للنظام"
+                            Visibility="{Binding IsFullscreenHost, ElementName=Root, Converter={StaticResource BoolVis}}">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Close" Width="16" Height="16" VerticalAlignment="Center" Foreground="White"/>
+                            <TextBlock Text="إغلاق" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12" Foreground="White"/>
                         </StackPanel>
                     </Button>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1" MinHeight="0">
+        <Grid Grid.Row="1" MinHeight="0" Margin="0,4,0,0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.35*" MinWidth="300"/>
-                <ColumnDefinition Width="10"/>
-                <ColumnDefinition Width="1*" MinWidth="300"/>
+                <ColumnDefinition Width="1.35*" MinWidth="320"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="1*" MinWidth="320"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Catalog (right in RTL = col 0) -->
-            <Border Grid.Column="0" Style="{StaticResource PosPanelCard}" MinHeight="0">
+            <!-- Catalog -->
+            <Border Grid.Column="0" Style="{StaticResource PosPanelCard}" Padding="10" CornerRadius="12" MinHeight="0">
                 <Grid MinHeight="0">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*" MinHeight="0"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Favorites -->
-                    <ScrollViewer Grid.Row="0" Margin="0,0,0,10"
-                                  MaxHeight="76"
+                    <ScrollViewer Grid.Row="0" Margin="0,0,0,8"
+                                  MaxHeight="44"
                                   VerticalScrollBarVisibility="Disabled"
                                   HorizontalScrollBarVisibility="Auto"
                                   Style="{DynamicResource ThinScrollViewer}">
-                        <StackPanel>
-                            <TextBlock Text="المفضلة" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,6"
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="المفضلة" FontWeight="SemiBold" FontSize="12" Margin="0,0,8,0"
+                                       VerticalAlignment="Center"
                                        Foreground="{DynamicResource TextSecondaryBrush}"/>
                             <ItemsControl ItemsSource="{Binding FavoriteProducts}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <WrapPanel/>
+                                        <StackPanel Orientation="Horizontal"/>
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Button Command="{Binding DataContext.AddProductCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                             CommandParameter="{Binding}"
-                                            Margin="0,0,6,6" Padding="10,7"
+                                            Margin="0,0,6,0" Padding="12,0" Height="36"
                                             Style="{StaticResource PrimaryButton}"
-                                            materialDesign:ButtonAssist.CornerRadius="8"
+                                            materialDesign:ButtonAssist.CornerRadius="10"
                                             ToolTip="{Binding Name}">
                                         <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="Star" Width="14" Height="14" VerticalAlignment="Center"/>
-                                            <TextBlock Text="{Binding Name}" Margin="6,0,0,0" MaxWidth="110" TextTrimming="CharacterEllipsis"/>
+                                            <materialDesign:PackIcon Kind="Star" Width="16" Height="16" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Name}" Margin="6,0,0,0" MaxWidth="120" FontSize="12" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
                                     </Button>
                                 </DataTemplate>
@@ -208,205 +304,15 @@
 
                     <TextBox x:Name="SearchBox"
                              Grid.Row="1"
-                             materialDesign:HintAssist.Hint="باركود أو اسم أو اسم علمي — Enter للإضافة"
+                             materialDesign:HintAssist.Hint="باركود أو اسم — Enter"
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FilledTextBox}"
                              KeyDown="SearchBox_KeyDown"
-                             Margin="0,0,0,10"
-                             FontSize="15"/>
+                             Margin="0,0,0,8"
+                             Height="34" MinHeight="34" FontSize="13"
+                             Padding="10,4"/>
 
-                    <!-- Choice rows: label + equal-width chips across remaining width (horizontal only) -->
-                    <StackPanel Grid.Row="2" Margin="0,0,0,8">
-                        <Grid Margin="0,0,0,6"
-                              Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolVis}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*" MinWidth="0"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="العملة" FontSize="12" FontWeight="SemiBold"
-                                       VerticalAlignment="Center" Margin="0,0,8,0" MinWidth="56"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
-                            <UniformGrid Grid.Column="1" Rows="1" Columns="2">
-                                <Button Content="دينار" Margin="0,0,4,0"
-                                        Command="{Binding SelectPosCurrencyCommand}" CommandParameter="IQD">
-                                    <Button.Style>
-                                        <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChipBar}">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding SelectedPosCurrency, Converter={StaticResource EnumToBool}, ConverterParameter=IQD}" Value="True">
-                                                    <Setter Property="Tag" Value="Selected"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Button.Style>
-                                </Button>
-                                <Button Content="دولار" Margin="4,0,0,0"
-                                        Command="{Binding SelectPosCurrencyCommand}" CommandParameter="USD">
-                                    <Button.Style>
-                                        <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChipBar}">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding SelectedPosCurrency, Converter={StaticResource EnumToBool}, ConverterParameter=USD}" Value="True">
-                                                    <Setter Property="Tag" Value="Selected"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Button.Style>
-                                </Button>
-                            </UniformGrid>
-                            <TextBlock Grid.Column="2" Text="{Binding FxRateText}" FontSize="11"
-                                       VerticalAlignment="Center" Margin="8,0,0,0" Foreground="#1565C0"
-                                       Visibility="{Binding ShowFxInfo, Converter={StaticResource BoolVis}}"/>
-                        </Grid>
-
-                        <Grid Margin="0,0,0,6">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*" MinWidth="0"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="المخزن" FontSize="12" FontWeight="SemiBold"
-                                       VerticalAlignment="Center" Margin="0,0,8,0" MinWidth="56"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
-                            <ItemsControl Grid.Column="1" ItemsSource="{Binding Warehouses}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <UniformGrid Rows="1"/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemContainerStyle>
-                                    <Style TargetType="ContentPresenter">
-                                        <Setter Property="Margin" Value="0,0,4,0"/>
-                                    </Style>
-                                </ItemsControl.ItemContainerStyle>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Command="{Binding DataContext.SelectWarehouseCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}">
-                                            <Button.Content>
-                                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
-                                                           TextAlignment="Center"/>
-                                            </Button.Content>
-                                            <Button.Style>
-                                                <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChipBar}">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Value="True">
-                                                            <DataTrigger.Binding>
-                                                                <MultiBinding Converter="{StaticResource ObjectsEqual}">
-                                                                    <Binding Path="DataContext.SelectedWarehouse" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
-                                                                    <Binding Path="."/>
-                                                                </MultiBinding>
-                                                            </DataTrigger.Binding>
-                                                            <Setter Property="Tag" Value="Selected"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </Grid>
-
-                        <Grid Margin="0,0,0,6">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*" MinWidth="0"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="القاصة" FontSize="12" FontWeight="SemiBold"
-                                       VerticalAlignment="Center" Margin="0,0,8,0" MinWidth="56"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
-                            <ItemsControl Grid.Column="1" ItemsSource="{Binding FilteredCashBoxes}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <UniformGrid Rows="1"/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemContainerStyle>
-                                    <Style TargetType="ContentPresenter">
-                                        <Setter Property="Margin" Value="0,0,4,0"/>
-                                    </Style>
-                                </ItemsControl.ItemContainerStyle>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Command="{Binding DataContext.SelectCashBoxCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}">
-                                            <Button.Content>
-                                                <TextBlock TextTrimming="CharacterEllipsis" TextAlignment="Center">
-                                                    <Run Text="{Binding Name, Mode=OneWay}"/>
-                                                    <Run Text=" "/>
-                                                    <Run Text="{Binding Currency, Mode=OneWay, StringFormat=({0})}"/>
-                                                </TextBlock>
-                                            </Button.Content>
-                                            <Button.Style>
-                                                <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChipBar}">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Value="True">
-                                                            <DataTrigger.Binding>
-                                                                <MultiBinding Converter="{StaticResource ObjectsEqual}">
-                                                                    <Binding Path="DataContext.SelectedCashBox" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
-                                                                    <Binding Path="."/>
-                                                                </MultiBinding>
-                                                            </DataTrigger.Binding>
-                                                            <Setter Property="Tag" Value="Selected"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </Grid>
-
-                        <Grid Visibility="{Binding ShowProductPricing, Converter={StaticResource BoolVis}}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*" MinWidth="0"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBlock Text="التسعير" FontSize="12" FontWeight="SemiBold"
-                                       VerticalAlignment="Center" Margin="0,0,8,0" MinWidth="56"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
-                            <ItemsControl Grid.Column="1" ItemsSource="{Binding BulkPricingTypes}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <UniformGrid Rows="1"/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemContainerStyle>
-                                    <Style TargetType="ContentPresenter">
-                                        <Setter Property="Margin" Value="0,0,4,0"/>
-                                    </Style>
-                                </ItemsControl.ItemContainerStyle>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Button Command="{Binding DataContext.SelectBulkPricingTypeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}">
-                                            <Button.Content>
-                                                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"
-                                                           TextAlignment="Center"/>
-                                            </Button.Content>
-                                            <Button.Style>
-                                                <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChipBar}">
-                                                    <Style.Triggers>
-                                                        <DataTrigger Value="True">
-                                                            <DataTrigger.Binding>
-                                                                <MultiBinding Converter="{StaticResource ObjectsEqual}">
-                                                                    <Binding Path="DataContext.SelectedBulkPricingType" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
-                                                                    <Binding Path="."/>
-                                                                </MultiBinding>
-                                                            </DataTrigger.Binding>
-                                                            <Setter Property="Tag" Value="Selected"/>
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Button.Style>
-                                        </Button>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </Grid>
-                    </StackPanel>
-
-                    <ListBox Grid.Row="3"
+                    <ListBox Grid.Row="2"
                              ItemsSource="{Binding FilteredProducts}"
                              Style="{StaticResource PosProductListBox}"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -428,7 +334,7 @@
                             <Style TargetType="ListBoxItem">
                                 <Setter Property="Padding" Value="0"/>
                                 <Setter Property="Margin" Value="0"/>
-                                <Setter Property="Width" Value="152"/>
+                                <Setter Property="Width" Value="140"/>
                                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                                 <Setter Property="VerticalContentAlignment" Value="Top"/>
                                 <Setter Property="Focusable" Value="False"/>
@@ -444,8 +350,9 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <Border Style="{StaticResource PosProductCard}"
-                                        Height="104"
-                                        Margin="3"
+                                        Height="96"
+                                        Margin="4"
+                                        CornerRadius="12"
                                         HorizontalAlignment="Stretch"
                                         VerticalAlignment="Top">
                                     <Grid>
@@ -461,21 +368,21 @@
                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"
                                                        TextWrapping="Wrap" MaxHeight="40" TextTrimming="CharacterEllipsis"
                                                        FontFamily="{DynamicResource AppFont}"/>
-                                            <TextBlock Text="{Binding ScientificName}" FontSize="10" Margin="0,2,0,0"
-                                                       Foreground="#607D8B" TextTrimming="CharacterEllipsis"
-                                                       Visibility="{Binding HasScientificName, Converter={StaticResource BoolVis}}"/>
-                                            <TextBlock Text="{Binding Barcode}" FontSize="10" Margin="0,4,0,0"
-                                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock FontSize="12" Margin="0,4,0,0" Foreground="#2E7D32"
+                                                       FontFamily="{DynamicResource AppFont}">
+                                                <Run Text="متوفر"/>
+                                                <Run Text=" "/>
+                                                <Run Text="{Binding AvailableQuantityText, Mode=OneWay}" FontWeight="SemiBold"/>
+                                            </TextBlock>
                                         </StackPanel>
                                         <Button Grid.Row="0" Panel.ZIndex="2"
                                                 Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}"
                                                 Style="{StaticResource IconButton}"
-                                                Width="28" Height="28"
+                                                Width="32" Height="32"
                                                 HorizontalAlignment="Right" VerticalAlignment="Top"
                                                 Margin="0,4,4,0" ToolTip="مفضلة">
-                                            <materialDesign:PackIcon Width="16" Height="16" Foreground="#F9A825">
+                                            <materialDesign:PackIcon Width="18" Height="18" Foreground="#F9A825">
                                                 <materialDesign:PackIcon.Style>
                                                     <Style TargetType="materialDesign:PackIcon">
                                                         <Setter Property="Kind" Value="StarOutline"/>
@@ -488,20 +395,14 @@
                                                 </materialDesign:PackIcon.Style>
                                             </materialDesign:PackIcon>
                                         </Button>
-                                        <Grid Grid.Row="1" Margin="10,0,10,10" IsHitTestVisible="False">
-                                            <TextBlock FontWeight="Bold" FontSize="14" Foreground="#1565C0"
-                                                       VerticalAlignment="Center" HorizontalAlignment="Right"
-                                                       FontFamily="{DynamicResource AppFont}">
-                                                <Run Text="{Binding Price, StringFormat=N0, Mode=OneWay}"/>
-                                                <Run Text=" "/>
-                                                <Run Text="{Binding DataContext.CurrencyAmountSuffix, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"/>
-                                            </TextBlock>
-                                            <Border HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                    Width="30" Height="30" CornerRadius="8" Background="#1565C0">
-                                                <materialDesign:PackIcon Kind="Plus" Width="18" Height="18" Foreground="White"
-                                                                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                        </Grid>
+                                        <TextBlock Grid.Row="1" Margin="12,0,12,10" IsHitTestVisible="False"
+                                                   FontWeight="Bold" FontSize="14" Foreground="#1565C0"
+                                                   VerticalAlignment="Center" HorizontalAlignment="Left"
+                                                   FontFamily="{DynamicResource AppFont}">
+                                            <Run Text="{Binding Price, StringFormat=N0, Mode=OneWay}"/>
+                                            <Run Text=" "/>
+                                            <Run Text="{Binding DataContext.CurrencyAmountSuffix, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"/>
+                                        </TextBlock>
                                     </Grid>
                                 </Border>
                             </DataTemplate>
@@ -510,59 +411,74 @@
                 </Grid>
             </Border>
 
-            <!-- Cart (left in RTL = col 2) -->
-            <Border Grid.Column="2" Style="{StaticResource PosPanelCard}" MinHeight="0">
+            <!-- Cart -->
+            <Border Grid.Column="2" Style="{StaticResource PosPanelCard}" Padding="10" CornerRadius="12" MinHeight="0">
                 <Grid MinHeight="0">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*" MinHeight="120"/>
+                        <RowDefinition Height="*" MinHeight="180"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
-                    <!-- Quick actions -->
                     <UniformGrid Grid.Row="0" Columns="4" Margin="0,0,0,10">
                         <Button Command="{Binding OpenPaymentDialogAndPrintCommand}"
-                                Style="{StaticResource PosActionPayButton}" Margin="0,0,4,0"
+                                Style="{StaticResource PosActionPayButton}" Height="52" Margin="0,0,4,0"
                                 ToolTip="إتمام البيع وطباعة الإيصال">
                             <StackPanel>
-                                <materialDesign:PackIcon Kind="CashRegister" Width="22" Height="22" HorizontalAlignment="Center"/>
-                                <TextBlock Text="دفع / طباعة" FontSize="11" FontWeight="SemiBold" Margin="0,4,0,0" HorizontalAlignment="Center"/>
+                                <materialDesign:PackIcon Kind="CashRegister" Width="20" Height="20" HorizontalAlignment="Center"/>
+                                <TextBlock Text="دفع / طباعة" FontSize="12" FontWeight="SemiBold" Margin="0,4,0,0" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
                         <Button Command="{Binding HoldInvoiceCommand}"
-                                Style="{StaticResource PosActionHoldButton}" Margin="2,0"
+                                Style="{StaticResource PosActionHoldButton}" Height="52" Margin="2,0"
                                 ToolTip="تعليق الفاتورة">
                             <StackPanel>
-                                <materialDesign:PackIcon Kind="PauseCircleOutline" Width="22" Height="22" HorizontalAlignment="Center"/>
-                                <TextBlock Text="تعليق" FontSize="11" FontWeight="SemiBold" Margin="0,4,0,0" HorizontalAlignment="Center"/>
+                                <materialDesign:PackIcon Kind="PauseCircleOutline" Width="20" Height="20" HorizontalAlignment="Center"/>
+                                <TextBlock Text="تعليق" FontSize="12" FontWeight="SemiBold" Margin="0,4,0,0" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
                         <Button Command="{Binding ShowHeldInvoicesCommand}"
-                                Style="{StaticResource PosActionHoldButton}" Margin="2,0"
+                                Style="{StaticResource PosActionHoldButton}" Height="52" Margin="2,0"
                                 ToolTip="استئناف فاتورة معلقة">
                             <StackPanel>
-                                <materialDesign:PackIcon Kind="PlaylistPlay" Width="22" Height="22" HorizontalAlignment="Center"/>
-                                <TextBlock Text="معلقة" FontSize="11" FontWeight="SemiBold" Margin="0,4,0,0" HorizontalAlignment="Center"/>
+                                <materialDesign:PackIcon Kind="PlaylistPlay" Width="20" Height="20" HorizontalAlignment="Center"/>
+                                <TextBlock Text="معلقة" FontSize="12" FontWeight="SemiBold" Margin="0,4,0,0" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
                         <Button Command="{Binding ClearCartCommand}"
-                                Style="{StaticResource PosActionClearButton}" Margin="4,0,0,0"
+                                Style="{StaticResource PosActionClearButton}" Height="52" Margin="4,0,0,0"
                                 ToolTip="مسح السلة">
                             <StackPanel>
-                                <materialDesign:PackIcon Kind="CartOff" Width="22" Height="22" HorizontalAlignment="Center"/>
-                                <TextBlock Text="مسح" FontSize="11" FontWeight="SemiBold" Margin="0,4,0,0" HorizontalAlignment="Center"/>
+                                <materialDesign:PackIcon Kind="CartOff" Width="20" Height="20" HorizontalAlignment="Center"/>
+                                <TextBlock Text="مسح" FontSize="12" FontWeight="SemiBold" Margin="0,4,0,0" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
                     </UniformGrid>
 
-                    <ComboBox Grid.Row="1"
-                              ItemsSource="{Binding PosCustomers}"
-                              SelectedItem="{Binding SelectedPosCustomer}"
-                              materialDesign:HintAssist.Hint="العميل (ابحث بالاسم أو رقم العميل)"
-                              Style="{StaticResource CustomerSearchableComboBox}"
-                              Margin="0,0,0,10"/>
+                    <Grid Grid.Row="1" Margin="0,0,0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <ComboBox ItemsSource="{Binding PosCustomers}"
+                                  SelectedItem="{Binding SelectedPosCustomer}"
+                                  materialDesign:HintAssist.Hint="العميل"
+                                  Style="{StaticResource CustomerSearchableComboBox}"
+                                  FontSize="12" Height="32" MinHeight="32" MaxHeight="32"
+                                  Padding="8,2"/>
+                        <Button Grid.Column="1"
+                                Command="{Binding OpenQuickAddCustomerCommand}"
+                                ToolTip="إضافة عميل جديد"
+                                Style="{StaticResource MaterialDesignIconButton}"
+                                Width="32" Height="32"
+                                Margin="4,0,0,0"
+                                VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="AccountPlusOutline" Width="18" Height="18"
+                                                     Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                        </Button>
+                    </Grid>
 
                     <DataGrid x:Name="PosCartGrid"
                               Grid.Row="2"
@@ -572,12 +488,15 @@
                               IsReadOnly="False"
                               HeadersVisibility="Column"
                               Style="{StaticResource PosDataGrid}"
+                              ColumnHeaderStyle="{StaticResource PosCartColumnHeader}"
+                              FontSize="14"
                               ScrollViewer.HorizontalScrollBarVisibility="Auto"
                               ScrollViewer.VerticalScrollBarVisibility="Auto"
                               ScrollViewer.CanContentScroll="False"
                               FrozenColumnCount="1"
-                              RowHeight="52"
-                              MinRowHeight="48"
+                              RowHeight="56"
+                              MinRowHeight="52"
+                              ColumnHeaderHeight="44"
                               MinHeight="0"
                               VerticalAlignment="Stretch"
                               ClipToBounds="True">
@@ -585,11 +504,12 @@
                             <Style TargetType="ScrollBar" BasedOn="{StaticResource PosHiddenVerticalScrollBar}"/>
                         </DataGrid.Resources>
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="" Width="44" MinWidth="44" MaxWidth="44" IsReadOnly="True"
+                            <DataGridTemplateColumn Header="" Width="40" MinWidth="40" MaxWidth="40" IsReadOnly="True"
                                                     CanUserResize="False">
                                 <DataGridTemplateColumn.CellStyle>
                                     <Style TargetType="DataGridCell" BasedOn="{StaticResource ModernDataGridCell}">
                                         <Setter Property="Padding" Value="0"/>
+                                        <Setter Property="FontSize" Value="13"/>
                                         <Setter Property="HorizontalContentAlignment" Value="Center"/>
                                         <Setter Property="VerticalContentAlignment" Value="Center"/>
                                         <Setter Property="BorderThickness" Value="0"/>
@@ -602,25 +522,26 @@
                                         <Button Command="{Binding DataContext.RemoveLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}"
                                                 Style="{StaticResource InvoiceDeleteRowButton}"
-                                                Width="34" Height="34"
+                                                Width="32" Height="32"
                                                 HorizontalAlignment="Center" VerticalAlignment="Center"
                                                 ToolTip="حذف البند">
-                                            <materialDesign:PackIcon Kind="TrashCanOutline" Width="17" Height="17"
+                                            <materialDesign:PackIcon Kind="TrashCanOutline" Width="16" Height="16"
                                                                      Foreground="#C62828"/>
                                         </Button>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="المنتج" Width="*" MinWidth="120" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="المنتج" Width="2.2*" MinWidth="160" IsReadOnly="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding DisplayName}"
                                                    TextWrapping="Wrap"
                                                    TextTrimming="CharacterEllipsis"
-                                                   MaxHeight="48"
+                                                   FontSize="14"
+                                                   FontWeight="SemiBold"
                                                    VerticalAlignment="Center"
                                                    ToolTip="{Binding DisplayName}"
-                                                   Margin="4,2"
+                                                   Margin="6,4"
                                                    FontFamily="{DynamicResource AppFont}"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
@@ -694,23 +615,23 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="الكمية" Width="132" MinWidth="120">
+                            <DataGridTemplateColumn Header="الكمية" Width="130" MinWidth="120">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <Button Content="−" Width="28" Height="32" Padding="0"
+                                            <Button Content="−" Width="34" Height="34" Padding="0" FontSize="16" FontWeight="Bold"
                                                     Command="{Binding DataContext.DecreaseLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     Style="{StaticResource FlatButton}"/>
-                                            <Button Margin="4,0" MinWidth="48" Padding="6,4"
+                                            <Button Margin="4,0" MinWidth="48" Height="34" Padding="8,0"
                                                     Style="{StaticResource PosTouchValueButton}"
                                                     Command="{Binding DataContext.EditLineQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     ToolTip="اضغط لإدخال الكمية">
-                                                <TextBlock Text="{Binding Quantity, StringFormat=N0}" FontWeight="SemiBold"
-                                                           FontFamily="{DynamicResource AppFont}"/>
+                                                <TextBlock Text="{Binding Quantity, StringFormat=N0}" FontWeight="Bold" FontSize="15"
+                                                           FontFamily="{DynamicResource AppFont}" Foreground="#0D47A1"/>
                                             </Button>
-                                            <Button Content="+" Width="28" Height="32" Padding="0"
+                                            <Button Content="+" Width="34" Height="34" Padding="0" FontSize="16" FontWeight="Bold"
                                                     Command="{Binding DataContext.IncreaseLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                     CommandParameter="{Binding}"
                                                     Style="{StaticResource FlatButton}"/>
@@ -718,41 +639,43 @@
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="السعر" Width="84" MinWidth="72">
+                            <DataGridTemplateColumn Header="السعر" Width="90" MinWidth="80">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Style="{StaticResource PosTouchValueButton}"
-                                                HorizontalAlignment="Stretch"
+                                                HorizontalAlignment="Stretch" Height="34" MinHeight="34" Padding="6,0"
                                                 Command="{Binding DataContext.EditLinePriceCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}"
                                                 ToolTip="اضغط لإدخال السعر">
-                                            <TextBlock Text="{Binding UnitPrice, StringFormat=N0}" FontWeight="SemiBold"
-                                                       FontFamily="{DynamicResource AppFont}" TextAlignment="Center"/>
+                                            <TextBlock Text="{Binding UnitPrice, StringFormat=N0}" FontWeight="Bold" FontSize="14"
+                                                       FontFamily="{DynamicResource AppFont}" TextAlignment="Center"
+                                                       Foreground="#1565C0"/>
                                         </Button>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn x:Name="ColPosDiscount" Header="الخصم" Width="80" MinWidth="68"
+                            <DataGridTemplateColumn x:Name="ColPosDiscount" Header="الخصم" Width="80" MinWidth="70"
                                                     Visibility="Collapsed">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Style="{StaticResource PosTouchValueButton}"
-                                                HorizontalAlignment="Stretch"
+                                                HorizontalAlignment="Stretch" Height="34" MinHeight="34" Padding="6,0"
                                                 Command="{Binding DataContext.EditLineDiscountCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}"
                                                 ToolTip="اضغط لإدخال الخصم">
-                                            <TextBlock Text="{Binding DiscountAmount, StringFormat=N0}" FontWeight="SemiBold"
+                                            <TextBlock Text="{Binding DiscountAmount, StringFormat=N0}" FontWeight="Bold" FontSize="14"
                                                        FontFamily="{DynamicResource AppFont}" TextAlignment="Center"/>
                                         </Button>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                             </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="المجموع" Width="90" MinWidth="72" IsReadOnly="True">
+                            <DataGridTemplateColumn Header="المجموع" Width="96" MinWidth="84" IsReadOnly="True">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <TextBlock Text="{Binding LineTotal, StringFormat=N0}"
-                                                   FontWeight="Bold" VerticalAlignment="Center"
+                                                   FontWeight="Bold" FontSize="15" VerticalAlignment="Center"
                                                    HorizontalAlignment="Center" Margin="4,0"
+                                                   Foreground="#0D47A1"
                                                    FontFamily="{DynamicResource AppFont}"
                                                    TextWrapping="NoWrap"/>
                                     </DataTemplate>
@@ -761,160 +684,128 @@
                         </DataGrid.Columns>
                     </DataGrid>
 
-                    <!-- Summary (always visible above pay buttons) -->
-                    <Border Grid.Row="3" Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="12,10" Margin="0,8,0,0">
-                        <StackPanel>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="المجموع الفرعي" Foreground="#607D8B" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="1" FontWeight="SemiBold" VerticalAlignment="Center">
-                                    <Run Text="{Binding SubTotal, StringFormat=N0, Mode=OneWay}"/>
-                                    <Run Text=" "/>
-                                    <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
-                                </TextBlock>
-                            </Grid>
+                    <Border Grid.Row="3" Background="{DynamicResource BackgroundBrush}" CornerRadius="10"
+                            Padding="10,8" Margin="0,6,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                            <StackPanel Margin="0,10,0,2"
-                                        Visibility="{Binding ShowProductDiscount, Converter={StaticResource BoolVis}}">
-                                <TextBlock Text="خصم الفاتورة" FontSize="12" FontWeight="SemiBold" Foreground="#2E7D32"
-                                           Margin="0,0,0,6"/>
-                                <ItemsControl ItemsSource="{Binding InvoiceDiscountTypeOptions}" Margin="0,0,0,6">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <WrapPanel/>
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Button Content="{Binding Label}"
-                                                    Command="{Binding DataContext.SelectInvoiceDiscountTypeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding}">
-                                                <Button.Style>
-                                                    <Style TargetType="Button" BasedOn="{StaticResource PosChoiceChip}">
-                                                        <Style.Triggers>
-                                                            <DataTrigger Value="True">
-                                                                <DataTrigger.Binding>
-                                                                    <MultiBinding Converter="{StaticResource ObjectsEqual}">
-                                                                        <Binding Path="DataContext.SelectedInvoiceDiscountOption" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
-                                                                        <Binding Path="."/>
-                                                                    </MultiBinding>
-                                                                </DataTrigger.Binding>
-                                                                <Setter Property="Tag" Value="Selected"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Button.Style>
-                                            </Button>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Button Style="{StaticResource PosTouchValueButton}"
-                                            HorizontalAlignment="Stretch" Height="40"
-                                            Command="{Binding EditInvoiceDiscountValueCommand}"
-                                            ToolTip="اضغط لإدخال قيمة الخصم">
-                                        <TextBlock FontFamily="{DynamicResource AppFont}">
-                                            <Run Text="{Binding InvoiceDiscountValueHint, Mode=OneWay}"/>
-                                            <Run Text=": "/>
-                                            <Run Text="{Binding InvoiceDiscountValue, StringFormat=N0, Mode=OneWay}" FontWeight="Bold"/>
-                                        </TextBlock>
-                                    </Button>
-                                    <TextBlock Grid.Column="1" Margin="10,0,0,0"
-                                               FontWeight="SemiBold" Foreground="#2E7D32" FontSize="13"
-                                               VerticalAlignment="Center" ToolTip="مبلغ الخصم">
-                                        <Run Text="{Binding InvoiceDiscountAmount, StringFormat=N0, Mode=OneWay}"/>
+                            <StackPanel VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="فرعي" FontSize="11" Foreground="#78909C" VerticalAlignment="Center"/>
+                                    <TextBlock FontWeight="SemiBold" FontSize="12" Margin="6,0,0,0" VerticalAlignment="Center">
+                                        <Run Text="{Binding SubTotal, StringFormat=N0, Mode=OneWay}"/>
                                         <Run Text=" "/>
                                         <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
                                     </TextBlock>
+                                </StackPanel>
+
+                                <Grid Visibility="{Binding ShowProductDiscount, Converter={StaticResource BoolVis}}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox ItemsSource="{Binding InvoiceDiscountTypeOptions}"
+                                              SelectedItem="{Binding SelectedInvoiceDiscountOption}"
+                                              DisplayMemberPath="Label"
+                                              FontSize="11" Height="28" MinHeight="28" Width="110"
+                                              materialDesign:HintAssist.Hint="خصم"
+                                              Style="{StaticResource MaterialDesignComboBox}"
+                                              Margin="0,0,6,0"/>
+                                    <Button Grid.Column="1" Style="{StaticResource PosTouchValueButton}"
+                                            HorizontalAlignment="Stretch" Height="28" MinHeight="28"
+                                            Command="{Binding EditInvoiceDiscountValueCommand}"
+                                            ToolTip="قيمة الخصم">
+                                        <TextBlock FontFamily="{DynamicResource AppFont}" FontSize="11">
+                                            <Run Text="{Binding InvoiceDiscountValue, StringFormat=N0, Mode=OneWay}" FontWeight="Bold"/>
+                                        </TextBlock>
+                                    </Button>
+                                    <TextBlock Grid.Column="2" Margin="6,0,0,0"
+                                               FontWeight="SemiBold" Foreground="#2E7D32" FontSize="11"
+                                               VerticalAlignment="Center">
+                                        <Run Text="{Binding InvoiceDiscountAmount, StringFormat=N0, Mode=OneWay}"/>
+                                    </TextBlock>
                                 </Grid>
+
+                                <loyalty:LoyaltyPanel Margin="0,4,0,0" IsCompact="True" DataContext="{Binding}"/>
                             </StackPanel>
 
-                            <loyalty:LoyaltyPanel Margin="0,8,0,0" IsCompact="True" DataContext="{Binding}"/>
-
-                            <Grid Margin="0,8,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="الإجمالي" FontSize="16" FontWeight="Bold"
-                                           Foreground="#0D47A1" VerticalAlignment="Center"
-                                           FontFamily="{DynamicResource AppFont}"/>
-                                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                    <TextBlock FontSize="24" FontWeight="Bold" Foreground="#1565C0"
-                                               FontFamily="{DynamicResource AppFont}" TextAlignment="Right">
+                            <Border Grid.Column="1" Background="#E3F2FD" CornerRadius="10" Padding="14,8" Margin="10,0,0,0"
+                                    MinWidth="140" VerticalAlignment="Center">
+                                <StackPanel HorizontalAlignment="Right">
+                                    <TextBlock Text="الإجمالي" FontSize="11" FontWeight="SemiBold"
+                                               Foreground="#1565C0" HorizontalAlignment="Right"/>
+                                    <TextBlock FontSize="22" FontWeight="Bold" Foreground="#0D47A1"
+                                               FontFamily="{DynamicResource AppFont}" TextAlignment="Right" Margin="0,2,0,0">
                                         <Run Text="{Binding GrandTotal, StringFormat=N0, Mode=OneWay}"/>
                                         <Run Text=" "/>
                                         <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
                                     </TextBlock>
-                                    <TextBlock Text="{Binding IqdEquivalentText}" FontSize="12"
-                                               Foreground="{DynamicResource TextSecondaryBrush}"
-                                               HorizontalAlignment="Right" Margin="0,2,0,0"
+                                    <TextBlock Text="{Binding UsdEquivalentText}" FontSize="11"
+                                               Foreground="#546E7A"
+                                               HorizontalAlignment="Right"
                                                Visibility="{Binding ShowFxInfo, Converter={StaticResource BoolVis}}"
                                                FontFamily="{DynamicResource AppFont}"/>
                                 </StackPanel>
-                            </Grid>
-                        </StackPanel>
+                            </Border>
+                        </Grid>
                     </Border>
 
-                    <!-- Bottom actions -->
-                    <Grid Grid.Row="4" Margin="0,12,0,0">
+                    <Grid Grid.Row="4" Margin="0,8,0,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <Button Grid.Row="0" Command="{Binding OpenCurrencyChangeCommand}"
-                                Style="{StaticResource OutlinedButton}" Height="40" Margin="0,0,0,8"
-                                materialDesign:ButtonAssist.CornerRadius="10"
-                                BorderBrush="#1565C0" Foreground="#1565C0"
-                                ToolTip="حساب الباقي بعملات الدينار العراقي (F7)">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="CashMultiple" Width="18" Height="18" VerticalAlignment="Center"/>
-                                <TextBlock Text="حساب العملات (F7)" Margin="8,0,0,0" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-                        <Grid Grid.Row="1">
+                        <Grid Grid.Row="0">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <Button Grid.Column="0" Command="{Binding OpenPaymentDialogCommand}"
-                                    Style="{StaticResource PosPayPrintButton}" Height="48" Margin="0,0,6,0"
+                            <Button Grid.Column="0" Command="{Binding OpenCurrencyChangeCommand}"
+                                    Style="{StaticResource OutlinedButton}" Height="46" Padding="12,0" Margin="0,0,6,0"
+                                    materialDesign:ButtonAssist.CornerRadius="10"
+                                    BorderBrush="#1565C0" Foreground="#1565C0"
+                                    ToolTip="حساب الباقي بعملات الدينار العراقي (F7)">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="CashMultiple" Width="18" Height="18" VerticalAlignment="Center"/>
+                                    <TextBlock Text="عملات" Margin="6,0,0,0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Grid.Column="1" Command="{Binding OpenPaymentDialogCommand}"
+                                    Style="{StaticResource PosPayPrintButton}" Height="46" Margin="0,0,6,0"
                                     materialDesign:ButtonAssist.CornerRadius="10">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="CashCheck" Width="20" Height="20" VerticalAlignment="Center"/>
-                                    <TextBlock Text="إتمام البيع" Margin="8,0,0,0" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <TextBlock Text="إتمام البيع" Margin="8,0,0,0" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
-                            <Button Grid.Column="1" Command="{Binding PrintThermalReceiptCommand}"
-                                    Style="{StaticResource OutlinedButton}" Height="48" Margin="6,0,6,0"
+                            <Button Grid.Column="2" Command="{Binding PrintThermalReceiptCommand}"
+                                    Style="{StaticResource OutlinedButton}" Height="46" Padding="14,0" Margin="0,0,6,0"
                                     materialDesign:ButtonAssist.CornerRadius="10"
-                                    ToolTip="طباعة آخر فاتورة بحجم ورق الكاشير المختار">
+                                    ToolTip="طباعة آخر فاتورة بحجم ورق الكاشير">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Printer" Width="18" Height="18" VerticalAlignment="Center"/>
-                                    <TextBlock Text="طباعة" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="طباعة" Margin="6,0,0,0" FontSize="13" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
-                            <CheckBox Grid.Column="2" Content="طباعة تلقائية" IsChecked="{Binding PrintAfterSale}"
-                                      VerticalAlignment="Center" Margin="4,0,0,0" FontSize="11"/>
+                            <CheckBox Grid.Column="3" Content="تلقائي" IsChecked="{Binding PrintAfterSale}"
+                                      VerticalAlignment="Center" FontSize="11"
+                                      ToolTip="طباعة تلقائية"/>
                         </Grid>
-                        <Button Grid.Row="2" Command="{Binding PrintPharmacyReceiptCommand}"
-                                Style="{StaticResource OutlinedButton}" Height="40" Margin="0,8,0,0"
+                        <Button Grid.Row="1" Command="{Binding PrintPharmacyReceiptCommand}"
+                                Style="{StaticResource OutlinedButton}" Height="36" Margin="0,6,0,0"
                                 materialDesign:ButtonAssist.CornerRadius="10"
                                 BorderBrush="#2E7D32" Foreground="#2E7D32"
                                 Visibility="{Binding ShowPharmacy, Converter={StaticResource BoolVis}}"
-                                ToolTip="طباعة إيصال صيدلية يتضمن طريقة الاستخدام (80/58 حسب إعداد الطباعة)">
+                                ToolTip="طباعة إيصال صيدلية">
                             <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Pill" Width="18" Height="18" VerticalAlignment="Center"/>
-                                <TextBlock Text="طباعة صيدلية (طريقة الاستخدام)" Margin="8,0,0,0" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                <materialDesign:PackIcon Kind="Pill" Width="16" Height="16" VerticalAlignment="Center"/>
+                                <TextBlock Text="طباعة صيدلية" Margin="6,0,0,0" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
                     </Grid>
@@ -957,11 +848,17 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="المبلغ الكامل" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="14"/>
-                                <TextBlock Grid.Column="1" FontSize="26" FontWeight="Bold" Foreground="#1565C0">
-                                    <Run Text="{Binding GrandTotal, StringFormat=N0, Mode=OneWay}"/>
-                                    <Run Text=" "/>
-                                    <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
-                                </TextBlock>
+                                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                    <TextBlock FontSize="26" FontWeight="Bold" Foreground="#1565C0" TextAlignment="Right">
+                                        <Run Text="{Binding GrandTotal, StringFormat=N0, Mode=OneWay}"/>
+                                        <Run Text=" "/>
+                                        <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding UsdEquivalentText}" FontSize="12"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               HorizontalAlignment="Right" Margin="0,2,0,0"
+                                               Visibility="{Binding ShowFxInfo, Converter={StaticResource BoolVis}}"/>
+                                </StackPanel>
                             </Grid>
                         </Border>
 
@@ -1092,5 +989,38 @@
                 </Border>
             </materialDesign:DialogHost.DialogContent>
         </materialDesign:DialogHost>
+
+        <!-- Quick add customer -->
+        <Grid Visibility="{Binding IsQuickAddCustomerOpen, Converter={StaticResource BoolVis}}"
+              Panel.ZIndex="100" Grid.RowSpan="2">
+            <Border Background="#80000000"/>
+            <materialDesign:Card Padding="20" MinWidth="380" MaxWidth="460"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                                 UniformCornerRadius="14"
+                                 materialDesign:ElevationAssist.Elevation="Dp8">
+                <StackPanel>
+                    <TextBlock Text="إضافة عميل جديد" FontSize="16" FontWeight="Bold" Margin="0,0,0,12"
+                               Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                    <TextBox materialDesign:HintAssist.Hint="اسم العميل *"
+                             Text="{Binding QuickCustomerName, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
+                    <TextBox materialDesign:HintAssist.Hint="رقم الهاتف"
+                             Text="{Binding QuickCustomerPhone, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
+                    <TextBox materialDesign:HintAssist.Hint="العنوان"
+                             Text="{Binding QuickCustomerAddress, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
+                    <TextBlock Text="{Binding QuickCustomerError}" Foreground="#D32F2F" Margin="0,0,0,8"
+                               Visibility="{Binding QuickCustomerError, Converter={StaticResource NullToCollapsedConverter}}"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,4,0,0">
+                        <Button Content="حفظ" Command="{Binding SaveQuickCustomerCommand}"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                materialDesign:ButtonAssist.CornerRadius="8" Padding="20,6" Margin="0,0,8,0"/>
+                        <Button Content="إلغاء" Command="{Binding CancelQuickAddCustomerCommand}"
+                                Style="{StaticResource FlatButton}"/>
+                    </StackPanel>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
     </Grid>
 </UserControl>

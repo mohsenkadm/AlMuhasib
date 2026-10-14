@@ -1,5 +1,7 @@
+using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Import;
 using AlMuhasib.UI.Controls;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
@@ -8,6 +10,46 @@ namespace AlMuhasib.UI.ViewModels;
 
 public partial class ProductsViewModel
 {
+    private List<ProductImportBranchColumn> _importBranchColumns = [];
+
+    /// <summary>يظهر خيار أعمدة الفروع عند وجود أكثر من فرع نشط.</summary>
+    [ObservableProperty] private bool _showBranchColumnsImportToggle;
+
+    /// <summary>تضمين أعمدة ظهور الفروع في قالب/استيراد Excel.</summary>
+    [ObservableProperty] private bool _includeBranchColumnsInImport = true;
+
+    private async Task RefreshImportBranchOptionsAsync()
+    {
+        _importBranchColumns = [];
+        ShowBranchColumnsImportToggle = false;
+
+        if (_services.GetService(typeof(IBranchService)) is not IBranchService branchService)
+            return;
+
+        var branches = (await branchService.GetActiveAsync())
+            .OrderByDescending(b => b.IsMain)
+            .ThenBy(b => b.Name)
+            .ToList();
+
+        if (branches.Count <= 1)
+        {
+            IncludeBranchColumnsInImport = false;
+            return;
+        }
+
+        _importBranchColumns = branches
+            .Select(b => new ProductImportBranchColumn
+            {
+                BranchId = b.Id,
+                BranchName = b.Name,
+                Header = ProductImportSchema.BuildBranchHeader(b.Name)
+            })
+            .ToList();
+
+        ShowBranchColumnsImportToggle = true;
+        IncludeBranchColumnsInImport = true;
+    }
+
     private ProductImportOptions BuildCurrentImportOptions()
     {
         var flags = _userPreferences.Current.FeatureFlags;
@@ -18,6 +60,8 @@ public partial class ProductsViewModel
             IncludeDiscountFields = flags.ProductDiscountEnabled,
             IncludePricingFields = flags.ProductPricingEnabled,
             IncludeCarShowroomFields = flags.CarShowroom,
+            IncludeBranchColumns = IncludeBranchColumnsInImport && _importBranchColumns.Count > 1,
+            Branches = IncludeBranchColumnsInImport ? _importBranchColumns : [],
             CustomFields = CustomFieldColumns
                 .Select(c => new ProductImportCustomField
                 {

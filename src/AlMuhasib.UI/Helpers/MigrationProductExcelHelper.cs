@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.RegularExpressions;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Models.Import;
 using AlMuhasib.UI.Models;
 using ClosedXML.Excel;
 
@@ -8,14 +9,16 @@ namespace AlMuhasib.UI.Helpers;
 
 /// <summary>
 /// قالب واستيراد منتجات معالج النقل —
-/// أعمدة ثابتة + تكلفة د.ع/$ + كمية لكل مخزن + سعر لكل نوع تسعير (+ دولار عند تعدد العملات).
+/// أعمدة ثابتة + تكلفة د.ع/$ + كمية لكل مخزن + سعر لكل نوع تسعير (+ دولار عند تعدد العملات) + ظهور الفروع.
 /// </summary>
 public static class MigrationProductExcelHelper
 {
     public static byte[] BuildTemplate(
         IReadOnlyList<string> pricingTypeNames,
         IReadOnlyList<string> warehouseNames,
-        bool enableMultiCurrency)
+        bool enableMultiCurrency,
+        IReadOnlyList<(int Id, string Name)>? branches = null,
+        bool includeBranchColumns = false)
     {
         using var workbook = new XLWorkbook();
         var sheet = workbook.Worksheets.Add("البيانات");
@@ -43,6 +46,12 @@ public static class MigrationProductExcelHelper
             headers.Add($"سعر_بيع_{SanitizeHeader(typeName)}_دينار");
             if (enableMultiCurrency)
                 headers.Add($"سعر_بيع_{SanitizeHeader(typeName)}_دولار");
+        }
+
+        if (includeBranchColumns && branches is { Count: > 1 })
+        {
+            foreach (var (_, name) in branches)
+                headers.Add(ProductImportSchema.BuildBranchHeader(name));
         }
 
         for (var i = 0; i < headers.Count; i++)
@@ -85,6 +94,16 @@ public static class MigrationProductExcelHelper
                 sheet.Cell(2, col++).Value = 0;
         }
 
+        if (includeBranchColumns && branches is { Count: > 1 })
+        {
+            var first = true;
+            foreach (var _ in branches)
+            {
+                sheet.Cell(2, col++).Value = first ? "نعم" : "لا";
+                first = false;
+            }
+        }
+
         var guide = workbook.Worksheets.Add("تعليمات");
         guide.RightToLeft = true;
         guide.Column(1).Width = 90;
@@ -101,7 +120,9 @@ public static class MigrationProductExcelHelper
         };
         if (enableMultiCurrency)
             lines.Add("7) أعمدة سعر_بيع_*_دولار لأسعار البيع بالدولار — مستقلة عن الدينار.");
-        lines.Add("8) بعد الاستيراد راجع الجدول ثم اضغط «حفظ الخطوة» لتحديث المنتجات والأسعار.");
+        if (includeBranchColumns && branches is { Count: > 1 })
+            lines.Add("8) أعمدة ظهور_فرع_* = نعم/1 لإظهار المنتج في الفرع، لا/0 أو فارغ لإخفائه. إن تُركت كلها فارغة يُربط بالفرع الرئيسي.");
+        lines.Add("بعد الاستيراد راجع الجدول ثم اضغط «حفظ الخطوة» لتحديث المنتجات والأسعار.");
         for (var i = 0; i < lines.Count; i++)
             guide.Cell(i + 1, 1).Value = lines[i];
         guide.Cell(1, 1).Style.Font.Bold = true;
@@ -116,7 +137,8 @@ public static class MigrationProductExcelHelper
         IReadOnlyList<string> pricingTypeNames,
         IReadOnlyList<string> warehouseNames,
         bool enableMultiCurrency,
-        decimal initialUsdToIqd)
+        decimal initialUsdToIqd,
+        IReadOnlyList<(int Id, string Name, bool IsMain)>? branches = null)
     {
         using var workbook = new XLWorkbook(filePath);
         var sheet = workbook.Worksheets.FirstOrDefault(w =>
@@ -127,6 +149,7 @@ public static class MigrationProductExcelHelper
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
         var rows = new List<MigrationNamedBalanceRow>();
         _ = initialUsdToIqd;
+        branches ??= [];
 
         for (var r = 2; r <= lastRow; r++)
         {
@@ -223,6 +246,36 @@ public static class MigrationProductExcelHelper
                 });
             }
 
+            if (branches.Count > 1)
+            {
+                foreach (var (id, branchName, isMain) in branches)
+                {
+                    var header = ProductImportSchema.BuildBranchHeader(branchName);
+                    var cell = GetCell(sheet, r, headerMap, header);
+                    var visible = headerMap.ContainsKey(header)
+                        ? ProductImportSchema.IsBranchVisibleCell(cell)
+                        : isMain;
+                    row.BranchVisibility.Add(new MigrationBranchVisibilityCell
+                    {
+                        BranchId = id,
+                        BranchName = branchName,
+                        IsVisible = visible
+                    });
+                }
+
+                // إن وُجدت أعمدة فروع وكلها لا → الفرع الرئيسي
+                if (branches.Any(b => headerMap.ContainsKey(ProductImportSchema.BuildBranchHeader(b.Name)))
+                    && row.BranchVisibility.All(b => !b.IsVisible))
+                {
+                    var main = row.BranchVisibility.FirstOrDefault(b =>
+                        branches.Any(x => x.Id == b.BranchId && x.IsMain));
+                    if (main is not null)
+                        main.IsVisible = true;
+                    else if (row.BranchVisibility.Count > 0)
+                        row.BranchVisibility[0].IsVisible = true;
+                }
+            }
+
             row.RebuildPricesSummary();
             rows.Add(row);
         }
@@ -237,7 +290,6 @@ public static class MigrationProductExcelHelper
         if (headerMap.TryGetValue(exactKey, out var col))
             return MigrationExcelHelper.ParseDecimal(sheet.Cell(row, col).GetFormattedString());
 
-        var suffix = usd ? "_دولار" : string.Empty;
         var match = headerMap.FirstOrDefault(kv =>
             kv.Key.StartsWith("سعر_", StringComparison.OrdinalIgnoreCase)
             && kv.Key.Contains(SanitizeHeader(typeName), StringComparison.OrdinalIgnoreCase)

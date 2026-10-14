@@ -15,6 +15,7 @@ public static class CallbackData
     public const string PromptSupplier = "st:s";
     public const string SystemDashboard = "sys";
 
+    public static string Group(ReportGroup group) => $"g:{(int)group}";
     public static string Report(ReportKind kind) => $"r:{(int)kind}";
     public static string Period(ReportKind kind, ReportPeriod period) => $"p:{(int)kind}:{(int)period}";
     public static string BackPeriod(ReportKind kind) => $"b:period:{(int)kind}";
@@ -44,6 +45,14 @@ public static class CallbackData
         if (parts.Length == 1 && parts[0] == "sys")
         {
             action = new CallbackAction(CallbackActionType.SystemDashboard);
+            return true;
+        }
+
+        if (parts.Length == 2 && parts[0] == "g"
+            && int.TryParse(parts[1], out var gid)
+            && Enum.IsDefined(typeof(ReportGroup), gid))
+        {
+            action = new CallbackAction(CallbackActionType.OpenGroup, Group: (ReportGroup)gid);
             return true;
         }
 
@@ -115,6 +124,7 @@ public static class CallbackData
 public enum CallbackActionType
 {
     MainMenu,
+    OpenGroup,
     SelectReport,
     PeriodMenu,
     RunReport,
@@ -133,5 +143,6 @@ public readonly record struct CallbackAction(
     CallbackActionType Type,
     ReportKind? Kind = null,
     ReportPeriod? Period = null,
+    ReportGroup? Group = null,
     int? BranchId = null,
     Guid? EntitySyncId = null);

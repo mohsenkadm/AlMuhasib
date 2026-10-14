@@ -21,12 +21,14 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
     private readonly IProductPriceService _productPriceService;
     private readonly ICustomFieldSettingsService _customFieldSettings;
     private readonly IFeatureFlagService _featureFlags;
+    private readonly IBranchService _branchService;
     private readonly MainWindowViewModel _mainWindow;
     private HashSet<string> _existingNames = new(StringComparer.OrdinalIgnoreCase);
     private List<Warehouse> _warehouses = [];
     private List<PricingType> _pricingTypes = [];
     private List<string> _warehouseNames = [];
     private List<string> _pricingTypeNames = [];
+    private List<(int Id, string Name, bool IsMain)> _branchInfos = [];
 
     public ObservableCollection<BulkProductEntryRow> Rows { get; } = [];
     public ObservableCollection<Category> Categories { get; } = [];
@@ -41,6 +43,12 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
     [ObservableProperty] private bool _showPricingFields;
     [ObservableProperty] private bool _showMultiCurrency;
     [ObservableProperty] private bool _showCarShowroomFields;
+
+    /// <summary>يظهر خيار أعمدة الفروع عند وجود أكثر من فرع.</summary>
+    [ObservableProperty] private bool _showBranchColumnsToggle;
+
+    /// <summary>إظهار أعمدة ظهور الفروع في الشبكة.</summary>
+    [ObservableProperty] private bool _showBranchColumns = true;
 
     [ObservableProperty] private bool _showCustomField1;
     [ObservableProperty] private bool _showCustomField2;
@@ -79,6 +87,7 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
         IProductPriceService productPriceService,
         ICustomFieldSettingsService customFieldSettings,
         IFeatureFlagService featureFlags,
+        IBranchService branchService,
         MainWindowViewModel mainWindow)
     {
         _productService = productService;
@@ -87,6 +96,7 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
         _productPriceService = productPriceService;
         _customFieldSettings = customFieldSettings;
         _featureFlags = featureFlags;
+        _branchService = branchService;
         _mainWindow = mainWindow;
         PageTitle = "إضافة منتجات متعددة";
         Rows.CollectionChanged += OnRowsCollectionChanged;
@@ -96,6 +106,14 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
     public IReadOnlyList<string> GetWarehouseNames() => _warehouseNames;
     public IReadOnlyList<string> GetPricingTypeNames() =>
         ShowPricingFields ? _pricingTypeNames : Array.Empty<string>();
+    public IReadOnlyList<(int Id, string Name, bool IsMain)> GetBranchInfos() =>
+        ShowBranchColumns && _branchInfos.Count > 1 ? _branchInfos : [];
+
+    partial void OnShowBranchColumnsChanged(bool value)
+    {
+        SyncAllRowStructures();
+        GridColumnsVersion++;
+    }
 
     public override async Task InitializeAsync()
     {
@@ -137,6 +155,15 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
             .OrderBy(w => w.Name)
             .ToList();
         _warehouseNames = _warehouses.Select(w => w.Name).ToList();
+
+        var branches = (await _branchService.GetActiveAsync())
+            .OrderByDescending(b => b.IsMain)
+            .ThenBy(b => b.Name)
+            .ToList();
+        _branchInfos = branches.Select(b => (b.Id, b.Name, b.IsMain)).ToList();
+        ShowBranchColumnsToggle = _branchInfos.Count > 1;
+        if (!ShowBranchColumnsToggle)
+            ShowBranchColumns = false;
 
         if (ShowPricingFields)
         {
@@ -193,6 +220,8 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
         row.EnsureStructure(
             _warehouseNames,
             ShowPricingFields ? _pricingTypeNames : Array.Empty<string>());
+        row.EnsureBranchVisibility(
+            ShowBranchColumns && _branchInfos.Count > 1 ? _branchInfos : []);
     }
 
     private void EnsureBlankRows(int count)
@@ -430,6 +459,16 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
 
                     await _productService.CreateAsync(product);
                     _existingNames.Add(product.Name);
+
+                    if (ShowBranchColumns && _branchInfos.Count > 1)
+                    {
+                        var mainId = _branchInfos.FirstOrDefault(b => b.IsMain).Id;
+                        if (mainId <= 0)
+                            mainId = _branchInfos[0].Id;
+                        var branchIds = row.ResolveSelectedBranchIds(mainId);
+                        if (branchIds.Count > 0)
+                            await _productService.SetProductBranchesAsync(product.Id, branchIds);
+                    }
 
                     var unitCostIqd = row.ResolveOpeningUnitCostIqd();
                     if (unitCostIqd > 0)

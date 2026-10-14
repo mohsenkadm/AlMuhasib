@@ -35,7 +35,8 @@ public partial class BulkProductsEntryView
     {
         if (e.PropertyName is nameof(BulkProductsEntryViewModel.GridColumnsVersion)
             or nameof(BulkProductsEntryViewModel.ShowPricingFields)
-            or nameof(BulkProductsEntryViewModel.ShowMultiCurrency))
+            or nameof(BulkProductsEntryViewModel.ShowMultiCurrency)
+            or nameof(BulkProductsEntryViewModel.ShowBranchColumns))
         {
             RebuildDynamicColumns(force: true);
         }
@@ -109,6 +110,18 @@ public partial class BulkProductsEntryView
                 headerElement: CreateWarehouseQtyHeader(name)), insertAt++);
         }
 
+        var branches = vm.GetBranchInfos();
+        for (var i = 0; i < branches.Count; i++)
+        {
+            var (_, branchName, _) = branches[i];
+            InsertDynamic(CreateCheckBoxColumn(
+                $"فرع\n{branchName}",
+                $"BranchVisibility[{i}].IsVisible",
+                100,
+                minWidth: 80,
+                toolTip: $"ظهور المنتج في فرع «{branchName}»"), insertAt++);
+        }
+
         var pricing = vm.GetPricingTypeNames();
         for (var i = 0; i < pricing.Count; i++)
         {
@@ -162,6 +175,29 @@ public partial class BulkProductsEntryView
     {
         BulkGrid.Columns.Insert(Math.Min(index, BulkGrid.Columns.Count), column);
         _dynamicColumns.Add(column);
+    }
+
+    private static DataGridCheckBoxColumn CreateCheckBoxColumn(
+        string header,
+        string bindingPath,
+        double width,
+        double minWidth = 80,
+        string? toolTip = null)
+    {
+        var col = new DataGridCheckBoxColumn
+        {
+            Header = header,
+            Binding = new Binding(bindingPath)
+            {
+                UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged,
+                Mode = BindingMode.TwoWay
+            },
+            Width = new DataGridLength(width),
+            MinWidth = minWidth
+        };
+        if (!string.IsNullOrWhiteSpace(toolTip))
+            col.HeaderStyle = CreateHeaderStyle(toolTip);
+        return col;
     }
 
     private static DataGridTextColumn CreateTextColumn(

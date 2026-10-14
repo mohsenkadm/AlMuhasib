@@ -510,7 +510,11 @@ public partial class App : Application
                 _systemProfile.SaveSelection(
                     wizard.SelectedSystem.Value,
                     wizard.SelectedDeploymentMode,
-                    wizard.BranchDisplayName);
+                    wizard.BranchDisplayName,
+                    wizard.IsDuhokBranchActivated);
+
+                if (wizard.IsDuhokBranchActivated)
+                    DesktopShortcutBranding.ApplyExpressShortcutsIfNeeded(isDuhokBranch: true);
 
                 // New installs only: start the desktop trial after first successful setup.
                 _desktopLicense.StartTrial();
@@ -520,6 +524,9 @@ public partial class App : Application
                 // Existing configured installs without a license file become Grandfathered (lifetime).
                 _desktopLicense.EnsureInitialized(profileIsConfigured: true);
             }
+
+            // Apply product branding (Qayd vs Express) before Splash/Login/Main open.
+            ProductBranding.Apply(_systemProfile.Current.IsDuhokBranch);
 
             var licenseStatus = _desktopLicense.GetStatus();
             if (!licenseStatus.IsUsable)

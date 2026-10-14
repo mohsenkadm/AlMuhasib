@@ -604,6 +604,7 @@ public class MonthlyIncomeExpensePoint
 public class WarehouseStockRow
 {
     public string ProductName { get; set; } = string.Empty;
+    public string? Barcode { get; set; }
     public string WarehouseName { get; set; } = string.Empty;
     public decimal Quantity { get; set; }
     public decimal AverageCost { get; set; }

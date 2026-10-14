@@ -29,6 +29,7 @@ public partial class MainWindow : Window
         ISessionActivityService sessionActivity)
     {
         InitializeComponent();
+        Title = $"{AppInfo.AppNameAr} - {AppInfo.AppNameEn}";
         _viewModel = viewModel;
         _preferences = preferences;
         _sessionActivity = sessionActivity;
@@ -331,6 +332,15 @@ public partial class MainWindow : Window
 
     private void QuickAssistBackdrop_Click(object sender, MouseButtonEventArgs e) =>
         _viewModel.IsQuickAssistOpen = false;
+
+    private void TelegramSubscribeBackdrop_Click(object sender, MouseButtonEventArgs e) =>
+        _viewModel.CloseTelegramSubscribeDialogCommand.Execute(null);
+
+    private void MobileSubscribeBackdrop_Click(object sender, MouseButtonEventArgs e) =>
+        _viewModel.CloseMobileSubscribeDialogCommand.Execute(null);
+
+    private void MobileDownloadBackdrop_Click(object sender, MouseButtonEventArgs e) =>
+        _viewModel.CloseMobileDownloadDialogCommand.Execute(null);
 
     private void SmartAssistantBackdrop_Click(object sender, MouseButtonEventArgs e) =>
         _viewModel.IsSmartAssistantOpen = false;

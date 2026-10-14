@@ -6,6 +6,8 @@
         Title="بيع سريع (POS) — كاشير"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
+        WindowStyle="None"
+        ResizeMode="NoResize"
         ShowInTaskbar="True"
         Background="{DynamicResource BackgroundBrush}"
         FlowDirection="RightToLeft"
@@ -14,8 +16,8 @@
         MinWidth="1024"
         MinHeight="640">
 
-    <Grid Margin="8">
-        <views:PosQuickSaleView x:Name="PosView" IsFullscreenHost="True"/>
+    <Grid Margin="0">
+        <views:PosQuickSaleView x:Name="PosView" IsFullscreenHost="True" Margin="8"/>
 
         <controls:ToastHost x:Name="PosToastHost"
                             Panel.ZIndex="500"

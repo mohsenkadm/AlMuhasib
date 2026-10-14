@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Qaid.TelegramBot.Application.Models;
 
 namespace Qaid.TelegramBot.Application.Abstractions;
@@ -22,6 +23,7 @@ public interface ILinkService
 
 public interface IQaidApiClient
 {
+    Task<JsonElement> GetJsonAsync(string relativePath, string accessToken, string? query, CancellationToken ct);
     Task<TenantLoginResponse> LoginAsync(string username, string password, CancellationToken ct);
     Task<SelectBranchResponse> SelectBranchAsync(string accessToken, int branchId, CancellationToken ct);
     Task<TenantLoginResponse> RefreshAsync(string refreshToken, CancellationToken ct);
@@ -70,6 +72,7 @@ public interface ISessionTokenService
 public interface ITelegramBotGateway
 {
     Task SendTextAsync(long chatId, string text, IReadOnlyList<IReadOnlyList<BotButton>>? keyboard, CancellationToken ct);
+    Task SendDocumentAsync(long chatId, byte[] pdfContent, string fileName, string caption, IReadOnlyList<IReadOnlyList<BotButton>>? keyboard, CancellationToken ct);
     Task AnswerCallbackAsync(string callbackQueryId, string? text, CancellationToken ct);
     Task EditTextAsync(long chatId, int messageId, string text, IReadOnlyList<IReadOnlyList<BotButton>>? keyboard, CancellationToken ct);
 }

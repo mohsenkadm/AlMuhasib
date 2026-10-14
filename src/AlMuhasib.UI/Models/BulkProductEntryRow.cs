@@ -39,6 +39,7 @@ public partial class BulkProductEntryRow : ObservableObject
 
     public ObservableCollection<MigrationWarehouseQtyCell> WarehouseQtys { get; } = [];
     public ObservableCollection<MigrationProductPriceCell> ProductPrices { get; } = [];
+    public ObservableCollection<MigrationBranchVisibilityCell> BranchVisibility { get; } = [];
 
     public bool HasName => !string.IsNullOrWhiteSpace(Name);
 
@@ -82,6 +83,39 @@ public partial class BulkProductEntryRow : ObservableObject
             else
                 ProductPrices.Add(new MigrationProductPriceCell { PricingTypeName = typeName });
         }
+    }
+
+    public void EnsureBranchVisibility(IReadOnlyList<(int Id, string Name, bool IsMain)> branches)
+    {
+        var byId = BranchVisibility
+            .GroupBy(b => b.BranchId)
+            .ToDictionary(g => g.Key, g => g.First());
+        BranchVisibility.Clear();
+        foreach (var (id, name, isMain) in branches)
+        {
+            if (byId.TryGetValue(id, out var existing))
+            {
+                existing.BranchName = name;
+                BranchVisibility.Add(existing);
+            }
+            else
+            {
+                BranchVisibility.Add(new MigrationBranchVisibilityCell
+                {
+                    BranchId = id,
+                    BranchName = name,
+                    IsVisible = isMain
+                });
+            }
+        }
+    }
+
+    public IReadOnlyList<int> ResolveSelectedBranchIds(int? fallbackMainBranchId)
+    {
+        var selected = BranchVisibility.Where(b => b.IsVisible).Select(b => b.BranchId).Distinct().ToList();
+        if (selected.Count == 0 && fallbackMainBranchId is int id)
+            selected.Add(id);
+        return selected;
     }
 
     partial void OnNameChanged(string value)

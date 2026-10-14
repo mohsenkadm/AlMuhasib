@@ -2,6 +2,13 @@
 
 خدمة ASP.NET Core مستقلة لاستعلام تقارير نظام قيد عبر Telegram (قراءة فقط).
 
+## واجهة البوت
+
+- مجموعات تقارير مطابقة لنظام قيد (المبيعات، الأقساط، العملاء، المخزون والمالية، المالية، الرقابية)
+- أيقونة لكل تقرير ومجموعة
+- الفترات: اليوم / أمس / 7 أيام / هذا الشهر / الشهر الماضي / **خلال هذه السنة**
+- كل تقرير يُجهَّز كملف **PDF بحجم A4** (جداول + ملخص) عبر QuestPDF
+
 ## المتطلبات
 
 - .NET 10
@@ -21,8 +28,8 @@
 dotnet user-secrets set "Telegram:BotToken" "<token>"
 dotnet user-secrets set "Telegram:WebhookSecret" "<random-secret>"
 dotnet user-secrets set "QaidApi:BaseUrl" "https://your-api-host"
-dotnet user-secrets set "Telegram:PublicBaseUrl" "https://your-bot-host"
-dotnet user-secrets set "Telegram:WebhookUrl" "https://your-bot-host/telegram/webhook"
+dotnet user-secrets set "Telegram:PublicBaseUrl" "https://mohsenkadmapple-001-site4.dtempurl.com"
+dotnet user-secrets set "Telegram:WebhookUrl" "https://mohsenkadmapple-001-site4.dtempurl.com/telegram/webhook"
 ```
 
 2. شغّل الخدمة:
@@ -31,7 +38,7 @@ dotnet user-secrets set "Telegram:WebhookUrl" "https://your-bot-host/telegram/we
 dotnet run --project src/Qaid.TelegramBot
 ```
 
-3. افتح `/link` وسجّل الدخول بحساب قيد، ثم أرسل الرمز إلى البوت.
+3. عند `/start` يظهر زر **تسجيل الدخول إلى قيد** يفتح `/link`. سجّل الدخول ثم أرسل الرمز إلى البوت.
 
 ## الأمان
 

@@ -128,6 +128,8 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="المنتج" Binding="{Binding ProductName}" Width="*"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ProductName"/>
+                                <DataGridTextColumn Header="الباركود" Binding="{Binding Barcode}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Barcode"/>
                                 <DataGridTextColumn Header="المخزن" Binding="{Binding WarehouseName}" Width="140"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WarehouseName"/>
                                 <DataGridTextColumn Header="الكمية" Binding="{Binding Quantity, StringFormat=N0}" Width="100"

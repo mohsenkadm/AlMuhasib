@@ -55,6 +55,14 @@ public partial class MigrationWarehouseQtyCell : ObservableObject
     [ObservableProperty] private decimal _quantity;
 }
 
+/// <summary>ظهور المنتج في فرع واحد (شبكة/Excel).</summary>
+public partial class MigrationBranchVisibilityCell : ObservableObject
+{
+    [ObservableProperty] private int _branchId;
+    [ObservableProperty] private string _branchName = string.Empty;
+    [ObservableProperty] private bool _isVisible;
+}
+
 /// <summary>محرر أسعار عند الإدخال اليدوي للمنتج (قبل الإضافة للجدول).</summary>
 public partial class MigrationProductPriceEditor : ObservableObject
 {
@@ -122,6 +130,7 @@ public partial class MigrationNamedBalanceRow : ObservableObject
 
     public ObservableCollection<MigrationProductPriceCell> ProductPrices { get; } = [];
     public ObservableCollection<MigrationWarehouseQtyCell> WarehouseQtys { get; } = [];
+    public ObservableCollection<MigrationBranchVisibilityCell> BranchVisibility { get; } = [];
 
     public DiscountType ParseDiscountType()
     {
@@ -193,6 +202,39 @@ public partial class MigrationNamedBalanceRow : ObservableObject
 
         _ = includeUsdPrices;
         RebuildPricesSummary();
+    }
+
+    public void EnsureBranchVisibility(IReadOnlyList<(int Id, string Name, bool IsMain)> branches)
+    {
+        var byId = BranchVisibility
+            .GroupBy(b => b.BranchId)
+            .ToDictionary(g => g.Key, g => g.First());
+        BranchVisibility.Clear();
+        foreach (var (id, name, isMain) in branches)
+        {
+            if (byId.TryGetValue(id, out var existing))
+            {
+                existing.BranchName = name;
+                BranchVisibility.Add(existing);
+            }
+            else
+            {
+                BranchVisibility.Add(new MigrationBranchVisibilityCell
+                {
+                    BranchId = id,
+                    BranchName = name,
+                    IsVisible = isMain
+                });
+            }
+        }
+    }
+
+    public IReadOnlyList<int> ResolveSelectedBranchIds(int? fallbackMainBranchId)
+    {
+        var selected = BranchVisibility.Where(b => b.IsVisible).Select(b => b.BranchId).Distinct().ToList();
+        if (selected.Count == 0 && fallbackMainBranchId is int id)
+            selected.Add(id);
+        return selected;
     }
 
     public void RebuildPricesSummary()

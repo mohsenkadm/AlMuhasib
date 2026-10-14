@@ -511,15 +511,26 @@
                         <DockPanel Visibility="{Binding ShowProductsGrid, Converter={StaticResource BoolVis}}" Margin="0,0,0,8">
                             <Border DockPanel.Dock="Top" Margin="0,0,0,8" Padding="10,8" CornerRadius="8"
                                     Background="{DynamicResource BackgroundBrush}">
-                                <TextBlock FontSize="12.5" TextWrapping="Wrap"
-                                           Foreground="{DynamicResource TextSecondaryBrush}">
-                                    <Run Text="توضيح العملات:"/>
-                                    <Run Text=" "/>
-                                    <Run Text="(دينار)" FontWeight="Bold" Foreground="#1565C0"/>
-                                    <Run Text=" = دينار عراقي · "/>
-                                    <Run Text="(دولار)" FontWeight="Bold" Foreground="#00796B"/>
-                                    <Run Text=" = دولار أمريكي (عند تفعيل تنوع العملات). عدّل الأسعار ثم احفظ الخطوة لتحديثها في النظام."/>
-                                </TextBlock>
+                                <DockPanel>
+                                    <CheckBox DockPanel.Dock="Left"
+                                              Content="أعمدة الفروع"
+                                              IsChecked="{Binding ShowProductBranchColumns}"
+                                              VerticalAlignment="Center"
+                                              Margin="0,0,16,0"
+                                              FontSize="12.5"
+                                              ToolTip="إظهار عمود لكل فرع في الجدول وقالب Excel"
+                                              Visibility="{Binding ShowProductBranchColumnsToggle, Converter={StaticResource BoolVis}}"/>
+                                    <TextBlock FontSize="12.5" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               VerticalAlignment="Center">
+                                        <Run Text="توضيح العملات:"/>
+                                        <Run Text=" "/>
+                                        <Run Text="(دينار)" FontWeight="Bold" Foreground="#1565C0"/>
+                                        <Run Text=" = دينار عراقي · "/>
+                                        <Run Text="(دولار)" FontWeight="Bold" Foreground="#00796B"/>
+                                        <Run Text=" = دولار أمريكي (عند تفعيل تنوع العملات). عدّل الأسعار ثم احفظ الخطوة لتحديثها في النظام."/>
+                                    </TextBlock>
+                                </DockPanel>
                             </Border>
                             <DataGrid x:Name="ProductsGrid"
                                       ItemsSource="{Binding CurrentRows}"

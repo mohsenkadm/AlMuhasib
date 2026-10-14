@@ -251,19 +251,20 @@
             </Setter>
         </Style>
 
-        <!-- ─── Quick action button ───────────────────────── -->
+        <!-- ─── Compact quick action button ───────────────── -->
         <Style x:Key="DashboardQuickAction" TargetType="Button">
-            <Setter Property="Height" Value="92"/>
-            <Setter Property="Margin" Value="0,0,10,0"/>
+            <Setter Property="Height" Value="56"/>
+            <Setter Property="MinWidth" Value="148"/>
+            <Setter Property="Margin" Value="0,0,8,8"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <materialDesign:Card x:Name="Card" UniformCornerRadius="16" Padding="16,14"
+                        <materialDesign:Card x:Name="Card" UniformCornerRadius="12" Padding="10,8"
                                              materialDesign:ElevationAssist.Elevation="Dp0"
                                              Background="{TemplateBinding Background}"
-                                             BorderBrush="#33FFFFFF" BorderThickness="1"
+                                             BorderBrush="{DynamicResource DashboardQuickActionBorderBrush}" BorderThickness="1"
                                              RenderTransformOrigin="0.5,0.5">
                             <materialDesign:Card.RenderTransform>
                                 <ScaleTransform ScaleX="1" ScaleY="1"/>
@@ -272,16 +273,16 @@
                         </materialDesign:Card>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Card" Property="materialDesign:ElevationAssist.Elevation" Value="Dp4"/>
+                                <Setter TargetName="Card" Property="materialDesign:ElevationAssist.Elevation" Value="Dp2"/>
                                 <Trigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
                                             <DoubleAnimation Storyboard.TargetName="Card"
                                                              Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                             To="1.03" Duration="0:0:0.18"/>
+                                                             To="1.02" Duration="0:0:0.14"/>
                                             <DoubleAnimation Storyboard.TargetName="Card"
                                                              Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                             To="1.03" Duration="0:0:0.18"/>
+                                                             To="1.02" Duration="0:0:0.14"/>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </Trigger.EnterActions>
@@ -290,16 +291,16 @@
                                         <Storyboard>
                                             <DoubleAnimation Storyboard.TargetName="Card"
                                                              Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                             To="1" Duration="0:0:0.18"/>
+                                                             To="1" Duration="0:0:0.14"/>
                                             <DoubleAnimation Storyboard.TargetName="Card"
                                                              Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                             To="1" Duration="0:0:0.18"/>
+                                                             To="1" Duration="0:0:0.14"/>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Card" Property="materialDesign:ElevationAssist.Elevation" Value="Dp1"/>
+                                <Setter TargetName="Card" Property="materialDesign:ElevationAssist.Elevation" Value="Dp0"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -799,80 +800,251 @@
                             </Border>
 
                             <TextBlock Grid.Row="2" Text="إجراءات سريعة" FontSize="13" FontWeight="SemiBold"
-                                       Foreground="#E1F5FE" Margin="0,18,0,10" />
+                                       Foreground="#E1F5FE" Margin="0,18,0,8" />
 
-                            <!-- Quick actions -->
-                            <UniformGrid Grid.Row="3" Columns="3">
+                            <!-- Quick actions (compact wrap) -->
+                            <WrapPanel Grid.Row="3" Orientation="Horizontal">
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickSales, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenSalesInvoiceCommand}"
-                                        Background="{DynamicResource DashboardQuickActionBrush}" Margin="0,0,8,0">
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="46" Height="46" CornerRadius="14" Margin="0,0,12,0">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
                                             <Border.Background>
                                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                                     <GradientStop Color="#43A047" Offset="0" />
                                                     <GradientStop Color="#2E7D32" Offset="1" />
                                                 </LinearGradientBrush>
                                             </Border.Background>
-                                            <materialDesign:PackIcon Kind="CashRegister" Width="24" Height="24"
+                                            <materialDesign:PackIcon Kind="CashRegister" Width="18" Height="18"
                                                                      Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         </Border>
-                                        <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="فاتورة مبيعات" FontWeight="Bold" FontSize="14"
-                                                       Foreground="{DynamicResource DashboardKpiGreenBrush}" />
-                                            <TextBlock Text="إنشاء فاتورة بيع جديدة" FontSize="11"
-                                                       Foreground="{DynamicResource DashboardQuickActionSubtitleBrush}" Margin="0,3,0,0" />
-                                        </StackPanel>
+                                        <TextBlock Text="فاتورة مبيعات" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiGreenBrush}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickPurchase, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenPurchaseInvoiceCommand}"
-                                        Background="{DynamicResource DashboardQuickActionBrush}" Margin="4,0,4,0">
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="46" Height="46" CornerRadius="14" Margin="0,0,12,0">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
                                             <Border.Background>
                                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                                     <GradientStop Color="#FB8C00" Offset="0" />
                                                     <GradientStop Color="#EF6C00" Offset="1" />
                                                 </LinearGradientBrush>
                                             </Border.Background>
-                                            <materialDesign:PackIcon Kind="CartArrowDown" Width="24" Height="24"
+                                            <materialDesign:PackIcon Kind="CartArrowDown" Width="18" Height="18"
                                                                      Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         </Border>
-                                        <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="فاتورة مشتريات" FontWeight="Bold" FontSize="14"
-                                                       Foreground="{DynamicResource DashboardKpiOrangeBrush}" />
-                                            <TextBlock Text="تسجيل مشتريات جديدة" FontSize="11"
-                                                       Foreground="{DynamicResource DashboardQuickActionSubtitleBrush}" Margin="0,3,0,0" />
-                                        </StackPanel>
+                                        <TextBlock Text="فاتورة مشتريات" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiOrangeBrush}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickInstallment, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenInstallmentInvoiceCommand}"
-                                        Background="{DynamicResource DashboardQuickActionBrush}" Margin="8,0,0,0">
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="46" Height="46" CornerRadius="14" Margin="0,0,12,0">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
                                             <Border.Background>
                                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                                     <GradientStop Color="#42A5F5" Offset="0" />
                                                     <GradientStop Color="#1565C0" Offset="1" />
                                                 </LinearGradientBrush>
                                             </Border.Background>
-                                            <materialDesign:PackIcon Kind="CalendarClock" Width="24" Height="24"
+                                            <materialDesign:PackIcon Kind="CalendarClock" Width="18" Height="18"
                                                                      Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
                                         </Border>
-                                        <StackPanel VerticalAlignment="Center">
-                                            <TextBlock Text="فاتورة أقساط" FontWeight="Bold" FontSize="14"
-                                                       Foreground="{DynamicResource DashboardKpiBlueBrush}" />
-                                            <TextBlock Text="بيع بالتقسيط للعملاء" FontSize="11"
-                                                       Foreground="{DynamicResource DashboardQuickActionSubtitleBrush}" Margin="0,3,0,0" />
-                                        </StackPanel>
+                                        <TextBlock Text="فاتورة أقساط" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiBlueBrush}" />
                                     </StackPanel>
                                 </Button>
-                            </UniformGrid>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Visibility="{Binding ShowDashboardQuickWarehouseReport, Converter={StaticResource BoolToVis}}"
+                                        Command="{Binding OpenWarehouseReportCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#8E24AA" Offset="0" />
+                                                    <GradientStop Color="#6A1B9A" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="Warehouse" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="تقرير المخازن" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiPurpleBrush}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Visibility="{Binding ShowDashboardQuickProducts, Converter={StaticResource BoolToVis}}"
+                                        Command="{Binding OpenProductsCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#00897B" Offset="0" />
+                                                    <GradientStop Color="#00695C" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="PackageVariantClosed" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="المنتجات" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiTealBrush}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Visibility="{Binding ShowDashboardQuickAddProduct, Converter={StaticResource BoolToVis}}"
+                                        Command="{Binding OpenAddProductCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#26A69A" Offset="0" />
+                                                    <GradientStop Color="#00796B" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="PackageVariantPlus" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="إضافة منتج" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiTealBrush}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Visibility="{Binding ShowDashboardQuickCustomers, Converter={StaticResource BoolToVis}}"
+                                        Command="{Binding OpenCustomersCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#5C6BC0" Offset="0" />
+                                                    <GradientStop Color="#3949AB" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="AccountGroup" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="العملاء" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiIndigoBrush}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Visibility="{Binding ShowDashboardQuickAddCustomer, Converter={StaticResource BoolToVis}}"
+                                        Command="{Binding OpenAddCustomerCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#7986CB" Offset="0" />
+                                                    <GradientStop Color="#3F51B5" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="AccountPlus" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="إضافة عميل" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiIndigoBrush}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Visibility="{Binding ShowDashboardQuickSuppliers, Converter={StaticResource BoolToVis}}"
+                                        Command="{Binding OpenSuppliersCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#EC407A" Offset="0" />
+                                                    <GradientStop Color="#AD1457" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="Factory" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="الموردون" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiPinkBrush}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Visibility="{Binding ShowDashboardQuickAddSupplier, Converter={StaticResource BoolToVis}}"
+                                        Command="{Binding OpenAddSupplierCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#F06292" Offset="0" />
+                                                    <GradientStop Color="#C2185B" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="TruckDelivery" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="إضافة مورد" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiPinkBrush}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Visibility="{Binding ShowDashboardQuickDailySales, Converter={StaticResource BoolToVis}}"
+                                        Command="{Binding OpenDailySalesReportCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#EF5350" Offset="0" />
+                                                    <GradientStop Color="#C62828" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="ChartTimelineVariant" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="يومية المبيعات" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiRedBrush}" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Visibility="{Binding ShowDashboardQuickDailyOperations, Converter={StaticResource BoolToVis}}"
+                                        Command="{Binding OpenDailyOperationsReportCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#78909C" Offset="0" />
+                                                    <GradientStop Color="#455A64" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="ClipboardTextClock" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock Text="التقرير اليومي" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardQuickActionTitleBrush}" />
+                                    </StackPanel>
+                                </Button>
+                            </WrapPanel>
                         </Grid>
                     </Grid>
                 </materialDesign:Card>

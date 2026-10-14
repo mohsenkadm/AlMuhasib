@@ -1551,6 +1551,7 @@ public partial class ReportService : IReportService
             result.Add(new WarehouseStockRow
             {
                 ProductName = s.Product.Name,
+                Barcode = s.Product.Barcode,
                 WarehouseName = s.Warehouse?.Name ?? "—",
                 Quantity = s.Quantity,
                 AverageCost = Math.Round(avgCost, 0),

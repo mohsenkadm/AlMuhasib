@@ -1575,7 +1575,9 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
 
             result.Add(new WarehouseStockRow
             {
-                ProductName = s.Product?.Name ?? "\u2014", WarehouseName = s.Warehouse?.Name ?? "\u2014",
+                ProductName = s.Product?.Name ?? "\u2014",
+                Barcode = s.Product?.Barcode,
+                WarehouseName = s.Warehouse?.Name ?? "\u2014",
                 Quantity = s.Quantity, AverageCost = Math.Round(avgCost, 0), TotalValue = Math.Round(s.Quantity * avgCost, 0)
             });
         }

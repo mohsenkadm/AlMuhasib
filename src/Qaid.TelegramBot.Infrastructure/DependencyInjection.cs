@@ -6,6 +6,7 @@ using Qaid.TelegramBot.Application.Abstractions;
 using Qaid.TelegramBot.Application.Options;
 using Qaid.TelegramBot.Application.Services;
 using Qaid.TelegramBot.Infrastructure.Data;
+using Qaid.TelegramBot.Infrastructure.Reports;
 using Qaid.TelegramBot.Infrastructure.Security;
 using Qaid.TelegramBot.Infrastructure.Services;
 using Qaid.TelegramBot.Infrastructure.Telegram;
@@ -31,6 +32,8 @@ public static class DependencyInjection
         services.AddSingleton<IRateLimiter, InMemoryRateLimiter>();
         services.AddScoped<ILinkService, LinkService>();
         services.AddScoped<ISessionTokenService, SessionTokenService>();
+        services.AddSingleton<IReportPdfGenerator, QuestReportPdfGenerator>();
+        services.AddScoped<IReportPdfService, ReportPdfService>();
         services.AddScoped<IBotUpdateProcessor, BotUpdateProcessor>();
         services.AddScoped<ITelegramBotGateway, TelegramBotGateway>();
 

@@ -39,7 +39,11 @@ public sealed class SystemProfileService : ISystemProfileService
         _ => "AlMuhasibDb"
     };
 
-    public void SaveSelection(ApplicationSystemType system, DeploymentMode deploymentMode = DeploymentMode.Standalone, string? branchDisplayName = null)
+    public void SaveSelection(
+        ApplicationSystemType system,
+        DeploymentMode deploymentMode = DeploymentMode.Standalone,
+        string? branchDisplayName = null,
+        bool isDuhokBranch = false)
     {
         if (_current.IsConfigured)
             throw new InvalidOperationException("System type is already configured and cannot be changed.");
@@ -49,7 +53,8 @@ public sealed class SystemProfileService : ISystemProfileService
             SelectedSystem = system,
             SelectedAt = DateTime.UtcNow,
             DeploymentMode = deploymentMode,
-            BranchDisplayName = branchDisplayName
+            BranchDisplayName = branchDisplayName,
+            IsDuhokBranch = isDuhokBranch
         };
         SaveToDisk();
     }
@@ -75,7 +80,8 @@ public sealed class SystemProfileService : ISystemProfileService
             SelectedSystem = system,
             SelectedAt = DateTime.UtcNow,
             DeploymentMode = _current.DeploymentMode,
-            BranchDisplayName = _current.BranchDisplayName
+            BranchDisplayName = _current.BranchDisplayName,
+            IsDuhokBranch = _current.IsDuhokBranch
         };
         SaveToDisk();
     }

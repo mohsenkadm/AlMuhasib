@@ -14,7 +14,11 @@ public interface ISystemProfileService
     bool IsMainServer => Current.IsMainServer;
     bool IsStandalone => Current.IsStandalone;
     bool IsSharedServer => Current.IsSharedServer;
-    void SaveSelection(ApplicationSystemType system, DeploymentMode deploymentMode = DeploymentMode.Standalone, string? branchDisplayName = null);
+    void SaveSelection(
+        ApplicationSystemType system,
+        DeploymentMode deploymentMode = DeploymentMode.Standalone,
+        string? branchDisplayName = null,
+        bool isDuhokBranch = false);
     void ChangeSystem(ApplicationSystemType system);
     void UpdateDeploymentMode(DeploymentMode mode, string? branchDisplayName = null);
 }

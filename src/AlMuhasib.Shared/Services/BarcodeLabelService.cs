@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using AlMuhasib.Core;
 using AlMuhasib.Core.Interfaces.Services;
 using ZXing;
 using ZXing.Common;
@@ -41,17 +42,37 @@ public class BarcodeLabelService : IBarcodeLabelService
         foreach (var item in list)
         {
             var section = new Section { Margin = new Thickness(0, 0, 0, 16) };
-            var block = new Paragraph
+
+            var companyName = ResolveCompanyName(item);
+            if (!string.IsNullOrWhiteSpace(companyName))
             {
-                Margin = new Thickness(0, 0, 0, 4),
-                TextAlignment = TextAlignment.Center
-            };
-            block.Inlines.Add(new Run(item.ProductName)
+                var companyLine = new Paragraph
+                {
+                    Margin = new Thickness(0, 0, 0, 2),
+                    TextAlignment = TextAlignment.Center
+                };
+                companyLine.Inlines.Add(new Run(companyName.Trim())
+                {
+                    FontWeight = FontWeights.SemiBold,
+                    FontSize = 11
+                });
+                section.Blocks.Add(companyLine);
+            }
+
+            if (!string.IsNullOrWhiteSpace(item.ProductName))
             {
-                FontWeight = FontWeights.Bold,
-                FontSize = 13
-            });
-            section.Blocks.Add(block);
+                var productLine = new Paragraph
+                {
+                    Margin = new Thickness(0, 0, 0, 4),
+                    TextAlignment = TextAlignment.Center
+                };
+                productLine.Inlines.Add(new Run(item.ProductName.Trim())
+                {
+                    FontWeight = FontWeights.Bold,
+                    FontSize = 13
+                });
+                section.Blocks.Add(productLine);
+            }
 
             var barcodeImage = CreateBarcodeBitmap(item.Barcode, 260, 80);
             if (barcodeImage is not null)
@@ -120,6 +141,14 @@ public class BarcodeLabelService : IBarcodeLabelService
         var pd = new PrintDialog();
         if (pd.ShowDialog() != true) return;
         pd.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator, "ملصقات باركود");
+    }
+
+    private static string ResolveCompanyName(BarcodeLabelItem item)
+    {
+        if (!string.IsNullOrWhiteSpace(item.CompanyName))
+            return item.CompanyName;
+
+        return PrintBrandingProvider.Current.CompanyName ?? string.Empty;
     }
 
     private static BitmapSource? CreateBarcodeBitmap(string barcode, int width, int height)
