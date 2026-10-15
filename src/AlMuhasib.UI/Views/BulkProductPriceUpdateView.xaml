@@ -1,0 +1,425 @@
+<UserControl x:Class="AlMuhasib.UI.Views.BulkProductPriceUpdateView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft"
+             Loaded="OnLoaded">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- العنوان -->
+        <md:Card x:Name="HeroCard" Grid.Row="0" Style="{StaticResource ElevatedCard}"
+                 Padding="18" Margin="0,0,0,12" md:ElevationAssist.Elevation="Dp2">
+            <md:Card.RenderTransform>
+                <TranslateTransform Y="16"/>
+            </md:Card.RenderTransform>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="تعديل أسعار المنتجات" FontSize="22" FontWeight="Bold"
+                               Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                    <TextBlock Text="{Binding StatusMessage}" Margin="0,4,0,0" Opacity="0.75"
+                               TextWrapping="Wrap"/>
+                </StackPanel>
+                <Button Grid.Column="1" Command="{Binding RefreshCommand}"
+                        Style="{StaticResource FlatButton}" VerticalAlignment="Center"
+                        md:ButtonAssist.CornerRadius="8" Padding="14,8">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="تحديث"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </md:Card>
+
+        <!-- إحصائيات -->
+        <UniformGrid x:Name="StatsPanel" Grid.Row="1" Columns="5" Margin="0,0,0,12">
+            <controls:AnimatedStatCard Title="المعروض" TextValue="{Binding DisplayedCount, StringFormat={}{0}}"
+                                       Icon="PackageVariant" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
+                                       IconForeground="#1565C0" ValueForeground="#1565C0" Margin="0,0,8,0"/>
+            <controls:AnimatedStatCard Title="المحدد" TextValue="{Binding SelectedCount, StringFormat={}{0}}"
+                                       Icon="CheckboxMarked" IconBackground="{DynamicResource DashboardKpiTealLightBrush}"
+                                       IconForeground="#00796B" ValueForeground="#00796B" Margin="0,0,8,0"/>
+            <controls:AnimatedStatCard Title="سيتغيّر" TextValue="{Binding ChangingCount, StringFormat={}{0}}"
+                                       Icon="SwapHorizontal" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
+                                       IconForeground="#2E7D32" ValueForeground="#2E7D32" Margin="0,0,8,0"/>
+            <controls:AnimatedStatCard Title="متوسط التغير" TextValue="{Binding AverageChangePercentText}"
+                                       Icon="Percent" IconBackground="{DynamicResource NotepadPaperBrush}"
+                                       IconForeground="#EF6C00" ValueForeground="#EF6C00" Margin="0,0,8,0"/>
+            <controls:AnimatedStatCard Title="أكبر فرق" TextValue="{Binding MaxChangeText}"
+                                       Icon="ChartTimelineVariant" IconBackground="{DynamicResource PrimaryHueLightBrush}"
+                                       IconForeground="#1565C0" ValueForeground="#1565C0"/>
+        </UniformGrid>
+
+        <!-- المحتوى -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="420"/>
+                <ColumnDefinition Width="340" MinWidth="300"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- الجدول -->
+            <md:Card Grid.Column="0" Style="{StaticResource ElevatedCard}" Padding="0" Margin="0,0,12,0"
+                     md:ElevationAssist.Elevation="Dp2">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- فلاتر -->
+                    <Border Grid.Row="0" Style="{StaticResource FilterBar}" Padding="12,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     md:HintAssist.Hint="بحث بالكود أو الاسم"
+                                     Style="{StaticResource FilledTextBox}"
+                                     Margin="0,0,8,0"/>
+
+                            <Grid Grid.Column="1" Margin="0,0,8,0">
+                                <Button Command="{Binding ToggleCategoryPopupCommand}"
+                                        Style="{StaticResource FlatButton}"
+                                        md:ButtonAssist.CornerRadius="8" Padding="12,8"
+                                        MinWidth="160">
+                                    <StackPanel Orientation="Horizontal">
+                                        <md:PackIcon Kind="TagMultiple" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="{Binding CategoryFilterSummary}" VerticalAlignment="Center"
+                                                   MaxWidth="140" TextTrimming="CharacterEllipsis"/>
+                                        <md:PackIcon Kind="MenuDown" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                </Button>
+                                <Popup IsOpen="{Binding IsCategoryPopupOpen}"
+                                       Placement="Bottom" StaysOpen="False"
+                                       AllowsTransparency="True" PopupAnimation="Fade">
+                                    <Border Background="{DynamicResource CardBackgroundBrush}"
+                                            BorderBrush="{DynamicResource DividerBrush}"
+                                            BorderThickness="1" CornerRadius="10" Padding="10"
+                                            MinWidth="240" MaxHeight="320"
+                                            md:ElevationAssist.Elevation="Dp4">
+                                        <DockPanel>
+                                            <CheckBox DockPanel.Dock="Top"
+                                                      Content="كل الأصناف"
+                                                      IsChecked="{Binding SelectAllCategories}"
+                                                      FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                                <ItemsControl ItemsSource="{Binding CategoryFilters}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <CheckBox Content="{Binding Name}"
+                                                                      IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                                                      Margin="0,3"/>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </ScrollViewer>
+                                        </DockPanel>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+
+                            <CheckBox Grid.Column="2" Content="تحديد الكل"
+                                      IsChecked="{Binding SelectAllRows}"
+                                      VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <DataGrid Grid.Row="1"
+                              ItemsSource="{Binding Rows}"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              SelectionMode="Single"
+                              HeadersVisibility="Column"
+                              Style="{StaticResource ModernDataGrid}"
+                              RowHeight="48"
+                              EnableRowVirtualization="True"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="تحديد" Width="70">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="الكود" Binding="{Binding Barcode}" Width="110" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="المنتج" Binding="{Binding ProductName}" Width="1.6*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="الصنف" Binding="{Binding CategoryName}" Width="1*" IsReadOnly="True"/>
+                            <DataGridTemplateColumn Header="سعر البيع الحالي" Width="130">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding CurrentPriceText}"
+                                                   Foreground="#1565C0" FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="سعر البيع الجديد" Width="150">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="4,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" CornerRadius="8" Padding="6,2" Margin="0,0,6,0"
+                                                    VerticalAlignment="Center"
+                                                    Background="{Binding NewPriceBrush}">
+                                                <TextBlock Text="{Binding SignText}" Foreground="White"
+                                                           FontWeight="Bold" FontSize="12"/>
+                                            </Border>
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding NewPrice, UpdateSourceTrigger=LostFocus, StringFormat=N2}"
+                                                     VerticalContentAlignment="Center"
+                                                     Foreground="{Binding NewPriceBrush}"
+                                                     FontWeight="SemiBold"
+                                                     BorderThickness="0"
+                                                     Background="Transparent"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="الفرق" Width="110">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding DifferenceText}"
+                                                   Foreground="{Binding DifferenceBrush}"
+                                                   FontWeight="SemiBold"
+                                                   VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="" Width="56">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource FlatButton}" Padding="4"
+                                                ToolTip="إعادة حساب الصف"
+                                                Command="{Binding DataContext.ResetRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}">
+                                            <md:PackIcon Kind="Restore" Width="18" Height="18"/>
+                                        </Button>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </md:Card>
+
+            <!-- لوحة الإعدادات -->
+            <md:Card x:Name="SettingsPanel" Grid.Column="1" Style="{StaticResource ElevatedCard}"
+                     Padding="16" md:ElevationAssist.Elevation="Dp3">
+                <md:Card.RenderTransform>
+                    <TranslateTransform X="20"/>
+                </md:Card.RenderTransform>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel>
+                        <TextBlock Text="إعدادات التعديل" FontSize="16" FontWeight="Bold"
+                                   Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,14"/>
+
+                        <!-- العملة -->
+                        <StackPanel Margin="0,0,0,12"
+                                    Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="العملة" FontWeight="SemiBold" Margin="0,0,0,6" Opacity="0.85"/>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <RadioButton Grid.Column="0" Content="دينار" GroupName="Currency"
+                                             IsChecked="{Binding SelectedCurrency, Mode=TwoWay, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=IQD}"
+                                             Margin="0,0,4,0" HorizontalAlignment="Stretch"/>
+                                <RadioButton Grid.Column="1" Content="دولار" GroupName="Currency"
+                                             IsChecked="{Binding SelectedCurrency, Mode=TwoWay, Converter={StaticResource EnumToBoolConverter}, ConverterParameter=USD}"
+                                             Margin="4,0,0,0" HorizontalAlignment="Stretch"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- نوع التسعير -->
+                        <TextBlock Text="نوع التسعير" FontWeight="SemiBold" Margin="0,0,0,6" Opacity="0.85"/>
+                        <ComboBox ItemsSource="{Binding PricingTypes}"
+                                  SelectedItem="{Binding SelectedPricingType}"
+                                  DisplayMemberPath="Name"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,0,0,14"/>
+
+                        <!-- زيادة / تخفيض -->
+                        <TextBlock Text="نوع التعديل" FontWeight="SemiBold" Margin="0,0,0,6" Opacity="0.85"/>
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Command="{Binding SetIncreaseCommand}"
+                                    Margin="0,0,6,0" Height="48" md:ButtonAssist.CornerRadius="10"
+                                    BorderThickness="2">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+                                        <Setter Property="Background" Value="#E8F5E9"/>
+                                        <Setter Property="Foreground" Value="#1B5E20"/>
+                                        <Setter Property="BorderBrush" Value="#2E7D32"/>
+                                        <Setter Property="Opacity" Value="0.6"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsIncrease}" Value="True">
+                                                <Setter Property="Opacity" Value="1"/>
+                                                <Setter Property="Background" Value="#2E7D32"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                                <Setter Property="BorderBrush" Value="#1B5E20"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="TrendingUp" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="زيادة" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Grid.Column="1" Command="{Binding SetDecreaseCommand}"
+                                    Margin="6,0,0,0" Height="48" md:ButtonAssist.CornerRadius="10"
+                                    BorderThickness="2">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+                                        <Setter Property="Background" Value="#FFEBEE"/>
+                                        <Setter Property="Foreground" Value="#B71C1C"/>
+                                        <Setter Property="BorderBrush" Value="#C62828"/>
+                                        <Setter Property="Opacity" Value="0.6"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsIncrease}" Value="False">
+                                                <Setter Property="Opacity" Value="1"/>
+                                                <Setter Property="Background" Value="#C62828"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                                <Setter Property="BorderBrush" Value="#B71C1C"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="TrendingDown" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="تخفيض" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <!-- النسبة -->
+                        <TextBlock Text="نسبة الزيادة / التخفيض" FontWeight="SemiBold" Margin="0,0,0,6" Opacity="0.85"/>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding PercentValue, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}"
+                                     md:HintAssist.Hint="النسبة"/>
+                            <TextBlock Grid.Column="1" Text="%" FontSize="18" FontWeight="Bold"
+                                       VerticalAlignment="Center" Margin="10,0,0,0"
+                                       Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                        </Grid>
+
+                        <ItemsControl ItemsSource="{Binding PercentPresets}" Margin="0,0,0,14">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="5"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Button Content="{Binding StringFormat={}{0}%}"
+                                            Command="{Binding DataContext.ApplyPresetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"
+                                            Margin="3" Height="40" Width="40"
+                                            md:ButtonAssist.CornerRadius="20"
+                                            Style="{StaticResource FlatButton}"
+                                            FontWeight="SemiBold" FontSize="12"
+                                            ToolTip="تطبيق النسبة"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- التقريب -->
+                        <TextBlock Text="التقريب" FontWeight="SemiBold" Margin="0,0,0,6" Opacity="0.85"/>
+                        <ComboBox ItemsSource="{Binding RoundingOptions}"
+                                  SelectedItem="{Binding SelectedRounding}"
+                                  DisplayMemberPath="DisplayName"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,0,0,16"/>
+
+                        <!-- ملخص -->
+                        <Border Background="#E8F5E9" CornerRadius="12" Padding="14" Margin="0,0,0,14">
+                            <StackPanel>
+                                <TextBlock Text="{Binding ChangingCount, StringFormat={}{0} منتجاً سيتغيّر}"
+                                           FontSize="20" FontWeight="Bold" Foreground="#1B5E20"/>
+                                <TextBlock Text="{Binding FormulaSummary}" Margin="0,6,0,0"
+                                           Foreground="#2E7D32" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding ExampleSummary}" Margin="0,4,0,0"
+                                           Opacity="0.85"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Button Command="{Binding ApplyPreviewCommand}"
+                                Style="{StaticResource FlatButton}"
+                                md:ButtonAssist.CornerRadius="8"
+                                Margin="0,0,0,8" Height="40">
+                            <StackPanel Orientation="Horizontal">
+                                <md:PackIcon Kind="Eye" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="تطبيق المعاينة على الكل"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding ResetOverridesCommand}"
+                                Style="{StaticResource FlatButton}"
+                                md:ButtonAssist.CornerRadius="8"
+                                Margin="0,0,0,12" Height="40">
+                            <StackPanel Orientation="Horizontal">
+                                <md:PackIcon Kind="Restore" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="إعادة تعيين التعديلات اليدوية"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button x:Name="SaveButton"
+                                Command="{Binding SaveAsyncCommand}"
+                                IsEnabled="{Binding CanEdit}"
+                                Style="{StaticResource PrimaryButton}"
+                                md:ButtonAssist.CornerRadius="10"
+                                Height="50">
+                            <StackPanel Orientation="Horizontal">
+                                <md:PackIcon Kind="ContentSave" Width="22" Height="22"
+                                             VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="حفظ" FontSize="16" FontWeight="Bold"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </ScrollViewer>
+            </md:Card>
+        </Grid>
+
+        <Border Grid.RowSpan="3" Style="{StaticResource PageLoading}"
+                Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             IsIndeterminate="True" Width="40" Height="40" Value="0"/>
+                <TextBlock Text="جاري التحميل..." Margin="0,16,0,0" HorizontalAlignment="Center" Opacity="0.85"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

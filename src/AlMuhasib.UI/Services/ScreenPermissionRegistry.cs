@@ -17,6 +17,7 @@ public static class ScreenPermissionRegistry
     public const string BalanceSheet = "BalanceSheet";
     public const string NetworkConnection = "NetworkConnection";
     public const string BarcodePriceCheck = "BarcodePriceCheck";
+    public const string BulkProductPriceUpdate = "BulkProductPriceUpdate";
     public const string SalesReturn = "SalesReturn";
     public const string PurchaseReturn = "PurchaseReturn";
     public const string DamageInvoice = "DamageInvoice";
@@ -141,6 +142,7 @@ public static class ScreenPermissionRegistry
         ("PackagingTypes", "أنواع التعبئة"),
         ("PricingTypes", "أنواع التسعير"),
         ("ProductPricing", "تسعير منتجات"),
+        (BulkProductPriceUpdate, "تعديل أسعار المنتجات"),
         (BarcodePriceCheck, "فحص السعر بالباركود"),
         ("Customers", "العملاء"),
         ("Drivers", "السواقين"),
@@ -264,6 +266,7 @@ public static class ScreenPermissionRegistry
         [typeof(PackagingTypesViewModel)] = "PackagingTypes",
         [typeof(PricingTypesViewModel)] = "PricingTypes",
         [typeof(ProductPricingViewModel)] = "ProductPricing",
+        [typeof(BulkProductPriceUpdateViewModel)] = BulkProductPriceUpdate,
         [typeof(CustomersViewModel)] = "Customers",
         [typeof(DriversViewModel)] = "Drivers",
         [typeof(EmployeesViewModel)] = "Employees",
@@ -400,6 +403,7 @@ public static class ScreenPermissionRegistry
         ["PackagingTypes"] = typeof(PackagingTypesViewModel),
         ["PricingTypes"] = typeof(PricingTypesViewModel),
         ["ProductPricing"] = typeof(ProductPricingViewModel),
+        [BulkProductPriceUpdate] = typeof(BulkProductPriceUpdateViewModel),
         ["Customers"] = typeof(CustomersViewModel),
         ["Drivers"] = typeof(DriversViewModel),
         ["Employees"] = typeof(EmployeesViewModel),
