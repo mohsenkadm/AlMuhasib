@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft"
              Loaded="OnLoaded">
@@ -83,133 +84,214 @@
                     <!-- فلاتر -->
                     <Border Grid.Row="0" Style="{StaticResource FilterBar}" Padding="12,10">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
 
-                            <TextBox Grid.Column="0"
-                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                     md:HintAssist.Hint="بحث بالكود أو الاسم"
-                                     Style="{StaticResource FilledTextBox}"
-                                     Margin="0,0,8,0"/>
+                                <TextBox Grid.Column="0"
+                                         Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                         md:HintAssist.Hint="بحث بالكود أو الاسم"
+                                         Style="{StaticResource FilledTextBox}"
+                                         Margin="0,0,8,0"/>
 
-                            <Grid Grid.Column="1" Margin="0,0,8,0">
-                                <Button Command="{Binding ToggleCategoryPopupCommand}"
-                                        Style="{StaticResource FlatButton}"
-                                        md:ButtonAssist.CornerRadius="8" Padding="12,8"
-                                        MinWidth="160">
-                                    <StackPanel Orientation="Horizontal">
-                                        <md:PackIcon Kind="TagMultiple" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                        <TextBlock Text="{Binding CategoryFilterSummary}" VerticalAlignment="Center"
-                                                   MaxWidth="140" TextTrimming="CharacterEllipsis"/>
-                                        <md:PackIcon Kind="MenuDown" VerticalAlignment="Center" Margin="6,0,0,0"/>
-                                    </StackPanel>
-                                </Button>
-                                <Popup IsOpen="{Binding IsCategoryPopupOpen}"
-                                       Placement="Bottom" StaysOpen="False"
-                                       AllowsTransparency="True" PopupAnimation="Fade">
-                                    <Border Background="{DynamicResource CardBackgroundBrush}"
-                                            BorderBrush="{DynamicResource DividerBrush}"
-                                            BorderThickness="1" CornerRadius="10" Padding="10"
-                                            MinWidth="240" MaxHeight="320"
-                                            md:ElevationAssist.Elevation="Dp4">
-                                        <DockPanel>
-                                            <CheckBox DockPanel.Dock="Top"
-                                                      Content="كل الأصناف"
-                                                      IsChecked="{Binding SelectAllCategories}"
-                                                      FontWeight="SemiBold" Margin="0,0,0,8"/>
-                                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                                <ItemsControl ItemsSource="{Binding CategoryFilters}">
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <CheckBox Content="{Binding Name}"
-                                                                      IsChecked="{Binding IsChecked, Mode=TwoWay}"
-                                                                      Margin="0,3"/>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </ScrollViewer>
-                                        </DockPanel>
-                                    </Border>
-                                </Popup>
+                                <Grid Grid.Column="1" Margin="0,0,8,0">
+                                    <Button Command="{Binding ToggleCategoryPopupCommand}"
+                                            Style="{StaticResource FlatButton}"
+                                            md:ButtonAssist.CornerRadius="8" Padding="12,8"
+                                            MinWidth="160">
+                                        <StackPanel Orientation="Horizontal">
+                                            <md:PackIcon Kind="TagMultiple" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding CategoryFilterSummary}" VerticalAlignment="Center"
+                                                       MaxWidth="140" TextTrimming="CharacterEllipsis"/>
+                                            <md:PackIcon Kind="MenuDown" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                        </StackPanel>
+                                    </Button>
+                                    <Popup IsOpen="{Binding IsCategoryPopupOpen}"
+                                           Placement="Bottom" StaysOpen="False"
+                                           AllowsTransparency="True" PopupAnimation="Fade">
+                                        <Border Background="{DynamicResource CardBackgroundBrush}"
+                                                BorderBrush="{DynamicResource DividerBrush}"
+                                                BorderThickness="1" CornerRadius="10" Padding="10"
+                                                MinWidth="240" MaxHeight="320"
+                                                md:ElevationAssist.Elevation="Dp4">
+                                            <DockPanel>
+                                                <CheckBox DockPanel.Dock="Top"
+                                                          Content="كل الأصناف"
+                                                          IsChecked="{Binding SelectAllCategories}"
+                                                          FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                                    <ItemsControl ItemsSource="{Binding CategoryFilters}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <CheckBox Content="{Binding Name}"
+                                                                          IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                                                                          Margin="0,3"/>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </ScrollViewer>
+                                            </DockPanel>
+                                        </Border>
+                                    </Popup>
+                                </Grid>
+
+                                <CheckBox Grid.Column="2" Content="تحديد الكل"
+                                          IsChecked="{Binding SelectAllRows}"
+                                          VerticalAlignment="Center"/>
                             </Grid>
-
-                            <CheckBox Grid.Column="2" Content="تحديد الكل"
-                                      IsChecked="{Binding SelectAllRows}"
-                                      VerticalAlignment="Center"/>
+                            <TextBlock Grid.Row="1" Margin="0,8,0,0" Opacity="0.7" FontSize="12"
+                                       Text="تحرير كإكسل: انقر الخلية أو ابدأ الكتابة · Enter للصف التالي · Ctrl+V للصق عمود أسعار"/>
                         </Grid>
                     </Border>
 
-                    <DataGrid Grid.Row="1"
+                    <DataGrid x:Name="PriceGrid" Grid.Row="1"
                               ItemsSource="{Binding Rows}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
-                              SelectionMode="Single"
+                              CanUserDeleteRows="False"
+                              CanUserSortColumns="True"
+                              CanUserResizeColumns="True"
+                              CanUserReorderColumns="False"
                               HeadersVisibility="Column"
-                              Style="{StaticResource ModernDataGrid}"
-                              RowHeight="48"
+                              SelectionMode="Extended"
+                              SelectionUnit="Cell"
+                              IsReadOnly="False"
+                              FrozenColumnCount="3"
+                              RowHeight="44"
+                              FontSize="13"
+                              GridLinesVisibility="All"
+                              AlternatingRowBackground="{DynamicResource DataGridRowAltBrush}"
                               EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True"
                               VirtualizingPanel.IsVirtualizing="True"
-                              VirtualizingPanel.VirtualizationMode="Recycling">
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              VirtualizingPanel.ScrollUnit="Pixel"
+                              ScrollViewer.IsDeferredScrollingEnabled="False"
+                              ClipboardCopyMode="IncludeHeader"
+                              behaviors:ExcelLikeDataGridBehavior.IsEnabled="True"
+                              behaviors:ExcelLikeDataGridBehavior.PasteTargetHeader="سعر البيع الجديد"
+                              behaviors:DataGridCopyableCellsBehavior.IsEnabled="False">
+                        <DataGrid.Style>
+                            <Style TargetType="DataGrid" BasedOn="{StaticResource ModernDataGrid}">
+                                <Setter Property="IsReadOnly" Value="False"/>
+                                <Setter Property="SelectionUnit" Value="Cell"/>
+                                <Setter Property="SelectionMode" Value="Extended"/>
+                                <Setter Property="GridLinesVisibility" Value="All"/>
+                                <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource DataGridGridLineBrush}"/>
+                                <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource DataGridGridLineBrush}"/>
+                                <Setter Property="behaviors:DataGridCopyableCellsBehavior.IsEnabled" Value="False"/>
+                                <Setter Property="RowStyle" Value="{StaticResource ModernDataGridReadOnlyRow}"/>
+                            </Style>
+                        </DataGrid.Style>
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell" BasedOn="{StaticResource ModernDataGridCell}">
+                                <Setter Property="BorderThickness" Value="0.5"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource DataGridGridLineBrush}"/>
+                                <Setter Property="Padding" Value="8,0"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#BBDEFB"/>
+                                        <Setter Property="Foreground" Value="#0D47A1"/>
+                                        <Setter Property="TextElement.Foreground" Value="#0D47A1"/>
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                        <Setter Property="BorderBrush" Value="#1565C0"/>
+                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.CellStyle>
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="تحديد" Width="70">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="الكود" Binding="{Binding Barcode}" Width="110" IsReadOnly="True"/>
-                            <DataGridTextColumn Header="المنتج" Binding="{Binding ProductName}" Width="1.6*" IsReadOnly="True"/>
-                            <DataGridTextColumn Header="الصنف" Binding="{Binding CategoryName}" Width="1*" IsReadOnly="True"/>
-                            <DataGridTemplateColumn Header="سعر البيع الحالي" Width="130">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding CurrentPriceText}"
-                                                   Foreground="#1565C0" FontWeight="SemiBold"
-                                                   VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="سعر البيع الجديد" Width="150">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Grid Margin="4,0">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <Border Grid.Column="0" CornerRadius="8" Padding="6,2" Margin="0,0,6,0"
-                                                    VerticalAlignment="Center"
-                                                    Background="{Binding NewPriceBrush}">
-                                                <TextBlock Text="{Binding SignText}" Foreground="White"
-                                                           FontWeight="Bold" FontSize="12"/>
-                                            </Border>
-                                            <TextBox Grid.Column="1"
-                                                     Text="{Binding NewPrice, UpdateSourceTrigger=LostFocus, StringFormat=N2}"
-                                                     VerticalContentAlignment="Center"
-                                                     Foreground="{Binding NewPriceBrush}"
-                                                     FontWeight="SemiBold"
-                                                     BorderThickness="0"
-                                                     Background="Transparent"/>
-                                        </Grid>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="الفرق" Width="110">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding DifferenceText}"
-                                                   Foreground="{Binding DifferenceBrush}"
-                                                   FontWeight="SemiBold"
-                                                   VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="" Width="56">
+                            <DataGridCheckBoxColumn Header="تحديد"
+                                                    Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="70"
+                                                    CanUserSort="False"/>
+                            <DataGridTextColumn Header="الكود"
+                                                Binding="{Binding Barcode}"
+                                                Width="110"
+                                                IsReadOnly="True"/>
+                            <DataGridTextColumn Header="المنتج"
+                                                Binding="{Binding ProductName}"
+                                                Width="1.6*"
+                                                MinWidth="140"
+                                                IsReadOnly="True"/>
+                            <DataGridTextColumn Header="الصنف"
+                                                Binding="{Binding CategoryName}"
+                                                Width="1*"
+                                                MinWidth="100"
+                                                IsReadOnly="True"/>
+                            <DataGridTextColumn Header="سعر البيع الحالي"
+                                                Binding="{Binding CurrentPrice, StringFormat=N2}"
+                                                Width="130"
+                                                IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#1565C0"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="±"
+                                                Binding="{Binding SignText}"
+                                                Width="44"
+                                                IsReadOnly="True"
+                                                CanUserResize="False">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{Binding NewPriceBrush}"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                        <Setter Property="FontSize" Value="14"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn x:Name="ColNewPrice"
+                                                Header="سعر البيع الجديد"
+                                                Binding="{Binding NewPrice, Mode=TwoWay, UpdateSourceTrigger=LostFocus, StringFormat=N2}"
+                                                Width="140"
+                                                MinWidth="110"
+                                                IsReadOnly="False">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{Binding NewPriceBrush}"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                                <DataGridTextColumn.EditingElementStyle>
+                                    <Style TargetType="TextBox" BasedOn="{StaticResource NumericCellTextBox}">
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="Foreground" Value="#1565C0"/>
+                                        <Setter Property="Background" Value="#E3F2FD"/>
+                                        <Setter Property="Padding" Value="6,4"/>
+                                    </Style>
+                                </DataGridTextColumn.EditingElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTextColumn Header="الفرق"
+                                                Binding="{Binding DifferenceText}"
+                                                Width="110"
+                                                IsReadOnly="True">
+                                <DataGridTextColumn.ElementStyle>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{Binding DifferenceBrush}"/>
+                                        <Setter Property="FontWeight" Value="SemiBold"/>
+                                        <Setter Property="HorizontalAlignment" Value="Center"/>
+                                        <Setter Property="VerticalAlignment" Value="Center"/>
+                                    </Style>
+                                </DataGridTextColumn.ElementStyle>
+                            </DataGridTextColumn>
+                            <DataGridTemplateColumn Header="" Width="52" IsReadOnly="True" CanUserResize="False">
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <Button Style="{StaticResource FlatButton}" Padding="4"
