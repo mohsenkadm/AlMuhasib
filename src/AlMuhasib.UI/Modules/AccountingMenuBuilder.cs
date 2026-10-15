@@ -41,6 +41,7 @@ public static class AccountingMenuBuilder
                     ("أنواع التعبئة", PackIconKind.PackageVariant, typeof(PackagingTypesViewModel), "PackagingTypes"),
                     ("أنواع التسعير", PackIconKind.CashMultiple, typeof(PricingTypesViewModel), "PricingTypes"),
                     ("تسعير منتجات", PackIconKind.TagTextOutline, typeof(ProductPricingViewModel), "ProductPricing"),
+                    ("تعديل أسعار المنتجات", PackIconKind.TagPlus, typeof(BulkProductPriceUpdateViewModel), ScreenPermissionRegistry.BulkProductPriceUpdate),
                     ("المخازن", PackIconKind.Warehouse, typeof(WarehousesViewModel), "Warehouses"),
                     ("الأرصدة الافتتاحية", PackIconKind.PackageVariantClosedPlus, typeof(OpeningStockViewModel), "OpeningStock"),
                     ("تسوية مخزنية", PackIconKind.TuneVerticalVariant, typeof(StockAdjustmentViewModel), "StockAdjustment"),

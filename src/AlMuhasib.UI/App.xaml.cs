@@ -252,6 +252,7 @@ public partial class App : Application
         services.AddTransient<PricingTypesViewModel>();
         services.AddTransient<PackagingTypesViewModel>();
         services.AddTransient<ProductPricingViewModel>();
+        services.AddTransient<BulkProductPriceUpdateViewModel>();
         services.AddTransient<CustomersViewModel>();
         services.AddTransient<DriversViewModel>();
         services.AddTransient<EmployeesViewModel>();
