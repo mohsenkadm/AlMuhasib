@@ -576,6 +576,9 @@ public class SupervisoryReportService : ISupervisoryReportService
         InvoiceType.Purchase => "مشتريات",
         InvoiceType.Installment => "أقساط",
         InvoiceType.PurchaseReturn => "مرتجع مشتريات",
+        InvoiceType.SaleReturn => "مرتجع مبيعات",
+        InvoiceType.Damage => "تلف",
+        InvoiceType.Quote => "عرض سعر",
         _ => type.ToString()
     };
 

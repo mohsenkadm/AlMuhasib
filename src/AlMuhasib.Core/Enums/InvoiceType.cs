@@ -8,7 +8,10 @@ public enum InvoiceType
     PurchaseReturn,
     SaleReturn,
     /// <summary>فاتورة تلف — تنقص كمية المخزن دون عميل.</summary>
-    Damage
+    Damage,
+
+    /// <summary>فاتورة عرض سعر — للعميل دون تأثير على المخزن أو الحسابات.</summary>
+    Quote
 }
 
 public enum InvoiceHoldStatus

@@ -19,7 +19,7 @@ public partial class SalesInvoiceViewModel
 
     private void RefreshProductOffersFeatureVisibility()
     {
-        ShowProductOffers = !IsReturnMode && !IsDamageMode && _featureFlags?.ProductOffers == true;
+        ShowProductOffers = !IsReturnMode && !IsDamageMode && !IsQuoteMode && _featureFlags?.ProductOffers == true;
         if (!ShowProductOffers)
             RemoveOfferGiftRows();
     }
@@ -36,7 +36,7 @@ public partial class SalesInvoiceViewModel
 
     private async Task RefreshOfferGiftsAsync()
     {
-        if (_isApplyingOffers || IsReturnMode || IsDamageMode)
+        if (_isApplyingOffers || IsReturnMode || IsDamageMode || IsQuoteMode)
             return;
 
         if (!ShowProductOffers || _productOfferService is null)

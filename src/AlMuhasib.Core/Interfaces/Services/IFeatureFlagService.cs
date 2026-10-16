@@ -32,6 +32,7 @@ public interface IFeatureFlagService
     bool WarehouseInvoiceAndDriver { get; }
     bool SalesRepresentatives { get; }
     bool DamageInvoices { get; }
+    bool PriceQuotes { get; }
     bool TemplateMobileShop { get; }
     bool TemplateClothing { get; }
     bool TemplateConstruction { get; }

@@ -357,6 +357,7 @@ public partial class App : Application
         services.AddTransient<WarehouseProductProfitReportViewModel>();
         services.AddTransient<StockTakingReportViewModel>();
         services.AddTransient<DamageInvoicesReportViewModel>();
+        services.AddTransient<PriceQuotesReportViewModel>();
         services.AddTransient<PackagingStockReportViewModel>();
         services.AddTransient<CogsReportViewModel>();
         services.AddTransient<FinancialPositionSummaryReportViewModel>();

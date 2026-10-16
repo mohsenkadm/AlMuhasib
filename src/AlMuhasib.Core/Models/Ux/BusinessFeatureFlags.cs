@@ -64,6 +64,9 @@ public class BusinessFeatureFlags
 
     public bool DamageInvoices { get; set; }
 
+    /// <summary>فواتير عرض السعر — معطّل افتراضياً (بدون تأثير على المخزن أو الحسابات).</summary>
+    public bool PriceQuotes { get; set; }
+
     public bool TemplateMobileShop { get; set; }
     public bool TemplateClothing { get; set; }
     public bool TemplateConstruction { get; set; }

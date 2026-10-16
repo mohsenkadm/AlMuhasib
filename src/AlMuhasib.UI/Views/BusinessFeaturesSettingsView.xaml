@@ -253,6 +253,10 @@
                                                     Description="تسجيل المواد التالفة وإنقاصها من المخزن مع تقرير التلف"
                                                     Icon="DeleteAlert" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828"
                                                     IsChecked="{Binding DamageInvoices}"/>
+                        <controls:FeatureToggleCard Title="عرض السعر"
+                                                    Description="فواتير عرض سعر للعملاء بدون تأثير على المخزن أو الحسابات مع قائمة فواتير العرض"
+                                                    Icon="FileDocumentOutline" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0"
+                                                    IsChecked="{Binding PriceQuotes}"/>
                         <controls:FeatureToggleCard Title="تسديد الفواتير الآجلة من التقارير"
                                                     Description="إظهار زر تسديد الفواتير الآجلة في جدولي تقرير المبيعات وتقرير المشتريات — مفعّل افتراضياً"
                                                     Icon="CashCheck" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32"

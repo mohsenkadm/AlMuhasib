@@ -391,20 +391,30 @@ public partial class MainWindowViewModel : ObservableObject
         var invoice = await ResolveInvoiceTypeAsync(invoiceId);
         var isReturn = invoice == InvoiceType.SaleReturn;
         var isDamage = invoice == InvoiceType.Damage;
-        var title = isDamage ? "فاتورة تلف" : isReturn ? "مرتجع مبيعات" : "فاتورة مبيعات";
-        var icon = isDamage ? PackIconKind.DeleteAlert : isReturn ? PackIconKind.KeyboardReturn : PackIconKind.CashRegister;
-        var screen = isDamage
-            ? ScreenPermissionRegistry.DamageInvoice
-            : isReturn
-                ? ScreenPermissionRegistry.SalesReturn
-                : "SaleInvoice";
+        var isQuote = invoice == InvoiceType.Quote;
+        var title = isQuote ? "فاتورة عرض سعر"
+            : isDamage ? "فاتورة تلف"
+            : isReturn ? "مرتجع مبيعات"
+            : "فاتورة مبيعات";
+        var icon = isQuote ? PackIconKind.FileDocumentOutline
+            : isDamage ? PackIconKind.DeleteAlert
+            : isReturn ? PackIconKind.KeyboardReturn
+            : PackIconKind.CashRegister;
+        var screen = isQuote
+            ? ScreenPermissionRegistry.PriceQuote
+            : isDamage
+                ? ScreenPermissionRegistry.DamageInvoice
+                : isReturn
+                    ? ScreenPermissionRegistry.SalesReturn
+                    : "SaleInvoice";
 
-        // فضّل تبويباً بنفس وضع الشاشة (مبيعات / مرتجع / تلف) إن وُجد
+        // فضّل تبويباً بنفس وضع الشاشة (مبيعات / مرتجع / تلف / عرض سعر) إن وُجد
         var existing = OpenTabs.FirstOrDefault(t =>
             t.ViewModelType == typeof(SalesInvoiceViewModel)
             && t.ViewModel is SalesInvoiceViewModel svm
             && svm.IsReturnMode == isReturn
-            && svm.IsDamageMode == isDamage);
+            && svm.IsDamageMode == isDamage
+            && svm.IsQuoteMode == isQuote);
 
         if (existing?.ViewModel is SalesInvoiceViewModel salesVm)
         {
@@ -630,6 +640,8 @@ public partial class MainWindowViewModel : ObservableObject
                 InvoiceNavigationBridge.PendingSalesReturnMode = true;
             if (string.Equals(item.ScreenName, "DamageInvoice", StringComparison.OrdinalIgnoreCase))
                 InvoiceNavigationBridge.PendingDamageMode = true;
+            if (string.Equals(item.ScreenName, "PriceQuote", StringComparison.OrdinalIgnoreCase))
+                InvoiceNavigationBridge.PendingQuoteMode = true;
             _ = OpenTabAsync(
                 item.ViewModelType,
                 item.Title,
@@ -705,6 +717,8 @@ public partial class MainWindowViewModel : ObservableObject
             InvoiceNavigationBridge.PendingSalesReturnMode = true;
         if (string.Equals(entry.ScreenName, "DamageInvoice", StringComparison.OrdinalIgnoreCase))
             InvoiceNavigationBridge.PendingDamageMode = true;
+        if (string.Equals(entry.ScreenName, "PriceQuote", StringComparison.OrdinalIgnoreCase))
+            InvoiceNavigationBridge.PendingQuoteMode = true;
 
         CloseReportFlyout();
         PageTitle = entry.Title;

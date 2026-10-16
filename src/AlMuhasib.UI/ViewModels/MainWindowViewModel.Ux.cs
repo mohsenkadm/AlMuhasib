@@ -58,6 +58,10 @@ public partial class MainWindowViewModel
         if (string.Equals(item.ScreenName, "DamageInvoice", StringComparison.OrdinalIgnoreCase))
             return flags.DamageInvoices;
 
+        if (string.Equals(item.ScreenName, "PriceQuote", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(item.ScreenName, "PriceQuotesReport", StringComparison.OrdinalIgnoreCase))
+            return flags.PriceQuotes;
+
         return item.ViewModelType switch
         {
             var t when t == typeof(InstallmentInvoiceViewModel) => flags.Installments,
@@ -80,6 +84,7 @@ public partial class MainWindowViewModel
             var t when t == typeof(PackagingTypesViewModel) => flags.UnitsOfMeasure,
             var t when t == typeof(PackagingStockReportViewModel) => flags.UnitsOfMeasure,
             var t when t == typeof(DamageInvoicesReportViewModel) => flags.DamageInvoices,
+            var t when t == typeof(PriceQuotesReportViewModel) => flags.PriceQuotes,
             var t when t == typeof(PricingTypesViewModel) => flags.ProductPricingEnabled,
             var t when t == typeof(ProductPricingViewModel) => flags.ProductPricingEnabled,
             var t when t == typeof(BulkProductPriceUpdateViewModel) => flags.ProductPricingEnabled,

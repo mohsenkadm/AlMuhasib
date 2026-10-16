@@ -58,6 +58,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _productOffers;
     [ObservableProperty] private bool _salesRepresentatives;
     [ObservableProperty] private bool _damageInvoices;
+    [ObservableProperty] private bool _priceQuotes;
 
     public WhatsAppApiProvider[] WhatsAppApiProviders { get; } =
         [WhatsAppApiProvider.UltraMsg, WhatsAppApiProvider.MetaCloud, WhatsAppApiProvider.CustomWebhook];
@@ -91,7 +92,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             UpdateSalePriceOnPurchase, AddMissingProductsOnPurchase, PurchaseExpenses,
             AllocatePurchaseExpensesToProducts, WhatsAppApiMessaging,
             ProductDiscountEnabled, LoyaltySystem, ProductOffers, SalesRepresentatives,
-            DamageInvoices,
+            DamageInvoices, PriceQuotes,
             TemplateMobileShop, TemplateClothing,
             TemplateConstruction, TemplatePharmacy, CarShowroom, SettleCreditInvoicesInReports,
             InvestorProfitEligibility15Days);
@@ -190,6 +191,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         ProductOffers = p.FeatureFlags.ProductOffers;
         SalesRepresentatives = p.FeatureFlags.SalesRepresentatives;
         DamageInvoices = p.FeatureFlags.DamageInvoices;
+        PriceQuotes = p.FeatureFlags.PriceQuotes;
 
         TemplateMobileShop = p.FeatureFlags.TemplateMobileShop;
         TemplateClothing = p.FeatureFlags.TemplateClothing;
@@ -240,6 +242,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnProductOffersChanged(bool value) => NotifyFeaturesCount();
     partial void OnSalesRepresentativesChanged(bool value) => NotifyFeaturesCount();
     partial void OnDamageInvoicesChanged(bool value) => NotifyFeaturesCount();
+    partial void OnPriceQuotesChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateMobileShopChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateClothingChanged(bool value) => NotifyFeaturesCount();
     partial void OnTemplateConstructionChanged(bool value) => NotifyFeaturesCount();
@@ -302,6 +305,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.FeatureFlags.ProductOffers = ProductOffers;
             p.FeatureFlags.SalesRepresentatives = SalesRepresentatives;
             p.FeatureFlags.DamageInvoices = DamageInvoices;
+            p.FeatureFlags.PriceQuotes = PriceQuotes;
 
             p.FeatureFlags.TemplateMobileShop = TemplateMobileShop;
             p.FeatureFlags.TemplateClothing = TemplateClothing;
