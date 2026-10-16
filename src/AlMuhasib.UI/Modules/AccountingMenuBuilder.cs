@@ -20,13 +20,15 @@ public static class AccountingMenuBuilder
             // كروبات تفتح نافذة جانبية مثل التقارير
             FlyoutGroup(
                 key: "sales-tools",
-                title: "مرتجعات وتلف وفحص السعر",
+                title: "مرتجعات وتلف وعرض السعر",
                 icon: PackIconKind.ClipboardListOutline,
                 accent: "#AD1457",
                 accentLight: "#FCE4EC",
                 [
                     ("مرتجع مبيعات", PackIconKind.KeyboardReturn, typeof(SalesInvoiceViewModel), ScreenPermissionRegistry.SalesReturn),
                     ("فاتورة تلف", PackIconKind.DeleteAlert, typeof(SalesInvoiceViewModel), ScreenPermissionRegistry.DamageInvoice),
+                    ("فاتورة عرض سعر", PackIconKind.FileDocumentOutline, typeof(SalesInvoiceViewModel), ScreenPermissionRegistry.PriceQuote),
+                    ("فواتير عرض السعر", PackIconKind.FileDocumentMultipleOutline, typeof(PriceQuotesReportViewModel), ScreenPermissionRegistry.PriceQuotesReport),
                     ("فحص السعر بالباركود", PackIconKind.BarcodeScan, typeof(BarcodePriceCheckViewModel), ScreenPermissionRegistry.BarcodePriceCheck),
                 ]),
             FlyoutGroup(

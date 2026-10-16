@@ -1563,6 +1563,44 @@ public partial class ReportService : IReportService
         return result;
     }
 
+    public async Task<PriceQuotesReportResult> GetPriceQuotesReportAsync(
+        DateTime? from, DateTime? to, int? customerId)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var query = context.Invoices
+            .AsNoTracking()
+            .Include(i => i.Customer)
+            .Where(i => i.InvoiceType == InvoiceType.Quote);
+
+        if (from.HasValue) query = query.Where(i => i.Date >= from.Value);
+        if (to.HasValue) query = query.Where(i => i.Date < EndOfDay(to));
+        if (customerId.HasValue) query = query.Where(i => i.CustomerId == customerId.Value);
+
+        var invoices = await query.OrderByDescending(i => i.Date).ToListAsync();
+        var iqd = invoices.Where(i => i.Currency == AccountingCurrency.IQD).ToList();
+        var usd = invoices.Where(i => i.Currency == AccountingCurrency.USD).ToList();
+        var totalIqd = iqd.Sum(i => i.NetAmount);
+
+        return new PriceQuotesReportResult
+        {
+            TotalAmount = totalIqd,
+            TotalAmountUsd = usd.Sum(i => i.NetAmount),
+            InvoiceCount = invoices.Count,
+            AverageInvoice = iqd.Count > 0 ? totalIqd / iqd.Count : 0,
+            Rows = invoices.Select(i => new PriceQuoteReportRow
+            {
+                InvoiceId = i.Id,
+                InvoiceNumber = i.InvoiceNumber,
+                Date = i.Date,
+                CustomerName = i.Customer?.Name ?? "—",
+                CustomerFileNumber = i.Customer?.FileNumber,
+                NetAmount = i.NetAmount,
+                Currency = i.Currency,
+                Notes = i.Notes
+            }).ToList()
+        };
+    }
+
     public async Task<DamageInvoicesReportResult> GetDamageInvoicesReportAsync(
         DateTime? from, DateTime? to, int? warehouseId)
     {
