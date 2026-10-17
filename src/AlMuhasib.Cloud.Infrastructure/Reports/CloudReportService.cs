@@ -1588,6 +1588,10 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
         DateTime? from, DateTime? to, int? warehouseId) =>
         Task.FromResult(new DamageInvoicesReportResult());
 
+    public Task<PriceQuotesReportResult> GetPriceQuotesReportAsync(
+        DateTime? from, DateTime? to, int? customerId) =>
+        Task.FromResult(new PriceQuotesReportResult());
+
     public Task<PackagingStockReportResult> GetPackagingStockReportAsync(int? warehouseId, int? productId) =>
         Task.FromResult(new PackagingStockReportResult());
 

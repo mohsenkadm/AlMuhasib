@@ -116,7 +116,7 @@ public partial class SalesInvoiceViewModel
 
     private void RefreshLoyaltyFeatureVisibility()
     {
-        var enabled = _featureFlags?.LoyaltySystem == true;
+        var enabled = !IsQuoteMode && !IsDamageMode && _featureFlags?.LoyaltySystem == true;
         ShowLoyaltyPanel = enabled;
         if (!enabled)
         {

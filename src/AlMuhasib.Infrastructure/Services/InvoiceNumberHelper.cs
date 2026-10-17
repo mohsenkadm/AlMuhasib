@@ -15,6 +15,7 @@ public static class InvoiceNumberHelper
         InvoiceType.SaleReturn => "SRT",
         InvoiceType.Installment => "INS",
         InvoiceType.Damage => "DMG",
+        InvoiceType.Quote => "QTE",
         _ => "INV"
     };
 

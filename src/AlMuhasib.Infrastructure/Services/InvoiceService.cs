@@ -637,6 +637,7 @@ public class InvoiceService : IInvoiceService
         InvoiceType.Installment => "أقساط",
         InvoiceType.PurchaseReturn => "مرتجع مشتريات",
         InvoiceType.Damage => "تلف",
+        InvoiceType.Quote => "عرض سعر",
         _ => type.ToString()
     };
 
@@ -722,25 +723,29 @@ public class InvoiceService : IInvoiceService
             if (InvoiceReturnCreditHelper.IsCreditReturnType(invoice.InvoiceType))
                 await ReverseReturnCreditImpactAsync(context, invoice, username);
 
-            foreach (var item in invoice.Items.Where(i => i.ProductId.HasValue))
+            // عكس المخزون فقط لأنواع أثّرت عليه عند الإنشاء — عرض السعر لا يمس المخزن.
+            if (invoice.InvoiceType is not InvoiceType.Quote)
             {
-                var warehouseId = item.WarehouseId ?? invoice.WarehouseId;
-                var stock = await context.WarehouseStocks
-                    .FirstOrDefaultAsync(s =>
-                        s.WarehouseId == warehouseId &&
-                        s.ProductId == item.ProductId!.Value);
-
-                if (stock is not null)
+                foreach (var item in invoice.Items.Where(i => i.ProductId.HasValue))
                 {
-                    if (invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.SaleReturn)
-                        stock.Quantity -= item.Quantity;
-                    else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
-                        stock.Quantity += item.Quantity;
-                    else
-                        stock.Quantity += item.Quantity;
+                    var warehouseId = item.WarehouseId ?? invoice.WarehouseId;
+                    var stock = await context.WarehouseStocks
+                        .FirstOrDefaultAsync(s =>
+                            s.WarehouseId == warehouseId &&
+                            s.ProductId == item.ProductId!.Value);
 
-                    stock.UpdatedBy = username;
-                    stock.UpdatedAt = DateTime.UtcNow;
+                    if (stock is not null)
+                    {
+                        if (invoice.InvoiceType is InvoiceType.Purchase or InvoiceType.SaleReturn)
+                            stock.Quantity -= item.Quantity;
+                        else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
+                            stock.Quantity += item.Quantity;
+                        else
+                            stock.Quantity += item.Quantity;
+
+                        stock.UpdatedBy = username;
+                        stock.UpdatedAt = DateTime.UtcNow;
+                    }
                 }
             }
 

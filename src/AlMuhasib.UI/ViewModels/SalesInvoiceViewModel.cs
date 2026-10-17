@@ -183,23 +183,45 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(InvoiceWarningsBanner))]
     [NotifyPropertyChangedFor(nameof(ShowCustomerAndPayment))]
+    [NotifyPropertyChangedFor(nameof(ShowPaymentMethod))]
     [NotifyPropertyChangedFor(nameof(ShowCashBox))]
+    [NotifyPropertyChangedFor(nameof(ShowWarehouse))]
+    [NotifyPropertyChangedFor(nameof(ShowExtraToolbarButtons))]
     [NotifyPropertyChangedFor(nameof(ShowConvertToSalesReturn))]
     private bool _isDamageMode;
 
-    /// <summary>إخفاء العميل وطريقة الدفع في وضع التلف.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(InvoiceWarningsBanner))]
+    [NotifyPropertyChangedFor(nameof(ShowCustomerAndPayment))]
+    [NotifyPropertyChangedFor(nameof(ShowPaymentMethod))]
+    [NotifyPropertyChangedFor(nameof(ShowCashBox))]
+    [NotifyPropertyChangedFor(nameof(ShowWarehouse))]
+    [NotifyPropertyChangedFor(nameof(ShowExtraToolbarButtons))]
+    [NotifyPropertyChangedFor(nameof(ShowConvertToSalesReturn))]
+    private bool _isQuoteMode;
+
+    /// <summary>إخفاء العميل وطريقة الدفع في وضع التلف. العميل يظهر في عرض السعر.</summary>
     public bool ShowCustomerAndPayment => !IsDamageMode;
+
+    /// <summary>طريقة الدفع — مخفية في التلف وعرض السعر.</summary>
+    public bool ShowPaymentMethod => !IsDamageMode && !IsQuoteMode;
+
+    /// <summary>المخزن — مخفي في عرض السعر (يُخزَّن افتراضياً دون تأثير).</summary>
+    public bool ShowWarehouse => !IsQuoteMode;
+
+    /// <summary>أزرار إضافية في الشريط السفلي — مخفية في عرض السعر (يبقى حفظ وطباعة).</summary>
+    public bool ShowExtraToolbarButtons => !IsQuoteMode;
 
     /// <summary>زر تحويل البيع إلى مرتجع مبيعات — يظهر فقط في وضع البيع مع تفعيل ميزة المرتجع.</summary>
     public bool ShowConvertToSalesReturn =>
-        !IsReturnMode && !IsDamageMode && (_featureFlags?.SalesReturns ?? false);
+        !IsReturnMode && !IsDamageMode && !IsQuoteMode && (_featureFlags?.SalesReturns ?? false);
 
     /// <summary>
     /// الصندوق يظهر للنقد دائماً، وللآجل أيضاً (دفعة مقدمة اختيارية) —
     /// لا يُخفى عند اختيار الآجل حتى يبقى الحفظ ممكناً مع تصفية عملة الصندوق.
     /// </summary>
     public bool ShowCashBox =>
-        !IsDamageMode && (IsCashPayment || IsCreditPayment);
+        !IsDamageMode && !IsQuoteMode && (IsCashPayment || IsCreditPayment);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanSave))]
@@ -423,15 +445,23 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
         try
         {
-            var permissionScreen = InvoiceNavigationBridge.PendingDamageMode
-                ? ScreenPermissionRegistry.DamageInvoice
-                : InvoiceNavigationBridge.PendingSalesReturnMode
-                  || InvoiceNavigationBridge.PendingSalesReturnFromInvoiceId.HasValue
-                    ? ScreenPermissionRegistry.SalesReturn
-                    : "SaleInvoice";
+            var permissionScreen = InvoiceNavigationBridge.PendingQuoteMode
+                ? ScreenPermissionRegistry.PriceQuote
+                : InvoiceNavigationBridge.PendingDamageMode
+                    ? ScreenPermissionRegistry.DamageInvoice
+                    : InvoiceNavigationBridge.PendingSalesReturnMode
+                      || InvoiceNavigationBridge.PendingSalesReturnFromInvoiceId.HasValue
+                        ? ScreenPermissionRegistry.SalesReturn
+                        : "SaleInvoice";
             LoadPermissions(_currentUserService, permissionScreen);
 
-            InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Sale);
+            InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(
+                InvoiceNavigationBridge.PendingQuoteMode ? InvoiceType.Quote
+                : InvoiceNavigationBridge.PendingDamageMode ? InvoiceType.Damage
+                : InvoiceNavigationBridge.PendingSalesReturnMode
+                  || InvoiceNavigationBridge.PendingSalesReturnFromInvoiceId.HasValue
+                    ? InvoiceType.SaleReturn
+                    : InvoiceType.Sale);
 
             var customers = await _unitOfWork.Customers.GetAllAsync();
             Customers.Clear();
@@ -484,6 +514,11 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             {
                 InvoiceNavigationBridge.PendingDamageMode = false;
                 await EnterDamageModeAsync();
+            }
+            else if (InvoiceNavigationBridge.PendingQuoteMode)
+            {
+                InvoiceNavigationBridge.PendingQuoteMode = false;
+                await EnterQuoteModeAsync();
             }
             else if (InvoiceNavigationBridge.PendingSalesCopyInvoiceId is int pendingCopyId)
             {
@@ -603,6 +638,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         }
 
         IsReturnMode = true;
+        IsQuoteMode = false;
+        IsDamageMode = false;
         PageTitle = "مرتجع مبيعات";
         if (string.IsNullOrWhiteSpace(reference))
             _relatedInvoiceId = null;
@@ -623,6 +660,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
         IsDamageMode = true;
         IsReturnMode = false;
+        IsQuoteMode = false;
         PageTitle = "فاتورة تلف";
         SelectedPaymentMethod = PaymentMethod.Cash;
         SelectedCustomer = null;
@@ -633,7 +671,44 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         CreditRemainingAmount = 0m;
         InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Damage);
         OnPropertyChanged(nameof(ShowCustomerAndPayment));
+        OnPropertyChanged(nameof(ShowPaymentMethod));
+        OnPropertyChanged(nameof(ShowWarehouse));
+        OnPropertyChanged(nameof(ShowExtraToolbarButtons));
+        RefreshProductOffersFeatureVisibility();
         RefreshInvoiceWarnings();
+    }
+
+    public async Task EnterQuoteModeAsync()
+    {
+        if (_featureFlags is not null && !_featureFlags.PriceQuotes)
+        {
+            BeautifulMessageDialog.ShowWarning("فعّل «عرض السعر» من إعدادات الميزات أولاً");
+            return;
+        }
+
+        IsQuoteMode = true;
+        IsDamageMode = false;
+        IsReturnMode = false;
+        PageTitle = "فاتورة عرض سعر";
+        SelectedPaymentMethod = PaymentMethod.Cash;
+        SelectedCashBox = null;
+        CreditDueDate = null;
+        CreditPaidAmount = 0m;
+        CreditRemainingAmount = 0m;
+        SelectedDriver = null;
+        SelectedSalesRepresentative = null;
+        TransportFeeAmount = 0m;
+        InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Quote);
+        OnPropertyChanged(nameof(ShowCustomerAndPayment));
+        OnPropertyChanged(nameof(ShowPaymentMethod));
+        OnPropertyChanged(nameof(ShowCashBox));
+        OnPropertyChanged(nameof(ShowWarehouse));
+        OnPropertyChanged(nameof(ShowExtraToolbarButtons));
+        OnPropertyChanged(nameof(ShowConvertToSalesReturn));
+        RefreshFeatureVisibility();
+        RefreshProductOffersFeatureVisibility();
+        RefreshInvoiceWarnings();
+        await Task.CompletedTask;
     }
 
     public async Task LoadAsReturnFromInvoiceAsync(int invoiceId)
@@ -674,7 +749,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             return;
         }
 
-        if (IsReturnMode || IsDamageMode)
+        if (IsReturnMode || IsDamageMode || IsQuoteMode)
             return;
 
         var sourceId = _savedInvoice?.Id ?? _editingInvoiceId;
@@ -721,10 +796,12 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             warnings.Add("وضع مرتجع مبيعات — سيتم زيادة المخزون وخصم المبلغ من القاصة عند الحفظ النقدي.");
         if (IsDamageMode)
             warnings.Add("فاتورة تلف — سيتم إنقاص الكمية من المخزن عند الحفظ دون التأثير على الصندوق.");
-        if (IsCreditPayment && SelectedCustomer?.MaxCreditLimit is > 0)
+        if (IsQuoteMode)
+            warnings.Add("عرض سعر — للعميل فقط بدون تأثير على المخزن أو الحسابات أو الصندوق.");
+        if (IsCreditPayment && SelectedCustomer?.MaxCreditLimit is > 0 && !IsQuoteMode)
             warnings.Add($"حد ائتمان العميل: {SelectedCustomer.MaxCreditLimit:N0} د.ع — سيُفحص عند الحفظ.");
 
-        if (!IsReturnMode && !IsDamageMode && Items.Any(i => i.ProductId is > 0 && i.Quantity > 0 && i.UnitPrice > 0))
+        if (!IsReturnMode && !IsDamageMode && !IsQuoteMode && Items.Any(i => i.ProductId is > 0 && i.Quantity > 0 && i.UnitPrice > 0))
             warnings.Add("F4 إضافة منتج · F5 فحص الربح · Ctrl+S حفظ · F7 حاسبة العملة · Esc إلغاء المسودة.");
         InvoiceWarningsBanner = string.Join("  |  ", warnings);
     }
@@ -1199,20 +1276,25 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     {
         ErrorMessage = string.Empty;
 
-        // Validation
+        // Validation — عرض السعر يخزّن مخزناً افتراضياً دون إظهاره؛ باقي الأوضاع تتطلب اختيار مخزن.
         if (SelectedWarehouse is null)
         {
-            InvoiceValidationDialog.ShowBlockingError("يرجى اختيار المخزن");
-            return;
+            if (IsQuoteMode && Warehouses.Count > 0)
+                SelectedWarehouse = Warehouses[0];
+            else
+            {
+                InvoiceValidationDialog.ShowBlockingError("يرجى اختيار المخزن");
+                return;
+            }
         }
 
-        if (IsCashPayment && SelectedCashBox is null && !IsDamageMode)
+        if (IsCashPayment && SelectedCashBox is null && !IsDamageMode && !IsQuoteMode)
         {
             InvoiceValidationDialog.ShowBlockingError("يرجى اختيار القاصة");
             return;
         }
 
-        if (IsCreditPayment && CreditPaidAmount > 0m && SelectedCashBox is null)
+        if (IsCreditPayment && CreditPaidAmount > 0m && SelectedCashBox is null && !IsQuoteMode)
         {
             InvoiceValidationDialog.ShowBlockingError("يرجى اختيار القاصة للمبلغ المدفوع");
             return;
@@ -1221,6 +1303,12 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         if (IsDamageMode && _featureFlags is not null && !_featureFlags.DamageInvoices)
         {
             InvoiceValidationDialog.ShowBlockingError("فعّل «فاتورة التلف» من إعدادات الميزات أولاً");
+            return;
+        }
+
+        if (IsQuoteMode && _featureFlags is not null && !_featureFlags.PriceQuotes)
+        {
+            InvoiceValidationDialog.ShowBlockingError("فعّل «عرض السعر» من إعدادات الميزات أولاً");
             return;
         }
 
@@ -1283,9 +1371,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             return;
         }
 
-        // Stock validation for sales/damage (not returns — returns increase stock).
+        // Stock validation for sales/damage (not returns — returns increase stock; quotes never touch stock).
         // عند التعديل: أضف كميات الفاتورة الأصلية لأنها ستُعاد للمخزن قبل إعادة الخصم.
-        if (!IsReturnMode)
+        if (!IsReturnMode && !IsQuoteMode)
         {
             foreach (var item in validItems.Where(i => i.ProductId.HasValue))
             {
@@ -1336,7 +1424,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             }
         }
 
-        if (!IsReturnMode && !IsDamageMode)
+        if (!IsReturnMode && !IsDamageMode && !IsQuoteMode)
         {
             var belowCostCurrency = ShowMultiCurrency ? SelectedCurrency : AccountingCurrency.IQD;
             var belowCost = await _costGuard.FindBelowCostLinesAsync(validItems, ShowProductDiscount, belowCostCurrency);
@@ -1348,7 +1436,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             }
         }
 
-        if (IsCreditPayment && SelectedCustomer is not null && !IsReturnMode && !IsDamageMode)
+        if (IsCreditPayment && SelectedCustomer is not null && !IsReturnMode && !IsDamageMode && !IsQuoteMode)
         {
             var creditCheck = await _customerCreditService.CheckCreditAsync(
                 SelectedCustomer.Id, GrandTotal, isInstallment: false,
@@ -1385,36 +1473,48 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 }
             }
 
-            var invoiceType = IsDamageMode
-                ? InvoiceType.Damage
-                : IsReturnMode
-                    ? InvoiceType.SaleReturn
-                    : IsInstallmentPayment ? InvoiceType.Installment : InvoiceType.Sale;
+            var invoiceType = IsQuoteMode
+                ? InvoiceType.Quote
+                : IsDamageMode
+                    ? InvoiceType.Damage
+                    : IsReturnMode
+                        ? InvoiceType.SaleReturn
+                        : IsInstallmentPayment ? InvoiceType.Installment : InvoiceType.Sale;
 
             var invoice = new Invoice
             {
                 InvoiceNumber = InvoiceNumber,
                 InvoiceType = invoiceType,
                 CustomerId = customerId,
-                DriverId = ShowDriverSelection && !IsDamageMode ? SelectedDriver?.Id : null,
-                SalesRepresentativeId = ShowSalesRepSelection && !IsDamageMode ? SelectedSalesRepresentative?.Id : null,
+                DriverId = ShowDriverSelection && !IsDamageMode && !IsQuoteMode ? SelectedDriver?.Id : null,
+                SalesRepresentativeId = ShowSalesRepSelection && !IsDamageMode && !IsQuoteMode
+                    ? SelectedSalesRepresentative?.Id
+                    : null,
                 WarehouseId = SelectedWarehouse.Id,
-                PaymentMethod = IsDamageMode ? PaymentMethod.Cash : SelectedPaymentMethod,
+                PaymentMethod = IsDamageMode || IsQuoteMode ? PaymentMethod.Cash : SelectedPaymentMethod,
                 Currency = ShowMultiCurrency ? SelectedCurrency : AccountingCurrency.IQD,
                 FxRate = ShowMultiCurrency
                     ? AccountingCurrencyRules.RequireFxRateOrThrow(SelectedCurrency, FxRate, "فاتورة مبيعات")
                     : 1m,
                 CashBoxId = ResolveCashBoxIdForSave(),
                 Date = InvoiceDate,
-                CreditDueDate = !IsDamageMode && IsCreditPayment ? CreditDueDate : null,
-                PaidAmount = !IsDamageMode && IsCreditPayment ? Math.Clamp(CreditPaidAmount, 0m, GrandTotal) : 0m,
-                DiscountAmount = IsDamageMode
+                CreditDueDate = !IsDamageMode && !IsQuoteMode && IsCreditPayment ? CreditDueDate : null,
+                PaidAmount = !IsDamageMode && !IsQuoteMode && IsCreditPayment
+                    ? Math.Clamp(CreditPaidAmount, 0m, GrandTotal)
+                    : 0m,
+                DiscountAmount = IsDamageMode || IsQuoteMode
                     ? 0m
                     : (ShowProductDiscount ? InvoiceDiscountAmount : 0m)
                         + (ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m),
-                LoyaltyRedeemDiscountAmount = !IsDamageMode && ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m,
-                LoyaltyPointsRedeemed = !IsDamageMode && ShowLoyaltyPanel ? Math.Max(0, LoyaltyRedeemPoints) : 0,
-                TransportFeeAmount = !IsDamageMode && ShowTransportFee ? Math.Max(0m, TransportFeeAmount) : 0m,
+                LoyaltyRedeemDiscountAmount = !IsDamageMode && !IsQuoteMode && ShowLoyaltyPanel
+                    ? Math.Max(0m, LoyaltyDiscountAmount)
+                    : 0m,
+                LoyaltyPointsRedeemed = !IsDamageMode && !IsQuoteMode && ShowLoyaltyPanel
+                    ? Math.Max(0, LoyaltyRedeemPoints)
+                    : 0,
+                TransportFeeAmount = !IsDamageMode && !IsQuoteMode && ShowTransportFee
+                    ? Math.Max(0m, TransportFeeAmount)
+                    : 0m,
                 RelatedInvoiceId = IsReturnMode ? _relatedInvoiceId : null,
                 Notes = string.IsNullOrWhiteSpace(Notes) ? null : Notes.Trim()
             };
@@ -1467,7 +1567,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             }
 
             // اقرأ العلم الحي — لا تعتمد على حالة قديمة إن تغيّرت الميزات أثناء فتح الشاشة
-            if (_featureFlags?.SerialNumbers == true)
+            if (!IsQuoteMode && _featureFlags?.SerialNumbers == true)
             {
                 foreach (var row in validItems.Where(r => r.ProductId.HasValue && Math.Abs(r.Quantity) >= 1))
                 {
@@ -1482,16 +1582,17 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             Invoice saved;
             if (_editingInvoiceId is int editId)
             {
-                saved = await _invoiceService.ReplaceInvoiceAsync(editId, invoice, invoiceItems);
+                saved = await _invoiceService.ReplaceInvoiceAsync(
+                    editId, invoice, invoiceItems, skipStockUpdate: IsQuoteMode);
                 ClearEditingInvoiceId();
             }
             else
             {
-                var applyLoyalty = !IsDamageMode && ShowLoyaltyPanel && customerId is not null;
+                var applyLoyalty = !IsDamageMode && !IsQuoteMode && ShowLoyaltyPanel && customerId is not null;
                 saved = await _invoiceService.CreateInvoiceAsync(
                     invoice,
                     invoiceItems,
-                    skipStockUpdate: false,
+                    skipStockUpdate: IsQuoteMode,
                     loyaltyRedeemPoints: applyLoyalty ? Math.Max(0, LoyaltyRedeemPoints) : 0,
                     applyLoyalty: applyLoyalty);
             }
@@ -1514,13 +1615,24 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
             _draftService.ClearDraft(DraftKey);
             _recentActivity.Record(
-                IsDamageMode ? "فاتورة تلف" : IsReturnMode ? "مرتجع مبيعات" : "فاتورة مبيعات",
+                IsQuoteMode ? "فاتورة عرض سعر"
+                    : IsDamageMode ? "فاتورة تلف"
+                    : IsReturnMode ? "مرتجع مبيعات"
+                    : "فاتورة مبيعات",
                 $"{saved.InvoiceNumber} — {saved.NetAmount:N0} {CurrencyAmountSuffix}",
-                IsDamageMode ? "DamageInvoice" : IsReturnMode ? "SalesReturn" : "SaleInvoice",
+                IsQuoteMode ? ScreenPermissionRegistry.PriceQuote
+                    : IsDamageMode ? "DamageInvoice"
+                    : IsReturnMode ? "SalesReturn"
+                    : "SaleInvoice",
                 typeof(SalesInvoiceViewModel));
 
+            var savedLabel = IsQuoteMode ? "عرض السعر"
+                : IsDamageMode ? "فاتورة التلف"
+                : IsReturnMode ? "مرتجع المبيعات"
+                : "الفاتورة";
             BeautifulMessageDialog.ShowSuccess(
-                $"تم حفظ {(IsDamageMode ? "فاتورة التلف" : IsReturnMode ? "مرتجع المبيعات" : "الفاتورة")} بنجاح\nرقم الفاتورة: {saved.InvoiceNumber}\nالمبلغ الكلي: {saved.NetAmount:N0} {CurrencyAmountSuffix}\n\nيمكنك الطباعة أو الإرسال عبر واتساب.");
+                $"تم حفظ {savedLabel} بنجاح\nرقم الفاتورة: {saved.InvoiceNumber}\nالمبلغ الكلي: {saved.NetAmount:N0} {CurrencyAmountSuffix}"
+                + (IsQuoteMode ? "\n\nيمكنك الطباعة." : "\n\nيمكنك الطباعة أو الإرسال عبر واتساب."));
 
             // حدّث ذمة العميل بعد الحفظ حتى تظهر في الطباعة شاملة أثر هذه الفاتورة.
             await RefreshCustomerBalanceAsync();
@@ -1579,7 +1691,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
     private int? ResolveCashBoxIdForSave()
     {
-        if (IsDamageMode || SelectedCashBox is null)
+        if (IsDamageMode || IsQuoteMode || SelectedCashBox is null)
             return null;
         if (IsCashPayment)
             return SelectedCashBox.Id;
@@ -1656,6 +1768,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         {
             Title = _savedInvoice.InvoiceType switch
             {
+                InvoiceType.Quote => "عرض سعر",
                 InvoiceType.Damage => "فاتورة تلف",
                 InvoiceType.SaleReturn => "مرتجع مبيعات",
                 _ => "فاتورة مبيعات"
@@ -1673,24 +1786,26 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             DriverName = ShowDriverSelection ? SelectedDriver?.Name : null,
             SalesRepresentativeName = salesRepresentative?.Name,
             SalesRepresentativePhone = salesRepresentative?.Phone,
-            WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
-            PaymentMethod = _savedInvoice.PaymentMethod switch
-            {
-                PaymentMethod.Cash => "نقدي",
-                PaymentMethod.Credit => "آجل",
-                PaymentMethod.Installment => "أقساط",
-                _ => "—"
-            },
+            WarehouseName = IsQuoteMode ? string.Empty : (SelectedWarehouse?.Name ?? string.Empty),
+            PaymentMethod = IsQuoteMode
+                ? "—"
+                : _savedInvoice.PaymentMethod switch
+                {
+                    PaymentMethod.Cash => "نقدي",
+                    PaymentMethod.Credit => "آجل",
+                    PaymentMethod.Installment => "أقساط",
+                    _ => "—"
+                },
             Notes = _savedInvoice.Notes,
             Subtotal = Subtotal,
             RoundingAmount = RoundingAmount,
             TransportFeeAmount = ShowTransportFee ? TransportFeeAmount : 0m,
             DiscountAmount = _savedInvoice.DiscountAmount,
-            PaidAmount = paidAmount,
-            RemainingAmount = remainingAmount,
+            PaidAmount = IsQuoteMode ? 0m : paidAmount,
+            RemainingAmount = IsQuoteMode ? 0m : remainingAmount,
             GrandTotal = GrandTotal,
-            CustomerOutstandingBalance = CustomerOutstandingBalance,
-            CustomerOutstandingBalanceUsd = ShowMultiCurrency ? CustomerOutstandingBalanceUsd : null,
+            CustomerOutstandingBalance = IsQuoteMode ? null : CustomerOutstandingBalance,
+            CustomerOutstandingBalanceUsd = IsQuoteMode || !ShowMultiCurrency ? null : CustomerOutstandingBalanceUsd,
             ShowLineDiscount = ShowProductDiscount,
             PharmacyUsageReceipt = ShowPharmacyUsage,
             ShowCarShowroomFields = ShowCarShowroomContractPrint,
@@ -1822,7 +1937,17 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
         await ReloadProductSearchCatalogAsync();
         RecalculateTotals();
-        if (IsDamageMode)
+        if (IsQuoteMode)
+        {
+            InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Quote);
+            PageTitle = "فاتورة عرض سعر";
+            OnPropertyChanged(nameof(ShowCustomerAndPayment));
+            OnPropertyChanged(nameof(ShowPaymentMethod));
+            OnPropertyChanged(nameof(ShowCashBox));
+            OnPropertyChanged(nameof(ShowWarehouse));
+            OnPropertyChanged(nameof(ShowExtraToolbarButtons));
+        }
+        else if (IsDamageMode)
         {
             InvoiceNumber = await _invoiceService.GenerateInvoiceNumberAsync(InvoiceType.Damage);
             PageTitle = "فاتورة تلف";

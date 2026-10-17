@@ -34,6 +34,7 @@ public interface IReportService
     // Warehouse
     Task<List<WarehouseStockRow>> GetWarehouseReportAsync(int? warehouseId, bool includeZero = false);
     Task<DamageInvoicesReportResult> GetDamageInvoicesReportAsync(DateTime? from, DateTime? to, int? warehouseId);
+    Task<PriceQuotesReportResult> GetPriceQuotesReportAsync(DateTime? from, DateTime? to, int? customerId);
     Task<PackagingStockReportResult> GetPackagingStockReportAsync(int? warehouseId, int? productId);
 
     // Investors
@@ -1950,6 +1951,28 @@ public class DamageInvoiceReportRow
     public decimal Quantity { get; set; }
     public decimal UnitCost { get; set; }
     public decimal TotalCost { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class PriceQuotesReportResult
+{
+    public decimal TotalAmount { get; set; }
+    public decimal TotalAmountUsd { get; set; }
+    public int InvoiceCount { get; set; }
+    public decimal AverageInvoice { get; set; }
+    public List<PriceQuoteReportRow> Rows { get; set; } = [];
+}
+
+public class PriceQuoteReportRow
+{
+    public int InvoiceId { get; set; }
+    public string InvoiceNumber { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string? CustomerFileNumber { get; set; }
+    public decimal NetAmount { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
     public string? Notes { get; set; }
 }
 

@@ -22,6 +22,8 @@ public static class ScreenPermissionRegistry
     public const string PurchaseReturn = "PurchaseReturn";
     public const string DamageInvoice = "DamageInvoice";
     public const string DamageInvoicesReport = "DamageInvoicesReport";
+    public const string PriceQuote = "PriceQuote";
+    public const string PriceQuotesReport = "PriceQuotesReport";
     public const string PackagingStockReport = "PackagingStockReport";
     public const string MinimumQuantityReport = "MinimumQuantityReport";
 
@@ -168,6 +170,8 @@ public static class ScreenPermissionRegistry
         ("SaleInvoice", "فاتورة مبيعات"),
         (SalesReturn, "مرتجع مبيعات"),
         (DamageInvoice, "فاتورة تلف"),
+        (PriceQuote, "فاتورة عرض سعر"),
+        (PriceQuotesReport, "فواتير عرض السعر"),
         ("InstallmentInvoice", "فاتورة أقساط"),
         ("Installments", "الأقساط ولوحة التحصيل"),
         ("OpeningInstallments", "أرصدة الأقساط الافتتاحية"),
@@ -310,6 +314,7 @@ public static class ScreenPermissionRegistry
         [typeof(StockAdjustmentViewModel)] = "StockAdjustment",
         [typeof(MinimumQuantityReportViewModel)] = MinimumQuantityReport,
         [typeof(DamageInvoicesReportViewModel)] = DamageInvoicesReport,
+        [typeof(PriceQuotesReportViewModel)] = PriceQuotesReport,
         [typeof(PackagingStockReportViewModel)] = PackagingStockReport,
         [typeof(SalesReportViewModel)] = "Reports",
         [typeof(PurchasesReportViewModel)] = "Reports",
@@ -428,6 +433,8 @@ public static class ScreenPermissionRegistry
         ["SaleInvoice"] = typeof(SalesInvoiceViewModel),
         [SalesReturn] = typeof(SalesInvoiceViewModel),
         [DamageInvoice] = typeof(SalesInvoiceViewModel),
+        [PriceQuote] = typeof(SalesInvoiceViewModel),
+        [PriceQuotesReport] = typeof(PriceQuotesReportViewModel),
         [BarcodePriceCheck] = typeof(BarcodePriceCheckViewModel),
         ["InstallmentInvoice"] = typeof(InstallmentInvoiceViewModel),
         ["Installments"] = typeof(InstallmentsViewModel),

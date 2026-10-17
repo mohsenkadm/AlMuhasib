@@ -339,7 +339,8 @@ public class DashboardService : IDashboardService
         try
         {
             var recentInvoices = await context.Invoices
-                .Where(i => i.Currency == AccountingCurrency.IQD)
+                .Where(i => i.Currency == AccountingCurrency.IQD
+                            && i.InvoiceType != InvoiceType.Quote)
                 .OrderByDescending(i => i.Date)
                 .ThenByDescending(i => i.Id)
                 .Take(5)
@@ -350,6 +351,7 @@ public class DashboardService : IDashboardService
                          : i.InvoiceType == InvoiceType.SaleReturn ? "مرتجع مبيعات"
                          : i.InvoiceType == InvoiceType.PurchaseReturn ? "مرتجع مشتريات"
                          : i.InvoiceType == InvoiceType.Installment ? "أقساط"
+                         : i.InvoiceType == InvoiceType.Damage ? "تلف"
                          : "فاتورة",
                     Number = i.InvoiceNumber,
                     Party = i.CustomerId != null

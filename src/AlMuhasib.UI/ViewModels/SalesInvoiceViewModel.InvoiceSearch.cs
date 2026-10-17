@@ -94,11 +94,13 @@ public partial class SalesInvoiceViewModel
         IsInvoiceSearchLoading = true;
         try
         {
-            var searchType = IsDamageMode
-                ? InvoiceType.Damage
-                : IsReturnMode
-                    ? InvoiceType.SaleReturn
-                    : InvoiceType.Sale;
+            var searchType = IsQuoteMode
+                ? InvoiceType.Quote
+                : IsDamageMode
+                    ? InvoiceType.Damage
+                    : IsReturnMode
+                        ? InvoiceType.SaleReturn
+                        : InvoiceType.Sale;
 
             var results = await _invoiceService.SearchAsync(
                 searchType,
@@ -148,7 +150,7 @@ public partial class SalesInvoiceViewModel
 
         var invoice = await _invoiceService.GetByIdWithDetailsAsync(invoiceId);
         if (invoice is null || invoice.InvoiceType is not (
-                InvoiceType.Sale or InvoiceType.SaleReturn or InvoiceType.Damage))
+                InvoiceType.Sale or InvoiceType.SaleReturn or InvoiceType.Damage or InvoiceType.Quote))
         {
             BeautifulMessageDialog.ShowWarning("تعذر تحميل الفاتورة");
             return;
@@ -166,14 +168,23 @@ public partial class SalesInvoiceViewModel
         _savedItems = [];
         ErrorMessage = string.Empty;
 
+        IsQuoteMode = invoice.InvoiceType == InvoiceType.Quote;
         IsDamageMode = invoice.InvoiceType == InvoiceType.Damage;
         IsReturnMode = invoice.InvoiceType == InvoiceType.SaleReturn;
         PageTitle = invoice.InvoiceType switch
         {
+            InvoiceType.Quote => "تعديل فاتورة عرض سعر",
             InvoiceType.Damage => "تعديل فاتورة تلف",
             InvoiceType.SaleReturn => "تعديل مرتجع مبيعات",
             _ => "تعديل فاتورة مبيعات"
         };
+        RefreshFeatureVisibility();
+        RefreshProductOffersFeatureVisibility();
+        OnPropertyChanged(nameof(ShowPaymentMethod));
+        OnPropertyChanged(nameof(ShowWarehouse));
+        OnPropertyChanged(nameof(ShowExtraToolbarButtons));
+        OnPropertyChanged(nameof(ShowCashBox));
+        OnPropertyChanged(nameof(ShowConvertToSalesReturn));
         _relatedInvoiceId = invoice.RelatedInvoiceId;
 
         InvoiceNumber = invoice.InvoiceNumber;

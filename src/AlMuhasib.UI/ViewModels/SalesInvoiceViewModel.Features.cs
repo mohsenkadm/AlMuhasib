@@ -123,18 +123,19 @@ public partial class SalesInvoiceViewModel
     {
         if (_featureFlags is null) return;
 
-        ShowUnitsOfMeasure = _featureFlags.UnitsOfMeasure;
-        ShowMenuWeight = _featureFlags.MenuWeight;
-        ShowProductDiscount = _featureFlags.ProductDiscountEnabled;
-        ShowExpiryTracking = _featureFlags.ExpiryTracking;
-        ShowSerialNumbers = _featureFlags.SerialNumbers;
+        var quote = IsQuoteMode;
+        ShowUnitsOfMeasure = !quote && _featureFlags.UnitsOfMeasure;
+        ShowMenuWeight = !quote && _featureFlags.MenuWeight;
+        ShowProductDiscount = !quote && _featureFlags.ProductDiscountEnabled;
+        ShowExpiryTracking = !quote && _featureFlags.ExpiryTracking;
+        ShowSerialNumbers = !quote && _featureFlags.SerialNumbers;
         ShowProductPricing = _featureFlags.ProductPricingEnabled;
-        ShowClothingSizes = _featureFlags.TemplateClothing;
-        ShowTransportFee = _featureFlags.TransportFees;
-        ShowDriverSelection = _featureFlags.WarehouseInvoiceAndDriver;
-        ShowSalesRepSelection = _featureFlags.SalesRepresentatives;
-        ShowPharmacyUsage = _featureFlags.TemplatePharmacy;
-        ShowCarShowroomContractPrint = _featureFlags.CarShowroom;
+        ShowClothingSizes = !quote && _featureFlags.TemplateClothing;
+        ShowTransportFee = !quote && _featureFlags.TransportFees;
+        ShowDriverSelection = !quote && _featureFlags.WarehouseInvoiceAndDriver;
+        ShowSalesRepSelection = !quote && _featureFlags.SalesRepresentatives;
+        ShowPharmacyUsage = !quote && _featureFlags.TemplatePharmacy;
+        ShowCarShowroomContractPrint = !quote && _featureFlags.CarShowroom;
         PrintCarContractCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(ShowConvertToSalesReturn));
         RefreshLoyaltyFeatureVisibility();
@@ -539,7 +540,7 @@ public partial class SalesInvoiceViewModel
 
     private async Task ApplyFeatureSideEffectsOnSaveAsync(IReadOnlyList<InvoiceItemRow> rows, IReadOnlyList<Core.Entities.InvoiceItem> savedItems)
     {
-        if (_featureFlags is null) return;
+        if (_featureFlags is null || IsQuoteMode) return;
 
         for (var i = 0; i < rows.Count && i < savedItems.Count; i++)
         {

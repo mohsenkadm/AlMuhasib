@@ -1861,6 +1861,9 @@
                         <DataTemplate DataType="{x:Type vm:DamageInvoicesReportViewModel}">
                             <views:DamageInvoicesReportView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:PriceQuotesReportViewModel}">
+                            <views:PriceQuotesReportView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:PackagingStockReportViewModel}">
                             <views:PackagingStockReportView />
                         </DataTemplate>
