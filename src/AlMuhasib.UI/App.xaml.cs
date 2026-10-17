@@ -478,6 +478,11 @@ public partial class App : Application
 
         services.AddSingleton<MainWindowViewModel>();
 
+        // AI Assistant (UI stage — MockAssistantService is swappable for a live provider)
+        services.AddSingleton<IAssistantService, MockAssistantService>();
+        services.AddSingleton<AiChatViewModel>();
+        services.AddSingleton<AiChatWindow>();
+
         // Views
         services.AddTransient<LoginWindow>();
         services.AddTransient<MainWindow>();

@@ -41,6 +41,9 @@ public partial class NavigationMenuItem : ObservableObject
     [ObservableProperty]
     private bool _isReportCategory;
 
+    /// <summary>عنصر قائمة عادي (ليس قسماً ولا مجموعة ولا فئة تقارير).</summary>
+    public bool IsPlainMenuItem => !IsGroupHeader && !IsReportCategory && !IsMenuSectionLabel;
+
     [ObservableProperty]
     private string _categoryKey = string.Empty;
 

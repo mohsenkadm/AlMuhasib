@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.Models;
@@ -274,7 +275,7 @@ public partial class PurchaseInvoiceViewModel
 
     private async Task LoadRowPricingOptionsAsync(InvoiceItemRow row, int productId)
     {
-        if (!ShowProductPricing)
+        if (_productPriceService is null)
         {
             row.AvailablePricingOptions.Clear();
             row.SetSelectedPricingOptionWithoutPrice(null);
@@ -282,6 +283,20 @@ public partial class PurchaseInvoiceViewModel
         }
 
         var prices = await _productPriceService.GetByProductIdAsync(productId);
+
+        if (!ShowProductPricing)
+        {
+            row.AvailablePricingOptions.Clear();
+            row.SetSelectedPricingOptionWithoutPrice(null);
+            if (row.UnitPrice <= 0 && prices.Count > 0)
+            {
+                var preferredPrice = prices.FirstOrDefault(p => p.PricingType?.IsDefault == true) ?? prices[0];
+                row.UnitPrice = ProductListPriceHelper.ResolveListPrice(
+                    preferredPrice, SelectedCurrency, isPurchase: true);
+            }
+            return;
+        }
+
         var options = InvoiceBulkPricingHelper.ToOptions(prices, usePurchasePrice: true, SelectedCurrency);
 
         row.AvailablePricingOptions.Clear();

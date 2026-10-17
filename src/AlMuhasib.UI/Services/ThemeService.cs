@@ -103,6 +103,18 @@ public sealed class ThemeService
         SetBrush(res, "MutedIconBackgroundBrush", isDark ? DarkMutedIcon : "#ECEFF1");
         SetBrush(res, "ChartEmptyIconBrush", isDark ? "#5A7390" : "#BDBDBD");
 
+        // AI Chat surfaces
+        SetBrush(res, "AiChatBodyBrush", isDark ? DarkBg : "#F5F7FA");
+        SetBrush(res, "AiUserBubbleBrush", isDark ? "#3D7AE0" : "#1565C0");
+        SetBrush(res, "AiAssistantBubbleBrush", isDark ? "#1A2550" : "#EEF2F8");
+        SetBrush(res, "AiAssistantBubbleBorderBrush", isDark ? "#3A4870" : "#D8E0EC");
+        SetBrush(res, "AiAssistantBubbleForegroundBrush", isDark ? DarkText : "#212121");
+        SetBrush(res, "AiErrorBubbleBrush", isDark ? "#3D2226" : "#FFEBEE");
+        SetBrush(res, "AiErrorBubbleBorderBrush", isDark ? "#EF9A9A" : "#E57373");
+        SetBrush(res, "AiComposerFieldBrush", isDark ? "#161F46" : "#F0F4F9");
+        SetBrush(res, "AiComposerFieldBorderBrush", isDark ? "#3A4570" : "#D5DEEA");
+        SetBrush(res, "AiSuggestionHoverBorderBrush", isDark ? "#5BA3D9" : "#90CAF9");
+
         // Accent / warning — classic blue in dark (replace cyan/purple)
         SetBrush(res, "AccentBrush", isDark ? DarkAccent : "#00ACC1");
         SetBrush(res, "AccentLightBrush", isDark ? DarkAccentLight : "#E0F7FA");

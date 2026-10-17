@@ -209,7 +209,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
     /// <summary>المخزن — مخفي في عرض السعر (يُخزَّن افتراضياً دون تأثير).</summary>
     public bool ShowWarehouse => !IsQuoteMode;
 
-    /// <summary>أزرار إضافية في الشريط السفلي — مخفية في عرض السعر (يبقى حفظ وطباعة).</summary>
+    /// <summary>أزرار إضافية في الشريط السفلي — مخفية في عرض السعر (يبقى حفظ وطباعة وجديد + العملة).</summary>
     public bool ShowExtraToolbarButtons => !IsQuoteMode;
 
     /// <summary>زر تحويل البيع إلى مرتجع مبيعات — يظهر فقط في وضع البيع مع تفعيل ميزة المرتجع.</summary>

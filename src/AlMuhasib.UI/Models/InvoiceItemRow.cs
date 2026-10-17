@@ -335,6 +335,11 @@ public partial class InvoiceItemRow : ObservableObject
 
     partial void OnSelectedProductChanged(Product? value)
     {
+        var previousProductId = ProductId;
+        var isProductReplacement = value is not null
+            && previousProductId is > 0
+            && previousProductId != value.Id;
+
         if (value is not null)
         {
             ProductId = value.Id;
@@ -343,6 +348,10 @@ public partial class InvoiceItemRow : ObservableObject
             ProductWeightUnit = value.WeightUnit ?? string.Empty;
             UsageInstructions = value.UsageInstructions ?? string.Empty;
             ApplyCarShowroomFieldsFromProduct(value);
+
+            // عند استبدال منتج في الصف: صفّر السعر حتى يُجلب سعر المنتج الجديد (دينار/دولار)
+            if (isProductReplacement)
+                ResetPricingForProductReplacement();
         }
         else
         {
@@ -355,6 +364,36 @@ public partial class InvoiceItemRow : ObservableObject
 
         RefreshProductDiscount();
         ProductChanged?.Invoke(this);
+    }
+
+    /// <summary>
+    /// يُستدعى عند تغيير المنتج في نفس الصف حتى لا يبقى سعر المنتج السابق.
+    /// لا يُستدعى عند أول اختيار (UnitPrice=0) ولا عند استعادة فاتورة (ProductId مسبقاً = نفس المنتج).
+    /// </summary>
+    private void ResetPricingForProductReplacement()
+    {
+        AvailablePricingOptions.Clear();
+        SetSelectedPricingOptionWithoutPrice(null);
+        PricingTypeId = null;
+        PricingTypeName = string.Empty;
+        UnitPrice = 0m;
+        SalePrice = 0m;
+        ProductSizeId = null;
+        SizeName = string.Empty;
+        SelectedColor = null;
+        ProductColorId = null;
+        ColorName = string.Empty;
+        SelectedBatch = null;
+        BatchId = null;
+        BatchNumber = string.Empty;
+        ExpiryDate = null;
+        SerialNumber = string.Empty;
+        SelectedUnit = null;
+        SelectedUnitName = string.Empty;
+        UnitConversionFactor = 1m;
+        AvailableUnits.Clear();
+        AvailableBatches.Clear();
+        AvailableColors.Clear();
     }
 
     private void ApplyCarShowroomFieldsFromProduct(Product product)

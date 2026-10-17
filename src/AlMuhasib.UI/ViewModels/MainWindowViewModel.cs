@@ -1473,6 +1473,70 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void OpenHelpWhatsApp() => _helpSupport.OpenWhatsAppSupport();
 
+    private AiChatWindow? _aiChatWindow;
+
+    [RelayCommand]
+    private void OpenAiAssistant()
+    {
+        try
+        {
+            IsQuickAssistOpen = false;
+
+            _aiChatWindow ??= _serviceProvider.GetRequiredService<AiChatWindow>();
+
+            if (_aiChatWindow.Owner is null && Application.Current.MainWindow is { IsLoaded: true } owner)
+            {
+                _aiChatWindow.Owner = owner;
+                owner.Closed -= OnOwnerClosedForAiChat;
+                owner.Closed += OnOwnerClosedForAiChat;
+            }
+
+            PositionAiChatWindow(_aiChatWindow);
+            _aiChatWindow.Reveal();
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذّر فتح المساعد الذكي:\n{ex.Message}");
+        }
+    }
+
+    private void OnOwnerClosedForAiChat(object? sender, EventArgs e)
+    {
+        try
+        {
+            _aiChatWindow?.ForceClose();
+        }
+        catch
+        {
+            // ignore during shutdown
+        }
+        finally
+        {
+            _aiChatWindow = null;
+        }
+    }
+
+    private static void PositionAiChatWindow(Window window)
+    {
+        var owner = window.Owner ?? Application.Current.MainWindow;
+        var workArea = owner is not null
+            ? SystemParameters.WorkArea
+            : SystemParameters.WorkArea;
+
+        if (owner is { IsLoaded: true })
+        {
+            // Place near the bottom-right of the owner (physical), above the FAB stack.
+            var desiredLeft = owner.Left + owner.ActualWidth - window.Width - 28;
+            var desiredTop = owner.Top + owner.ActualHeight - window.Height - 96;
+            window.Left = Math.Max(workArea.Left + 8, Math.Min(desiredLeft, workArea.Right - window.Width - 8));
+            window.Top = Math.Max(workArea.Top + 8, Math.Min(desiredTop, workArea.Bottom - window.Height - 8));
+            return;
+        }
+
+        window.Left = workArea.Right - window.Width - 24;
+        window.Top = workArea.Bottom - window.Height - 24;
+    }
+
     [RelayCommand]
     private async Task OpenTelegramFabAsync()
     {
@@ -1634,6 +1698,34 @@ public partial class MainWindowViewModel : ObservableObject
         catch (Exception ex)
         {
             BeautifulMessageDialog.ShowError($"تعذّر فتح الحاسبة:\n{ex.Message}");
+        }
+    }
+
+    [RelayCommand]
+    private void OpenAnyDesk()
+    {
+        IsQuickAssistOpen = false;
+        try
+        {
+            var candidates = new[]
+            {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "AnyDesk", "AnyDesk.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "AnyDesk", "AnyDesk.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AnyDesk", "AnyDesk.exe"),
+            };
+
+            var exe = candidates.FirstOrDefault(File.Exists);
+            if (exe is null)
+            {
+                BeautifulMessageDialog.ShowError("لم يتم العثور على AnyDesk على هذا الجهاز.\nثبّت البرنامج ثم حاول مرة أخرى.");
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذّر فتح AnyDesk:\n{ex.Message}");
         }
     }
 

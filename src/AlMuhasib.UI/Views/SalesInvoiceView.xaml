@@ -283,33 +283,36 @@
                                   FontSize="14"
                                   Visibility="{Binding ShowWarehouse, Converter={StaticResource BoolToVis}}" />
 
-                        <!-- Payment Method — 3 Radio Buttons -->
+                        <!-- Payment + currency (currency stays visible in quote mode when multi-currency is on) -->
                         <StackPanel Grid.Row="1" Grid.Column="1"
                                     Orientation="Horizontal"
                                     VerticalAlignment="Center"
-                                    Margin="0,0,12,0"
-                                    Visibility="{Binding ShowPaymentMethod, Converter={StaticResource BoolToVis}}">
-                            <TextBlock Text="طريقة الدفع:"
-                                       FontSize="13"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"
-                                       VerticalAlignment="Center"
-                                       Margin="0,0,12,0" />
+                                    Margin="0,0,12,0">
+                            <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center"
+                                        Visibility="{Binding ShowPaymentMethod, Converter={StaticResource BoolToVis}}">
+                                <TextBlock Text="طريقة الدفع:"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           VerticalAlignment="Center"
+                                           Margin="0,0,12,0" />
 
-                            <RadioButton Content="نقدي"
-                                         IsChecked="{Binding SelectedPaymentMethod, Converter={StaticResource PaymentMethodConverter}, ConverterParameter=Cash}"
-                                         GroupName="PaymentMethod"
-                                         Style="{StaticResource MaterialDesignTabRadioButtonBottom}"
-                                         Padding="12,8"
-                                         FontSize="13"
-                                         Margin="0,0,6,0" />
+                                <RadioButton Content="نقدي"
+                                             IsChecked="{Binding SelectedPaymentMethod, Converter={StaticResource PaymentMethodConverter}, ConverterParameter=Cash}"
+                                             GroupName="PaymentMethod"
+                                             Style="{StaticResource MaterialDesignTabRadioButtonBottom}"
+                                             Padding="12,8"
+                                             FontSize="13"
+                                             Margin="0,0,6,0" />
 
-                            <RadioButton Content="آجل"
-                                         IsChecked="{Binding SelectedPaymentMethod, Converter={StaticResource PaymentMethodConverter}, ConverterParameter=Credit}"
-                                         GroupName="PaymentMethod"
-                                         Style="{StaticResource MaterialDesignTabRadioButtonBottom}"
-                                         Padding="12,8"
-                                         FontSize="13"
-                                         Margin="0,0,6,0" />
+                                <RadioButton Content="آجل"
+                                             IsChecked="{Binding SelectedPaymentMethod, Converter={StaticResource PaymentMethodConverter}, ConverterParameter=Credit}"
+                                             GroupName="PaymentMethod"
+                                             Style="{StaticResource MaterialDesignTabRadioButtonBottom}"
+                                             Padding="12,8"
+                                             FontSize="13"
+                                             Margin="0,0,6,0" />
+                            </StackPanel>
 
                             <StackPanel Orientation="Horizontal"
                                         VerticalAlignment="Center"
@@ -337,7 +340,6 @@
                                          IsEnabled="{Binding CanSave}"
                                          Visibility="{Binding ShowFxRateInput, Converter={StaticResource BoolToVis}}"/>
                             </StackPanel>
-
                         </StackPanel>
 
                         <!-- الصندوق + تاريخ الاستحقاق (الآجل): لا يُستبدل الصندوق بتاريخ الاستحقاق -->
@@ -678,7 +680,7 @@
                                 </DataGridTemplateColumn>
 
                                 <DataGridTemplateColumn x:Name="ColLineWarehouse" Header="المخزن" Width="165" MinWidth="150"
-                                                        Visibility="{Binding DataContext.ShowWarehouse, Source={x:Reference Root}, Converter={StaticResource BoolToVis}}">
+                                                        Visibility="{Binding DataContext.ShowWarehouse, Source={x:Reference VmProxy}, Converter={StaticResource BoolToVis}}">
                                     <DataGridTemplateColumn.CellStyle>
                                         <Style TargetType="DataGridCell" BasedOn="{StaticResource ModernDataGridCell}">
                                             <Setter Property="Padding" Value="4,4"/>
@@ -1075,7 +1077,7 @@
                                 <Button Command="{Binding NewInvoiceCommand}" Style="{StaticResource FlatButton}"
                                         Height="40" Padding="16,0" Margin="0,0,8,4"
                                         materialDesign:ButtonAssist.CornerRadius="10"
-                                        Visibility="{Binding ShowExtraToolbarButtons, Converter={StaticResource BoolToVis}}">
+                                        ToolTip="عرض سعر / فاتورة جديدة">
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="FileDocumentPlusOutline" Width="18" Height="18" VerticalAlignment="Center"/>
                                         <TextBlock Text="جديد" Margin="6,0,0,0" VerticalAlignment="Center"/>
