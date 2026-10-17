@@ -18,6 +18,20 @@ public class CloudBranch
 
     public Tenant Tenant { get; set; } = null!;
     public ICollection<TenantAccountBranch> AccountBranches { get; set; } = [];
+    public ICollection<CloudProductBranch> ProductBranches { get; set; } = [];
+}
+
+/// <summary>ربط منتج ↔ فروع يظهر فيها (متعدد إلى متعدد).</summary>
+public class CloudProductBranch
+{
+    public int Id { get; set; }
+    public int TenantId { get; set; }
+    public int ProductId { get; set; }
+    public int BranchId { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public CloudProduct Product { get; set; } = null!;
+    public CloudBranch Branch { get; set; } = null!;
 }
 
 /// <summary>ربط حساب مستأجر ↔ فروع مسموحة.</summary>

@@ -26,6 +26,7 @@ public class CloudProduct : CloudBaseEntity
     public DateTime? DiscountExpiresAt { get; set; }
     public CloudCategory Category { get; set; } = null!;
     public ICollection<CloudProductPrice> ProductPrices { get; set; } = [];
+    public ICollection<CloudProductBranch> ProductBranches { get; set; } = [];
 }
 public class CloudPricingType : CloudBaseEntity
 {

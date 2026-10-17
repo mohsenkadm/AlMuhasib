@@ -2,6 +2,7 @@ namespace AlMuhasib.Sync;
 
 public enum SyncEntityType
 {
+    Branch,
     Category,
     Product,
     PricingType,

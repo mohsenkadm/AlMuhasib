@@ -146,6 +146,39 @@ public sealed class AuthController : ControllerBase
         });
     }
 
+    [HttpGet("branches")]
+    [Authorize(Policy = "Tenant")]
+    public async Task<ActionResult<AllowedBranchesResponse>> GetBranches(CancellationToken ct)
+    {
+        _db.BypassBranchFilter = true;
+        try
+        {
+            var tenantId = int.Parse(User.FindFirst("tenant_id")!.Value);
+            var accountId = int.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+
+            var account = await _db.TenantAccounts.AsNoTracking()
+                .FirstAsync(a => a.Id == accountId && a.TenantId == tenantId, ct);
+
+            var branches = await LoadAllowedBranchesAsync(tenantId, accountId, account.CreatedAt, ct);
+            int? currentBranchId = null;
+            var branchClaim = User.FindFirst("branch_id")?.Value;
+            if (int.TryParse(branchClaim, out var parsed) && parsed > 0)
+                currentBranchId = parsed;
+
+            return Ok(new AllowedBranchesResponse
+            {
+                AllowedBranches = branches,
+                DefaultBranchId = branches.FirstOrDefault(b => b.IsDefault)?.BranchId
+                                  ?? (branches.Count == 1 ? branches[0].BranchId : null),
+                CurrentBranchId = currentBranchId
+            });
+        }
+        finally
+        {
+            _db.BypassBranchFilter = false;
+        }
+    }
+
     [HttpPost("refresh")]
     [AllowAnonymous]
     public async Task<ActionResult<TenantLoginResponse>> Refresh([FromBody] RefreshTokenRequest request, CancellationToken ct)

@@ -59,6 +59,13 @@ public sealed partial class SyncEngine : ISyncEngine
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
         try
         {
+            // Branches first — other entities resolve BranchSyncId against this cache.
+            foreach (var dto in request.Data.Branches)
+                accepted += await UpsertBranchAsync(tenantId, dto, response, ct);
+            await _db.SaveChangesAsync(ct);
+            await EnsureBranchCacheAsync(tenantId, ct);
+            await RefreshAllowedBranchesAsync(tenantId, ct);
+
             foreach (var dto in request.Data.Categories)
                 accepted += await UpsertCategoryAsync(tenantId, dto, response, ct);
             await _db.SaveChangesAsync(ct);
@@ -70,6 +77,8 @@ public sealed partial class SyncEngine : ISyncEngine
                 accepted += await UpsertProductAsync(tenantId, dto, categoryId.Value, response, ct);
             }
             await FlushAndCacheAsync(_db.Products, tenantId, request.Data.Products.Select(p => p.SyncId), resolver, ct);
+            await ApplyProductVisibleBranchesAsync(tenantId, request.Data.Products, response, ct);
+            await _db.SaveChangesAsync(ct);
 
             foreach (var dto in request.Data.PricingTypes)
                 accepted += await UpsertPricingTypeAsync(tenantId, dto, response, ct);
@@ -308,6 +317,7 @@ public sealed partial class SyncEngine : ISyncEngine
         var since = request.Since ?? DateTime.MinValue;
         var bundle = new SyncDataBundle();
 
+        bundle.Branches = await PullBranchesAsync(tenantId, since, ct);
         bundle.Categories = await PullEntitiesAsync(_db.Categories, tenantId, since, MapCategory, ct);
         bundle.Products = await PullProductsAsync(tenantId, since, ct);
         bundle.PricingTypes = await PullEntitiesAsync(_db.PricingTypes, tenantId, since, MapPricingType, ct);
@@ -366,6 +376,205 @@ public sealed partial class SyncEngine : ISyncEngine
     }
 
     #region Upsert helpers
+
+    private static bool ShouldRejectBranch(CloudBranch? existing, SyncDtoBase incoming)
+    {
+        if (existing is null) return false;
+        if (incoming.UpdatedAt.HasValue && existing.UpdatedAt.HasValue &&
+            incoming.UpdatedAt.Value < existing.UpdatedAt.Value)
+            return true;
+        return false;
+    }
+
+    private async Task<int> UpsertBranchAsync(int tenantId, BranchSyncDto dto, SyncPushResponse response, CancellationToken ct)
+    {
+        if (dto.SyncId == Guid.Empty)
+        {
+            AddConflict(response, "Branch", dto.SyncId, "SyncId فارغ — حدّث التطبيق المحلي وأعد المزامنة");
+            return 0;
+        }
+
+        var code = (dto.Code ?? string.Empty).Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            AddConflict(response, "Branch", dto.SyncId, "رمز الفرع مطلوب");
+            return 0;
+        }
+
+        var name = (dto.Name ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            AddConflict(response, "Branch", dto.SyncId, "اسم الفرع مطلوب");
+            return 0;
+        }
+
+        var existing = await _db.Branches.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(b => b.TenantId == tenantId && b.SyncId == dto.SyncId, ct);
+
+        // Relink Desktop MAIN SyncId onto the cloud MAIN row when codes match but SyncIds differ.
+        if (existing is null && (dto.IsMain || code == CloudBranch.MainBranchCode))
+        {
+            existing = await _db.Branches.IgnoreQueryFilters()
+                .FirstOrDefaultAsync(b => b.TenantId == tenantId && !b.IsDeleted
+                                          && (b.IsMain || b.Code == CloudBranch.MainBranchCode), ct);
+            if (existing is not null)
+                existing.SyncId = dto.SyncId;
+        }
+
+        if (ShouldRejectBranch(existing, dto))
+        {
+            AddConflict(response, "Branch", dto.SyncId, "Server version is newer");
+            return 0;
+        }
+
+        var isNew = existing is null;
+        if (isNew)
+        {
+            existing = new CloudBranch
+            {
+                TenantId = tenantId,
+                SyncId = dto.SyncId,
+                CreatedAt = dto.CreatedAt == default ? DateTime.UtcNow : dto.CreatedAt
+            };
+            _db.Branches.Add(existing);
+        }
+
+        // Protect MAIN from deactivation / demotion.
+        if (existing!.IsMain || existing.Code == CloudBranch.MainBranchCode)
+        {
+            if (dto.IsDeleted || !dto.IsActive)
+            {
+                AddConflict(response, "Branch", dto.SyncId, "لا يمكن تعطيل أو حذف الفرع الرئيسي");
+                return 0;
+            }
+            if (!dto.IsMain && code != CloudBranch.MainBranchCode)
+            {
+                AddConflict(response, "Branch", dto.SyncId, "لا يمكن إلغاء صفة الفرع الرئيسي");
+                return 0;
+            }
+        }
+
+        var duplicateCode = await _db.Branches.IgnoreQueryFilters()
+            .AnyAsync(b => b.TenantId == tenantId && !b.IsDeleted && b.Code == code
+                           && b.SyncId != dto.SyncId, ct);
+        if (duplicateCode)
+        {
+            AddConflict(response, "Branch", dto.SyncId, $"رمز الفرع مستخدم مسبقاً: {code}");
+            return 0;
+        }
+
+        if (dto.IsMain)
+        {
+            var otherMain = await _db.Branches.IgnoreQueryFilters()
+                .Where(b => b.TenantId == tenantId && !b.IsDeleted && b.IsMain && b.SyncId != dto.SyncId)
+                .ToListAsync(ct);
+            foreach (var m in otherMain)
+                m.IsMain = false;
+        }
+
+        existing.Name = name;
+        existing.Code = code;
+        existing.IsActive = dto.IsActive;
+        existing.IsMain = dto.IsMain || code == CloudBranch.MainBranchCode;
+        existing.UpdatedAt = dto.UpdatedAt ?? dto.CreatedAt;
+        existing.IsDeleted = dto.IsDeleted;
+        if (dto.IsDeleted && existing.IsMain)
+        {
+            AddConflict(response, "Branch", dto.SyncId, "لا يمكن حذف الفرع الرئيسي");
+            return 0;
+        }
+
+        // Ensure Id is available for assignment / cache before later entities in this push.
+        if (isNew)
+            await _db.SaveChangesAsync(ct);
+
+        _branchSyncCache[existing.SyncId] = existing.Id;
+        if (existing.IsMain)
+            _mainBranchId = existing.Id;
+
+        // New branches: assign every active tenant account so all mobile users see it in Login.
+        if (isNew && !existing.IsDeleted)
+        {
+            var activeAccountIds = await _db.TenantAccounts.AsNoTracking()
+                .Where(a => a.TenantId == tenantId && a.IsActive)
+                .Select(a => a.Id)
+                .ToListAsync(ct);
+            var alreadyAssigned = await _db.TenantAccountBranches
+                .Where(x => x.TenantId == tenantId && x.BranchId == existing.Id)
+                .Select(x => x.TenantAccountId)
+                .ToListAsync(ct);
+            var assignedSet = alreadyAssigned.ToHashSet();
+            foreach (var accId in activeAccountIds)
+            {
+                if (assignedSet.Contains(accId)) continue;
+                _db.TenantAccountBranches.Add(new TenantAccountBranch
+                {
+                    TenantId = tenantId,
+                    TenantAccountId = accId,
+                    BranchId = existing.Id,
+                    IsDefault = existing.IsMain,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+        else if (_tenantContext?.TenantAccountId is int accountId and > 0)
+        {
+            // Existing branch touch: ensure syncing account still has access.
+            var hasAssignment = await _db.TenantAccountBranches
+                .AnyAsync(x => x.TenantId == tenantId
+                               && x.TenantAccountId == accountId
+                               && x.BranchId == existing.Id, ct);
+            if (!hasAssignment)
+            {
+                _db.TenantAccountBranches.Add(new TenantAccountBranch
+                {
+                    TenantId = tenantId,
+                    TenantAccountId = accountId,
+                    BranchId = existing.Id,
+                    IsDefault = existing.IsMain,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+
+        _allowedBranchIds.Add(existing.Id);
+
+        return 1;
+    }
+
+    private async Task<List<BranchSyncDto>> PullBranchesAsync(int tenantId, DateTime since, CancellationToken ct)
+    {
+        var query = _db.Branches.IgnoreQueryFilters()
+            .Where(b => b.TenantId == tenantId && (b.UpdatedAt ?? b.CreatedAt) >= since);
+
+        if (_tenantContext?.CanViewAllBranches == true)
+        {
+            // Admin: all tenant branches
+        }
+        else if (_allowedBranchIds.Count > 0)
+        {
+            var allowed = _allowedBranchIds;
+            query = query.Where(b => allowed.Contains(b.Id) || b.IsMain);
+        }
+        else
+        {
+            query = query.Where(b => b.IsMain);
+        }
+
+        var rows = await query.ToListAsync(ct);
+        return rows.Select(b => new BranchSyncDto
+        {
+            SyncId = b.SyncId,
+            BranchSyncId = Guid.Empty,
+            CreatedAt = b.CreatedAt,
+            UpdatedAt = b.UpdatedAt,
+            IsDeleted = b.IsDeleted,
+            Name = b.Name,
+            Code = b.Code,
+            IsActive = b.IsActive,
+            IsMain = b.IsMain
+        }).ToList();
+    }
 
     private static void AddConflict(SyncPushResponse response, string entityType, Guid syncId, string reason, CloudBaseEntity? serverEntity = null) =>
         response.Conflicts.Add(new SyncConflict
@@ -709,6 +918,42 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.DiscountValue = dto.DiscountValue;
         existing.DiscountExpiresAt = dto.DiscountExpiresAt;
         return 1;
+    }
+
+    private async Task ApplyProductVisibleBranchesAsync(
+        int tenantId, List<ProductSyncDto> products, SyncPushResponse response, CancellationToken ct)
+    {
+        foreach (var dto in products)
+        {
+            var product = await FindBySyncIdAsync(_db.Products, tenantId, dto.SyncId, ct);
+            if (product is null) continue;
+
+            var existingLinks = await _db.ProductBranches
+                .Where(pb => pb.TenantId == tenantId && pb.ProductId == product.Id)
+                .ToListAsync(ct);
+            _db.ProductBranches.RemoveRange(existingLinks);
+
+            // Empty list = visible in all branches (no rows), matching Desktop legacy behavior.
+            if (dto.VisibleBranchSyncIds is null || dto.VisibleBranchSyncIds.Count == 0)
+                continue;
+
+            foreach (var branchSyncId in dto.VisibleBranchSyncIds.Distinct())
+            {
+                if (!_branchSyncCache.TryGetValue(branchSyncId, out var branchId))
+                {
+                    AddConflict(response, "Product", dto.SyncId, $"VisibleBranchSyncId غير معروف: {branchSyncId:D}");
+                    continue;
+                }
+
+                _db.ProductBranches.Add(new CloudProductBranch
+                {
+                    TenantId = tenantId,
+                    ProductId = product.Id,
+                    BranchId = branchId,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
     }
 
     private async Task<int> UpsertPricingTypeAsync(int tenantId, PricingTypeSyncDto dto, SyncPushResponse response, CancellationToken ct)
@@ -1332,6 +1577,18 @@ public sealed partial class SyncEngine : ISyncEngine
         var categories = await QueryTenantBranch(_db.Categories, tenantId).ToListAsync(ct);
         var catMap = categories.ToDictionary(c => c.Id, c => c.SyncId);
         var products = await QueryTenantBranchSince(_db.Products, tenantId, since).ToListAsync(ct);
+        var productIds = products.Select(p => p.Id).ToHashSet();
+        var visibility = productIds.Count == 0
+            ? new Dictionary<int, List<Guid>>()
+            : (await _db.ProductBranches.AsNoTracking()
+                .Where(pb => pb.TenantId == tenantId && productIds.Contains(pb.ProductId))
+                .Select(pb => new { pb.ProductId, pb.BranchId })
+                .ToListAsync(ct))
+            .GroupBy(x => x.ProductId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(x => ResolveBranchSyncId(x.BranchId)).Where(id => id != Guid.Empty).Distinct().ToList());
+
         return products.Select(p => new ProductSyncDto
         {
             SyncId = p.SyncId, BranchSyncId = ResolveBranchSyncId(p.BranchId), CreatedAt = p.CreatedAt, CreatedBy = p.CreatedBy, UpdatedAt = p.UpdatedAt, UpdatedBy = p.UpdatedBy,
@@ -1342,7 +1599,8 @@ public sealed partial class SyncEngine : ISyncEngine
             PassengerCount = p.PassengerCount, PlateNumber = p.PlateNumber, PlateType = p.PlateType,
             Weight = p.Weight, WeightUnit = p.WeightUnit,
             DiscountType = p.DiscountType, DiscountValue = p.DiscountValue, DiscountExpiresAt = p.DiscountExpiresAt,
-            CategorySyncId = catMap.GetValueOrDefault(p.CategoryId)
+            CategorySyncId = catMap.GetValueOrDefault(p.CategoryId),
+            VisibleBranchSyncIds = visibility.GetValueOrDefault(p.Id) ?? []
         }).ToList();
     }
 

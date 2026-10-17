@@ -47,6 +47,22 @@ public sealed class TransferListItem
     public string? Notes { get; set; }
 }
 
+public sealed class CurrencyExchangeListItem
+{
+    public Guid SyncId { get; set; }
+    public Guid FromCashBoxSyncId { get; set; }
+    public string FromCashBoxName { get; set; } = string.Empty;
+    public Guid ToCashBoxSyncId { get; set; }
+    public string ToCashBoxName { get; set; } = string.Empty;
+    public AccountingCurrency FromCurrency { get; set; }
+    public AccountingCurrency ToCurrency { get; set; }
+    public decimal FromAmount { get; set; }
+    public decimal ToAmount { get; set; }
+    public decimal FxRate { get; set; }
+    public DateTime Date { get; set; }
+    public string? Notes { get; set; }
+}
+
 public sealed class WarehouseStockListItem
 {
     public Guid SyncId { get; set; }

@@ -4,6 +4,7 @@ public static class SyncEntityOrder
 {
     public static readonly SyncEntityType[] PushOrder =
     [
+        SyncEntityType.Branch,
         SyncEntityType.Category,
         SyncEntityType.Product,
         SyncEntityType.PricingType,

@@ -561,4 +561,37 @@ public sealed class ReportsController : TenantApiControllerBase
         return Ok(await _reports.GetWorkSummaryAsync(f.From, f.To));
     }
 
+    [HttpGet("executive-summary")]
+    public async Task<IActionResult> ExecutiveSummary([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        EnsureTenant();
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetExecutiveBusinessSummaryAsync(f.From, f.To));
+    }
+
+    [HttpGet("warehouse-transfers")]
+    public async Task<IActionResult> WarehouseTransfersReport([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        EnsureTenant();
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetWarehouseTransfersReportAsync(
+            f.From, f.To, f.WarehouseId, null, f.Search));
+    }
+
+    [HttpGet("warehouse-transfers/{id:int}")]
+    public async Task<IActionResult> WarehouseTransferDetail(int id, CancellationToken ct)
+    {
+        EnsureTenant();
+        var detail = await _reports.GetWarehouseTransferDetailAsync(id);
+        return detail is null ? NotFound() : Ok(detail);
+    }
+
+    [HttpGet("damage-invoices")]
+    public async Task<IActionResult> DamageInvoices([FromQuery] ReportFilterRequest filter, CancellationToken ct)
+    {
+        EnsureTenant();
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetDamageInvoicesReportAsync(f.From, f.To, f.WarehouseId));
+    }
+
 }

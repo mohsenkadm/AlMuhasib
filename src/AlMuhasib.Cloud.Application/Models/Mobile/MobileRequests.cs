@@ -213,3 +213,14 @@ public sealed class PayInstallmentRequest
     public DateTime? PaymentDate { get; set; }
     public string? Notes { get; set; }
 }
+
+public sealed class CreateCurrencyExchangeRequest
+{
+    public Guid? SyncId { get; set; }
+    public Guid FromCashBoxSyncId { get; set; }
+    public Guid ToCashBoxSyncId { get; set; }
+    public decimal FromAmount { get; set; }
+    public decimal? FxRate { get; set; }
+    public DateTime Date { get; set; }
+    public string? Notes { get; set; }
+}

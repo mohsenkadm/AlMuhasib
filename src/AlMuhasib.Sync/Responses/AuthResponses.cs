@@ -52,6 +52,22 @@ public sealed class SelectBranchResponse
     public BranchInfoDto? Branch { get; set; }
 }
 
+/// <summary>تحديث قائمة الفروع المسموحة دون إعادة تسجيل دخول كاملة.</summary>
+public sealed class AllowedBranchesResponse
+{
+    public List<BranchInfoDto> AllowedBranches { get; set; } = [];
+    public int? DefaultBranchId { get; set; }
+    public int? CurrentBranchId { get; set; }
+}
+
+public sealed class LatestExchangeRateResponse
+{
+    public DateTime RateDate { get; set; }
+    public decimal UsdToIqd { get; set; }
+    public string Notes { get; set; } = string.Empty;
+    public Guid SyncId { get; set; }
+}
+
 public sealed class LicenseStatusResponse
 {
     public bool IsActive { get; set; }

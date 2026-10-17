@@ -844,6 +844,113 @@ public sealed class CloudMobileWriteService : ICloudMobileWriteService
         };
     }
 
+    public async Task<MobileWriteResponse> CreateCurrencyExchangeAsync(
+        int tenantId, CreateCurrencyExchangeRequest request, string username, CancellationToken ct = default)
+    {
+        if (request.FromCashBoxSyncId == Guid.Empty || request.ToCashBoxSyncId == Guid.Empty)
+            throw new ArgumentException("قاصة المصدر والوجهة مطلوبتان");
+        if (request.FromCashBoxSyncId == request.ToCashBoxSyncId)
+            throw new ArgumentException("اختر قاصتين مختلفتين");
+        if (request.FromAmount <= 0)
+            throw new ArgumentException("أدخل مبلغاً أكبر من صفر");
+
+        var fromBox = await _db.CashBoxes.FirstOrDefaultAsync(
+            c => c.TenantId == tenantId && c.SyncId == request.FromCashBoxSyncId && !c.IsDeleted, ct)
+            ?? throw new ArgumentException("قاصة المصدر غير موجودة");
+        var toBox = await _db.CashBoxes.FirstOrDefaultAsync(
+            c => c.TenantId == tenantId && c.SyncId == request.ToCashBoxSyncId && !c.IsDeleted, ct)
+            ?? throw new ArgumentException("قاصة الوجهة غير موجودة");
+
+        if (fromBox.Currency == toBox.Currency)
+            throw new ArgumentException("الصيرفة تتطلب قاصتين بعملتين مختلفتين (دينار ودولار)");
+
+        var fxInput = request.FxRate is > 0 ? request.FxRate.Value : 0m;
+        if (fxInput <= 0)
+        {
+            var latest = await _db.ExchangeRates.AsNoTracking()
+                .Where(r => r.TenantId == tenantId && !r.IsDeleted)
+                .OrderByDescending(r => r.RateDate)
+                .Select(r => (decimal?)r.UsdToIqd)
+                .FirstOrDefaultAsync(ct);
+            fxInput = latest ?? 0m;
+        }
+
+        var (_, fx) = await CloudMultiCurrencyFeatureGate.ApplyForWriteAsync(
+            _db, tenantId, AccountingCurrency.USD, fxInput, "صيرفة موبايل", ct);
+        if (fx <= 0)
+            throw new ArgumentException("أدخل سعر صرف صالحاً أو سجّل سعراً من شاشة أسعار الصرف");
+
+        var fromCurrency = fromBox.Currency;
+        var toCurrency = toBox.Currency;
+        var normalizedFrom = fromCurrency == AccountingCurrency.USD
+            ? AccountingCurrencyHelper.RoundUsd(request.FromAmount)
+            : AccountingCurrencyHelper.RoundIqd(request.FromAmount);
+
+        if (fromBox.Balance < normalizedFrom)
+            throw new ArgumentException(
+                $"رصيد قاصة المصدر غير كافٍ (المتاح: {AccountingCurrencyHelper.Format(fromBox.Balance, fromCurrency)})");
+
+        var toAmount = AccountingCurrencyHelper.Convert(normalizedFrom, fromCurrency, toCurrency, fx);
+        var syncId = request.SyncId is { } s && s != Guid.Empty ? s : Guid.NewGuid();
+        var now = DateTime.UtcNow;
+        var date = request.Date == default ? DateTime.UtcNow : request.Date;
+
+        var dto = new CurrencyExchangeSyncDto
+        {
+            SyncId = syncId,
+            FromCashBoxSyncId = request.FromCashBoxSyncId,
+            ToCashBoxSyncId = request.ToCashBoxSyncId,
+            FromCurrency = fromCurrency,
+            ToCurrency = toCurrency,
+            FromAmount = normalizedFrom,
+            ToAmount = toAmount,
+            FxRate = AccountingCurrencyHelper.RoundIqd(fx),
+            Date = date,
+            Notes = string.IsNullOrWhiteSpace(request.Notes) ? null : request.Notes.Trim(),
+            CreatedAt = now,
+            CreatedBy = username
+        };
+
+        var pushResponse = await _syncEngine.PushAsync(tenantId, new SyncPushRequest
+        {
+            Data = new SyncDataBundle { CurrencyExchanges = [dto] }
+        }, ct);
+
+        if (pushResponse.Conflicts.Count > 0)
+        {
+            return new MobileWriteResponse
+            {
+                SyncId = syncId,
+                Message = "تعذر حفظ الصيرفة",
+                Conflicts = pushResponse.Conflicts
+            };
+        }
+
+        // Re-load tracked boxes and adjust balances (sync upsert does not move cash).
+        fromBox = await _db.CashBoxes.FirstAsync(
+            c => c.TenantId == tenantId && c.SyncId == request.FromCashBoxSyncId && !c.IsDeleted, ct);
+        toBox = await _db.CashBoxes.FirstAsync(
+            c => c.TenantId == tenantId && c.SyncId == request.ToCashBoxSyncId && !c.IsDeleted, ct);
+
+        if (fromBox.Balance < normalizedFrom)
+            throw new ArgumentException("رصيد قاصة المصدر غير كافٍ");
+
+        fromBox.Balance -= normalizedFrom;
+        fromBox.UpdatedAt = now;
+        fromBox.UpdatedBy = username;
+        toBox.Balance += toAmount;
+        toBox.UpdatedAt = now;
+        toBox.UpdatedBy = username;
+        await _db.SaveChangesAsync(ct);
+
+        return new MobileWriteResponse
+        {
+            SyncId = syncId,
+            Message = "تم حفظ الصيرفة بنجاح",
+            Conflicts = pushResponse.Conflicts
+        };
+    }
+
     public Task<MobileWriteResponse> UpsertWarehouseAsync(int tenantId, UpsertWarehouseRequest request, string username, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(request.Name))

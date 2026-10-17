@@ -48,8 +48,18 @@ internal static class SyncMapper
             (e.UpdatedAt ?? e.CreatedAt) >= cutoff
             || (e.IsDeleted && (e.DeletedAt ?? e.UpdatedAt ?? e.CreatedAt) >= cutoff);
 
+        var branches = await db.Branches.IgnoreQueryFilters().ToListAsync(ct);
         var categories = await db.Categories.IgnoreQueryFilters().ToListAsync(ct);
         var products = await db.Products.IgnoreQueryFilters().ToListAsync(ct);
+        var productBranches = await db.ProductBranches.AsNoTracking().ToListAsync(ct);
+        var productVisibleBranchSyncIds = productBranches
+            .GroupBy(pb => pb.ProductId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(pb => _branchIdToSync.GetValueOrDefault(pb.BranchId))
+                    .Where(id => id != Guid.Empty)
+                    .Distinct()
+                    .ToList());
         var pricingTypes = await db.PricingTypes.IgnoreQueryFilters().ToListAsync(ct);
         var productPrices = await db.ProductPrices.IgnoreQueryFilters().ToListAsync(ct);
         var businessSettings = await db.BusinessSettings.IgnoreQueryFilters().ToListAsync(ct);
@@ -149,9 +159,11 @@ internal static class SyncMapper
 
         var bundle = new SyncDataBundle
         {
+            // Always push MAIN + any changed branch so Cloud BranchSyncId cache stays aligned.
+            Branches = branches.Where(b => ShouldSync(b) || b.IsMain).Select(MapBranch).ToList(),
             Categories = categories.Where(c => ShouldSync(c) || referencedCategoryIds.Contains(c.Id)).Select(MapCategory).ToList(),
             Products = products.Where(p => ShouldSync(p) || referencedProductIds.Contains(p.Id))
-                .Select(p => MapProductSafe(p, catMap)).Where(p => p is not null).Cast<ProductSyncDto>().ToList(),
+                .Select(p => MapProductSafe(p, catMap, productVisibleBranchSyncIds)).Where(p => p is not null).Cast<ProductSyncDto>().ToList(),
             PricingTypes = pricingTypes.Where(t => ShouldSync(t) || referencedPricingTypeIds.Contains(t.Id)).Select(MapPricingType).ToList(),
             BusinessSettings = businessSettings.Where(ShouldSync).Select(MapBusinessSettings).ToList(),
             ExchangeRates = exchangeRates.Where(ShouldSync).Select(MapExchangeRate).ToList(),
@@ -258,6 +270,7 @@ internal static class SyncMapper
 
     private static async Task ApplyPullBundleCoreAsync(AppDbContext db, SyncDataBundle data, CancellationToken ct)
     {
+        await UpsertBranchesAsync(db, data.Branches, ct);
         await EnsureBranchMapsAsync(db, ct);
         var catBySync = await UpsertCategoriesAsync(db, data.Categories, ct);
         await UpsertProductsAsync(db, data.Products, catBySync, ct);
@@ -333,7 +346,20 @@ internal static class SyncMapper
     };
 
     private static CategorySyncDto MapCategory(Category c) { var d = new CategorySyncDto(); CopyBase(c, d); d.Name = c.Name; return d; }
-    private static ProductSyncDto MapProduct(Product p, Dictionary<int, Guid> cats)
+    private static BranchSyncDto MapBranch(Branch b)
+    {
+        var d = new BranchSyncDto();
+        CopyBase(b, d);
+        d.BranchSyncId = Guid.Empty;
+        d.Name = b.Name;
+        d.Code = b.Code;
+        d.IsActive = b.IsActive;
+        d.IsMain = b.IsMain;
+        return d;
+    }
+
+    private static ProductSyncDto MapProduct(
+        Product p, Dictionary<int, Guid> cats, Dictionary<int, List<Guid>>? visibleBranches = null)
     {
         var d = new ProductSyncDto();
         CopyBase(p, d);
@@ -355,9 +381,11 @@ internal static class SyncMapper
         d.DiscountType = p.DiscountType;
         d.DiscountValue = p.DiscountValue;
         d.DiscountExpiresAt = p.DiscountExpiresAt;
+        d.VisibleBranchSyncIds = visibleBranches?.GetValueOrDefault(p.Id) ?? [];
         return d;
     }
-    private static ProductSyncDto? MapProductSafe(Product p, Dictionary<int, Guid> cats)
+    private static ProductSyncDto? MapProductSafe(
+        Product p, Dictionary<int, Guid> cats, Dictionary<int, List<Guid>>? visibleBranches = null)
     {
         if (!cats.TryGetValue(p.CategoryId, out var catSyncId)) return null;
         var d = new ProductSyncDto();
@@ -380,6 +408,7 @@ internal static class SyncMapper
         d.DiscountType = p.DiscountType;
         d.DiscountValue = p.DiscountValue;
         d.DiscountExpiresAt = p.DiscountExpiresAt;
+        d.VisibleBranchSyncIds = visibleBranches?.GetValueOrDefault(p.Id) ?? [];
         return d;
     }
     private static PricingTypeSyncDto MapPricingType(PricingType t)
@@ -659,6 +688,66 @@ internal static class SyncMapper
     private static async Task<T?> FindBySyncIdAsync<T>(DbSet<T> set, Guid syncId, CancellationToken ct) where T : BaseEntity =>
         await set.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.SyncId == syncId, ct);
 
+    private static async Task UpsertBranchesAsync(AppDbContext db, List<BranchSyncDto> items, CancellationToken ct)
+    {
+        if (items.Count == 0) return;
+
+        foreach (var dto in items)
+        {
+            if (dto.SyncId == Guid.Empty) continue;
+            var code = (dto.Code ?? string.Empty).Trim().ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(code)) continue;
+
+            var entity = await FindBySyncIdAsync(db.Branches, dto.SyncId, ct);
+            if (entity is null && (dto.IsMain || code == Branch.MainBranchCode))
+            {
+                entity = await db.Branches.IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(b => !b.IsDeleted && (b.IsMain || b.Code == Branch.MainBranchCode), ct);
+                if (entity is not null)
+                    entity.SyncId = dto.SyncId;
+            }
+
+            entity ??= new Branch();
+            if (ShouldRejectIncoming(entity, dto)) continue;
+
+            if (entity.IsMain || entity.Code == Branch.MainBranchCode)
+            {
+                if (dto.IsDeleted || !dto.IsActive)
+                    continue;
+            }
+
+            var duplicate = await db.Branches.IgnoreQueryFilters()
+                .AnyAsync(b => !b.IsDeleted && b.Code == code && b.SyncId != dto.SyncId, ct);
+            if (duplicate) continue;
+
+            if (entity.Id == 0) db.Branches.Add(entity);
+
+            entity.SyncId = dto.SyncId;
+            entity.CreatedAt = dto.CreatedAt == default ? entity.CreatedAt : dto.CreatedAt;
+            entity.CreatedBy = string.IsNullOrWhiteSpace(dto.CreatedBy) ? entity.CreatedBy : dto.CreatedBy;
+            entity.UpdatedAt = dto.UpdatedAt ?? dto.CreatedAt;
+            entity.UpdatedBy = dto.UpdatedBy;
+            entity.IsDeleted = dto.IsDeleted;
+            entity.DeletedAt = dto.DeletedAt;
+            entity.DeletedBy = dto.DeletedBy;
+            entity.Name = (dto.Name ?? string.Empty).Trim();
+            entity.Code = code;
+            entity.IsActive = dto.IsActive;
+            entity.IsMain = dto.IsMain || code == Branch.MainBranchCode;
+
+            if (entity.IsMain)
+            {
+                var others = await db.Branches.IgnoreQueryFilters()
+                    .Where(b => !b.IsDeleted && b.IsMain && b.SyncId != dto.SyncId)
+                    .ToListAsync(ct);
+                foreach (var o in others)
+                    o.IsMain = false;
+            }
+        }
+
+        await db.SaveChangesAsync(ct);
+    }
+
     private static async Task<Dictionary<Guid, int>> UpsertCategoriesAsync(AppDbContext db, List<CategorySyncDto> items, CancellationToken ct)
     {
         var map = new Dictionary<Guid, int>();
@@ -697,6 +786,32 @@ internal static class SyncMapper
             entity.DiscountValue = dto.DiscountValue;
             entity.DiscountExpiresAt = dto.DiscountExpiresAt;
         }
+        await db.SaveChangesAsync(ct);
+
+        foreach (var dto in items)
+        {
+            var entity = await FindBySyncIdAsync(db.Products, dto.SyncId, ct);
+            if (entity is null) continue;
+
+            var existing = await db.ProductBranches.Where(pb => pb.ProductId == entity.Id).ToListAsync(ct);
+            db.ProductBranches.RemoveRange(existing);
+
+            if (dto.VisibleBranchSyncIds is null || dto.VisibleBranchSyncIds.Count == 0)
+                continue;
+
+            foreach (var branchSyncId in dto.VisibleBranchSyncIds.Distinct())
+            {
+                if (!_branchSyncToId.TryGetValue(branchSyncId, out var branchId))
+                    continue;
+                db.ProductBranches.Add(new ProductBranch
+                {
+                    ProductId = entity.Id,
+                    BranchId = branchId,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+
         await db.SaveChangesAsync(ct);
     }
 

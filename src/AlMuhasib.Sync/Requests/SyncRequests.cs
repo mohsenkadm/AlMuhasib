@@ -4,6 +4,7 @@ namespace AlMuhasib.Sync.Requests;
 
 public sealed class SyncDataBundle
 {
+    public List<BranchSyncDto> Branches { get; set; } = [];
     public List<CategorySyncDto> Categories { get; set; } = [];
     public List<ProductSyncDto> Products { get; set; } = [];
     public List<PricingTypeSyncDto> PricingTypes { get; set; } = [];

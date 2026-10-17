@@ -80,10 +80,12 @@ Unique indexes: `(BranchId, InvoiceNumber)` where not deleted.
 
 ## Sync
 
-- Branches sync by `SyncId`.
-- Every sync DTO carries `BranchSyncId`.
-- Push/pull scoped to tenant; branch identity remapped like other FKs.
-- Offline Flutter queue stamps `branchId` / `branchSyncId` on enqueue; flush rejects mismatch.
+- Branch master rows sync first via `BranchSyncDto` / `SyncEntityType.Branch` (Desktop → Cloud Push, then Pull).
+- `BranchSyncId` on every other sync DTO resolves against the Branch SyncId cache after Branch upsert.
+- Creating a branch on Desktop pushes it; Cloud auto-assigns the syncing tenant account so Login sees it.
+- MAIN is relinked by Code when Desktop/Cloud SyncIds differ (first Branch sync after upgrade).
+- Push/pull of business data is scoped to tenant; branch identity remapped like other FKs.
+- Offline Flutter queue stamps `branchId` on enqueue; flush rejects mismatch. Cloud stamps `BranchSyncId` on mobile writes.
 
 ## Flutter
 
@@ -91,6 +93,18 @@ Unique indexes: `(BranchId, InvoiceNumber)` where not deleted.
 - Single branch → skip picker.
 - `ApiClient` sends `X-Branch-Id`; server validates.
 - On switch: clear controllers / queue isolation by `tenantId+branchId`.
+
+## Cloud report stubs (deferred — no Sync data)
+
+These Desktop reports remain empty stubs on Cloud until their source entities sync:
+
+| Report | Why deferred | Next step |
+|--------|--------------|-----------|
+| Expiry | `ProductBatch` is Desktop-only | Sync batches then implement Cloud query |
+| Packaging stock | No `CloudProductUnit` / packaging types | Sync product units |
+| Price quotes | No quote entity / Sync DTO | Add Sync then implement |
+
+Implemented on Cloud + API + Flutter: executive-summary, warehouse-transfers report, damage-invoices (`InvoiceType.Damage` already syncs via invoices).
 
 ## Adding a new branch-scoped entity
 

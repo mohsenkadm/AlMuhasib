@@ -66,7 +66,9 @@ public sealed class BranchService : IBranchService
             Code = code,
             IsActive = true,
             IsMain = false,
-            CreatedBy = _currentUser.Username
+            CreatedBy = _currentUser.Username,
+            UpdatedAt = DateTime.UtcNow,
+            UpdatedBy = _currentUser.Username
         };
         db.Branches.Add(branch);
         await db.SaveChangesAsync(ct);

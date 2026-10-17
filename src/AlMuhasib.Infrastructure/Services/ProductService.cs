@@ -356,6 +356,10 @@ public class ProductService : IProductService
             });
         }
 
+        // Touch product so Sync includes VisibleBranchSyncIds on next push.
+        var product = await context.Products.FirstAsync(p => p.Id == productId, ct);
+        product.UpdatedAt = now;
+
         await context.SaveChangesAsync(ct);
     }
 

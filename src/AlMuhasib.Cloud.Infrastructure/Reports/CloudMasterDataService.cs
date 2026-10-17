@@ -78,6 +78,16 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
                 (p.ScientificName != null && EF.Functions.Like(p.ScientificName, term)));
         }
 
+        // Single-branch: visible if linked to branch OR has no ProductBranch rows (legacy = all branches).
+        if (_tenantContext is { IsAllBranchesMode: false, BranchId: > 0 } branchCtx)
+        {
+            var branchId = branchCtx.BranchId!.Value;
+            var tid = _tenantContext.TenantId!.Value;
+            query = query.Where(p =>
+                _db.ProductBranches.Any(pb => pb.TenantId == tid && pb.ProductId == p.Id && pb.BranchId == branchId)
+                || !_db.ProductBranches.Any(pb => pb.TenantId == tid && pb.ProductId == p.Id));
+        }
+
         var products = await query.OrderBy(p => p.Name)
             .Select(p => new ProductLookupItem
             {
@@ -110,7 +120,9 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
                     PricingTypeName = p.PricingType.Name,
                     IsDefaultPricingType = p.PricingType.IsDefault,
                     SalePrice = p.SalePrice,
-                    PurchasePrice = p.PurchasePrice
+                    SalePriceUsd = p.SalePriceUsd,
+                    PurchasePrice = p.PurchasePrice,
+                    PurchasePriceUsd = p.PurchasePriceUsd
                 }
             })
             .ToListAsync(ct);
@@ -169,7 +181,9 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
                 PricingTypeName = p.PricingType.Name,
                 IsDefaultPricingType = p.PricingType.IsDefault,
                 SalePrice = p.SalePrice,
-                PurchasePrice = p.PurchasePrice
+                SalePriceUsd = p.SalePriceUsd,
+                PurchasePrice = p.PurchasePrice,
+                PurchasePriceUsd = p.PurchasePriceUsd
             })
             .ToListAsync(ct);
     }

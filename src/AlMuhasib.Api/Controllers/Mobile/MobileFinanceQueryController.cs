@@ -141,6 +141,52 @@ public sealed class MobileFinanceQueryController : ControllerBase
         });
     }
 
+    [HttpGet("currency-exchanges")]
+    public async Task<ActionResult<PagedResult<CurrencyExchangeListItem>>> GetCurrencyExchanges(
+        [FromQuery] DateTime? from,
+        [FromQuery] DateTime? to,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken ct = default)
+    {
+        EnsureTenant();
+        var tenantId = RequireTenantId();
+        var query = _db.CurrencyExchanges.AsNoTracking().ForTenant(tenantId);
+        if (from.HasValue) query = query.Where(x => x.Date >= from.Value);
+        if (to.HasValue) query = query.Where(x => x.Date <= to.Value);
+
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 200);
+        var total = await query.CountAsync(ct);
+        var items = await query.OrderByDescending(x => x.Date).ThenByDescending(x => x.Id)
+            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+
+        var cashBoxes = await _db.CashBoxes.AsNoTracking().ForTenant(tenantId)
+            .ToDictionaryAsync(c => c.Id, ct);
+
+        return Ok(new PagedResult<CurrencyExchangeListItem>
+        {
+            Items = items.Select(x => new CurrencyExchangeListItem
+            {
+                SyncId = x.SyncId,
+                FromCashBoxSyncId = cashBoxes.TryGetValue(x.FromCashBoxId, out var fromBox) ? fromBox.SyncId : Guid.Empty,
+                FromCashBoxName = cashBoxes.TryGetValue(x.FromCashBoxId, out var fb) ? fb.Name : x.FromCashBoxId.ToString(),
+                ToCashBoxSyncId = cashBoxes.TryGetValue(x.ToCashBoxId, out var toBox) ? toBox.SyncId : Guid.Empty,
+                ToCashBoxName = cashBoxes.TryGetValue(x.ToCashBoxId, out var tb) ? tb.Name : x.ToCashBoxId.ToString(),
+                FromCurrency = x.FromCurrency,
+                ToCurrency = x.ToCurrency,
+                FromAmount = x.FromAmount,
+                ToAmount = x.ToAmount,
+                FxRate = x.FxRate,
+                Date = x.Date,
+                Notes = x.Notes
+            }).ToList(),
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize
+        });
+    }
+
     [HttpGet("transfers")]
     public async Task<ActionResult<PagedResult<TransferListItem>>> GetTransfers(
         [FromQuery] DateTime? from,

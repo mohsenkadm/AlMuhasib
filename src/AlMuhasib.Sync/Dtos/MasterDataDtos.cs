@@ -2,6 +2,15 @@ using AlMuhasib.Core.Enums;
 
 namespace AlMuhasib.Sync.Dtos;
 
+/// <summary>سجل فرع على مستوى الشركة/المستأجر — BranchSyncId غير مستخدم (يُترك فارغاً).</summary>
+public sealed class BranchSyncDto : SyncDtoBase
+{
+    public string Name { get; set; } = string.Empty;
+    public string Code { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+    public bool IsMain { get; set; }
+}
+
 public sealed class CategorySyncDto : SyncDtoBase
 {
     public string Name { get; set; } = string.Empty;
@@ -27,6 +36,11 @@ public sealed class ProductSyncDto : SyncDtoBase
     public DiscountType DiscountType { get; set; }
     public decimal DiscountValue { get; set; }
     public DateTime? DiscountExpiresAt { get; set; }
+
+    /// <summary>
+    /// فروع ظهور المنتج. قائمة فارغة = ظاهر في كل الفروع (سلوك Desktop عند عدم وجود ProductBranch).
+    /// </summary>
+    public List<Guid> VisibleBranchSyncIds { get; set; } = [];
 }
 
 public sealed class PricingTypeSyncDto : SyncDtoBase

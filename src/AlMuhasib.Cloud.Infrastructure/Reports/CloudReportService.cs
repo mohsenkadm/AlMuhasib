@@ -1584,14 +1584,64 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
         return result;
     }
 
-    public Task<DamageInvoicesReportResult> GetDamageInvoicesReportAsync(
-        DateTime? from, DateTime? to, int? warehouseId) =>
-        Task.FromResult(new DamageInvoicesReportResult());
+    public async Task<DamageInvoicesReportResult> GetDamageInvoicesReportAsync(
+        DateTime? from, DateTime? to, int? warehouseId)
+    {
+        var context = _db;
+        var query = context.InvoiceItems
+            .AsNoTracking()
+            .Include(ii => ii.Product)
+            .Include(ii => ii.Invoice!).ThenInclude(i => i!.Warehouse)
+            .Where(ii => ii.Invoice != null
+                         && ii.Invoice.InvoiceType == InvoiceType.Damage
+                         && ii.ProductId != null
+                         && ii.Product != null);
 
+        if (from.HasValue) query = query.Where(ii => ii.Invoice!.Date >= from.Value);
+        if (to.HasValue) query = query.Where(ii => ii.Invoice!.Date < EndOfDay(to));
+        if (warehouseId.HasValue) query = query.Where(ii => ii.Invoice!.WarehouseId == warehouseId.Value);
+
+        var items = await query.OrderByDescending(ii => ii.Invoice!.Date).ToListAsync();
+        var productIds = items.Select(i => i.ProductId!.Value).Distinct().ToList();
+        var stocks = await context.WarehouseStocks
+            .Where(ws => productIds.Contains(ws.ProductId))
+            .ToListAsync();
+        var purchasesByProduct = await CloudProductCostHelper.GetPurchaseItemsByProductAsync(context, productIds);
+
+        var rows = new List<DamageInvoiceReportRow>();
+        foreach (var item in items)
+        {
+            var avgCost = CloudProductCostHelper.ComputeAverageUnitCostForProduct(
+                purchasesByProduct.GetValueOrDefault(item.ProductId!.Value) ?? [], stocks, item.ProductId.Value);
+            rows.Add(new DamageInvoiceReportRow
+            {
+                InvoiceNumber = item.Invoice!.InvoiceNumber,
+                Date = item.Invoice.Date,
+                WarehouseName = item.Invoice.Warehouse?.Name ?? "—",
+                ProductName = item.Product!.Name,
+                Quantity = item.Quantity,
+                UnitCost = Math.Round(avgCost, 0),
+                TotalCost = Math.Round(item.Quantity * avgCost, 0),
+                Notes = item.Invoice.Notes
+            });
+        }
+
+        return new DamageInvoicesReportResult
+        {
+            TotalDamagedQuantity = rows.Sum(r => r.Quantity),
+            TotalDamagedCost = rows.Sum(r => r.TotalCost),
+            InvoiceCount = rows.Select(r => r.InvoiceNumber).Distinct().Count(),
+            LineCount = rows.Count,
+            Rows = rows
+        };
+    }
+
+    /// <summary>عروض الأسعار غير متزامنة مع السحابة حالياً — يُنفَّذ عند إضافة Sync.</summary>
     public Task<PriceQuotesReportResult> GetPriceQuotesReportAsync(
         DateTime? from, DateTime? to, int? customerId) =>
         Task.FromResult(new PriceQuotesReportResult());
 
+    /// <summary>وحدات التعبئة غير موجودة على Cloud — يُنفَّذ عند مزامنة ProductUnit.</summary>
     public Task<PackagingStockReportResult> GetPackagingStockReportAsync(int? warehouseId, int? productId) =>
         Task.FromResult(new PackagingStockReportResult());
 
@@ -3060,6 +3110,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
         };
     }
 
+    /// <summary>دفعات الصلاحية (ProductBatch) Desktop-only بلا Sync — يُنفَّذ بعد مزامنة الدفعات.</summary>
     public Task<ExpiryReportResult> GetExpiryReportAsync(
         int? warehouseId = null,
         int? productId = null,
@@ -3070,10 +3121,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
         bool hideZeroQuantity = true,
         int nearExpiryCriticalDays = 30,
         int nearExpiryWarningDays = 90)
-    {
-        // تتبع دفعات الصلاحية محلي على سطح المكتب وغير متزامن مع السحابة حالياً
-        return Task.FromResult(new ExpiryReportResult());
-    }
+        => Task.FromResult(new ExpiryReportResult());
 
     private static InventoryReplenishmentRow? BuildReplenishmentRow(
         int productId,

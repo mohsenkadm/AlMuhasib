@@ -4953,6 +4953,40 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.ToTable("Products");
                 });
 
+            modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudProductBranch", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TenantId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("TenantId", "BranchId");
+
+                    b.HasIndex("TenantId", "ProductId", "BranchId")
+                        .IsUnique();
+
+                    b.ToTable("ProductBranches", (string)null);
+                });
+
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudProductOffer", b =>
                 {
                     b.Property<int>("Id")
@@ -7956,6 +7990,25 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudProductBranch", b =>
+                {
+                    b.HasOne("AlMuhasib.Cloud.Core.Entities.CloudBranch", "Branch")
+                        .WithMany("ProductBranches")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("AlMuhasib.Cloud.Core.Entities.CloudProduct", "Product")
+                        .WithMany("ProductBranches")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudProductPrice", b =>
                 {
                     b.HasOne("AlMuhasib.Cloud.Core.Entities.CloudPricingType", "PricingType")
@@ -8243,6 +8296,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudBranch", b =>
                 {
                     b.Navigation("AccountBranches");
+
+                    b.Navigation("ProductBranches");
                 });
 
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudCarSaleContract", b =>
@@ -8286,6 +8341,8 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
 
             modelBuilder.Entity("AlMuhasib.Cloud.Core.Entities.CloudProduct", b =>
                 {
+                    b.Navigation("ProductBranches");
+
                     b.Navigation("ProductPrices");
                 });
 

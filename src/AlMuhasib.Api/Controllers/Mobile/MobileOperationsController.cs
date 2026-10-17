@@ -135,6 +135,11 @@ public sealed class MobileOperationsController : ControllerBase
         [FromBody] CreateTransferRequest request, CancellationToken ct)
         => await WriteAsync(() => _mobileWrite.CreateTransferAsync(ResolveTenant(), request, Username, ct));
 
+    [HttpPost("currency-exchanges")]
+    public async Task<ActionResult<MobileWriteResponse>> CreateCurrencyExchange(
+        [FromBody] CreateCurrencyExchangeRequest request, CancellationToken ct)
+        => await WriteAsync(() => _mobileWrite.CreateCurrencyExchangeAsync(ResolveTenant(), request, Username, ct));
+
     [HttpPost("warehouses")]
     public async Task<ActionResult<MobileWriteResponse>> CreateWarehouse(
         [FromBody] UpsertWarehouseRequest request, CancellationToken ct)

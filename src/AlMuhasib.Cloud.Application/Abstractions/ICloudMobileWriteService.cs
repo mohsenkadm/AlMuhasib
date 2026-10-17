@@ -22,6 +22,7 @@ public interface ICloudMobileWriteService
     Task<MobileWriteResponse> CreateVoucherAsync(int tenantId, CreateVoucherRequest request, string username, CancellationToken ct = default);
     Task<MobileWriteResponse> CreateExpenseAsync(int tenantId, CreateExpenseRequest request, string username, CancellationToken ct = default);
     Task<MobileWriteResponse> CreateTransferAsync(int tenantId, CreateTransferRequest request, string username, CancellationToken ct = default);
+    Task<MobileWriteResponse> CreateCurrencyExchangeAsync(int tenantId, CreateCurrencyExchangeRequest request, string username, CancellationToken ct = default);
 
     Task<MobileWriteResponse> UpsertWarehouseAsync(int tenantId, UpsertWarehouseRequest request, string username, CancellationToken ct = default);
     Task<MobileWriteResponse> CreateWarehouseTransferAsync(int tenantId, CreateWarehouseTransferRequest request, string username, CancellationToken ct = default);
