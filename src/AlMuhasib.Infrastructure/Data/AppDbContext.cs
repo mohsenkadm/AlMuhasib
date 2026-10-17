@@ -321,7 +321,9 @@ public class AppDbContext : DbContext
                 AuditLogs.Add(log);
         }
 
-        return await base.SaveChangesAsync(cancellationToken);
+        // ConfigureAwait(false): يمنع تجمّد WPF عند استدعاء SaveChangesAsync().GetResult() من خيط الواجهة
+        // (مثل Repository.Update / SoftDelete بدون معاملة نشطة).
+        return await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -103,7 +103,7 @@ public sealed class HelpSupportService : IHelpSupportService
         }
 
         var message = string.IsNullOrWhiteSpace(manifest.TelegramSubscribeMessage)
-            ? "السلام عليكم، أرغب بالاشتراك في بوت تقارير تيليجرام — 10 دولار سنوياً."
+            ? "السلام عليكم، أرغب بالاشتراك في بوت تقارير تيليجرام."
             : manifest.TelegramSubscribeMessage.Trim();
 
         OpenWhatsAppChat(waDigits, message);
@@ -138,7 +138,7 @@ public sealed class HelpSupportService : IHelpSupportService
         }
 
         var message = string.IsNullOrWhiteSpace(manifest.MobileSubscribeMessage)
-            ? "السلام عليكم، أرغب بالاشتراك في تطبيق قيد المحاسبي للجوال — 10 دولار سنوياً."
+            ? "السلام عليكم، أرغب بالاشتراك في تطبيق قيد المحاسبي للجوال."
             : manifest.MobileSubscribeMessage.Trim();
 
         OpenWhatsAppChat(waDigits, message);
@@ -187,13 +187,13 @@ public sealed class HelpSupportService : IHelpSupportService
         SupportMessage = "السلام عليكم، أحتاج مساعدة في نظام المحاسب.",
         TelegramBotUrl = "https://t.me/qaidsystem_bot",
         TelegramSubscribeMessage =
-            "السلام عليكم، أرغب بالاشتراك في بوت تقارير تيليجرام لنظام قيد — 10 دولار سنوياً.",
+            "السلام عليكم، أرغب بالاشتراك في بوت تقارير تيليجرام لنظام قيد.",
         AppStoreUrl =
             "https://apps.apple.com/sa/app/%D9%82%D9%8A%D8%AF-%D8%A7%D9%84%D9%85%D8%AD%D8%A7%D8%B3%D8%A8%D9%8A/id6804299551?l=ar",
         PlayStoreUrl =
             "https://play.google.com/store/apps/details?id=com.almuhasib.almuhasib_mobile&hl=ar",
         MobileSubscribeMessage =
-            "السلام عليكم، أرغب بالاشتراك في تطبيق قيد المحاسبي للجوال — 10 دولار سنوياً.",
+            "السلام عليكم، أرغب بالاشتراك في تطبيق قيد المحاسبي للجوال.",
         Categories = []
     };
 

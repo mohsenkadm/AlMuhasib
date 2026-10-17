@@ -330,7 +330,8 @@ public partial class CustomersViewModel : ViewModelBase
                 customer.UpdatedAt = DateTime.UtcNow;
                 customer.UpdatedBy = _currentUserService.Username;
 
-                _unitOfWork.Customers.Update(customer);
+                // Update يحفظ بشكل متزامن — خارج خيط الواجهة لتفادي التجمد
+                await Task.Run(() => _unitOfWork.Customers.Update(customer));
                 await _unitOfWork.SaveChangesAsync();
             }
             else
@@ -370,7 +371,8 @@ public partial class CustomersViewModel : ViewModelBase
                     softDeleted.MaxCreditLimit = maxCreditLimit;
                     softDeleted.SalesRepresentativeId = salesRepId;
                     softDeleted.CustomFieldsJson = customFields;
-                    _unitOfWork.Customers.Update(softDeleted);
+                    // Update يحفظ بشكل متزامن — خارج خيط الواجهة لتفادي التجمد
+                    await Task.Run(() => _unitOfWork.Customers.Update(softDeleted));
                     await _unitOfWork.SaveChangesAsync();
                 }
                 else
@@ -421,7 +423,9 @@ public partial class CustomersViewModel : ViewModelBase
         if (CustomerToDelete is null) return;
         try
         {
-            _unitOfWork.Customers.SoftDelete(CustomerToDelete, _currentUserService.Username);
+            // SoftDelete يحفظ بشكل متزامن — خارج خيط الواجهة لتفادي التجمد
+            var toDelete = CustomerToDelete;
+            await Task.Run(() => _unitOfWork.Customers.SoftDelete(toDelete, _currentUserService.Username));
             await _unitOfWork.SaveChangesAsync();
             IsDeleteDialogOpen = false;
             CustomerToDelete = null;
@@ -710,7 +714,9 @@ public partial class CustomersViewModel : ViewModelBase
         if (attachment is null || AttachmentsCustomer is null) return;
         try
         {
-            _unitOfWork.CustomerAttachments.SoftDelete(attachment, _currentUserService.Username);
+            // SoftDelete يحفظ بشكل متزامن — خارج خيط الواجهة لتفادي التجمد
+            await Task.Run(() =>
+                _unitOfWork.CustomerAttachments.SoftDelete(attachment, _currentUserService.Username));
             await _unitOfWork.SaveChangesAsync();
 
             if (File.Exists(attachment.FilePath))

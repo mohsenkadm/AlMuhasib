@@ -2684,26 +2684,6 @@
                             </StackPanel>
                         </Border>
 
-                        <Border CornerRadius="14" Padding="14,12" HorizontalAlignment="Center" MinWidth="200">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="#E8EAF6" Offset="0"/>
-                                    <GradientStop Color="#C5CAE9" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="الاشتراك السنوي" FontSize="12"
-                                           Foreground="#283593" HorizontalAlignment="Center"/>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
-                                    <TextBlock Text="10" FontSize="32" FontWeight="Bold" Foreground="#1A237E"/>
-                                    <TextBlock Text="$" FontSize="18" FontWeight="SemiBold"
-                                               Foreground="#3949AB" Margin="4,10,0,0"/>
-                                    <TextBlock Text="/ سنة" FontSize="14"
-                                               Foreground="#5C6BC0" Margin="8,14,0,0"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
                         <TextBlock Text="ليس لديك يوزر مزامنة بعد — تواصل مع الدعم لتفعيل الاشتراك."
                                    FontSize="12.5"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
@@ -2921,26 +2901,6 @@
                                                              Foreground="#229ED9" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                     <TextBlock Text="يتطلب حساب مزامنة سحابية نشط" FontSize="13"
                                                Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
-                                </StackPanel>
-                            </StackPanel>
-                        </Border>
-
-                        <Border CornerRadius="14" Padding="14,12" HorizontalAlignment="Center" MinWidth="200">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="#E3F2FD" Offset="0"/>
-                                    <GradientStop Color="#BBDEFB" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="الاشتراك السنوي" FontSize="12"
-                                           Foreground="#1565C0" HorizontalAlignment="Center"/>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
-                                    <TextBlock Text="10" FontSize="32" FontWeight="Bold" Foreground="#0D47A1"/>
-                                    <TextBlock Text="$" FontSize="18" FontWeight="SemiBold"
-                                               Foreground="#1565C0" Margin="4,10,0,0"/>
-                                    <TextBlock Text="/ سنة" FontSize="14"
-                                               Foreground="#547792" Margin="8,14,0,0"/>
                                 </StackPanel>
                             </StackPanel>
                         </Border>
