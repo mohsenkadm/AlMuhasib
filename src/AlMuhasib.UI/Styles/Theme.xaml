@@ -55,6 +55,12 @@
     <SolidColorBrush x:Key="SidebarBrush" Color="#0D1B2A"/>
     <SolidColorBrush x:Key="SidebarActiveBrush" Color="#1565C0"/>
     <SolidColorBrush x:Key="SidebarHoverBrush" Color="#1B2A3D"/>
+    <!-- Sidebar primary menu hover/selection (ThemeService overrides for light/dark) -->
+    <SolidColorBrush x:Key="SidebarItemHoverBrush" Color="#1A3A5C"/>
+    <SolidColorBrush x:Key="SidebarItemSelectedBrush" Color="#1565C0"/>
+    <SolidColorBrush x:Key="SidebarItemGroupExpandedBrush" Color="#152E48"/>
+    <SolidColorBrush x:Key="SidebarItemChildHoverBrush" Color="#173552"/>
+    <SolidColorBrush x:Key="SidebarNavRippleBrush" Color="#401565C0"/>
     <SolidColorBrush x:Key="SubtleBorderBrush" Color="#E8EDF2"/>
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="#757575"/>
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="#212121"/>
@@ -729,7 +735,7 @@
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-        <Setter Property="materialDesign:RippleAssist.Feedback" Value="#42A5F540"/>
+        <Setter Property="materialDesign:RippleAssist.Feedback" Value="{DynamicResource SidebarNavRippleBrush}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -738,7 +744,7 @@
                         <Grid x:Name="LayoutRoot">
                             <Border x:Name="AccentBar" Width="3" HorizontalAlignment="Left"
                                     VerticalAlignment="Stretch" CornerRadius="2"
-                                    Background="{StaticResource SidebarMenuAccentBrush}"
+                                    Background="{DynamicResource PrimaryHueMidBrush}"
                                     Visibility="Collapsed" Margin="-4,8,0,8"/>
                             <Grid x:Name="ContentRow" Margin="2,0,0,0">
                                 <Grid.ColumnDefinitions>
@@ -752,7 +758,7 @@
                                                              Kind="{Binding Icon}"
                                                              Width="21" Height="21"
                                                              HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                             Foreground="{StaticResource SidebarMenuIconBrush}"/>
+                                                             Foreground="{DynamicResource SidebarMenuIconBrush}"/>
                                 </Border>
                                 <TextBlock x:Name="NavText" Grid.Column="1"
                                            Text="{Binding Title}"
@@ -767,17 +773,18 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#1A2F4A"/>
-                            <Setter TargetName="IconHost" Property="Background" Value="#FFFFFF10"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SidebarItemHoverBrush}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#33FFFFFF"/>
+                            <Setter TargetName="IconHost" Property="Background" Value="#22FFFFFF"/>
                             <Setter TargetName="NavIcon" Property="Foreground" Value="White"/>
-                            <Setter TargetName="NavText" Property="Foreground" Value="#ECEFF1"/>
+                            <Setter TargetName="NavText" Property="Foreground" Value="#F5F9FF"/>
                         </Trigger>
                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{StaticResource SidebarNavSelectedBrush}"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="#42A5F533"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SidebarNavSelectedBrush}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#5590CAF9"/>
                             <Setter TargetName="AccentBar" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="AccentBar" Property="Background" Value="{DynamicResource CardBrush}"/>
-                            <Setter TargetName="IconHost" Property="Background" Value="#FFFFFF28"/>
+                            <Setter TargetName="AccentBar" Property="Background" Value="#E3F2FD"/>
+                            <Setter TargetName="IconHost" Property="Background" Value="#33FFFFFF"/>
                             <Setter TargetName="NavIcon" Property="Foreground" Value="White"/>
                             <Setter TargetName="NavText" Property="Foreground" Value="White"/>
                             <Setter TargetName="NavText" Property="FontWeight" Value="SemiBold"/>
@@ -794,6 +801,7 @@
     </Style>
 
     <Style x:Key="SidebarNavGroupButton" TargetType="Button" BasedOn="{StaticResource SidebarNavMenuButton}">
+        <Setter Property="materialDesign:RippleAssist.Feedback" Value="{DynamicResource SidebarNavRippleBrush}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -838,11 +846,13 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#1A2F4A"/>
-                            <Setter TargetName="IconHost" Property="Background" Value="#FFFFFF10"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SidebarItemHoverBrush}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#33FFFFFF"/>
+                            <Setter TargetName="IconHost" Property="Background" Value="#22FFFFFF"/>
                         </Trigger>
                         <DataTrigger Binding="{Binding IsExpanded}" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#15283D"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SidebarItemGroupExpandedBrush}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#2290CAF9"/>
                         </DataTrigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -885,12 +895,14 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#1A3D62"/>
-                            <Setter TargetName="IconHost" Property="Background" Value="#FFFFFF18"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SidebarItemSelectedBrush}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#5590CAF9"/>
+                            <Setter TargetName="IconHost" Property="Background" Value="#33FFFFFF"/>
                         </DataTrigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#1A2F4A"/>
-                            <Setter TargetName="IconHost" Property="Background" Value="#FFFFFF10"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SidebarItemHoverBrush}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#33FFFFFF"/>
+                            <Setter TargetName="IconHost" Property="Background" Value="#22FFFFFF"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -907,13 +919,15 @@
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="materialDesign:RippleAssist.Feedback" Value="{DynamicResource SidebarNavRippleBrush}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" CornerRadius="9" Padding="8,0" Background="Transparent">
+                    <Border x:Name="Bd" CornerRadius="9" Padding="8,0" Background="Transparent"
+                            BorderBrush="Transparent" BorderThickness="1">
                         <Grid>
                             <Border x:Name="AccentBar" Width="2" HorizontalAlignment="Left"
-                                    Background="{StaticResource SidebarMenuAccentBrush}"
+                                    Background="{DynamicResource PrimaryHueMidBrush}"
                                     Visibility="Collapsed" Margin="-6,10,0,10"/>
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,0,0">
                                 <Ellipse Width="5" Height="5" Fill="#546E7A" Margin="0,0,10,0"
@@ -935,17 +949,19 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#1A3D62"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SidebarItemSelectedBrush}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#4490CAF9"/>
                             <Setter TargetName="AccentBar" Property="Visibility" Value="Visible"/>
-                            <Setter TargetName="AccentBar" Property="Background" Value="{DynamicResource CardBrush}"/>
+                            <Setter TargetName="AccentBar" Property="Background" Value="#E3F2FD"/>
                             <Setter TargetName="ChildIcon" Property="Foreground" Value="White"/>
                             <Setter TargetName="ChildText" Property="Foreground" Value="White"/>
                             <Setter TargetName="ChildText" Property="FontWeight" Value="SemiBold"/>
                         </DataTrigger>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#172A42"/>
-                            <Setter TargetName="ChildIcon" Property="Foreground" Value="#ECEFF1"/>
-                            <Setter TargetName="ChildText" Property="Foreground" Value="#ECEFF1"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource SidebarItemChildHoverBrush}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="#22FFFFFF"/>
+                            <Setter TargetName="ChildIcon" Property="Foreground" Value="#F5F9FF"/>
+                            <Setter TargetName="ChildText" Property="Foreground" Value="#F5F9FF"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

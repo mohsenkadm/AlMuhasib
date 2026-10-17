@@ -483,13 +483,19 @@
                                     VerticalAlignment="Center"
                                     Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock Text="{x:Static helpers:AppInfo.AppNameAr}"
-                                       FontSize="20"
+                                       FontSize="13"
                                        FontWeight="Bold"
-                                       Foreground="White" />
+                                       Foreground="White"
+                                       TextWrapping="Wrap"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxWidth="148"
+                                       LineHeight="17"/>
                             <TextBlock Text="{x:Static helpers:AppInfo.TaglineAr}"
-                                       FontSize="10.5"
+                                       FontSize="9.5"
                                        Foreground="{DynamicResource HintForegroundBrush}"
-                                       Margin="0,3,0,0" />
+                                       Margin="0,2,0,0"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxWidth="148"/>
                         </StackPanel>
 
                         <Button Grid.Column="2"

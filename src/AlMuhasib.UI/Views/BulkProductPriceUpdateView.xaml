@@ -4,6 +4,7 @@
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              Style="{StaticResource PageStyle}"
              FlowDirection="RightToLeft"
              Loaded="OnLoaded">
@@ -103,36 +104,62 @@
 
                                 <Grid Grid.Column="1" Margin="0,0,8,0">
                                     <Button Command="{Binding ToggleCategoryPopupCommand}"
-                                            Style="{StaticResource FlatButton}"
-                                            md:ButtonAssist.CornerRadius="8" Padding="12,8"
-                                            MinWidth="160">
+                                            MinWidth="180" Height="44" Padding="14,8"
+                                            md:ButtonAssist.CornerRadius="10"
+                                            Background="#E3F2FD"
+                                            BorderBrush="#1565C0"
+                                            BorderThickness="1.5"
+                                            Foreground="#0D47A1"
+                                            Cursor="Hand">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                                        CornerRadius="10"
+                                                        Padding="{TemplateBinding Padding}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Button.Template>
                                         <StackPanel Orientation="Horizontal">
-                                            <md:PackIcon Kind="TagMultiple" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                            <md:PackIcon Kind="TagMultiple" Width="20" Height="20"
+                                                         VerticalAlignment="Center" Margin="0,0,8,0"
+                                                         Foreground="#1565C0"/>
                                             <TextBlock Text="{Binding CategoryFilterSummary}" VerticalAlignment="Center"
-                                                       MaxWidth="140" TextTrimming="CharacterEllipsis"/>
-                                            <md:PackIcon Kind="MenuDown" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                                       FontWeight="SemiBold" FontSize="13"
+                                                       MaxWidth="150" TextTrimming="CharacterEllipsis"
+                                                       Foreground="#0D47A1"/>
+                                            <md:PackIcon Kind="MenuDown" Width="20" Height="20"
+                                                         VerticalAlignment="Center" Margin="8,0,0,0"
+                                                         Foreground="#1565C0"/>
                                         </StackPanel>
                                     </Button>
                                     <Popup IsOpen="{Binding IsCategoryPopupOpen}"
                                            Placement="Bottom" StaysOpen="False"
                                            AllowsTransparency="True" PopupAnimation="Fade">
-                                        <Border Background="{DynamicResource CardBackgroundBrush}"
-                                                BorderBrush="{DynamicResource DividerBrush}"
-                                                BorderThickness="1" CornerRadius="10" Padding="10"
-                                                MinWidth="240" MaxHeight="320"
-                                                md:ElevationAssist.Elevation="Dp4">
+                                        <Border Background="{DynamicResource CardBrush}"
+                                                BorderBrush="#1565C0"
+                                                BorderThickness="1.5" CornerRadius="12" Padding="12"
+                                                MinWidth="260" MaxHeight="340"
+                                                md:ElevationAssist.Elevation="Dp6">
+                                            <Border.Effect>
+                                                <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.18" Color="#1565C0"/>
+                                            </Border.Effect>
                                             <DockPanel>
                                                 <CheckBox DockPanel.Dock="Top"
                                                           Content="كل الأصناف"
                                                           IsChecked="{Binding SelectAllCategories}"
-                                                          FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                                          FontWeight="SemiBold" Margin="0,0,0,10"
+                                                          Foreground="{DynamicResource TextPrimaryBrush}"/>
                                                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                                                     <ItemsControl ItemsSource="{Binding CategoryFilters}">
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
                                                                 <CheckBox Content="{Binding Name}"
                                                                           IsChecked="{Binding IsChecked, Mode=TwoWay}"
-                                                                          Margin="0,3"/>
+                                                                          Margin="0,4"
+                                                                          Foreground="{DynamicResource TextPrimaryBrush}"/>
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
                                                     </ItemsControl>
@@ -342,7 +369,14 @@
                         <ComboBox ItemsSource="{Binding PricingTypes}"
                                   SelectedItem="{Binding SelectedPricingType}"
                                   DisplayMemberPath="Name"
-                                  Style="{StaticResource FilledComboBox}"
+                                  Style="{StaticResource OutlinedComboBox}"
+                                  Background="{DynamicResource CardBrush}"
+                                  BorderBrush="#1565C0"
+                                  BorderThickness="1.5"
+                                  Padding="10,8"
+                                  FontWeight="SemiBold"
+                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                  md:HintAssist.Hint="اختر نوع التسعير"
                                   Margin="0,0,0,14"/>
 
                         <!-- زيادة / تخفيض -->
@@ -403,46 +437,95 @@
                         </Grid>
 
                         <!-- النسبة -->
-                        <TextBlock Text="نسبة الزيادة / التخفيض" FontWeight="SemiBold" Margin="0,0,0,6" Opacity="0.85"/>
-                        <Grid Margin="0,0,0,10">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <TextBox Text="{Binding PercentValue, UpdateSourceTrigger=PropertyChanged}"
-                                     Style="{StaticResource FilledTextBox}"
-                                     md:HintAssist.Hint="النسبة"/>
-                            <TextBlock Grid.Column="1" Text="%" FontSize="18" FontWeight="Bold"
-                                       VerticalAlignment="Center" Margin="10,0,0,0"
-                                       Foreground="{DynamicResource PrimaryHueMidBrush}"/>
-                        </Grid>
+                        <TextBlock Text="نسبة الزيادة / التخفيض" FontWeight="SemiBold" Margin="0,0,0,8" Opacity="0.85"/>
+                        <Border Background="White" BorderBrush="#CFD8DC" BorderThickness="1"
+                                CornerRadius="12" Padding="12" Margin="0,0,0,14">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Text="{Binding PercentValue, UpdateSourceTrigger=PropertyChanged}"
+                                             FontSize="22" FontWeight="Bold"
+                                             HorizontalContentAlignment="Center"
+                                             VerticalContentAlignment="Center"
+                                             Height="48"
+                                             Background="#F5F7FA"
+                                             BorderBrush="#90A4AE"
+                                             BorderThickness="1.5"
+                                             Padding="8,6"
+                                             Foreground="#263238"/>
+                                    <Border Grid.Column="1" Background="#1565C0" CornerRadius="8"
+                                            Padding="14,0" Margin="8,0,0,0" MinWidth="48"
+                                            VerticalAlignment="Stretch">
+                                        <TextBlock Text="%" FontSize="20" FontWeight="Bold" Foreground="White"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                </Grid>
 
-                        <ItemsControl ItemsSource="{Binding PercentPresets}" Margin="0,0,0,14">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <UniformGrid Columns="5"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Button Content="{Binding StringFormat={}{0}%}"
-                                            Command="{Binding DataContext.ApplyPresetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}"
-                                            Margin="3" Height="40" Width="40"
-                                            md:ButtonAssist.CornerRadius="20"
-                                            Style="{StaticResource FlatButton}"
-                                            FontWeight="SemiBold" FontSize="12"
-                                            ToolTip="تطبيق النسبة"/>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                                <TextBlock Text="اختيار سريع" FontSize="12" Opacity="0.7" Margin="0,0,0,8"/>
+                                <ItemsControl ItemsSource="{Binding PercentPresetChips}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Columns="5"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:PercentPresetChip}">
+                                            <Button Command="{Binding DataContext.ApplyPresetCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Margin="3,0" Height="40"
+                                                    Cursor="Hand"
+                                                    ToolTip="{Binding Label, StringFormat=تطبيق {0}}">
+                                                <Button.Template>
+                                                    <ControlTemplate TargetType="Button">
+                                                        <Border x:Name="Chip"
+                                                                Background="#ECEFF1"
+                                                                BorderBrush="#B0BEC5"
+                                                                BorderThickness="1.5"
+                                                                CornerRadius="8"
+                                                                Padding="4,0">
+                                                            <TextBlock x:Name="ChipText"
+                                                                       Text="{Binding Label}"
+                                                                       FontSize="13" FontWeight="SemiBold"
+                                                                       Foreground="#37474F"
+                                                                       HorizontalAlignment="Center"
+                                                                       VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <ControlTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                <Setter TargetName="Chip" Property="Background" Value="#1565C0"/>
+                                                                <Setter TargetName="Chip" Property="BorderBrush" Value="#0D47A1"/>
+                                                                <Setter TargetName="ChipText" Property="Foreground" Value="White"/>
+                                                                <Setter TargetName="ChipText" Property="FontWeight" Value="Bold"/>
+                                                            </DataTrigger>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="Chip" Property="BorderBrush" Value="#1565C0"/>
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Button.Template>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
 
                         <!-- التقريب -->
                         <TextBlock Text="التقريب" FontWeight="SemiBold" Margin="0,0,0,6" Opacity="0.85"/>
                         <ComboBox ItemsSource="{Binding RoundingOptions}"
                                   SelectedItem="{Binding SelectedRounding}"
                                   DisplayMemberPath="DisplayName"
-                                  Style="{StaticResource FilledComboBox}"
+                                  Style="{StaticResource OutlinedComboBox}"
+                                  Background="{DynamicResource CardBrush}"
+                                  BorderBrush="#1565C0"
+                                  BorderThickness="1.5"
+                                  Padding="10,8"
+                                  FontWeight="SemiBold"
+                                  Foreground="{DynamicResource TextPrimaryBrush}"
+                                  md:HintAssist.Hint="التقريب"
                                   Margin="0,0,0,16"/>
 
                         <!-- ملخص -->
@@ -478,15 +561,15 @@
                         </Button>
 
                         <Button x:Name="SaveButton"
-                                Command="{Binding SaveAsyncCommand}"
-                                IsEnabled="{Binding CanEdit}"
+                                Command="{Binding SaveCommand}"
                                 Style="{StaticResource PrimaryButton}"
                                 md:ButtonAssist.CornerRadius="10"
-                                Height="50">
+                                Height="52"
+                                FontSize="16" FontWeight="Bold">
                             <StackPanel Orientation="Horizontal">
                                 <md:PackIcon Kind="ContentSave" Width="22" Height="22"
                                              VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock Text="حفظ" FontSize="16" FontWeight="Bold"
+                                <TextBlock Text="حفظ الأسعار" FontSize="16" FontWeight="Bold"
                                            VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>

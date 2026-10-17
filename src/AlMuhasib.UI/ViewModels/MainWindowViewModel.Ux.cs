@@ -82,7 +82,8 @@ public partial class MainWindowViewModel
             var t when t == typeof(DamageInvoicesReportViewModel) => flags.DamageInvoices,
             var t when t == typeof(PricingTypesViewModel) => flags.ProductPricingEnabled,
             var t when t == typeof(ProductPricingViewModel) => flags.ProductPricingEnabled,
-            var t when t == typeof(BulkProductPriceUpdateViewModel) => flags.ProductPricingEnabled,
+            // Bulk sale-price update is permission-gated only (not multi-pricing feature).
+            // Keeping it behind ProductPricingEnabled hid the screen even when CanView was granted.
             var t when t == typeof(LoyaltySettingsViewModel) => flags.LoyaltySystem,
             var t when t == typeof(LoyaltyAccountsViewModel) => flags.LoyaltySystem,
             var t when t == typeof(LoyaltyLedgerViewModel) => flags.LoyaltySystem,

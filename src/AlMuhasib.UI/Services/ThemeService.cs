@@ -71,8 +71,15 @@ public sealed class ThemeService
         if (isGold)
         {
             theme.SetPrimaryColor((Color)ColorConverter.ConvertFromString("#B8860B")!);
-            theme.SetSecondaryColor((Color)ColorConverter.ConvertFromString("#D4AF37")!);
+            // Soft gold accent — avoid bright yellow ripple/highlight on menus.
+            theme.SetSecondaryColor((Color)ColorConverter.ConvertFromString("#C9A227")!);
         }
+        else
+        {
+            theme.SetPrimaryColor((Color)ColorConverter.ConvertFromString("#1565C0")!);
+            theme.SetSecondaryColor((Color)ColorConverter.ConvertFromString("#1976D2")!);
+        }
+
         palette.SetTheme(theme);
 
         if (Application.Current is null) return;
@@ -119,6 +126,26 @@ public sealed class ThemeService
         SetBrush(res, "FlyoutPanelBrush", isDark ? DarkTopBar : "#F5F7FA");
         SetBrush(res, "FlyoutCardBrush", isDark ? DarkCard : "#FFFFFF");
         SetBrush(res, "FlyoutCardHoverBrush", isDark ? DarkHover : "#E3F2FD");
+
+        // Primary sidebar menu hover/selection (over dark sidebar chrome)
+        if (isGold)
+        {
+            SetBrush(res, "SidebarItemHoverBrush", isDark ? "#2A2416" : "#243018");
+            SetBrush(res, "SidebarItemSelectedBrush", isDark ? "#3D3218" : "#3A3014");
+            SetBrush(res, "SidebarItemGroupExpandedBrush", isDark ? "#241E12" : "#1E1A10");
+            SetBrush(res, "SidebarItemChildHoverBrush", isDark ? "#322A16" : "#2A2414");
+            SetBrush(res, "SidebarNavRippleBrush", "#40C9A227");
+            res["SidebarNavSelectedBrush"] = CreateSidebarSelectedBrush("#B8860B", "#8A6A08", "#3D2E14");
+        }
+        else
+        {
+            SetBrush(res, "SidebarItemHoverBrush", isDark ? "#1E2A52" : "#1A3A5C");
+            SetBrush(res, "SidebarItemSelectedBrush", isDark ? "#1A3A6C" : "#1565C0");
+            SetBrush(res, "SidebarItemGroupExpandedBrush", isDark ? "#16233F" : "#152E48");
+            SetBrush(res, "SidebarItemChildHoverBrush", isDark ? "#1A2748" : "#173552");
+            SetBrush(res, "SidebarNavRippleBrush", "#401565C0");
+            res["SidebarNavSelectedBrush"] = CreateSidebarSelectedBrush("#1565C0", "#1E5FA8", "#163D6B");
+        }
 
         if (isGold)
         {
@@ -475,6 +502,15 @@ public sealed class ThemeService
             brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#24FFFFFF")!, 1));
         }
 
+        return FreezeBrush(brush);
+    }
+
+    private static LinearGradientBrush CreateSidebarSelectedBrush(string start, string mid, string end)
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 0) };
+        brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString(start)!, 0));
+        brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString(mid)!, 0.55));
+        brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString(end)!, 1));
         return FreezeBrush(brush);
     }
 

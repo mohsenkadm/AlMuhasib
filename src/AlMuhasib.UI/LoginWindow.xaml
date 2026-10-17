@@ -225,9 +225,11 @@
             <Setter Property="Padding" Value="0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
             <Setter Property="Margin" Value="6"/>
-            <Setter Property="MinHeight" Value="168"/>
+            <Setter Property="Height" Value="188"/>
+            <Setter Property="MinHeight" Value="188"/>
+            <Setter Property="MaxHeight" Value="188"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -475,10 +477,12 @@
                                                     <Style TargetType="ScrollBar" BasedOn="{StaticResource LoginHiddenScrollBar}"/>
                                                 </ScrollViewer.Resources>
                                                 <ItemsControl ItemsSource="{Binding AdminUsers}"
-                                                              ItemTemplate="{StaticResource AdminCardTemplate}">
+                                                              ItemTemplate="{StaticResource AdminCardTemplate}"
+                                                              VerticalAlignment="Top">
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
-                                                            <UniformGrid Columns="3"/>
+                                                            <UniformGrid Columns="3"
+                                                                         VerticalAlignment="Top"/>
                                                         </ItemsPanelTemplate>
                                                     </ItemsControl.ItemsPanel>
                                                 </ItemsControl>

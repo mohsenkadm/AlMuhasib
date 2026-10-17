@@ -34,8 +34,8 @@ public partial class BulkProductPriceUpdateViewModel : ViewModelBase
     public ObservableCollection<BulkPriceUpdateRow> Rows { get; } = [];
     public ObservableCollection<PricingType> PricingTypes { get; } = [];
     public ObservableCollection<CategoryFilterItem> CategoryFilters { get; } = [];
+    public ObservableCollection<PercentPresetChip> PercentPresetChips { get; } = [];
     public IReadOnlyList<PriceRoundingOption> RoundingOptions { get; } = PriceRoundingOption.All;
-    public IReadOnlyList<decimal> PercentPresets { get; } = PresetPercents;
 
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private PricingType? _selectedPricingType;
@@ -89,6 +89,9 @@ public partial class BulkProductPriceUpdateViewModel : ViewModelBase
         _featureFlags = featureFlags;
 
         PageTitle = "تعديل أسعار المنتجات";
+        foreach (var p in PresetPercents)
+            PercentPresetChips.Add(new PercentPresetChip(p));
+        SyncPercentPresetSelection();
         SelectedRounding = RoundingOptions.FirstOrDefault(o => o.Mode == PriceRoundingMode.NearestOne)
                            ?? RoundingOptions[0];
         ShowMultiCurrency = _featureFlags.MultiCurrency;
@@ -108,6 +111,14 @@ public partial class BulkProductPriceUpdateViewModel : ViewModelBase
         try
         {
             LoadPermissions(_currentUserService, ScreenPermissionRegistry.BulkProductPriceUpdate);
+            // شاشة أسعار: صلاحية «تعديل السعر» كافية للحفظ حتى بدون CanEdit العام.
+            if (!CanEdit
+                && !_currentUserService.IsViewOnly(ScreenPermissionRegistry.BulkProductPriceUpdate)
+                && _currentUserService.CanEditPrice(ScreenPermissionRegistry.BulkProductPriceUpdate))
+            {
+                CanEdit = true;
+            }
+
             await _pricingTypeService.EnsureDefaultExistsAsync();
             await LoadLookupsAsync();
             await ReloadRowsAsync();
@@ -387,7 +398,17 @@ public partial class BulkProductPriceUpdateViewModel : ViewModelBase
         RecalculateAll(forceManual: false);
     }
 
-    partial void OnPercentValueChanged(decimal value) => RecalculateAll(forceManual: false);
+    partial void OnPercentValueChanged(decimal value)
+    {
+        SyncPercentPresetSelection();
+        RecalculateAll(forceManual: false);
+    }
+
+    private void SyncPercentPresetSelection()
+    {
+        foreach (var chip in PercentPresetChips)
+            chip.IsSelected = chip.Value == PercentValue;
+    }
 
     partial void OnSelectedRoundingChanged(PriceRoundingOption? value) => RecalculateAll(forceManual: false);
 
@@ -422,7 +443,9 @@ public partial class BulkProductPriceUpdateViewModel : ViewModelBase
     private void ApplyPreset(object? parameter)
     {
         if (parameter is null) return;
-        if (parameter is decimal d)
+        if (parameter is PercentPresetChip chip)
+            PercentValue = chip.Value;
+        else if (parameter is decimal d)
             PercentValue = d;
         else if (decimal.TryParse(parameter.ToString(), out var parsed))
             PercentValue = parsed;
@@ -491,7 +514,8 @@ public partial class BulkProductPriceUpdateViewModel : ViewModelBase
         var toSave = Rows.Where(r => r.IsSelected && r.HasChange).ToList();
         if (toSave.Count == 0)
         {
-            BeautifulMessageDialog.ShowWarning("لا توجد أسعار محددة للتعديل");
+            BeautifulMessageDialog.ShowWarning(
+                "لا توجد تغييرات للحفظ.\nطبّق نسبة على منتجات لها سعر حالي، أو عدّل «سعر البيع الجديد» يدوياً للمنتجات المحددة.");
             return;
         }
 
@@ -534,4 +558,19 @@ public partial class BulkProductPriceUpdateViewModel : ViewModelBase
             IsBusy = false;
         }
     }
+}
+
+/// <summary>زر نسبة جاهزة في لوحة تعديل الأسعار.</summary>
+public partial class PercentPresetChip : ObservableObject
+{
+    public PercentPresetChip(decimal value)
+    {
+        Value = value;
+        Label = $"{value:0}%";
+    }
+
+    public decimal Value { get; }
+    public string Label { get; }
+
+    [ObservableProperty] private bool _isSelected;
 }
