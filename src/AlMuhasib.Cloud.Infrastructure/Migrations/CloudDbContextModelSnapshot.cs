@@ -4899,6 +4899,11 @@ namespace AlMuhasib.Cloud.Infrastructure.Migrations
                     b.Property<int>("PlateType")
                         .HasColumnType("int");
 
+                    b.Property<bool>("ShowInCashier")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()

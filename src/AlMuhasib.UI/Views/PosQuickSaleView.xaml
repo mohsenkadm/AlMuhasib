@@ -268,39 +268,75 @@
                         <RowDefinition Height="*" MinHeight="0"/>
                     </Grid.RowDefinitions>
 
-                    <ScrollViewer Grid.Row="0" Margin="0,0,0,8"
-                                  MaxHeight="44"
-                                  VerticalScrollBarVisibility="Disabled"
-                                  HorizontalScrollBarVisibility="Auto"
-                                  Style="{DynamicResource ThinScrollViewer}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="المفضلة" FontWeight="SemiBold" FontSize="12" Margin="0,0,8,0"
-                                       VerticalAlignment="Center"
-                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
-                            <ItemsControl ItemsSource="{Binding FavoriteProducts}">
-                                <ItemsControl.ItemsPanel>
+                    <DockPanel Grid.Row="0" Margin="0,0,0,8" LastChildFill="True">
+                        <TextBlock DockPanel.Dock="Left" Text="الأصناف" FontWeight="SemiBold" FontSize="12"
+                                   Margin="0,0,8,0" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <ScrollViewer MaxHeight="48"
+                                      VerticalScrollBarVisibility="Disabled"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      Style="{DynamicResource ThinScrollViewer}">
+                            <ListBox ItemsSource="{Binding Categories}"
+                                     SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"
+                                     BorderThickness="0"
+                                     Background="Transparent"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                                <ListBox.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <StackPanel Orientation="Horizontal"/>
                                     </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Button Command="{Binding DataContext.AddProductCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}"
-                                            Margin="0,0,6,0" Padding="12,0" Height="36"
-                                            Style="{StaticResource PrimaryButton}"
-                                            materialDesign:ButtonAssist.CornerRadius="10"
-                                            ToolTip="{Binding Name}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="Star" Width="16" Height="16" VerticalAlignment="Center"/>
-                                            <TextBlock Text="{Binding Name}" Margin="6,0,0,0" MaxWidth="120" FontSize="12" TextTrimming="CharacterEllipsis"/>
-                                        </StackPanel>
-                                    </Button>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        </StackPanel>
-                    </ScrollViewer>
+                                </ListBox.ItemsPanel>
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Padding" Value="0"/>
+                                        <Setter Property="Margin" Value="0,0,6,0"/>
+                                        <Setter Property="Focusable" Value="True"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Border x:Name="Bd" Height="36" Padding="14,0" CornerRadius="10"
+                                                            Background="{DynamicResource CardBrush}"
+                                                            BorderBrush="{DynamicResource SubtleBorderBrush}"
+                                                            BorderThickness="1" Cursor="Hand">
+                                                        <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
+                                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#1565C0"/>
+                                                        </Trigger>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Bd" Property="BorderBrush" Value="#90CAF9"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}" FontSize="12" MaxWidth="140"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   FontFamily="{DynamicResource AppFont}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                                            <Setter Property="Foreground" Value="#1565C0"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </ScrollViewer>
+                    </DockPanel>
 
                     <TextBox x:Name="SearchBox"
                              Grid.Row="1"
@@ -364,7 +400,7 @@
                                                 Style="{StaticResource PosCardHitButton}"
                                                 Command="{Binding DataContext.AddProductCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                 CommandParameter="{Binding}"/>
-                                        <StackPanel Margin="12,10,36,0" IsHitTestVisible="False">
+                                        <StackPanel Margin="12,10,12,0" IsHitTestVisible="False">
                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"
                                                        TextWrapping="Wrap" MaxHeight="40" TextTrimming="CharacterEllipsis"
                                                        FontFamily="{DynamicResource AppFont}"/>
@@ -375,26 +411,6 @@
                                                 <Run Text="{Binding AvailableQuantityText, Mode=OneWay}" FontWeight="SemiBold"/>
                                             </TextBlock>
                                         </StackPanel>
-                                        <Button Grid.Row="0" Panel.ZIndex="2"
-                                                Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                CommandParameter="{Binding}"
-                                                Style="{StaticResource IconButton}"
-                                                Width="32" Height="32"
-                                                HorizontalAlignment="Right" VerticalAlignment="Top"
-                                                Margin="0,4,4,0" ToolTip="مفضلة">
-                                            <materialDesign:PackIcon Width="18" Height="18" Foreground="#F9A825">
-                                                <materialDesign:PackIcon.Style>
-                                                    <Style TargetType="materialDesign:PackIcon">
-                                                        <Setter Property="Kind" Value="StarOutline"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsFavorite}" Value="True">
-                                                                <Setter Property="Kind" Value="Star"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </materialDesign:PackIcon.Style>
-                                            </materialDesign:PackIcon>
-                                        </Button>
                                         <TextBlock Grid.Row="1" Margin="12,0,12,10" IsHitTestVisible="False"
                                                    FontWeight="Bold" FontSize="14" Foreground="#1565C0"
                                                    VerticalAlignment="Center" HorizontalAlignment="Left"

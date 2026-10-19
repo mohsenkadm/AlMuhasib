@@ -44,7 +44,6 @@ public partial class PosQuickSaleViewModel
         RefreshCurrencyAmountSuffix();
         RefreshFilteredCashBoxes(preferKeepSelection: true);
         RefreshFilteredProducts();
-        RefreshFavoriteProducts();
         RequoteCartForCashBoxCurrency();
         _ = RefreshFxAndEquivalentAsync();
         _ = RequotePricingOptionsForCurrencyAsync();

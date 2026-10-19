@@ -35,6 +35,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.DiscountValue)
             .HasPrecision(18, 2);
 
+        builder.Property(p => p.ShowInCashier)
+            .HasDefaultValue(true);
+
         builder.Property(p => p.CustomFieldsJson)
             .HasMaxLength(4000);
 

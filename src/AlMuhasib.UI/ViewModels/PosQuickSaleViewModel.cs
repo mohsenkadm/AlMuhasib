@@ -25,7 +25,6 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserPreferencesService _userPreferences;
     private readonly IRecentActivityService _recentActivity;
-    private readonly IFavoriteProductsService _favoriteProducts;
     private readonly ISoundService _sound;
     private readonly IProductPriceService _productPriceService;
     private readonly IProductBatchService _productBatchService;
@@ -43,12 +42,13 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     private readonly bool _pricingEnabled;
 
     public ObservableCollection<PosProductTile> FilteredProducts { get; } = [];
-    public ObservableCollection<PosProductTile> FavoriteProducts { get; } = [];
+    public ObservableCollection<Category> Categories { get; } = [];
     public ObservableCollection<PosCartLine> CartLines { get; } = [];
     public ObservableCollection<Warehouse> Warehouses { get; } = [];
     public ObservableCollection<CashBox> CashBoxes { get; } = [];
 
     [ObservableProperty] private string _searchText = string.Empty;
+    [ObservableProperty] private Category? _selectedCategory;
     [ObservableProperty] private Warehouse? _selectedWarehouse;
     [ObservableProperty] private CashBox? _selectedCashBox;
     // SelectedPosCurrency / FilteredCashBoxes / ShowMultiCurrency live in TouchUi partial.
@@ -99,7 +99,6 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         ICurrentUserService currentUserService,
         IUserPreferencesService userPreferences,
         IRecentActivityService recentActivity,
-        IFavoriteProductsService favoriteProducts,
         ISoundService sound,
         IProductPriceService productPriceService,
         IProductBatchService productBatchService,
@@ -119,7 +118,6 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         _currentUserService = currentUserService;
         _userPreferences = userPreferences;
         _recentActivity = recentActivity;
-        _favoriteProducts = favoriteProducts;
         _productPriceService = productPriceService;
         _productBatchService = productBatchService;
         _featureFlags = featureFlags;
@@ -172,6 +170,11 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             var products = (await _productService.GetVisibleInCurrentBranchAsync()).OrderBy(p => p.Name).ToList();
             _allProducts = products;
 
+            Categories.Clear();
+            foreach (var category in (await _unitOfWork.Categories.GetAllAsync()).OrderBy(c => c.Name))
+                Categories.Add(category);
+            SelectedCategory = Categories.FirstOrDefault();
+
             await LoadSuggestedPricesAsync();
             if (_pricingEnabled)
                 await LoadCatalogPricesAsync();
@@ -204,7 +207,6 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             await LoadWarehouseStockAsync();
 
             RefreshFilteredProducts();
-            RefreshFavoriteProducts();
             RefreshCurrencyAmountSuffix();
             await RefreshFxAndEquivalentAsync();
         }
@@ -214,16 +216,13 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         }
     }
 
-    [RelayCommand]
-    private void ToggleFavorite(PosProductTile? tile)
+    partial void OnSelectedCategoryChanged(Category? value)
     {
-        if (tile?.Product is null) return;
-        _favoriteProducts.ToggleFavorite(tile.Product.Id);
-        RefreshFavoriteProducts();
-        RefreshFilteredProducts();
-        StatusMessage = _favoriteProducts.IsFavorite(tile.Product.Id)
-            ? $"أُضيف «{tile.Product.Name}» للمفضلة"
-            : $"أُزيل «{tile.Product.Name}» من المفضلة";
+        // أثناء البحث النصي نتجاهل فلتر الصنف؛ عند اختيار صنف نفرّغ البحث لنرى منتجات الصنف.
+        if (value is not null && !string.IsNullOrWhiteSpace(SearchText))
+            SearchText = string.Empty;
+        else
+            RefreshFilteredProducts();
     }
 
     partial void OnSearchTextChanged(string value)
@@ -245,7 +244,6 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         SelectedPosCurrency = AccountingCurrency.IQD;
         RefreshCurrencyAmountSuffix();
         RefreshFilteredProducts();
-        RefreshFavoriteProducts();
         RequoteCartForCashBoxCurrency();
         _ = RefreshFxAndEquivalentAsync();
     }
@@ -764,16 +762,17 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     {
         await LoadWarehouseStockAsync();
         RefreshFilteredProducts();
-        RefreshFavoriteProducts();
     }
 
     private void RefreshFilteredProducts()
     {
         var term = SearchText.Trim();
-        IEnumerable<Product> query = _allProducts;
+        IEnumerable<Product> query = _allProducts.Where(p => p.ShowInCashier);
 
         if (!string.IsNullOrWhiteSpace(term))
             query = query.Where(p => ProductSearchHelper.Matches(p, term));
+        else if (SelectedCategory is not null)
+            query = query.Where(p => p.CategoryId == SelectedCategory.Id);
 
         FilteredProducts.Clear();
         foreach (var p in query.Take(80))
@@ -782,28 +781,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             {
                 Product = p,
                 Price = ResolveSuggestedPrice(p.Id),
-                AvailableQuantity = _warehouseQtyByProduct.GetValueOrDefault(p.Id),
-                IsFavorite = _favoriteProducts.IsFavorite(p.Id)
+                AvailableQuantity = _warehouseQtyByProduct.GetValueOrDefault(p.Id)
             });
-        }
-    }
-
-    private void RefreshFavoriteProducts()
-    {
-        FavoriteProducts.Clear();
-        foreach (var id in _favoriteProducts.GetFavoriteProductIds())
-        {
-            var product = _allProducts.FirstOrDefault(p => p.Id == id);
-            if (product is not null)
-            {
-                FavoriteProducts.Add(new PosProductTile
-                {
-                    Product = product,
-                    Price = ResolveSuggestedPrice(product.Id),
-                    AvailableQuantity = _warehouseQtyByProduct.GetValueOrDefault(product.Id),
-                    IsFavorite = true
-                });
-            }
         }
     }
 

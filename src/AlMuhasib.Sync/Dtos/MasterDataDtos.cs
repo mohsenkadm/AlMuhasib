@@ -31,6 +31,7 @@ public sealed class ProductSyncDto : SyncDtoBase
     public string? PlateNumber { get; set; }
     public VehiclePlateType PlateType { get; set; }
     public Guid CategorySyncId { get; set; }
+    public bool ShowInCashier { get; set; } = true;
     public decimal Weight { get; set; }
     public string? WeightUnit { get; set; }
     public DiscountType DiscountType { get; set; }

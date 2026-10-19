@@ -390,6 +390,22 @@
                                             Width="*"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Category.Name" />
 
+                        <!-- Show in cashier -->
+                        <DataGridTemplateColumn Header="كاشير" Width="90" IsReadOnly="True"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ShowInCashier">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding ShowInCashier, Mode=OneWay}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              ToolTip="إظهار في شاشة كاشير"
+                                              IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              Command="{Binding DataContext.ToggleShowInCashierCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              CommandParameter="{Binding}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
                         <!-- Branches -->
                         <DataGridTextColumn Header="الفروع"
                                             Binding="{Binding BranchesDisplay}"

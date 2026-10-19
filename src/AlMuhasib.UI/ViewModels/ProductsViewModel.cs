@@ -585,6 +585,39 @@ public partial class ProductsViewModel : ViewModelBase
             permissionScreenName: "Products");
     }
 
+    [RelayCommand]
+    private async Task ToggleShowInCashier(Product? product)
+    {
+        if (product is null) return;
+        if (!CanEdit)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية تعديل المنتجات");
+            return;
+        }
+
+        var newValue = !product.ShowInCashier;
+        try
+        {
+            await _productService.SetShowInCashierAsync(product.Id, newValue);
+            product.ShowInCashier = newValue;
+
+            var index = Products.IndexOf(product);
+            if (index >= 0)
+            {
+                Products.RemoveAt(index);
+                Products.Insert(index, product);
+            }
+
+            var card = ProductCards.FirstOrDefault(c => c.Product.Id == product.Id);
+            if (card is not null)
+                card.Product.ShowInCashier = newValue;
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذّر تحديث إظهار الكاشير: {ex.Message}");
+        }
+    }
+
     public async Task ReloadAfterExternalChangeAsync()
     {
         await LoadCategoriesAsync();

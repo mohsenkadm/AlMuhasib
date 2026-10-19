@@ -15,9 +15,6 @@ public partial class PosProductTile : ObservableObject
     [ObservableProperty]
     private decimal _availableQuantity;
 
-    [ObservableProperty]
-    private bool _isFavorite;
-
     public string AvailableQuantityText => AvailableQuantity.ToString("N0");
 
     partial void OnAvailableQuantityChanged(decimal value) =>
