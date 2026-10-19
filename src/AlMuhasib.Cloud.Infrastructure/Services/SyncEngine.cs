@@ -912,6 +912,7 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.PlateNumber = dto.PlateNumber;
         existing.PlateType = dto.PlateType;
         existing.CategoryId = categoryId;
+        existing.ShowInCashier = dto.ShowInCashier;
         existing.Weight = dto.Weight;
         existing.WeightUnit = dto.WeightUnit;
         existing.DiscountType = dto.DiscountType;
@@ -1600,6 +1601,7 @@ public sealed partial class SyncEngine : ISyncEngine
             Weight = p.Weight, WeightUnit = p.WeightUnit,
             DiscountType = p.DiscountType, DiscountValue = p.DiscountValue, DiscountExpiresAt = p.DiscountExpiresAt,
             CategorySyncId = catMap.GetValueOrDefault(p.CategoryId),
+            ShowInCashier = p.ShowInCashier,
             VisibleBranchSyncIds = visibility.GetValueOrDefault(p.Id) ?? []
         }).ToList();
     }

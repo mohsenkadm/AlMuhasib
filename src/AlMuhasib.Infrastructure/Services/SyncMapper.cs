@@ -376,6 +376,7 @@ internal static class SyncMapper
         d.PlateNumber = p.PlateNumber;
         d.PlateType = p.PlateType;
         d.CategorySyncId = cats[p.CategoryId];
+        d.ShowInCashier = p.ShowInCashier;
         d.Weight = p.Weight;
         d.WeightUnit = p.WeightUnit;
         d.DiscountType = p.DiscountType;
@@ -403,6 +404,7 @@ internal static class SyncMapper
         d.PlateNumber = p.PlateNumber;
         d.PlateType = p.PlateType;
         d.CategorySyncId = catSyncId;
+        d.ShowInCashier = p.ShowInCashier;
         d.Weight = p.Weight;
         d.WeightUnit = p.WeightUnit;
         d.DiscountType = p.DiscountType;
@@ -773,6 +775,7 @@ internal static class SyncMapper
             if (ShouldRejectIncoming(entity, dto)) continue;
             if (entity.Id == 0) db.Products.Add(entity);
             ApplyBase(entity, dto); entity.Name = dto.Name; entity.Description = dto.Description; entity.Barcode = dto.Barcode; entity.ScientificName = dto.ScientificName; entity.UsageInstructions = dto.UsageInstructions; entity.CategoryId = catId;
+            entity.ShowInCashier = dto.ShowInCashier;
             entity.VehicleType = dto.VehicleType;
             entity.ChassisNumber = dto.ChassisNumber;
             entity.CarModel = dto.CarModel;

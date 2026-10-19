@@ -53,6 +53,7 @@ public partial class ProductFormViewModel : ViewModelBase
     [ObservableProperty] private string _name = string.Empty;
     [ObservableProperty] private string _description = string.Empty;
     [ObservableProperty] private string _barcode = string.Empty;
+    [ObservableProperty] private bool _showInCashier = true;
     [ObservableProperty] private Category? _selectedCategory;
     [ObservableProperty] private string _scientificName = string.Empty;
     [ObservableProperty] private string _usageInstructions = string.Empty;
@@ -280,6 +281,7 @@ public partial class ProductFormViewModel : ViewModelBase
         Name = product.Name;
         Description = product.Description ?? string.Empty;
         Barcode = product.Barcode ?? string.Empty;
+        ShowInCashier = product.ShowInCashier;
         ScientificName = product.ScientificName ?? string.Empty;
         UsageInstructions = product.UsageInstructions ?? string.Empty;
         VehicleType = product.VehicleType ?? string.Empty;
@@ -321,6 +323,7 @@ public partial class ProductFormViewModel : ViewModelBase
         Name = string.Empty;
         Description = string.Empty;
         Barcode = string.Empty;
+        ShowInCashier = true;
         ScientificName = string.Empty;
         UsageInstructions = string.Empty;
         VehicleType = string.Empty;
@@ -929,6 +932,7 @@ public partial class ProductFormViewModel : ViewModelBase
         product.Name = Name.Trim();
         product.Description = string.IsNullOrWhiteSpace(Description) ? null : Description.Trim();
         product.Barcode = string.IsNullOrWhiteSpace(Barcode) ? null : Barcode.Trim();
+        product.ShowInCashier = ShowInCashier;
         product.CategoryId = SelectedCategory!.Id;
         product.ScientificName = ShowScientificName && !string.IsNullOrWhiteSpace(ScientificName)
             ? ScientificName.Trim() : null;

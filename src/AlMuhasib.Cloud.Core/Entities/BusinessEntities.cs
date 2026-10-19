@@ -19,6 +19,8 @@ public class CloudProduct : CloudBaseEntity
     public string? PlateNumber { get; set; }
     public VehiclePlateType PlateType { get; set; }
     public int CategoryId { get; set; }
+    /// <summary>إظهار المنتج في شبكة شاشة الكاشير.</summary>
+    public bool ShowInCashier { get; set; } = true;
     public decimal Weight { get; set; }
     public string? WeightUnit { get; set; }
     public DiscountType DiscountType { get; set; }

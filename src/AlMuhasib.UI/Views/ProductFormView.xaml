@@ -5,7 +5,7 @@
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
-             Style="{StaticResource PageStyle}"
+             Style="{StaticResource PosPageStyle}"
              FlowDirection="RightToLeft"
              Loaded="OnLoaded">
 
@@ -127,6 +127,12 @@
                                          Style="{StaticResource FilledTextBox}"/>
                             </StackPanel>
                         </UniformGrid>
+
+                        <CheckBox Content="إظهار في شاشة كاشير"
+                                  IsChecked="{Binding ShowInCashier}"
+                                  Margin="0,0,0,12"
+                                  VerticalAlignment="Center"
+                                  ToolTip="عند التعطيل لن يظهر المنتج في شبكة الكاشير، ويمكن إضافته بالباركود"/>
 
                         <!-- Pharmacy -->
                         <UniformGrid Columns="2" Visibility="{Binding ShowScientificName, Converter={StaticResource BoolToVis}}">
@@ -511,7 +517,7 @@
         </ScrollViewer>
 
         <!-- Sticky footer -->
-        <Border Grid.Row="1" Background="{DynamicResource CardBackgroundBrush}"
+        <Border Grid.Row="1" Background="{DynamicResource CardBrush}"
                 BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0" Padding="24,14">
             <DockPanel MaxWidth="1180" HorizontalAlignment="Stretch">
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
@@ -535,7 +541,7 @@
         <!-- Branch picker overlay -->
         <Grid Grid.RowSpan="2" Visibility="{Binding IsBranchPickerOpen, Converter={StaticResource BoolToVis}}"
               Background="#99000000" Panel.ZIndex="20">
-            <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="16" Padding="22"
+            <Border Background="{DynamicResource CardBrush}" CornerRadius="16" Padding="22"
                     MaxWidth="460" MaxHeight="560" VerticalAlignment="Center" HorizontalAlignment="Center">
                 <Border.Effect>
                     <DropShadowEffect BlurRadius="32" ShadowDepth="6" Opacity="0.28" Color="#004D40"/>
@@ -577,7 +583,7 @@
         <!-- Quick category -->
         <Grid Grid.RowSpan="2" Visibility="{Binding IsQuickCategoryOpen, Converter={StaticResource BoolToVis}}"
               Background="#99000000" Panel.ZIndex="21">
-            <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="14" Padding="20" Width="380"
+            <Border Background="{DynamicResource CardBrush}" CornerRadius="14" Padding="20" Width="380"
                     VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="إضافة صنف جديد" FontSize="16" FontWeight="Bold" Margin="0,0,0,12"/>
@@ -595,7 +601,7 @@
         <!-- Quick pricing type -->
         <Grid Grid.RowSpan="2" Visibility="{Binding IsQuickPricingTypeOpen, Converter={StaticResource BoolToVis}}"
               Background="#99000000" Panel.ZIndex="21">
-            <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="14" Padding="20" Width="380"
+            <Border Background="{DynamicResource CardBrush}" CornerRadius="14" Padding="20" Width="380"
                     VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="إضافة نوع تسعير" FontSize="16" FontWeight="Bold" Margin="0,0,0,12"/>
@@ -613,7 +619,7 @@
         <!-- Quick warehouse -->
         <Grid Grid.RowSpan="2" Visibility="{Binding IsQuickWarehouseOpen, Converter={StaticResource BoolToVis}}"
               Background="#99000000" Panel.ZIndex="21">
-            <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="14" Padding="20" Width="420"
+            <Border Background="{DynamicResource CardBrush}" CornerRadius="14" Padding="20" Width="420"
                     VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="إضافة مخزن جديد" FontSize="16" FontWeight="Bold" Margin="0,0,0,12"/>
@@ -636,7 +642,7 @@
         <!-- Quick packaging -->
         <Grid Grid.RowSpan="2" Visibility="{Binding IsQuickPackagingOpen, Converter={StaticResource BoolToVis}}"
               Background="#99000000" Panel.ZIndex="21">
-            <Border Background="{DynamicResource CardBackgroundBrush}" CornerRadius="14" Padding="20" Width="400"
+            <Border Background="{DynamicResource CardBrush}" CornerRadius="14" Padding="20" Width="400"
                     VerticalAlignment="Center" HorizontalAlignment="Center">
                 <StackPanel>
                     <TextBlock Text="إضافة نوع تعبئة" FontSize="16" FontWeight="Bold" Margin="0,0,0,12"/>

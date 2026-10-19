@@ -68,6 +68,7 @@ public class ProductService : IProductService
             softDeleted.PlateNumber = product.PlateNumber;
             softDeleted.PlateType = product.PlateType;
             softDeleted.CategoryId = product.CategoryId;
+            softDeleted.ShowInCashier = product.ShowInCashier;
             softDeleted.Weight = product.Weight;
             softDeleted.WeightUnit = product.WeightUnit;
             softDeleted.DiscountType = product.DiscountType;
@@ -208,6 +209,7 @@ public class ProductService : IProductService
         existing.UsageInstructions = product.UsageInstructions;
         existing.Description = product.Description;
         existing.CategoryId = product.CategoryId;
+        existing.ShowInCashier = product.ShowInCashier;
         existing.Weight = product.Weight;
         existing.WeightUnit = product.WeightUnit;
         existing.DiscountType = product.DiscountType;
@@ -225,6 +227,21 @@ public class ProductService : IProductService
         existing.UpdatedAt = DateTime.UtcNow;
 
         await context.SaveChangesAsync();
+    }
+
+    public async Task SetShowInCashierAsync(int productId, bool showInCashier, CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        var existing = await context.Products.FirstOrDefaultAsync(p => p.Id == productId, ct)
+            ?? throw new InvalidOperationException("المنتج غير موجود");
+
+        if (existing.ShowInCashier == showInCashier)
+            return;
+
+        existing.ShowInCashier = showInCashier;
+        existing.UpdatedBy = _currentUserService.Username;
+        existing.UpdatedAt = DateTime.UtcNow;
+        await context.SaveChangesAsync(ct);
     }
 
     public async Task ApplyDiscountToProductsAsync(

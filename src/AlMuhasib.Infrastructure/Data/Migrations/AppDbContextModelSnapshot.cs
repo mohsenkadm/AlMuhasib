@@ -2722,6 +2722,11 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<bool>("ShowInCashier")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<Guid>("SyncId")
                         .HasColumnType("uniqueidentifier");
 

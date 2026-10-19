@@ -16,6 +16,10 @@ public interface IProductService
         string? colorName = null,
         bool? hasBatches = null);
     Task UpdateAsync(Product product);
+
+    /// <summary>تبديل إظهار المنتج في شاشة الكاشير دون فتح نموذج التعديل.</summary>
+    Task SetShowInCashierAsync(int productId, bool showInCashier, CancellationToken ct = default);
+
     Task DeleteAsync(int id);
     Task ApplyDiscountToProductsAsync(
         IEnumerable<int> productIds,

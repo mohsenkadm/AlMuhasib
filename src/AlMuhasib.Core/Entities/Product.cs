@@ -18,6 +18,9 @@ public class Product : BaseEntity
 
     public int CategoryId { get; set; }
 
+    /// <summary>إظهار المنتج في شبكة شاشة الكاشير (بيع سريع). الباركود يعمل حتى لو كان false.</summary>
+    public bool ShowInCashier { get; set; } = true;
+
     /// <summary>وزن/حجم الوحدة الأساسية للمنتج (0 = غير محدد).</summary>
     public decimal Weight { get; set; }
 
