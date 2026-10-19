@@ -42,6 +42,12 @@ public interface IExportService
     /// <summary>طباعة إيصال كاشير حسب حجم الورق (A4 / 80mm / 58mm / 50mm).</summary>
     void PrintThermalReceipt(InvoicePrintModel model);
 
+    /// <summary>
+    /// طباعة إيصال كاشير. عند <paramref name="silent"/> تُطبع مباشرة على الطابعة المفضّلة أو الافتراضية
+    /// دون معاينة أو حوار طباعة.
+    /// </summary>
+    void PrintThermalReceipt(InvoicePrintModel model, bool silent);
+
     /// <summary>تصدير عقد تقسيط PDF.</summary>
     string ExportInstallmentContractToPdf(InvoicePrintModel model);
 

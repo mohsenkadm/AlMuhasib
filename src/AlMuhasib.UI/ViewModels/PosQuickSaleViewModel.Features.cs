@@ -125,7 +125,7 @@ public partial class PosQuickSaleViewModel
         int? pricingTypeId = _defaultPricingTypeByProduct.TryGetValue(product.Id, out var tid) ? tid : null;
         if (price <= 0)
         {
-            BeautifulMessageDialog.ShowWarning($"لا يوجد سعر سابق لـ «{product.Name}» — أدخل السعر من السلة");
+            NotifyPosValidationWarning($"لا يوجد سعر سابق لـ «{product.Name}» — أدخل السعر من السلة");
             price = 0;
         }
 

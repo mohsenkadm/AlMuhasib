@@ -256,7 +256,10 @@ public class ExcelExportService : IExportService
         DocumentPrintHelper.PrintWithPreview(doc, title);
     }
 
-    public void PrintInvoice(InvoicePrintModel m)
+    public void PrintInvoice(InvoicePrintModel m) =>
+        PrintInvoice(m, preferredPrinter: null, showPreview: true);
+
+    public void PrintInvoice(InvoicePrintModel m, string? preferredPrinter, bool showPreview)
     {
         if (m.Schedule is { Count: > 0 } && m.Title.Contains("أقساط"))
         {
@@ -266,7 +269,7 @@ public class ExcelExportService : IExportService
 
         if (!m.IsGoldInvoice && m.Schedule is not { Count: > 0 })
         {
-            PrintModernInvoice(m);
+            PrintModernInvoice(m, preferredPrinter, showPreview);
             return;
         }
 
@@ -872,17 +875,17 @@ public class ExcelExportService : IExportService
         // ═══════════════════════════════════════════════
         PrintBrandingFlowDocumentHelper.AppendBrandingFooter(doc, systemLine: $"طُبع بتاريخ: {DateTime.Now:yyyy/MM/dd HH:mm}");
 
-        DocumentPrintHelper.PrintWithPreview(doc, m.Title, pageSize);
+        DocumentPrintHelper.PrintDocument(doc, m.Title, pageSize, preferredPrinter, showPreview);
     }
 
     /// <summary>
     /// طباعة فاتورة بيع/شراء/مرتجع بقالب احترافي (نفس تنسيق ملف PDF) بحجم الورق المختار.
     /// </summary>
-    private void PrintModernInvoice(InvoicePrintModel m)
+    private void PrintModernInvoice(InvoicePrintModel m, string? preferredPrinter = null, bool showPreview = true)
     {
         var doc = ModernInvoiceDocumentBuilder.Build(m);
         var pageSize = ModernInvoiceDocumentBuilder.ResolvePageSize(m);
-        DocumentPrintHelper.PrintWithPreview(doc, m.Title, pageSize);
+        DocumentPrintHelper.PrintDocument(doc, m.Title, pageSize, preferredPrinter, showPreview);
     }
 
     private void PrintInstallmentInvoiceLikeReference(InvoicePrintModel m)
@@ -1196,7 +1199,10 @@ public class ExcelExportService : IExportService
     }
 
     public void PrintThermalReceipt(InvoicePrintModel model) =>
-        PrintThermalReceipt(model, null, null, true);
+        PrintThermalReceipt(model, silent: false);
+
+    public void PrintThermalReceipt(InvoicePrintModel model, bool silent) =>
+        PrintThermalReceipt(model, null, null, showPreview: !silent);
 
     public void PrintThermalReceipt(InvoicePrintModel model, string? paperSize,
         string? preferredPrinter, bool showPreview)

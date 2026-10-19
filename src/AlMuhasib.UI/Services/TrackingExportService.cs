@@ -90,12 +90,16 @@ public sealed class TrackingExportService : IExportService
     public string ExportStatementToPdf(StatementPrintModel model) =>
         _inner.ExportStatementToPdf(model);
 
-    public void PrintThermalReceipt(InvoicePrintModel model)
+    public void PrintThermalReceipt(InvoicePrintModel model) =>
+        PrintThermalReceipt(model, silent: false);
+
+    public void PrintThermalReceipt(InvoicePrintModel model, bool silent)
     {
         PrintPreferences.Load();
         var paperSize = model.IsGoldInvoice
             ? PrintPreferences.GoldReceiptPaperSize
             : PrintPreferences.PosReceiptPaperSize;
+        var showPreview = !silent && PrintPreferences.ShowPrintPreview;
 
         // POS/Gold A4: use the same themed invoice layout as sales invoices
         if (!PosReceiptPaperSizes.IsThermal(paperSize))
@@ -106,7 +110,7 @@ public sealed class TrackingExportService : IExportService
                 model.A4TemplateId = A4InvoiceTemplates.Normalize(PrintPreferences.A4InvoiceTemplate);
             if (string.IsNullOrWhiteSpace(model.PaperSize))
                 model.PaperSize = InvoicePaperSizes.Normalize(PrintPreferences.PaperSize);
-            _inner.PrintInvoice(model);
+            _inner.PrintInvoice(model, PrintPreferences.PreferredPrinter, showPreview);
             return;
         }
 
@@ -114,7 +118,7 @@ public sealed class TrackingExportService : IExportService
             model,
             paperSize,
             PrintPreferences.PreferredPrinter,
-            PrintPreferences.ShowPrintPreview);
+            showPreview);
     }
 
     public string ExportInstallmentContractToPdf(InvoicePrintModel model) =>

@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.39",
-  "releaseDate": "2026-10-18",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.39/AlMuhasib-1.14.39.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.39/Qayd-Setup-1.14.39.exe",
-  "sha256": "F30F17301542E186B52F8243C7980917DDA3CE73C4D35D5585BA4A1F2DE98DA1",
-  "sizeBytes": 162049600,
-  "releaseNotes": "إصلاح تجمد الحفظ وتحسين العملاء وفيديوهات المساعدة — تحديث اختياري آمن بدون تغيير قاعدة البيانات",
+  "version": "1.14.40",
+  "releaseDate": "2026-10-19",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.40/AlMuhasib-1.14.40.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.40/Qayd-Setup-1.14.40.exe",
+  "sha256": "5CA6A7E4DD9690289EB4390AACB63A1EA5FCAFF0C5794672BA3162999BEEF719",
+  "sizeBytes": 162047384,
+  "releaseNotes": "إظهار المنتجات في الكاشير وتحسينات واجهة وتقارير — تحديث اختياري آمن (عمود إضافي افتراضي ظاهر)",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

@@ -293,14 +293,39 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         if (string.IsNullOrEmpty(term))
             return;
 
+        // أوقف debounce وحدّث القائمة فوراً حتى لا تُضاف مادة قديمة بالخطأ
+        _searchDebounce.Stop();
+        RefreshFilteredProducts();
+
         var barcodeMatch = _allProducts.FirstOrDefault(p =>
             !string.IsNullOrEmpty(p.Barcode) &&
             p.Barcode.Equals(term, StringComparison.OrdinalIgnoreCase));
 
         if (barcodeMatch is not null)
         {
+            if (!barcodeMatch.ShowInCashier)
+            {
+                NotifyPosValidationError($"المنتج غير متاح في الكاشير — الباركود: {term}");
+                SearchText = string.Empty;
+                return;
+            }
+
+            if (!EnsureStockAllowsAdd(barcodeMatch, additionalQty: 1m))
+            {
+                SearchText = string.Empty;
+                return;
+            }
+
             _sound.Play(SoundEffect.Scan);
             await AddOrIncrementProductAsync(barcodeMatch);
+            SearchText = string.Empty;
+            return;
+        }
+
+        // مسح باركود (أرقام/رموز) بدون تطابق تام → خطأ، لا تأخذ أول نتيجة بحث جزئي
+        if (LooksLikeBarcodeScan(term))
+        {
+            NotifyPosValidationError($"لم يُعثر على منتج بهذا الباركود: {term}");
             SearchText = string.Empty;
             return;
         }
@@ -308,17 +333,80 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         var first = FilteredProducts.FirstOrDefault();
         if (first is not null)
         {
+            if (!EnsureStockAllowsAdd(first.Product, additionalQty: 1m))
+            {
+                SearchText = string.Empty;
+                return;
+            }
+
             await AddOrIncrementProductAsync(first.Product);
             SearchText = string.Empty;
+            return;
         }
-        else
-            StatusMessage = "لم يُعثر على منتج";
+
+        NotifyPosValidationError($"لم يُعثر على منتج بهذا الاسم: {term}");
+        SearchText = string.Empty;
+    }
+
+    private static bool LooksLikeBarcodeScan(string term)
+    {
+        if (term.Length < 4)
+            return false;
+
+        // قارئات الباركود تُرسل أرقاماً أو رموزاً بدون مسافات
+        if (term.Contains(' '))
+            return false;
+
+        var alnum = 0;
+        var digits = 0;
+        foreach (var ch in term)
+        {
+            if (char.IsLetterOrDigit(ch))
+                alnum++;
+            if (char.IsDigit(ch))
+                digits++;
+        }
+
+        return alnum == term.Length && digits >= term.Length * 0.7;
+    }
+
+    private void NotifyPosValidationError(string message)
+    {
+        StatusMessage = message;
+        // حوار واضح + صوت خطأ فوري (التوست قد لا يظهر أو يُفوت أثناء المسح)
+        BeautifulMessageDialog.ShowErrorDialog(message);
+    }
+
+    private void NotifyPosValidationWarning(string message)
+    {
+        StatusMessage = message;
+        BeautifulMessageDialog.ShowWarning(message);
+    }
+
+    /// <summary>يرجع false إن تجاوزت الكمية رصيد المخزن.</summary>
+    private bool EnsureStockAllowsAdd(Product product, decimal additionalQty)
+    {
+        if (SelectedWarehouse is null)
+            return true;
+
+        var available = _warehouseQtyByProduct.GetValueOrDefault(product.Id);
+        var inCart = CartLines.Where(l => l.ProductId == product.Id).Sum(l => l.Quantity);
+        if (inCart + additionalQty <= available)
+            return true;
+
+        NotifyPosValidationError(
+            available <= 0
+                ? $"«{product.Name}» غير متوفر في المخزن"
+                : $"«{product.Name}» — الكمية المطلوبة تتجاوز الرصيد ({available:N0})");
+        return false;
     }
 
     [RelayCommand]
     private async Task AddProduct(PosProductTile? tile)
     {
         if (tile?.Product is null) return;
+        if (!EnsureStockAllowsAdd(tile.Product, additionalQty: 1m))
+            return;
         await AddOrIncrementProductAsync(tile.Product);
     }
 
@@ -334,6 +422,9 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     private void IncreaseLine(PosCartLine? line)
     {
         if (line is null || line.IsOfferGift) return;
+        var product = _allProducts.FirstOrDefault(p => p.Id == line.ProductId);
+        if (product is not null && !EnsureStockAllowsAdd(product, additionalQty: 1m))
+            return;
         line.Quantity += 1;
         _ = RefreshOfferGiftsAsync();
     }
@@ -376,20 +467,23 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         IsPaymentDialogOpen = true;
     }
 
+    /// <summary>
+    /// إتمام البيع نقداً بالمبلغ الكامل وطباعة مباشرة دون واجهة الدفع أو حوار الطباعة (F12).
+    /// </summary>
     [RelayCommand]
-    private void OpenPaymentDialogAndPrint()
+    private async Task OpenPaymentDialogAndPrintAsync()
     {
         if (IsInstallmentMode)
         {
-            _ = CompleteInstallmentSaleCoreAsync();
+            await CompleteInstallmentSaleCoreAsync();
             return;
         }
 
         if (!CanOpenPaymentDialog()) return;
-        _printAfterConfirm = true;
         PaidAmount = GrandTotal;
+        CreditDueDate = DateTime.Today.AddMonths(1);
         RecalcChange();
-        IsPaymentDialogOpen = true;
+        await CompleteSaleCoreAsync(printReceipt: true, silentPrint: true);
     }
 
     [RelayCommand]
@@ -450,7 +544,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         }
 
         IsPaymentDialogOpen = false;
-        await CompleteSaleCoreAsync(printReceipt: _printAfterConfirm);
+        await CompleteSaleCoreAsync(printReceipt: _printAfterConfirm, silentPrint: false);
     }
 
     private bool CanOpenPaymentDialog()
@@ -514,7 +608,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         IsPaymentDialogOpen = true;
     }
 
-    private async Task CompleteSaleCoreAsync(bool printReceipt)
+    private async Task CompleteSaleCoreAsync(bool printReceipt, bool silentPrint = false)
     {
         if (IsInstallmentMode)
         {
@@ -721,7 +815,12 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             {
                 try
                 {
-                    PrintReceiptForInvoice(saved, cartSnapshot, totalSnapshot, pharmacyUsage: ShowPharmacy);
+                    PrintReceiptForInvoice(
+                        saved,
+                        cartSnapshot,
+                        totalSnapshot,
+                        pharmacyUsage: ShowPharmacy,
+                        silent: silentPrint);
                 }
                 catch (Exception printEx)
                 {

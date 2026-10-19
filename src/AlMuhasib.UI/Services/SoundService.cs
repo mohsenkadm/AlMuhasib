@@ -70,7 +70,8 @@ public sealed class SoundService : ISoundService, IDisposable
 
             var player = new MediaPlayer
             {
-                Volume = 0.55
+                // Error/Warning أوضح في الكاشير؛ باقي المؤثرات أنعم قليلاً
+                Volume = effect is SoundEffect.Error or SoundEffect.Warning ? 1.0 : 0.7
             };
             player.Open(new Uri(path, UriKind.Absolute));
             _players[effect] = player;

@@ -63,6 +63,14 @@ public partial class PosQuickSaleView : UserControl
             if (DataContext is ViewModels.PosQuickSaleViewModel vm)
                 vm.OpenCurrencyChangeCommand.Execute(null);
             e.Handled = true;
+            return;
+        }
+
+        if (e.Key == Key.F12)
+        {
+            if (DataContext is ViewModels.PosQuickSaleViewModel vm)
+                vm.OpenPaymentDialogAndPrintCommand.Execute(null);
+            e.Handled = true;
         }
     }
 

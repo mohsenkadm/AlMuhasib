@@ -11,6 +11,9 @@ public interface IToastNotificationService
 
     void DetachOverlayHost();
 
+    /// <summary>True when a toast host is attached and can display notifications.</summary>
+    bool HasActiveHost { get; }
+
     void ShowSuccess(string message, string? title = null);
     void ShowError(string message, string? title = null);
     void ShowWarning(string message, string? title = null);

@@ -17,6 +17,8 @@ public sealed class ToastNotificationService : IToastNotificationService
 
     private ToastHost? ActiveHost => _overlayHost ?? _host;
 
+    public bool HasActiveHost => ActiveHost is not null;
+
     public ToastNotificationService(ISoundService sound) => _sound = sound;
 
     public void AttachHost(ToastHost host) => _host = host;
@@ -29,10 +31,10 @@ public sealed class ToastNotificationService : IToastNotificationService
         _ = ShowFlowAsync(ToastDisplayState.Success, message, title);
 
     public void ShowError(string message, string? title = null) =>
-        _ = ShowFlowAsync(ToastDisplayState.Error, message, title);
+        _ = ShowFlowAsync(ToastDisplayState.Error, message, title, playSoundImmediately: true);
 
     public void ShowWarning(string message, string? title = null) =>
-        _ = ShowFlowAsync(ToastDisplayState.Warning, message, title);
+        _ = ShowFlowAsync(ToastDisplayState.Warning, message, title, playSoundImmediately: true);
 
     public void ShowInfo(string message, string? title = null) =>
         _ = ShowFlowAsync(ToastDisplayState.Info, message, title);
@@ -60,13 +62,25 @@ public sealed class ToastNotificationService : IToastNotificationService
         await DismissAsync(toast).ConfigureAwait(false);
     }
 
-    private async Task ShowFlowAsync(ToastDisplayState finalState, string message, string? title)
+    private async Task ShowFlowAsync(
+        ToastDisplayState finalState,
+        string message,
+        string? title,
+        bool playSoundImmediately = false)
     {
+        var sound = SoundForState(finalState);
+        if (playSoundImmediately && sound is SoundEffect immediate)
+            _sound.Play(immediate);
+
         var toast = CreateToast(ToastDisplayState.Loading, message, title ?? DefaultTitle(finalState));
         Push(toast);
         await Task.Delay(LoadingMs).ConfigureAwait(false);
-        await TransitionAsync(toast, finalState, message, title ?? DefaultTitle(finalState),
-            SoundForState(finalState)).ConfigureAwait(false);
+        await TransitionAsync(
+            toast,
+            finalState,
+            message,
+            title ?? DefaultTitle(finalState),
+            playSoundImmediately ? null : sound).ConfigureAwait(false);
         await DismissAsync(toast).ConfigureAwait(false);
     }
 

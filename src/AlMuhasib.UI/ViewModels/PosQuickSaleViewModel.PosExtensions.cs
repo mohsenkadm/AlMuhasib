@@ -449,7 +449,12 @@ public partial class PosQuickSaleViewModel
         return map;
     }
 
-    private void PrintReceiptForInvoice(Invoice saved, IReadOnlyList<PosCartLine> cartSnapshot, decimal totalSnapshot, bool pharmacyUsage = false)
+    private void PrintReceiptForInvoice(
+        Invoice saved,
+        IReadOnlyList<PosCartLine> cartSnapshot,
+        decimal totalSnapshot,
+        bool pharmacyUsage = false,
+        bool silent = false)
     {
         using var scope = ((App)System.Windows.Application.Current).Services.CreateScope();
         var export = scope.ServiceProvider.GetRequiredService<IExportService>();
@@ -475,6 +480,6 @@ public partial class PosQuickSaleViewModel
                 TotalPrice = l.LineTotal,
                 UsageInstructions = l.UsageInstructions
             }).ToList()
-        });
+        }, silent);
     }
 }

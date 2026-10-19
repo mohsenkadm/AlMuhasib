@@ -72,10 +72,16 @@ public partial class BeautifulMessageDialog : Window
         Show(message, title, MessageDialogType.Error, false);
     }
 
+    /// <summary>حوار خطأ إلزامي (بدون توست) — مناسب للكاشير عند مسح باركود خاطئ.</summary>
+    public static void ShowErrorDialog(string message, string title = "خطأ")
+    {
+        Show(message, title, MessageDialogType.Error, false);
+    }
+
     private static bool TryShowToast(MessageDialogType type, string message, string title)
     {
         var toast = ResolveToastService();
-        if (toast is null)
+        if (toast is null || !toast.HasActiveHost)
             return false;
 
         var displayTitle = title;
@@ -114,7 +120,6 @@ public partial class BeautifulMessageDialog : Window
 
     public static bool ShowConfirm(string message, string title = "تأكيد")
     {
-        ResolveSoundService()?.Play(SoundEffect.Confirm);
         return Show(message, title, MessageDialogType.Confirm, true);
     }
 
@@ -142,6 +147,8 @@ public partial class BeautifulMessageDialog : Window
 
     private static bool Show(string message, string title, MessageDialogType type, bool isConfirm)
     {
+        PlaySoundForType(type);
+
         var dialog = new BeautifulMessageDialog();
         TryAssignOwner(dialog);
         dialog.MessageText.Text = message;
@@ -152,6 +159,21 @@ public partial class BeautifulMessageDialog : Window
 
         dialog.ShowDialog();
         return dialog.ResultYes;
+    }
+
+    private static void PlaySoundForType(MessageDialogType type)
+    {
+        var sound = type switch
+        {
+            MessageDialogType.Success => SoundEffect.Success,
+            MessageDialogType.Warning => SoundEffect.Warning,
+            MessageDialogType.Error => SoundEffect.Error,
+            MessageDialogType.Info => SoundEffect.Info,
+            MessageDialogType.Confirm => SoundEffect.Confirm,
+            _ => (SoundEffect?)null
+        };
+        if (sound is SoundEffect effect)
+            ResolveSoundService()?.Play(effect);
     }
 
     private static void TryAssignOwner(Window dialog)

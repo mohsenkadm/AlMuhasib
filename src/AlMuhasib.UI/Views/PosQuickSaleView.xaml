@@ -29,7 +29,7 @@
             <MenuItem Header="الدفع" Command="{Binding OpenPaymentDialogCommand}">
                 <MenuItem.Icon><materialDesign:PackIcon Kind="Cash" Width="16" Height="16"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="دفع وطباعة" Command="{Binding OpenPaymentDialogAndPrintCommand}">
+            <MenuItem Header="دفع وطباعة (F12)" Command="{Binding OpenPaymentDialogAndPrintCommand}">
                 <MenuItem.Icon><materialDesign:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
             </MenuItem>
             <MenuItem Header="تعليق الفاتورة" Command="{Binding HoldInvoiceCommand}">
@@ -441,7 +441,7 @@
                     <UniformGrid Grid.Row="0" Columns="4" Margin="0,0,0,10">
                         <Button Command="{Binding OpenPaymentDialogAndPrintCommand}"
                                 Style="{StaticResource PosActionPayButton}" Height="52" Margin="0,0,4,0"
-                                ToolTip="إتمام البيع وطباعة الإيصال">
+                                ToolTip="إتمام البيع وطباعة مباشرة على الطابعة الافتراضية (F12)">
                             <StackPanel>
                                 <materialDesign:PackIcon Kind="CashRegister" Width="20" Height="20" HorizontalAlignment="Center"/>
                                 <TextBlock Text="دفع / طباعة" FontSize="12" FontWeight="SemiBold" Margin="0,4,0,0" HorizontalAlignment="Center"/>

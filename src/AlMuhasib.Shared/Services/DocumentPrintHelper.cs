@@ -56,29 +56,24 @@ public static class DocumentPrintHelper
         int copies)
     {
         var printDialog = new PrintDialog();
-        var usedPreferred = false;
-        if (!string.IsNullOrWhiteSpace(preferredPrinter))
+        try
         {
-            try
+            var server = new LocalPrintServer();
+            PrintQueue? queue = null;
+            if (!string.IsNullOrWhiteSpace(preferredPrinter))
             {
-                var server = new LocalPrintServer();
-                var queue = server.GetPrintQueues()
+                queue = server.GetPrintQueues()
                     .FirstOrDefault(q => q.FullName.Equals(preferredPrinter, StringComparison.OrdinalIgnoreCase)
                                          || q.Name.Equals(preferredPrinter, StringComparison.OrdinalIgnoreCase));
-                if (queue is not null)
-                {
-                    printDialog.PrintQueue = queue;
-                    usedPreferred = true;
-                }
             }
-            catch
-            {
-                // fall back to system print dialog
-            }
-        }
 
-        if (!usedPreferred && printDialog.ShowDialog() != true)
-            return;
+            // Direct print: preferred printer, otherwise Windows default — never show a dialog.
+            printDialog.PrintQueue = queue ?? server.DefaultPrintQueue;
+        }
+        catch
+        {
+            // Keep PrintDialog's default queue if LocalPrintServer is unavailable.
+        }
 
         var printableSize = new Size(printDialog.PrintableAreaWidth, printDialog.PrintableAreaHeight);
         // Prefer configured receipt width when the printer reports a wider area (common for thermal).
