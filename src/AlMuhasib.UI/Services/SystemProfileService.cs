@@ -36,6 +36,7 @@ public sealed class SystemProfileService : ISystemProfileService
         ApplicationSystemType.CarTrading => "AlMuhasibCarTradingDb",
         ApplicationSystemType.RealEstateContracts => "AlMuhasibRealEstateDb",
         ApplicationSystemType.GoldShop => "AlMuhasibGoldShopDb",
+        ApplicationSystemType.CustomsClearance => "AlMuhasibCustomsDb",
         _ => "AlMuhasibDb"
     };
 
