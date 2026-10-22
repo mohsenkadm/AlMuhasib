@@ -13,6 +13,7 @@ public static class SystemConnectionStrings
     public const string CarTradingDatabase = "AlMuhasibCarTradingDb";
     public const string RealEstateContractsDatabase = "AlMuhasibRealEstateDb";
     public const string GoldShopDatabase = "AlMuhasibGoldShopDb";
+    public const string CustomsDatabase = "AlMuhasibCustomsDb";
 
     public static string Build(IConfiguration configuration, ApplicationSystemType systemType)
     {
@@ -44,6 +45,7 @@ public static class SystemConnectionStrings
             ApplicationSystemType.CarTrading => CarTradingDatabase,
             ApplicationSystemType.RealEstateContracts => RealEstateContractsDatabase,
             ApplicationSystemType.GoldShop => GoldShopDatabase,
+            ApplicationSystemType.CustomsClearance => CustomsDatabase,
             _ => AccountingDatabase
         };
 

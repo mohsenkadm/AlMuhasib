@@ -7,5 +7,6 @@ public enum ApplicationSystemType
     HotelManagement = 2,
     CarTrading = 3,
     RealEstateContracts = 4,
-    GoldShop = 5
+    GoldShop = 5,
+    CustomsClearance = 6
 }

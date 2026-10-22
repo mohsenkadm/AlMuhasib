@@ -6,6 +6,7 @@ using AlMuhasib.Core.Interfaces.Services.Hotel;
 using AlMuhasib.Infrastructure.Data;
 using AlMuhasib.Infrastructure.Data.Car;
 using AlMuhasib.Infrastructure.Data.CarTrade;
+using AlMuhasib.Infrastructure.Data.Customs;
 using AlMuhasib.Infrastructure.Data.Gold;
 using AlMuhasib.Infrastructure.Data.Hotel;
 using AlMuhasib.Infrastructure.Data.RealEstate;
@@ -13,6 +14,7 @@ using AlMuhasib.Infrastructure.Repositories;
 using AlMuhasib.Infrastructure.Services;
 using AlMuhasib.Infrastructure.Services.Car;
 using AlMuhasib.Infrastructure.Services.CarTrade;
+using AlMuhasib.Infrastructure.Services.Customs;
 using AlMuhasib.Infrastructure.Services.Gold;
 using AlMuhasib.Infrastructure.Services.Hotel;
 using AlMuhasib.Infrastructure.Services.Hotel.Restaurant;
@@ -56,6 +58,9 @@ public static class DependencyInjection
                 break;
             case ApplicationSystemType.GoldShop:
                 RegisterGoldShopInfrastructure(services, connectionString, isBranchClient);
+                break;
+            case ApplicationSystemType.CustomsClearance:
+                RegisterCustomsInfrastructure(services, connectionString, isBranchClient);
                 break;
             default:
                 RegisterAccountingInfrastructure(services, connectionString, isBranchClient);
@@ -347,6 +352,37 @@ public static class DependencyInjection
         services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<GoldDbContext>>();
         services.AddScoped<SyncApiClient>();
         services.AddSingleton<ISyncService, GoldSyncService>();
+        services.AddHttpClient("CloudSync");
+    }
+
+    private static void RegisterCustomsInfrastructure(IServiceCollection services, string connectionString, bool isBranchClient)
+    {
+        services.AddDbContextFactory<CustomsDbContext>(options =>
+            options.UseSqlServer(
+                connectionString,
+                b => b.MigrationsAssembly(typeof(CustomsDbContext).Assembly.FullName)));
+
+        services.AddScoped<IUnitOfWork, CustomsUnitOfWork>();
+        services.AddScoped<IAuthService, CustomsAuthService>();
+        services.AddScoped<IPrintBrandingService, PrintBrandingService>();
+        services.AddScoped<IBranchService, NonAccountingBranchService>();
+        if (isBranchClient)
+            services.AddSingleton<IDatabaseMigrationService, NoOpDatabaseMigrationService>();
+        else
+            services.AddSingleton<IDatabaseMigrationService, CustomsDatabaseMigrationService>();
+
+        services.AddScoped<IGlobalSearchService, CustomsGlobalSearchService>();
+        services.AddScoped<IAuditLogService, CustomsAuditLogService>();
+        services.AddScoped<IUserLoginLogService, NoOpUserLoginLogService>();
+        services.AddScoped<ISmartAlertService, NoOpSmartAlertService>();
+        services.AddScoped<IUserTaskService, NoOpUserTaskService>();
+        services.AddScoped<IUserNoteService, NoOpUserNoteService>();
+        services.AddScoped<ICustomerStatementQuickService, NoOpCustomerStatementQuickService>();
+        services.AddScoped<IPartyQuickDetailService, NoOpPartyQuickDetailService>();
+        services.AddScoped<IProductQuickDetailService, NoOpProductQuickDetailService>();
+        services.AddScoped<ICloudSyncSettingsService, CloudSyncSettingsService<CustomsDbContext>>();
+        services.AddScoped<SyncApiClient>();
+        services.AddSingleton<ISyncService, CustomsSyncService>();
         services.AddHttpClient("CloudSync");
     }
 }
