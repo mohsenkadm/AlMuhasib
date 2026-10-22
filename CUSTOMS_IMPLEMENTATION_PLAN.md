@@ -538,10 +538,28 @@ Skeleton → Entities/Db → Customers/Vehicles lists → Invoices/Payments
 | أسماء DB | `src/AlMuhasib.Infrastructure/SystemConnectionStrings.cs` |
 | DI | `src/AlMuhasib.Infrastructure/DependencyInjection.cs` |
 | أنماط UI ذهب/محاسبة | `docs/GOLD_PHASE2_UI_PATTERNS.md` |
+| ربط المقبوضات/السندات بالفواتير | `docs/CUSTOMS_RECEIPT_PAYMENT_PATTERNS.md` |
 | Permission entity | `src/AlMuhasib.Core/Entities/Permission.cs` |
 | BaseEntity | `src/AlMuhasib.Core/Entities/BaseEntity.cs` |
 | معالج الإعداد | `src/AlMuhasib.UI/Windows/SetupWizardHostWindow.xaml` |
 | تصدير/طباعة | `src/AlMuhasib.Core/Interfaces/Services/IExportService.cs` |
+
+---
+
+## ملحق ج — خلاصة أنماط المقبوضات (للتخصيص)
+
+تفاصيل الحقول والتخصيص: **`docs/CUSTOMS_RECEIPT_PAYMENT_PATTERNS.md`**.
+
+| النمط | فاتورة واحدة | عدة فواتير | يُفضَّل للتخليص؟ |
+|-------|-----------|------------|------------------|
+| `Voucher` + `InvoiceId` / FIFO على العميل | نعم | نعم (FIFO بدون أسطر تخصيص محفوظة) | أقرب أساس للرأس |
+| `GoldPayment` | نعم (إلزامي) | لا | أسطر دفع لكل فاتورة |
+| `GoldVoucher` | لا | لا | لا (ذمة طرف فقط) |
+| CarTrade / RealEstate payments | وثيقة واحدة (عقد/عملية) | لا | لا للتخصيص متعدد |
+| `SalesRepCollection.ReceiptNumber` | اختياري | لا | تسمية رقم الوصل اليدوي فقط |
+| `[RET-APPLIED:…]` في Notes | — | نعم (نصي) | فكرة فقط — يُفضَّل جدول تخصيص |
+
+**التوصية:** `CustomsReceipt` (رأس بنمط السند المحاسبي) + `CustomsReceiptAllocation` (أسطر `InvoiceId`/`Amount`) + مرفقات بنمط `CustomerAttachment` تحت `Attachments/Customs/`.
 
 ---
 
