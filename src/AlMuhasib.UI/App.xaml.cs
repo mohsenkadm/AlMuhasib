@@ -18,6 +18,7 @@ using AlMuhasib.UI.ViewModels.CarTrade;
 using AlMuhasib.UI.ViewModels.Hotel;
 using AlMuhasib.UI.ViewModels.RealEstate;
 using AlMuhasib.UI.ViewModels.Gold;
+using AlMuhasib.UI.ViewModels.Customs;
 using AlMuhasib.UI.Modules;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.UI.Windows;
@@ -475,6 +476,8 @@ public partial class App : Application
         services.AddTransient<GoldDeletedInvoicesReportViewModel>();
         services.AddTransient<GoldExchangeReportViewModel>();
         services.AddTransient<GoldSaleReturnsReportViewModel>();
+
+        services.AddTransient<CustomsDashboardViewModel>();
 
         services.AddSingleton<MainWindowViewModel>();
 

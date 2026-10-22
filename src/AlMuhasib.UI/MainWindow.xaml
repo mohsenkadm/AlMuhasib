@@ -20,6 +20,8 @@
         xmlns:hotelVm="clr-namespace:AlMuhasib.UI.ViewModels.Hotel"
         xmlns:goldViews="clr-namespace:AlMuhasib.UI.Views.Gold"
         xmlns:goldVm="clr-namespace:AlMuhasib.UI.ViewModels.Gold"
+        xmlns:customsViews="clr-namespace:AlMuhasib.UI.Views.Customs"
+        xmlns:customsVm="clr-namespace:AlMuhasib.UI.ViewModels.Customs"
         xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
         xmlns:helpers="clr-namespace:AlMuhasib.UI.Helpers"
         xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
@@ -1525,6 +1527,9 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type goldVm:GoldSaleReturnsReportViewModel}">
                             <goldViews:GoldSaleReturnsReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type customsVm:CustomsDashboardViewModel}">
+                            <customsViews:CustomsDashboardView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:ProductsViewModel}">
                             <views:ProductsView />

@@ -41,8 +41,12 @@ public static class ScreenPermissionRegistry
 
     public static bool IsGoldShop => _registry?.IsGoldShop == true;
 
+    public static bool IsCustomsClearance => _registry?.IsCustomsClearance == true;
+
     public static IReadOnlyList<(string Name, string Label)> AllScreens =>
-        IsGoldShop
+        IsCustomsClearance
+            ? CustomsPermissionRegistry.Screens
+            : IsGoldShop
             ? GoldShopPermissionRegistry.Screens
             : IsHotelManagement
             ? HotelPermissionRegistryScreens
@@ -213,7 +217,9 @@ public static class ScreenPermissionRegistry
     ];
 
     public static string GetScreenName(Type viewModelType) =>
-        IsGoldShop
+        IsCustomsClearance
+            ? CustomsPermissionRegistry.GetScreenName(viewModelType)
+            : IsGoldShop
             ? GoldShopPermissionRegistry.GetScreenName(viewModelType)
             : IsHotelManagement
             ? HotelPermissionRegistry.GetScreenName(viewModelType)
@@ -229,7 +235,9 @@ public static class ScreenPermissionRegistry
         ViewModelToScreen.TryGetValue(viewModelType, out var name) ? name : viewModelType.Name;
 
     public static Type? GetDefaultViewModelType(string screenName) =>
-        IsGoldShop
+        IsCustomsClearance
+            ? CustomsPermissionRegistry.GetDefaultViewModelType(screenName)
+            : IsGoldShop
             ? GoldShopPermissionRegistry.GetDefaultViewModelType(screenName)
             : IsHotelManagement
             ? HotelPermissionRegistry.GetDefaultViewModelType(screenName)
@@ -245,7 +253,9 @@ public static class ScreenPermissionRegistry
         ScreenToDefaultViewModel.TryGetValue(screenName, out var type) ? type : null;
 
     public static string GetLabel(string screenName) =>
-        IsGoldShop
+        IsCustomsClearance
+            ? CustomsPermissionRegistry.GetLabel(screenName)
+            : IsGoldShop
             ? GoldShopPermissionRegistry.GetLabel(screenName)
             : IsHotelManagement
             ? HotelPermissionRegistry.GetLabel(screenName)

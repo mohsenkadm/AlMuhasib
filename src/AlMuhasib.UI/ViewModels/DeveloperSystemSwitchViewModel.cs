@@ -41,6 +41,7 @@ public partial class DeveloperSystemSwitchViewModel : ViewModelBase
             ApplicationSystemType.HotelManagement => "نظام إدارة الفنادق",
             ApplicationSystemType.RealEstateContracts => "نظام عقود العقارات",
             ApplicationSystemType.GoldShop => "نظام الذهب",
+            ApplicationSystemType.CustomsClearance => "التخليص الكمركي",
             _ => "نظام المحاسبة"
         };
         CurrentDatabaseDisplay = _systemProfile.ActiveDatabaseName;
@@ -160,6 +161,18 @@ public partial class DeveloperSystemSwitchViewModel : ViewModelBase
         ConfirmAndSwitch(ApplicationSystemType.GoldShop, "نظام الذهب");
     }
 
+    [RelayCommand]
+    private void SwitchToCustomsClearance()
+    {
+        if (_systemProfile.ActiveSystem == ApplicationSystemType.CustomsClearance)
+        {
+            _toast.ShowInfo("أنت تستخدم نظام التخليص الكمركي حالياً");
+            return;
+        }
+
+        ConfirmAndSwitch(ApplicationSystemType.CustomsClearance, "التخليص الكمركي");
+    }
+
     private void ConfirmAndSwitch(ApplicationSystemType target, string targetLabel)
     {
         var message =
@@ -184,6 +197,7 @@ public partial class DeveloperSystemSwitchViewModel : ViewModelBase
         ApplicationSystemType.HotelManagement => "AlMuhasibHotelsDb",
         ApplicationSystemType.RealEstateContracts => "AlMuhasibRealEstateDb",
         ApplicationSystemType.GoldShop => "AlMuhasibGoldShopDb",
+        ApplicationSystemType.CustomsClearance => "AlMuhasibCustomsDb",
         _ => "AlMuhasibDb"
     };
 }

@@ -1,0 +1,61 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Customs.CustomsDashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <ScrollViewer Padding="24">
+        <StackPanel>
+            <TextBlock Text="لوحة التحكم — التخليص الكمركي"
+                       FontSize="20"
+                       FontWeight="Bold"
+                       Foreground="#0277BD"
+                       Margin="0,0,0,16"/>
+
+            <UniformGrid Columns="4" Margin="0,0,0,16">
+                <md:Card Padding="16" Margin="4">
+                    <StackPanel>
+                        <TextBlock Text="عدد العملاء" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBlock Text="{Binding CustomerCount}" FontSize="24" FontWeight="Bold" Foreground="#0277BD"/>
+                    </StackPanel>
+                </md:Card>
+                <md:Card Padding="16" Margin="4">
+                    <StackPanel>
+                        <TextBlock Text="عدد الفواتير" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBlock Text="{Binding InvoiceCount}" FontSize="24" FontWeight="Bold"/>
+                    </StackPanel>
+                </md:Card>
+                <md:Card Padding="16" Margin="4">
+                    <StackPanel>
+                        <TextBlock Text="سيارات قيد الإجراء" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBlock Text="{Binding VehiclesInProgress}" FontSize="24" FontWeight="Bold" Foreground="#EF6C00"/>
+                    </StackPanel>
+                </md:Card>
+                <md:Card Padding="16" Margin="4">
+                    <StackPanel>
+                        <TextBlock Text="فواتير غير مسددة" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <TextBlock Text="{Binding UnpaidInvoices}" FontSize="24" FontWeight="Bold" Foreground="#C62828"/>
+                    </StackPanel>
+                </md:Card>
+            </UniformGrid>
+
+            <md:Card Padding="20" Margin="4">
+                <StackPanel>
+                    <TextBlock Text="مرحباً بك في نظام التخليص الكمركي والنقل"
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,8"/>
+                    <TextBlock Text="لوحة التحكم جاهزة داخل نفس واجهة قيد. ستظهر الإحصائيات الفعلية بعد تفعيل شاشات العمليات والتقارير."
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <Button Content="تحديث"
+                            Command="{Binding LoadDataCommand}"
+                            Style="{StaticResource OutlinedButton}"
+                            HorizontalAlignment="Left"
+                            Margin="0,16,0,0"
+                            md:ButtonAssist.CornerRadius="8"/>
+                </StackPanel>
+            </md:Card>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

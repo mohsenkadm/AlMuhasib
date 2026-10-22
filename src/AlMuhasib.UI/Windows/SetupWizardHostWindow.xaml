@@ -109,8 +109,10 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
             <ScrollViewer Grid.Row="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                <Grid MinWidth="1600">
+                <Grid MinWidth="1860">
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="12"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="12"/>
                         <ColumnDefinition Width="*"/>
@@ -193,6 +195,18 @@
                             </Border>
                             <TextBlock Text="نظام الذهب" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
                             <TextBlock Text="أسعار المثقال والمخزون والبيع والشراء لمحلات الذهب العراقية" TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,8,0,0" MaxWidth="220"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border x:Name="CustomsCard" Grid.Column="12" CornerRadius="14" BorderThickness="2"
+                            BorderBrush="{DynamicResource SubtleBorderBrush}" Background="{DynamicResource BackgroundBrush}" Cursor="Hand"
+                            MouseLeftButtonUp="OnCustomsSelected">
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="16">
+                            <Border Width="72" Height="72" CornerRadius="36" Background="#E1F5FE" Margin="0,0,0,12">
+                                <md:PackIcon Kind="Truck" Width="36" Height="36" Foreground="#0277BD" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="التخليص الكمركي" FontSize="16" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}" HorizontalAlignment="Center"/>
+                            <TextBlock Text="تخليص ونقل السيارات والشحنات مع الفواتير والمصاريف والمقبوضات" TextWrapping="Wrap" TextAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,8,0,0" MaxWidth="220"/>
                         </StackPanel>
                     </Border>
                 </Grid>

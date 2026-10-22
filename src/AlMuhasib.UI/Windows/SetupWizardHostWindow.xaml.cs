@@ -125,6 +125,9 @@ public partial class SetupWizardHostWindow : Window
     private void OnGoldSelected(object sender, MouseButtonEventArgs e) =>
         SelectSystem(ApplicationSystemType.GoldShop, GoldCard, "#B8860B", "#FFF8E1");
 
+    private void OnCustomsSelected(object sender, MouseButtonEventArgs e) =>
+        SelectSystem(ApplicationSystemType.CustomsClearance, CustomsCard, "#0277BD", "#E1F5FE");
+
     private void SelectSystem(ApplicationSystemType system, Border card, string accent, string bg)
     {
         SelectedSystem = system;
@@ -136,6 +139,7 @@ public partial class SetupWizardHostWindow : Window
         ResetCard(HotelCard);
         ResetCard(RealEstateCard);
         ResetCard(GoldCard);
+        ResetCard(CustomsCard);
 
         card.BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(accent)!);
         card.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(bg)!);
@@ -406,6 +410,7 @@ public partial class SetupWizardHostWindow : Window
             ApplicationSystemType.CarTrading => SystemConnectionStrings.CarTradingDatabase,
             ApplicationSystemType.RealEstateContracts => SystemConnectionStrings.RealEstateContractsDatabase,
             ApplicationSystemType.GoldShop => SystemConnectionStrings.GoldShopDatabase,
+            ApplicationSystemType.CustomsClearance => SystemConnectionStrings.CustomsDatabase,
             _ => SystemConnectionStrings.AccountingDatabase
         };
 
@@ -536,6 +541,7 @@ public partial class SetupWizardHostWindow : Window
                 ApplicationSystemType.CarTrading => SystemConnectionStrings.CarTradingDatabase,
                 ApplicationSystemType.RealEstateContracts => SystemConnectionStrings.RealEstateContractsDatabase,
                 ApplicationSystemType.GoldShop => SystemConnectionStrings.GoldShopDatabase,
+                ApplicationSystemType.CustomsClearance => SystemConnectionStrings.CustomsDatabase,
                 _ => SystemConnectionStrings.AccountingDatabase
             };
 
@@ -620,6 +626,7 @@ public partial class SetupWizardHostWindow : Window
                 ApplicationSystemType.CarTrading => SystemConnectionStrings.CarTradingDatabase,
                 ApplicationSystemType.RealEstateContracts => SystemConnectionStrings.RealEstateContractsDatabase,
                 ApplicationSystemType.GoldShop => SystemConnectionStrings.GoldShopDatabase,
+                ApplicationSystemType.CustomsClearance => SystemConnectionStrings.CustomsDatabase,
                 _ => SystemConnectionStrings.AccountingDatabase
             };
 
