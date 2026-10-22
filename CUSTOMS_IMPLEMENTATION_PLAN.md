@@ -327,6 +327,23 @@ OnStartup
 - مبالغ: `decimal(18,2)`؛ أسعار صرف غالباً `(18,4)`
 - عملة: غالباً enum كنص (`HasConversion<string>`)
 
+### 11.3.1 العملة وأسعار الصرف (IQD + USD)
+
+التخليص يحتاج ديناراً ودولاراً فقط. المرجع التفصيلي لإعادة الاستخدام:
+
+**[`docs/CUSTOMS_CURRENCY_REUSE.md`](docs/CUSTOMS_CURRENCY_REUSE.md)**
+
+الخلاصة المثبتة من الكود الحالي:
+
+| المصدر | ماذا يوجد |
+|--------|-----------|
+| محاسبة | `AccountingCurrency` (IQD=0, USD=1) + `ExchangeRate.UsdToIqd` `(18,4)` + لقطة `Invoice.Currency`/`FxRate` |
+| ذهب | `GoldCurrency` بنفس القيم + جدول منفصل `GoldFxRates` `(18,2)` + تسعير/دفع قد يختلفان |
+| سيارات / عقارات | **لا عملة ولا FX** — مبالغ `decimal` ضمنية |
+| Money abstraction | **غير موجود** |
+
+**إعادة الاستخدام للتخليص:** نمط المحاسبة (مستند بعملة واحدة + `FxRate` لقطة + عدم خلط الأرصدة عبر `EnsureSameCurrency` / `DualCurrencyBalance`) مع جدول صرف **محلي** داخل `CustomsDbContext` (مثل ذهب، دون مشاركة `AppDbContext.ExchangeRates`).
+
 ### 11.4 Migrations
 
 | النظام | الأسلوب |
