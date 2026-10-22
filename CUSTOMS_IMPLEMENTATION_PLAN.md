@@ -76,6 +76,9 @@ OnStartup
 **مرجع البنية:** Gold (slice غني) + CarTrade (migrations أنظف).  
 **مرجع الواجهة:** قيد المحاسبي + `docs/GOLD_PHASE2_UI_PATTERNS.md`.
 
+**تصميم المجال (المرحلة 2):** انظر [`CUSTOMS_ARCHITECTURE.md`](CUSTOMS_ARCHITECTURE.md) — الكيانات، العلاقات، العملات، FX، المقبوضات متعددة الفواتير، والمرفقات.  
+مراجع داعمة: [`docs/CUSTOMS_CURRENCY_REUSE.md`](docs/CUSTOMS_CURRENCY_REUSE.md)، [`docs/CUSTOMS_RECEIPT_PAYMENT_PATTERNS.md`](docs/CUSTOMS_RECEIPT_PAYMENT_PATTERNS.md).
+
 ---
 
 ## 2. أهم Modules الموجودة
@@ -525,7 +528,10 @@ Skeleton → Entities/Db → Customers/Vehicles lists → Invoices/Payments
 | BaseEntity | `src/AlMuhasib.Core/Entities/BaseEntity.cs` |
 | معالج الإعداد | `src/AlMuhasib.UI/Windows/SetupWizardHostWindow.xaml` |
 | تصدير/طباعة | `src/AlMuhasib.Core/Interfaces/Services/IExportService.cs` |
+| تصميم Architecture (مرحلة 2) | [`CUSTOMS_ARCHITECTURE.md`](CUSTOMS_ARCHITECTURE.md) |
+| عملات / FX للتخليص | [`docs/CUSTOMS_CURRENCY_REUSE.md`](docs/CUSTOMS_CURRENCY_REUSE.md) |
+| أنماط المقبوضات | [`docs/CUSTOMS_RECEIPT_PAYMENT_PATTERNS.md`](docs/CUSTOMS_RECEIPT_PAYMENT_PATTERNS.md) |
 
 ---
 
-**نهاية مرحلة التحليل.** الخطوة التالية بعد اعتماد هذه الوثيقة: تنفيذ المرحلة A (Skeleton) فقط، مع الالتزام بقاعدة عدم التأثير على الأنظمة الحالية.
+**نهاية مرحلة التحليل.** تصميم المجال موثّق في [`CUSTOMS_ARCHITECTURE.md`](CUSTOMS_ARCHITECTURE.md). الخطوة التالية بعد اعتماده: تنفيذ المرحلة A (Skeleton) ثم B (Entities) وفق ذلك التصميم، مع الالتزام بقاعدة عدم التأثير على الأنظمة الحالية.
