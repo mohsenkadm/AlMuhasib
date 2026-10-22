@@ -13,6 +13,7 @@ public sealed class SystemModuleRegistry
     private readonly HotelSystemModule _hotel;
     private readonly RealEstateContractsSystemModule _realEstate;
     private readonly GoldShopSystemModule _goldShop;
+    private readonly CustomsClearanceSystemModule _customsClearance;
 
     public SystemModuleRegistry(ISystemProfileService profile)
     {
@@ -23,6 +24,7 @@ public sealed class SystemModuleRegistry
         _hotel = new HotelSystemModule();
         _realEstate = new RealEstateContractsSystemModule();
         _goldShop = new GoldShopSystemModule();
+        _customsClearance = new CustomsClearanceSystemModule();
     }
 
     public ISystemModule ActiveModule => _profile.ActiveSystem switch
@@ -32,6 +34,7 @@ public sealed class SystemModuleRegistry
         ApplicationSystemType.HotelManagement => _hotel,
         ApplicationSystemType.RealEstateContracts => _realEstate,
         ApplicationSystemType.GoldShop => _goldShop,
+        ApplicationSystemType.CustomsClearance => _customsClearance,
         _ => _accounting
     };
 
@@ -40,5 +43,6 @@ public sealed class SystemModuleRegistry
     public bool IsHotelManagement => _profile.ActiveSystem == ApplicationSystemType.HotelManagement;
     public bool IsRealEstateContracts => _profile.ActiveSystem == ApplicationSystemType.RealEstateContracts;
     public bool IsGoldShop => _profile.ActiveSystem == ApplicationSystemType.GoldShop;
+    public bool IsCustomsClearance => _profile.ActiveSystem == ApplicationSystemType.CustomsClearance;
     public bool IsAccounting => _profile.ActiveSystem == ApplicationSystemType.Accounting;
 }
