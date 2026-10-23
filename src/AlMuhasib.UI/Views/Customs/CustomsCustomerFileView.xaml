@@ -124,6 +124,21 @@
                                      materialDesign:ElevationAssist.Elevation="Dp1"
                                      Background="{DynamicResource CardBrush}"
                                      BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                    <DockPanel>
+                    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                                Margin="0,12,0,0" HorizontalAlignment="Center"
+                                Visibility="{Binding ShowListPagination, Converter={StaticResource BoolToVis}}">
+                        <Button Command="{Binding FirstListPageCommand}" Content="الأولى"
+                                Style="{StaticResource OutlinedButton}" Margin="0,0,6,0" Padding="12,4"/>
+                        <Button Command="{Binding PreviousListPageCommand}" Content="السابق"
+                                Style="{StaticResource OutlinedButton}" Margin="0,0,6,0" Padding="12,4"/>
+                        <TextBlock Text="{Binding ListPaginationText}" VerticalAlignment="Center"
+                                   Margin="8,0" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <Button Command="{Binding NextListPageCommand}" Content="التالي"
+                                Style="{StaticResource OutlinedButton}" Margin="6,0,6,0" Padding="12,4"/>
+                        <Button Command="{Binding LastListPageCommand}" Content="الأخيرة"
+                                Style="{StaticResource OutlinedButton}" Padding="12,4"/>
+                    </StackPanel>
                     <TabControl SelectedIndex="{Binding SelectedTab}"
                                 Style="{StaticResource MaterialDesignTabControl}">
 
@@ -257,6 +272,7 @@
                             </StackPanel>
                         </TabItem>
                     </TabControl>
+                    </DockPanel>
                 </materialDesign:Card>
             </StackPanel>
         </ScrollViewer>

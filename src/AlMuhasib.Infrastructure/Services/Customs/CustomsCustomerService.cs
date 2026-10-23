@@ -177,48 +177,162 @@ public sealed class CustomsCustomerService : ICustomsCustomerService
 
     public async Task<CustomsCustomerFile?> GetCustomerFileAsync(
         int customerId,
+        int invoicePage = 1,
+        int vehiclePage = 1,
+        int receiptPage = 1,
+        int attachmentPage = 1,
+        int pageSize = 50,
         CancellationToken cancellationToken = default)
     {
         _permissions.EnsureView(CustomsScreenNames.Customers);
+        pageSize = Math.Clamp(pageSize, 1, 200);
+        invoicePage = Math.Max(1, invoicePage);
+        vehiclePage = Math.Max(1, vehiclePage);
+        receiptPage = Math.Max(1, receiptPage);
+        attachmentPage = Math.Max(1, attachmentPage);
+
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var customer = await db.CustomsCustomers.AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == customerId, cancellationToken);
         if (customer is null)
             return null;
 
-        var invoices = await db.CustomsInvoices.AsNoTracking()
+        // H-03: summary aggregates in SQL — do not load full history for KPIs.
+        var invoiceCount = await db.CustomsInvoices.AsNoTracking()
+            .CountAsync(
+                i => i.CustomerId == customerId && i.Status != CustomsInvoiceStatus.Cancelled,
+                cancellationToken);
+
+        var unpaidInvoiceCount = await db.CustomsInvoices.AsNoTracking()
+            .CountAsync(
+                i => i.CustomerId == customerId
+                     && i.Status != CustomsInvoiceStatus.Cancelled
+                     && i.RemainingAmount > 0,
+                cancellationToken);
+
+        var debitIqd = await db.CustomsInvoices.AsNoTracking()
+            .Where(i => i.CustomerId == customerId
+                        && i.Status == CustomsInvoiceStatus.Approved
+                        && i.Currency == AccountingCurrency.IQD)
+            .SumAsync(i => (decimal?)i.TotalAmount, cancellationToken) ?? 0m;
+
+        var debitUsd = await db.CustomsInvoices.AsNoTracking()
+            .Where(i => i.CustomerId == customerId
+                        && i.Status == CustomsInvoiceStatus.Approved
+                        && i.Currency == AccountingCurrency.USD)
+            .SumAsync(i => (decimal?)i.TotalAmount, cancellationToken) ?? 0m;
+
+        var creditIqd = await db.CustomsReceipts.AsNoTracking()
+            .Where(r => r.CustomerId == customerId && r.Currency == AccountingCurrency.IQD)
+            .SumAsync(r => (decimal?)r.Amount, cancellationToken) ?? 0m;
+
+        var creditUsd = await db.CustomsReceipts.AsNoTracking()
+            .Where(r => r.CustomerId == customerId && r.Currency == AccountingCurrency.USD)
+            .SumAsync(r => (decimal?)r.Amount, cancellationToken) ?? 0m;
+
+        var invoicesTotalCount = await db.CustomsInvoices.AsNoTracking()
+            .CountAsync(i => i.CustomerId == customerId, cancellationToken);
+
+        var vehiclesTotalCount = await db.CustomsVehicles.AsNoTracking()
+            .CountAsync(v => v.Invoice.CustomerId == customerId, cancellationToken);
+
+        var receiptsTotalCount = await db.CustomsReceipts.AsNoTracking()
+            .CountAsync(r => r.CustomerId == customerId, cancellationToken);
+
+        var attachmentsTotalCount = await db.CustomsAttachments.AsNoTracking()
+            .CountAsync(
+                a => a.OwnerType == CustomsAttachmentOwnerType.Customer && a.OwnerId == customerId,
+                cancellationToken);
+
+        var invoicePageRows = await db.CustomsInvoices.AsNoTracking()
             .Where(i => i.CustomerId == customerId)
             .OrderByDescending(i => i.InvoiceDate)
             .ThenByDescending(i => i.Id)
+            .Skip((invoicePage - 1) * pageSize)
+            .Take(pageSize)
+            .Select(i => new
+            {
+                i.Id,
+                i.InvoiceNumber,
+                i.InvoiceDate,
+                i.ServiceType,
+                i.Currency,
+                i.TotalAmount,
+                i.PaidAmount,
+                i.RemainingAmount,
+                i.Status
+            })
             .ToListAsync(cancellationToken);
 
-        var invoiceIds = invoices.Select(i => i.Id).ToList();
-        var vehicles = invoiceIds.Count == 0
-            ? []
-            : await db.CustomsVehicles.AsNoTracking()
-                .Include(v => v.Invoice)
-                .Where(v => invoiceIds.Contains(v.InvoiceId))
-                .OrderByDescending(v => v.Id)
-                .ToListAsync(cancellationToken);
+        var invoices = invoicePageRows.Select(i => new CustomsCustomerInvoiceRow
+        {
+            Id = i.Id,
+            InvoiceNumber = i.InvoiceNumber,
+            InvoiceDate = i.InvoiceDate,
+            ServiceTypeLabel = CustomsServiceTypeDisplay.ToArabic(i.ServiceType),
+            Currency = i.Currency,
+            CurrencyLabel = i.Currency == AccountingCurrency.USD ? "$" : "د.ع",
+            TotalAmount = i.TotalAmount,
+            PaidAmount = i.PaidAmount,
+            RemainingAmount = i.RemainingAmount,
+            Status = i.Status,
+            StatusLabel = CustomsInvoiceStatusDisplay.ToArabic(i.Status)
+        }).ToList();
+
+        var vehicles = await db.CustomsVehicles.AsNoTracking()
+            .Where(v => v.Invoice.CustomerId == customerId)
+            .OrderByDescending(v => v.Id)
+            .Skip((vehiclePage - 1) * pageSize)
+            .Take(pageSize)
+            .Select(v => new
+            {
+                v.Id,
+                InvoiceNumber = v.Invoice.InvoiceNumber,
+                v.SerialNumber,
+                v.IraqiPlate,
+                v.SyrianPlate,
+                v.IraqiDriver,
+                v.SyrianDriver,
+                v.CargoType,
+                v.Status,
+                v.VehiclePrice,
+                v.Currency
+            })
+            .ToListAsync(cancellationToken);
 
         var receipts = await db.CustomsReceipts.AsNoTracking()
             .Where(r => r.CustomerId == customerId)
             .OrderByDescending(r => r.ReceiptDate)
             .ThenByDescending(r => r.Id)
+            .Skip((receiptPage - 1) * pageSize)
+            .Take(pageSize)
+            .Select(r => new
+            {
+                r.Id,
+                r.ReceiptNumber,
+                r.ReceiptDate,
+                r.Amount,
+                r.Currency,
+                r.PaymentMethod,
+                r.ReceiverName,
+                r.Notes
+            })
             .ToListAsync(cancellationToken);
 
         var attachments = await db.CustomsAttachments.AsNoTracking()
             .Where(a => a.OwnerType == CustomsAttachmentOwnerType.Customer && a.OwnerId == customerId)
             .OrderByDescending(a => a.CreatedAt)
+            .Skip((attachmentPage - 1) * pageSize)
+            .Take(pageSize)
+            .Select(a => new CustomsAttachmentItem
+            {
+                Id = a.Id,
+                FileName = a.FileName,
+                FilePath = a.FilePath,
+                Description = a.Description,
+                CreatedAt = a.CreatedAt
+            })
             .ToListAsync(cancellationToken);
-
-        var activeInvoices = invoices.Where(i => i.Status != CustomsInvoiceStatus.Cancelled).ToList();
-        var approvedInvoices = invoices.Where(i => i.Status == CustomsInvoiceStatus.Approved).ToList();
-
-        var debitIqd = approvedInvoices.Where(i => i.Currency == AccountingCurrency.IQD).Sum(i => i.TotalAmount);
-        var debitUsd = approvedInvoices.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.TotalAmount);
-        var creditIqd = receipts.Where(r => r.Currency == AccountingCurrency.IQD).Sum(r => r.Amount);
-        var creditUsd = receipts.Where(r => r.Currency == AccountingCurrency.USD).Sum(r => r.Amount);
 
         return new CustomsCustomerFile
         {
@@ -237,28 +351,24 @@ public sealed class CustomsCustomerService : ICustomsCustomerService
             DebitUsd = debitUsd,
             CreditIqd = creditIqd,
             CreditUsd = creditUsd,
-            InvoiceCount = activeInvoices.Count,
-            UnpaidInvoiceCount = activeInvoices.Count(i => i.RemainingAmount > 0),
-            VehicleCount = vehicles.Count,
-            ReceiptCount = receipts.Count,
-            Invoices = invoices.Select(i => new CustomsCustomerInvoiceRow
-            {
-                Id = i.Id,
-                InvoiceNumber = i.InvoiceNumber,
-                InvoiceDate = i.InvoiceDate,
-                ServiceTypeLabel = CustomsServiceTypeDisplay.ToArabic(i.ServiceType),
-                Currency = i.Currency,
-                CurrencyLabel = i.Currency == AccountingCurrency.USD ? "$" : "د.ع",
-                TotalAmount = i.TotalAmount,
-                PaidAmount = i.PaidAmount,
-                RemainingAmount = i.RemainingAmount,
-                Status = i.Status,
-                StatusLabel = CustomsInvoiceStatusDisplay.ToArabic(i.Status)
-            }).ToList(),
+            InvoiceCount = invoiceCount,
+            UnpaidInvoiceCount = unpaidInvoiceCount,
+            VehicleCount = vehiclesTotalCount,
+            ReceiptCount = receiptsTotalCount,
+            InvoicesTotalCount = invoicesTotalCount,
+            VehiclesTotalCount = vehiclesTotalCount,
+            ReceiptsTotalCount = receiptsTotalCount,
+            AttachmentsTotalCount = attachmentsTotalCount,
+            InvoicePage = invoicePage,
+            VehiclePage = vehiclePage,
+            ReceiptPage = receiptPage,
+            AttachmentPage = attachmentPage,
+            PageSize = pageSize,
+            Invoices = invoices,
             Vehicles = vehicles.Select(v => new CustomsCustomerVehicleRow
             {
                 Id = v.Id,
-                InvoiceNumber = v.Invoice.InvoiceNumber,
+                InvoiceNumber = v.InvoiceNumber,
                 SerialNumber = v.SerialNumber,
                 IraqiPlate = v.IraqiPlate,
                 SyrianPlate = v.SyrianPlate,
@@ -281,14 +391,7 @@ public sealed class CustomsCustomerService : ICustomsCustomerService
                 ReceiverName = r.ReceiverName,
                 Notes = r.Notes
             }).ToList(),
-            Attachments = attachments.Select(a => new CustomsAttachmentItem
-            {
-                Id = a.Id,
-                FileName = a.FileName,
-                FilePath = a.FilePath,
-                Description = a.Description,
-                CreatedAt = a.CreatedAt
-            }).ToList()
+            Attachments = attachments
         };
     }
 }
