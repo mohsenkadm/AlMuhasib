@@ -315,7 +315,7 @@
                                 <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70"/>
                                 <DataGridTextColumn Header="التاريخ" Binding="{Binding ExpenseDate, StringFormat=yyyy/MM/dd}" Width="110"/>
                                 <DataGridTextColumn Header="المستلم" Binding="{Binding Recipient}" Width="110"/>
-                                <DataGridTemplateColumn Header="إجراءات" Width="100">
+                                <DataGridTemplateColumn Header="إجراءات" Width="120">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -325,6 +325,12 @@
                                                         IsEnabled="{Binding DataContext.CanEditExpense, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                         ToolTip="تعديل">
                                                     <md:PackIcon Kind="PencilOutline" Width="16" Height="16"/>
+                                                </Button>
+                                                <Button Command="{Binding DataContext.OpenExpenseAttachmentsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource TableAttachIconButton}"
+                                                        ToolTip="مرفقات المصروف">
+                                                    <md:PackIcon Kind="Attachment" Width="16" Height="16"/>
                                                 </Button>
                                                 <Button Command="{Binding DataContext.RemoveExpenseRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                         CommandParameter="{Binding}"
@@ -369,42 +375,15 @@
 
                 <!-- Attachments -->
                 <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12">
-                    <StackPanel>
-                        <DockPanel Margin="0,0,0,10">
-                            <TextBlock Text="المرفقات" FontWeight="Bold" FontSize="15" VerticalAlignment="Center"/>
-                            <Button DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                    Command="{Binding AddAttachmentCommand}"
-                                    Style="{StaticResource FlatButton}" Content="+ إضافة مرفق"
-                                    IsEnabled="{Binding HasSavedInvoice}"/>
-                        </DockPanel>
-                        <TextBlock Text="احفظ الفاتورة أولاً لتفعيل المرفقات" FontSize="12"
-                                   Foreground="{DynamicResource HintForegroundBrush}" Margin="0,0,0,8"
-                                   Visibility="{Binding HasSavedInvoice, Converter={StaticResource InvBoolToVis}}"/>
-                        <DataGrid ItemsSource="{Binding Attachments}" AutoGenerateColumns="False"
-                                  IsReadOnly="True" CanUserAddRows="False"
-                                  Style="{StaticResource ModernDataGrid}" MaxHeight="180">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="اسم الملف" Binding="{Binding FileName}" Width="*"/>
-                                <DataGridTextColumn Header="التاريخ" Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd HH:mm}" Width="140"/>
-                                <DataGridTemplateColumn Header="إجراءات" Width="100">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Button Command="{Binding DataContext.OpenAttachmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                        CommandParameter="{Binding}" Style="{StaticResource TableViewIconButton}">
-                                                    <md:PackIcon Kind="Eye" Width="16" Height="16"/>
-                                                </Button>
-                                                <Button Command="{Binding DataContext.DeleteAttachmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                        CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}">
-                                                    <md:PackIcon Kind="DeleteOutline" Width="16" Height="16"/>
-                                                </Button>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </StackPanel>
+                    <controls:CustomsAttachmentsPanel
+                        Title="المرفقات"
+                        SaveFirstHint="احفظ الفاتورة أولاً لتفعيل المرفقات"
+                        Items="{Binding Attachments}"
+                        HasSavedOwner="{Binding HasSavedInvoice}"
+                        CanDelete="{Binding CanDelete}"
+                        AddCommand="{Binding AddAttachmentCommand}"
+                        OpenCommand="{Binding OpenAttachmentCommand}"
+                        DeleteCommand="{Binding DeleteAttachmentCommand}"/>
                 </md:Card>
 
                 <!-- Notes -->
@@ -507,40 +486,17 @@
                                          Style="{StaticResource FilledTextBox}"
                                          TextWrapping="Wrap" AcceptsReturn="True" MinHeight="64" Margin="0,0,0,12"/>
 
-                                <DockPanel Margin="0,0,0,8">
-                                    <TextBlock Text="مرفقات السيارة" FontWeight="Bold" VerticalAlignment="Center"/>
-                                    <Button DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                            Command="{Binding DataContext.AddVehicleAttachmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            Style="{StaticResource FlatButton}" Content="+ مرفق"
-                                            IsEnabled="{Binding DataContext.HasSavedDetailVehicle, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                                </DockPanel>
-                                <TextBlock Text="احفظ الفاتورة أولاً لتفعيل مرفقات هذه السيارة" FontSize="12"
-                                           Foreground="{DynamicResource HintForegroundBrush}" Margin="0,0,0,8"
-                                           Visibility="{Binding DataContext.HasSavedDetailVehicle, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InvBoolToVis}}"/>
-                                <DataGrid ItemsSource="{Binding DataContext.VehicleAttachments, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                          AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                                          Style="{StaticResource ModernDataGrid}" MaxHeight="140">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="اسم الملف" Binding="{Binding FileName}" Width="*"/>
-                                        <DataGridTextColumn Header="التاريخ" Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd HH:mm}" Width="140"/>
-                                        <DataGridTemplateColumn Header="" Width="90">
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <Button Command="{Binding DataContext.OpenAttachmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                                CommandParameter="{Binding}" Style="{StaticResource TableViewIconButton}">
-                                                            <md:PackIcon Kind="Eye" Width="16" Height="16"/>
-                                                        </Button>
-                                                        <Button Command="{Binding DataContext.DeleteVehicleAttachmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                                CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}">
-                                                            <md:PackIcon Kind="DeleteOutline" Width="16" Height="16"/>
-                                                        </Button>
-                                                    </StackPanel>
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
-                                    </DataGrid.Columns>
-                                </DataGrid>
+                                <controls:CustomsAttachmentsPanel
+                                    Title="مرفقات السيارة"
+                                    AddButtonText="+ مرفق"
+                                    SaveFirstHint="احفظ الفاتورة أولاً لتفعيل مرفقات هذه السيارة"
+                                    MaxGridHeight="140"
+                                    Items="{Binding DataContext.VehicleAttachments, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    HasSavedOwner="{Binding DataContext.HasSavedDetailVehicle, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CanDelete="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    AddCommand="{Binding DataContext.AddVehicleAttachmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    OpenCommand="{Binding DataContext.OpenAttachmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    DeleteCommand="{Binding DataContext.DeleteVehicleAttachmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
                             </StackPanel>
                         </ScrollViewer>
                         <Border Grid.Row="2" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0" Padding="20,14">
@@ -585,35 +541,16 @@
                             </StackPanel>
                         </Border>
                         <StackPanel Grid.Row="1" Margin="24,16">
-                            <Button Content="+ إضافة مرفق" Command="{Binding AddVehicleAttachmentCommand}"
-                                    Style="{StaticResource MaterialDesignRaisedButton}" Background="#0277BD"
-                                    md:ButtonAssist.CornerRadius="8" Padding="16,8" HorizontalAlignment="Right"
-                                    Margin="0,0,0,12"
-                                    IsEnabled="{Binding HasSavedAttachmentsVehicle}"/>
-                            <DataGrid ItemsSource="{Binding VehicleAttachments}"
-                                      AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
-                                      Style="{StaticResource ModernDataGrid}" MaxHeight="320" MinHeight="160">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="اسم الملف" Binding="{Binding FileName}" Width="*"/>
-                                    <DataGridTextColumn Header="التاريخ" Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd HH:mm}" Width="140"/>
-                                    <DataGridTemplateColumn Header="إجراءات" Width="100">
-                                        <DataGridTemplateColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <Button Command="{Binding DataContext.OpenAttachmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                            CommandParameter="{Binding}" Style="{StaticResource TableViewIconButton}">
-                                                        <md:PackIcon Kind="Eye" Width="16" Height="16"/>
-                                                    </Button>
-                                                    <Button Command="{Binding DataContext.DeleteVehicleAttachmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                            CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}">
-                                                        <md:PackIcon Kind="DeleteOutline" Width="16" Height="16"/>
-                                                    </Button>
-                                                </StackPanel>
-                                            </DataTemplate>
-                                        </DataGridTemplateColumn.CellTemplate>
-                                    </DataGridTemplateColumn>
-                                </DataGrid.Columns>
-                            </DataGrid>
+                            <controls:CustomsAttachmentsPanel
+                                Title="المرفقات"
+                                SaveFirstHint="احفظ الفاتورة أولاً لتفعيل مرفقات هذه السيارة"
+                                MaxGridHeight="320"
+                                Items="{Binding VehicleAttachments}"
+                                HasSavedOwner="{Binding HasSavedAttachmentsVehicle}"
+                                CanDelete="{Binding CanDelete}"
+                                AddCommand="{Binding AddVehicleAttachmentCommand}"
+                                OpenCommand="{Binding OpenAttachmentCommand}"
+                                DeleteCommand="{Binding DeleteVehicleAttachmentCommand}"/>
                         </StackPanel>
                         <Border Grid.Row="2" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0" Padding="20,14">
                             <Button Content="إغلاق" Command="{Binding CloseVehicleAttachmentsCommand}"
@@ -628,11 +565,11 @@
         <md:DialogHost IsOpen="{Binding IsExpenseDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="3"
                        Style="{StaticResource ModernDialogHost}">
             <md:DialogHost.DialogContent>
-                <md:Card MinWidth="480" MaxWidth="540" UniformCornerRadius="16" md:ElevationAssist.Elevation="Dp8">
+                <md:Card MinWidth="520" MaxWidth="580" MaxHeight="680" UniformCornerRadius="16" md:ElevationAssist.Elevation="Dp8">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
                         <Border Grid.Row="0" Background="#0277BD" Padding="16,12,16,14" CornerRadius="16,16,0,0">
@@ -642,52 +579,67 @@
                                     <md:PackIcon Kind="Close" Width="22" Height="22"/>
                                 </Button>
                                 <TextBlock Text="{Binding ExpenseDialogTitle}" FontSize="18" FontWeight="Bold" Foreground="White"/>
-                                <TextBlock Text="نوع · مبلغ · عملة · تاريخ — بنفس مدخلات المنصة"
+                                <TextBlock Text="نوع · مبلغ · عملة · تاريخ — المرفقات بعد حفظ الفاتورة"
                                            FontSize="12" Foreground="#B3E5FC" Margin="0,6,0,0"/>
                             </StackPanel>
                         </Border>
-                        <StackPanel Grid.Row="1" Margin="24,20,24,8">
-                            <DockPanel Margin="0,0,0,12">
-                                <ComboBox ItemsSource="{Binding ExpenseTypes}"
-                                          SelectedItem="{Binding SelectedExpenseType}"
-                                          DisplayMemberPath="Name"
-                                          md:HintAssist.Hint="نوع المصروف *"
-                                          Style="{StaticResource FilledComboBox}"
-                                          DockPanel.Dock="Left" Width="260" Margin="0,0,8,0"/>
-                                <TextBox Text="{Binding NewExpenseTypeName, UpdateSourceTrigger=PropertyChanged}"
-                                         md:HintAssist.Hint="نوع جديد"
-                                         Style="{StaticResource FilledTextBox}"
-                                         Margin="0,0,4,0"/>
-                                <Button Content="+" Command="{Binding AddExpenseTypeCommand}"
-                                        Style="{StaticResource FlatButton}" DockPanel.Dock="Right"
-                                        VerticalAlignment="Center" Padding="8,4"/>
-                            </DockPanel>
-                            <TextBox Text="{Binding ExpenseDescription, UpdateSourceTrigger=PropertyChanged}"
-                                     md:HintAssist.Hint="الوصف"
-                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
-                            <UniformGrid Columns="2" Margin="0,0,0,12">
-                                <TextBox Text="{Binding ExpenseAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
-                                         md:HintAssist.Hint="المبلغ *"
-                                         Style="{StaticResource NumericTextBox}" Margin="0,0,8,0"/>
-                                <ComboBox ItemsSource="{Binding CurrencyOptions}"
-                                          SelectedValue="{Binding ExpenseCurrency}"
-                                          SelectedValuePath="Value" DisplayMemberPath="Label"
-                                          md:HintAssist.Hint="العملة *"
-                                          Style="{StaticResource FilledComboBox}"/>
-                            </UniformGrid>
-                            <TextBox Text="{Binding ExpenseFxRate, UpdateSourceTrigger=PropertyChanged}"
-                                     md:HintAssist.Hint="سعر الصرف (USD→IQD)"
-                                     Style="{StaticResource NumericTextBox}" Margin="0,0,0,12"
-                                     Visibility="{Binding ShowExpenseFxRate, Converter={StaticResource BoolToVis}}"/>
-                            <UniformGrid Columns="2" Margin="0,0,0,12">
-                                <DatePicker SelectedDate="{Binding ExpenseDate}"
-                                            md:HintAssist.Hint="تاريخ المصروف *"
-                                            Style="{StaticResource FilledDatePicker}" Margin="0,0,8,0"/>
-                                <TextBox Text="{Binding ExpenseRecipient, UpdateSourceTrigger=PropertyChanged}"
-                                         md:HintAssist.Hint="المستلم"
-                                         Style="{StaticResource FilledTextBox}"/>
-                            </UniformGrid>
-                        </StackPanel>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                                      behaviors:ScrollViewerMouseWheel.IsEnabled="True">
+                            <StackPanel Margin="24,20,24,8">
+                                <DockPanel Margin="0,0,0,12">
+                                    <ComboBox ItemsSource="{Binding ExpenseTypes}"
+                                              SelectedItem="{Binding SelectedExpenseType}"
+                                              DisplayMemberPath="Name"
+                                              md:HintAssist.Hint="نوع المصروف *"
+                                              Style="{StaticResource FilledComboBox}"
+                                              DockPanel.Dock="Left" Width="260" Margin="0,0,8,0"/>
+                                    <TextBox Text="{Binding NewExpenseTypeName, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="نوع جديد"
+                                             Style="{StaticResource FilledTextBox}"
+                                             Margin="0,0,4,0"/>
+                                    <Button Content="+" Command="{Binding AddExpenseTypeCommand}"
+                                            Style="{StaticResource FlatButton}" DockPanel.Dock="Right"
+                                            VerticalAlignment="Center" Padding="8,4"/>
+                                </DockPanel>
+                                <TextBox Text="{Binding ExpenseDescription, UpdateSourceTrigger=PropertyChanged}"
+                                         md:HintAssist.Hint="الوصف"
+                                         Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                                <UniformGrid Columns="2" Margin="0,0,0,12">
+                                    <TextBox Text="{Binding ExpenseAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                             md:HintAssist.Hint="المبلغ *"
+                                             Style="{StaticResource NumericTextBox}" Margin="0,0,8,0"/>
+                                    <ComboBox ItemsSource="{Binding CurrencyOptions}"
+                                              SelectedValue="{Binding ExpenseCurrency}"
+                                              SelectedValuePath="Value" DisplayMemberPath="Label"
+                                              md:HintAssist.Hint="العملة *"
+                                              Style="{StaticResource FilledComboBox}"/>
+                                </UniformGrid>
+                                <TextBox Text="{Binding ExpenseFxRate, UpdateSourceTrigger=PropertyChanged}"
+                                         md:HintAssist.Hint="سعر الصرف (USD→IQD)"
+                                         Style="{StaticResource NumericTextBox}" Margin="0,0,0,12"
+                                         Visibility="{Binding ShowExpenseFxRate, Converter={StaticResource BoolToVis}}"/>
+                                <UniformGrid Columns="2" Margin="0,0,0,16">
+                                    <DatePicker SelectedDate="{Binding ExpenseDate}"
+                                                md:HintAssist.Hint="تاريخ المصروف *"
+                                                Style="{StaticResource FilledDatePicker}" Margin="0,0,8,0"/>
+                                    <TextBox Text="{Binding ExpenseRecipient, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="المستلم"
+                                             Style="{StaticResource FilledTextBox}"/>
+                                </UniformGrid>
+
+                                <controls:CustomsAttachmentsPanel
+                                    Title="مرفقات المصروف"
+                                    AddButtonText="+ مرفق"
+                                    SaveFirstHint="احفظ الفاتورة أولاً لتفعيل مرفقات هذا المصروف"
+                                    MaxGridHeight="140"
+                                    Items="{Binding ExpenseAttachments}"
+                                    HasSavedOwner="{Binding HasSavedEditingExpense}"
+                                    CanDelete="{Binding CanDelete}"
+                                    AddCommand="{Binding AddExpenseAttachmentCommand}"
+                                    OpenCommand="{Binding OpenAttachmentCommand}"
+                                    DeleteCommand="{Binding DeleteExpenseAttachmentCommand}"/>
+                            </StackPanel>
+                        </ScrollViewer>
                         <Border Grid.Row="2" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0" Padding="20,14">
                             <StackPanel Orientation="Horizontal">
                                 <Button Content="حفظ" Command="{Binding SaveExpenseDialogCommand}"
@@ -696,6 +648,53 @@
                                 <Button Content="إلغاء" Command="{Binding CloseExpenseDialogCommand}"
                                         Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8" Padding="24,10"/>
                             </StackPanel>
+                        </Border>
+                    </Grid>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
+        <!-- Expense attachments dialog -->
+        <md:DialogHost IsOpen="{Binding IsExpenseAttachmentsDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="3"
+                       Style="{StaticResource ModernDialogHost}">
+            <md:DialogHost.DialogContent>
+                <md:Card MinWidth="520" MaxWidth="600" MaxHeight="560" UniformCornerRadius="16"
+                         md:ElevationAssist.Elevation="Dp8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Background="#0277BD" Padding="16,12,16,14" CornerRadius="16,16,0,0">
+                            <StackPanel>
+                                <Button Command="{Binding CloseExpenseAttachmentsCommand}" HorizontalAlignment="Left"
+                                        Style="{StaticResource FlatButton}" Foreground="White" Padding="2" Margin="0,0,0,8">
+                                    <md:PackIcon Kind="Close" Width="22" Height="22"/>
+                                </Button>
+                                <TextBlock Text="مرفقات المصروف" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                                <TextBlock FontSize="12" Foreground="#B3E5FC" Margin="0,6,0,0">
+                                    <Run Text="{Binding AttachmentsExpense.ExpenseTypeName, Mode=OneWay}"/>
+                                    <Run Text=" — "/>
+                                    <Run Text="{Binding AttachmentsExpense.Amount, Mode=OneWay, StringFormat=N0}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                        <StackPanel Grid.Row="1" Margin="24,16">
+                            <controls:CustomsAttachmentsPanel
+                                Title="المرفقات"
+                                SaveFirstHint="احفظ الفاتورة أولاً لتفعيل مرفقات هذا المصروف"
+                                MaxGridHeight="320"
+                                Items="{Binding ExpenseAttachments}"
+                                HasSavedOwner="{Binding HasSavedAttachmentsExpense}"
+                                CanDelete="{Binding CanDelete}"
+                                AddCommand="{Binding AddExpenseAttachmentCommand}"
+                                OpenCommand="{Binding OpenAttachmentCommand}"
+                                DeleteCommand="{Binding DeleteExpenseAttachmentCommand}"/>
+                        </StackPanel>
+                        <Border Grid.Row="2" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0" Padding="20,14">
+                            <Button Content="إغلاق" Command="{Binding CloseExpenseAttachmentsCommand}"
+                                    Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8" Padding="24,10"/>
                         </Border>
                     </Grid>
                 </md:Card>

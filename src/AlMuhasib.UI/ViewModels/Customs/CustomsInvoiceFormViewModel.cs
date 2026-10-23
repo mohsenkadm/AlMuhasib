@@ -68,6 +68,8 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     [ObservableProperty] private bool _showExpenseFxRate;
     [ObservableProperty] private DateTime _expenseDate = DateTime.Today;
     [ObservableProperty] private string _expenseRecipient = string.Empty;
+    [ObservableProperty] private bool _isExpenseAttachmentsDialogOpen;
+    [ObservableProperty] private CustomsInvoiceExpenseRow? _attachmentsExpense;
 
     private CustomsInvoiceExpenseRow? _editingExpenseRow;
 
@@ -77,6 +79,7 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     public ObservableCollection<CustomsInvoiceExpenseRow> Expenses { get; } = [];
     public ObservableCollection<CustomsAttachmentItem> Attachments { get; } = [];
     public ObservableCollection<CustomsAttachmentItem> VehicleAttachments { get; } = [];
+    public ObservableCollection<CustomsAttachmentItem> ExpenseAttachments { get; } = [];
     public ObservableCollection<CustomsExpenseTypeItem> ExpenseTypes { get; } = [];
 
     public IReadOnlyList<CustomsServiceTypeOption> ServiceTypeOptions { get; } =
@@ -110,6 +113,8 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     public bool CanAddExpense => CanAdd && Status != CustomsInvoiceStatus.Cancelled;
     public bool CanEditExpense => CanEdit && Status != CustomsInvoiceStatus.Cancelled;
     public bool CanDeleteExpense => CanDelete && Status != CustomsInvoiceStatus.Cancelled;
+    public bool HasSavedEditingExpense => _editingExpenseRow?.Id is > 0;
+    public bool HasSavedAttachmentsExpense => AttachmentsExpense?.Id is > 0;
     public string InvoiceCurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
 
     public CustomsInvoiceFormViewModel(
@@ -180,8 +185,11 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         Expenses.Clear();
         Attachments.Clear();
         VehicleAttachments.Clear();
+        ExpenseAttachments.Clear();
         CloseVehicleDetail();
         CloseVehicleAttachments();
+        CloseExpenseAttachments();
+        CloseExpenseDialog();
         AddVehicleRow();
         RecalculateTotals();
         NotifyFormStateChanged();
@@ -532,6 +540,8 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         ExpenseDialogTitle = "إضافة مصروف";
         ResetExpenseDialogFields();
         ExpenseCurrency = Currency;
+        ExpenseAttachments.Clear();
+        OnPropertyChanged(nameof(HasSavedEditingExpense));
         IsExpenseDialogOpen = true;
     }
 
@@ -555,7 +565,9 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         ExpenseDate = row.ExpenseDate;
         ExpenseRecipient = row.Recipient;
         NewExpenseTypeName = string.Empty;
+        OnPropertyChanged(nameof(HasSavedEditingExpense));
         IsExpenseDialogOpen = true;
+        _ = LoadExpenseAttachmentsForEditAsync();
     }
 
     [RelayCommand]
@@ -564,7 +576,115 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         IsExpenseDialogOpen = false;
         _editingExpenseRow = null;
         IsExpenseEditMode = false;
+        ExpenseAttachments.Clear();
         ResetExpenseDialogFields();
+        OnPropertyChanged(nameof(HasSavedEditingExpense));
+    }
+
+    [RelayCommand]
+    private async Task OpenExpenseAttachmentsAsync(CustomsInvoiceExpenseRow? row)
+    {
+        if (row is null) return;
+        if (row.Id is null or <= 0)
+        {
+            BeautifulMessageDialog.ShowWarning("احفظ الفاتورة أولاً قبل إرفاق ملفات للمصروف");
+            return;
+        }
+
+        AttachmentsExpense = row;
+        await LoadExpenseAttachmentsAsync(row.Id.Value);
+        IsExpenseAttachmentsDialogOpen = true;
+        OnPropertyChanged(nameof(HasSavedAttachmentsExpense));
+    }
+
+    [RelayCommand]
+    private void CloseExpenseAttachments()
+    {
+        IsExpenseAttachmentsDialogOpen = false;
+        AttachmentsExpense = null;
+        ExpenseAttachments.Clear();
+        OnPropertyChanged(nameof(HasSavedAttachmentsExpense));
+    }
+
+    private async Task LoadExpenseAttachmentsForEditAsync()
+    {
+        ExpenseAttachments.Clear();
+        if (_editingExpenseRow?.Id is not int id || id <= 0) return;
+        try
+        {
+            var items = await _attachmentService.GetByOwnerAsync(CustomsAttachmentOwnerType.Expense, id);
+            foreach (var item in items)
+                ExpenseAttachments.Add(item);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    private async Task LoadExpenseAttachmentsAsync(int expenseId)
+    {
+        ExpenseAttachments.Clear();
+        var items = await _attachmentService.GetByOwnerAsync(CustomsAttachmentOwnerType.Expense, expenseId);
+        foreach (var item in items)
+            ExpenseAttachments.Add(item);
+    }
+
+    [RelayCommand]
+    private async Task AddExpenseAttachmentAsync()
+    {
+        var expenseId = AttachmentsExpense?.Id ?? _editingExpenseRow?.Id;
+        if (expenseId is null or <= 0)
+        {
+            BeautifulMessageDialog.ShowWarning("احفظ الفاتورة أولاً قبل إرفاق ملفات للمصروف");
+            return;
+        }
+
+        var dialog = new OpenFileDialog
+        {
+            Filter = "صور ومستندات|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.pdf;*.doc;*.docx;*.xls;*.xlsx|كل الملفات|*.*",
+            Multiselect = true,
+            Title = "اختر مرفقات المصروف"
+        };
+        if (dialog.ShowDialog() != true) return;
+
+        try
+        {
+            foreach (var path in dialog.FileNames)
+            {
+                await _attachmentService.AddFromFileAsync(
+                    CustomsAttachmentOwnerType.Expense,
+                    expenseId.Value,
+                    path,
+                    null,
+                    _currentUserService.Username);
+            }
+
+            await LoadExpenseAttachmentsAsync(expenseId.Value);
+            BeautifulMessageDialog.ShowSuccess($"تم إرفاق {dialog.FileNames.Length} ملف");
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteExpenseAttachmentAsync(CustomsAttachmentItem? item)
+    {
+        if (item is null || !CanDelete) return;
+        if (!BeautifulMessageDialog.ShowConfirm($"حذف المرفق «{item.FileName}»؟"))
+            return;
+
+        try
+        {
+            await _attachmentService.SoftDeleteAsync(item.Id, _currentUserService.Username);
+            ExpenseAttachments.Remove(item);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
     }
 
     private void ResetExpenseDialogFields()
@@ -644,6 +764,11 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         if (row is null || !CanDeleteExpense) return;
         if (!BeautifulMessageDialog.ShowConfirm("حذف هذا المصروف من الفاتورة؟"))
             return;
+
+        if (ReferenceEquals(AttachmentsExpense, row))
+            CloseExpenseAttachments();
+        if (ReferenceEquals(_editingExpenseRow, row))
+            CloseExpenseDialog();
 
         Expenses.Remove(row);
         RecalculateInternalProfit();
