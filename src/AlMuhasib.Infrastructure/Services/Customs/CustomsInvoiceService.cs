@@ -160,6 +160,25 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         await db.CustomsInvoices.AddAsync(invoice, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
 
+        await CustomsAuditWriter.WriteAsync(
+            db,
+            AuditAction.Add,
+            "CustomsInvoice",
+            invoice.Id,
+            oldValues: null,
+            newValues: new
+            {
+                invoice.InvoiceNumber,
+                invoice.CustomerId,
+                invoice.TotalAmount,
+                Currency = invoice.Currency.ToString(),
+                Status = invoice.Status.ToString(),
+                VehicleCount = invoice.Vehicles.Count,
+                ExpenseCount = invoice.Expenses.Count
+            },
+            cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+
         return (await GetByIdAsync(invoice.Id, cancellationToken))!;
     }
 
@@ -189,6 +208,19 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         if (invoice.Status == CustomsInvoiceStatus.Approved && total < invoice.PaidAmount)
             throw new InvalidOperationException("الإجمالي الجديد أقل من المدفوع — لا يمكن الحفظ");
 
+        var oldSnapshot = new
+        {
+            invoice.CustomerId,
+            invoice.TotalAmount,
+            invoice.DiscountAmount,
+            invoice.PaidAmount,
+            invoice.RemainingAmount,
+            Currency = invoice.Currency.ToString(),
+            Status = invoice.Status.ToString(),
+            VehicleCount = invoice.Vehicles.Count(v => !v.IsDeleted),
+            ExpenseCount = invoice.Expenses.Count(e => !e.IsDeleted)
+        };
+
         invoice.CustomerId = request.CustomerId;
         invoice.InvoiceDate = request.InvoiceDate.Date;
         invoice.ServiceType = request.ServiceType;
@@ -206,6 +238,26 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         var user = request.UserName ?? "System";
         UpsertVehicles(invoice, request.Vehicles, request.Currency, user);
         await UpsertExpensesAsync(db, invoice, request.Expenses, user, cancellationToken);
+
+        await CustomsAuditWriter.WriteAsync(
+            db,
+            AuditAction.Edit,
+            "CustomsInvoice",
+            invoice.Id,
+            oldValues: oldSnapshot,
+            newValues: new
+            {
+                invoice.CustomerId,
+                invoice.TotalAmount,
+                invoice.DiscountAmount,
+                invoice.PaidAmount,
+                invoice.RemainingAmount,
+                Currency = invoice.Currency.ToString(),
+                Status = invoice.Status.ToString(),
+                VehicleCount = request.Vehicles.Count,
+                ExpenseCount = request.Expenses.Count
+            },
+            cancellationToken);
 
         await db.SaveChangesAsync(cancellationToken);
         return (await GetByIdAsync(invoice.Id, cancellationToken))!;
@@ -231,9 +283,20 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         if (invoice.Vehicles.Count == 0)
             throw new InvalidOperationException("أضف سيارة واحدة على الأقل قبل الاعتماد");
 
+        var previous = invoice.Status;
         invoice.Status = CustomsInvoiceStatus.Approved;
         invoice.UpdatedBy = userName;
         invoice.UpdatedAt = DateTime.UtcNow;
+
+        await CustomsAuditWriter.WriteAsync(
+            db,
+            AuditAction.Edit,
+            "CustomsInvoice.Approve",
+            invoice.Id,
+            oldValues: new { Status = previous.ToString() },
+            newValues: new { Status = CustomsInvoiceStatus.Approved.ToString() },
+            cancellationToken);
+
         await db.SaveChangesAsync(cancellationToken);
     }
 
@@ -253,6 +316,9 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         if (invoice.PaidAmount > 0)
             throw new InvalidOperationException("لا يمكن إلغاء فاتورة عليها مبالغ مدفوعة");
 
+        // Financial trail: Cancel keeps the row (Status = Cancelled); never hard-delete approved/cancelled invoices.
+        var previousStatus = invoice.Status;
+        var remaining = invoice.RemainingAmount;
         invoice.Status = CustomsInvoiceStatus.Cancelled;
         if (!string.IsNullOrWhiteSpace(reason))
         {
@@ -264,9 +330,32 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
 
         invoice.UpdatedBy = userName;
         invoice.UpdatedAt = DateTime.UtcNow;
+
+        await CustomsAuditWriter.WriteAsync(
+            db,
+            AuditAction.Edit,
+            "CustomsInvoice.Cancel",
+            invoice.Id,
+            oldValues: new
+            {
+                Status = previousStatus.ToString(),
+                RemainingAmount = remaining,
+                invoice.PaidAmount
+            },
+            newValues: new
+            {
+                Status = CustomsInvoiceStatus.Cancelled.ToString(),
+                RemainingAmount = remaining,
+                Reason = reason?.Trim()
+            },
+            cancellationToken);
+
         await db.SaveChangesAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Soft-delete drafts only. Approved/cancelled invoices must use Cancel (row retained) — no hard-delete of financial trail.
+    /// </summary>
     public async Task SoftDeleteAsync(int id, string deletedBy, CancellationToken cancellationToken = default)
     {
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);

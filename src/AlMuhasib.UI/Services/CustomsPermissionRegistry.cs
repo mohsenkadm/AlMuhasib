@@ -14,6 +14,7 @@ public static class CustomsPermissionRegistry
     public const string ProfitReport = "CustomsProfitReport";
     public const string Users = "Users";
     public const string Permissions = "Permissions";
+    public const string AuditLog = "AuditLog";
     public const string PrintSettings = "PrintSettings";
     public const string Backup = "Backup";
     public const string CloudSync = "CloudSync";
@@ -29,6 +30,7 @@ public static class CustomsPermissionRegistry
         (ProfitReport, "تقرير الربح"),
         (Users, "المستخدمون"),
         (Permissions, "الصلاحيات"),
+        (AuditLog, "سجل العمليات"),
         (PrintSettings, "إعدادات الطباعة"),
         (Backup, "النسخ الاحتياطي"),
         (CloudSync, "المزامنة السحابية"),
@@ -55,6 +57,7 @@ public static class CustomsPermissionRegistry
         [typeof(CustomsProfitReportViewModel)] = ProfitReport,
         [typeof(UsersViewModel)] = Users,
         [typeof(PermissionsViewModel)] = Permissions,
+        [typeof(AuditLogViewModel)] = AuditLog,
         [typeof(PrintLayoutSettingsViewModel)] = PrintSettings,
         [typeof(BackupRestoreViewModel)] = Backup,
         [typeof(CloudSyncSettingsViewModel)] = CloudSync,
@@ -73,6 +76,7 @@ public static class CustomsPermissionRegistry
         [ProfitReport] = typeof(CustomsProfitReportViewModel),
         [Users] = typeof(UsersViewModel),
         [Permissions] = typeof(PermissionsViewModel),
+        [AuditLog] = typeof(AuditLogViewModel),
         [PrintSettings] = typeof(PrintLayoutSettingsViewModel),
         [Backup] = typeof(BackupRestoreViewModel),
         [CloudSync] = typeof(CloudSyncSettingsViewModel),
@@ -91,6 +95,7 @@ public static class CustomsPermissionRegistry
         [ProfitReport] = "تقرير الربح",
         [Users] = "المستخدمون",
         [Permissions] = "الصلاحيات",
+        [AuditLog] = "سجل العمليات",
         [PrintSettings] = "إعدادات الطباعة",
         [Backup] = "النسخ الاحتياطي",
         [CloudSync] = "المزامنة السحابية",

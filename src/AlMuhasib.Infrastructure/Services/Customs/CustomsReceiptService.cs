@@ -203,6 +203,26 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
 
         await ApplyAllocationsAsync(db, receipt.Allocations.ToList(), sign: +1, cancellationToken);
         await RecomputeCustomerBalanceAsync(db, request.CustomerId, cancellationToken);
+
+        await CustomsAuditWriter.WriteAsync(
+            db,
+            AuditAction.Add,
+            "CustomsReceipt",
+            receipt.Id,
+            oldValues: null,
+            newValues: new
+            {
+                receipt.ReceiptNumber,
+                receipt.CustomerId,
+                receipt.Amount,
+                Currency = receipt.Currency.ToString(),
+                Allocations = receipt.Allocations
+                    .Where(a => !a.IsDeleted)
+                    .Select(a => new { a.InvoiceId, a.Amount })
+                    .ToList()
+            },
+            cancellationToken);
+
         await db.SaveChangesAsync(cancellationToken);
 
         return (await GetByIdAsync(receipt.Id, cancellationToken))!;
@@ -223,6 +243,17 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
 
         var user = request.UserName ?? "System";
         var fxRate = await ResolveFxRateAsync(db, request.Currency, request.ReceiptDate, request.FxRate, cancellationToken);
+
+        var oldSnapshot = new
+        {
+            receipt.CustomerId,
+            receipt.Amount,
+            Currency = receipt.Currency.ToString(),
+            Allocations = receipt.Allocations
+                .Where(a => !a.IsDeleted)
+                .Select(a => new { a.InvoiceId, a.Amount })
+                .ToList()
+        };
 
         // Reverse previous allocations before applying the new set
         await ApplyAllocationsAsync(db, receipt.Allocations.Where(a => !a.IsDeleted).ToList(), sign: -1, cancellationToken);
@@ -245,11 +276,30 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         var active = receipt.Allocations.Where(a => !a.IsDeleted).ToList();
         await ApplyAllocationsAsync(db, active, sign: +1, cancellationToken);
         await RecomputeCustomerBalanceAsync(db, request.CustomerId, cancellationToken);
+
+        await CustomsAuditWriter.WriteAsync(
+            db,
+            AuditAction.Edit,
+            "CustomsReceipt",
+            receipt.Id,
+            oldValues: oldSnapshot,
+            newValues: new
+            {
+                receipt.CustomerId,
+                receipt.Amount,
+                Currency = receipt.Currency.ToString(),
+                Allocations = active.Select(a => new { a.InvoiceId, a.Amount }).ToList()
+            },
+            cancellationToken);
+
         await db.SaveChangesAsync(cancellationToken);
 
         return (await GetByIdAsync(receipt.Id, cancellationToken))!;
     }
 
+    /// <summary>
+    /// Cancels a receipt by reversing allocations and soft-deleting the row — balances are recomputed; no silent erase without audit.
+    /// </summary>
     public async Task CancelAsync(int id, string userName, CancellationToken cancellationToken = default)
     {
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
@@ -259,6 +309,14 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
             ?? throw new InvalidOperationException("الوصل غير موجود");
 
         var active = receipt.Allocations.Where(a => !a.IsDeleted).ToList();
+        var oldSnapshot = new
+        {
+            receipt.CustomerId,
+            receipt.Amount,
+            Currency = receipt.Currency.ToString(),
+            Allocations = active.Select(a => new { a.InvoiceId, a.Amount }).ToList()
+        };
+
         await ApplyAllocationsAsync(db, active, sign: -1, cancellationToken);
 
         foreach (var a in active)
@@ -267,6 +325,16 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         var customerId = receipt.CustomerId;
         receipt.MarkSoftDeleted(userName);
         await RecomputeCustomerBalanceAsync(db, customerId, cancellationToken);
+
+        await CustomsAuditWriter.WriteAsync(
+            db,
+            AuditAction.Delete,
+            "CustomsReceipt.Cancel",
+            receipt.Id,
+            oldValues: oldSnapshot,
+            newValues: new { Reversed = true, AllocationsCleared = active.Count },
+            cancellationToken);
+
         await db.SaveChangesAsync(cancellationToken);
     }
 

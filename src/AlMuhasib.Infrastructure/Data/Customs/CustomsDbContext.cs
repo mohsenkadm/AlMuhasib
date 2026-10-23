@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Entities.Customs;
 using AlMuhasib.Core.Enums;
@@ -14,6 +15,9 @@ public class CustomsDbContext : DbContext
     private readonly ICurrentUserService? _currentUserService;
 
     public bool IsApplyingSyncPull { get; set; }
+
+    /// <summary>Exposed for CustomsAuditWriter semantic entries.</summary>
+    internal ICurrentUserService? CurrentUserService => _currentUserService;
 
     public CustomsDbContext(DbContextOptions<CustomsDbContext> options, ICurrentUserService? currentUserService = null)
         : base(options)
@@ -98,15 +102,20 @@ public class CustomsDbContext : DbContext
         }
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var currentUser = _currentUserService?.Username ?? "System";
         var userId = _currentUserService?.UserId;
-        var pendingAuditLogs = new List<AuditLog>();
+        var auditEntries = new List<AuditEntry>();
+        var addEntityLinks = new List<(AuditLog Log, BaseEntity Entity)>();
 
         foreach (var entry in ChangeTracker.Entries<BaseEntity>())
         {
+            // Auto-audit skips AuditLog (no wipe path) and Permission (written via CustomsAuditWriter).
             if (entry.Entity is AuditLog or Permission)
+                continue;
+
+            if (IsApplyingSyncPull)
                 continue;
 
             switch (entry.State)
@@ -116,39 +125,174 @@ public class CustomsDbContext : DbContext
                     entry.Entity.CreatedBy = currentUser;
                     if (userId.HasValue)
                     {
-                        pendingAuditLogs.Add(new AuditLog
+                        var audit = new AuditEntry(entry, AuditAction.Add, userId.Value, currentUser);
+                        var log = audit.ToAuditLog();
+                        if (log is not null)
                         {
-                            UserId = userId.Value,
-                            Action = AuditAction.Add,
-                            EntityName = entry.Metadata.ClrType.Name,
-                            EntityId = entry.Entity.Id,
-                            Timestamp = DateTime.UtcNow,
-                            CreatedBy = currentUser
-                        });
+                            AuditLogs.Add(log);
+                            addEntityLinks.Add((log, entry.Entity));
+                        }
                     }
                     break;
+
                 case EntityState.Modified:
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
                     entry.Entity.UpdatedBy = currentUser;
                     if (userId.HasValue)
                     {
-                        pendingAuditLogs.Add(new AuditLog
-                        {
-                            UserId = userId.Value,
-                            Action = AuditAction.Edit,
-                            EntityName = entry.Metadata.ClrType.Name,
-                            EntityId = entry.Entity.Id,
-                            Timestamp = DateTime.UtcNow,
-                            CreatedBy = currentUser
-                        });
+                        var isDeletedProp = entry.Property(nameof(BaseEntity.IsDeleted));
+                        var becameDeleted = isDeletedProp.IsModified
+                            && isDeletedProp.OriginalValue is false
+                            && isDeletedProp.CurrentValue is true;
+                        var audit = new AuditEntry(
+                            entry,
+                            becameDeleted ? AuditAction.Delete : AuditAction.Edit,
+                            userId.Value,
+                            currentUser);
+                        var log = audit.ToAuditLog();
+                        if (log is not null)
+                            AuditLogs.Add(log);
+                    }
+                    break;
+
+                case EntityState.Deleted:
+                    // Financial trail: prefer soft-delete / Cancel status — hard deletes are still logged if they occur.
+                    if (userId.HasValue)
+                    {
+                        var audit = new AuditEntry(entry, AuditAction.Delete, userId.Value, currentUser);
+                        var log = audit.ToAuditLog();
+                        if (log is not null)
+                            AuditLogs.Add(log);
                     }
                     break;
             }
         }
 
-        foreach (var log in pendingAuditLogs)
-            AuditLogs.Add(log);
+        var result = await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        return base.SaveChangesAsync(cancellationToken);
+        // Fix EntityId on Add audits that were captured before the database assigned keys.
+        var needsSecondSave = false;
+        foreach (var (log, entity) in addEntityLinks)
+        {
+            if (log.EntityId == 0 && entity.Id != 0)
+            {
+                log.EntityId = entity.Id;
+                needsSecondSave = true;
+            }
+        }
+
+        if (needsSecondSave)
+            await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Temporary audit entry holder used to capture old/new values before SaveChanges.
+    /// Mirrors <c>AppDbContext.AuditEntry</c> without BranchId (ignored on Customs AuditLogs).
+    /// </summary>
+    private sealed class AuditEntry
+    {
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            WriteIndented = false,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+
+        private static readonly HashSet<string> ExcludedProps =
+        [
+            nameof(BaseEntity.CreatedAt), nameof(BaseEntity.CreatedBy),
+            nameof(BaseEntity.UpdatedAt), nameof(BaseEntity.UpdatedBy),
+            nameof(BaseEntity.DeletedAt), nameof(BaseEntity.DeletedBy),
+            nameof(BaseEntity.IsDeleted),
+            nameof(BaseEntity.RowVersion),
+            nameof(BaseEntity.SyncId),
+            "HeaderImageData",
+            "FooterImageData"
+        ];
+
+        private static bool ShouldSkipProperty(PropertyEntry prop)
+        {
+            if (ExcludedProps.Contains(prop.Metadata.Name)) return true;
+            if (prop.Metadata.IsPrimaryKey()) return true;
+            var clr = Nullable.GetUnderlyingType(prop.Metadata.ClrType) ?? prop.Metadata.ClrType;
+            return clr == typeof(byte[]);
+        }
+
+        public EntityEntry Entry { get; }
+        public AuditAction Action { get; }
+        public int UserId { get; }
+        public string CreatedBy { get; }
+
+        public AuditEntry(EntityEntry entry, AuditAction action, int userId, string createdBy)
+        {
+            Entry = entry;
+            Action = action;
+            UserId = userId;
+            CreatedBy = createdBy;
+        }
+
+        public AuditLog? ToAuditLog()
+        {
+            var entityName = Entry.Metadata.ClrType.Name;
+            var entityId = Entry.Entity is BaseEntity be ? be.Id : 0;
+
+            string? oldValues = null;
+            string? newValues = null;
+
+            switch (Action)
+            {
+                case AuditAction.Add:
+                {
+                    var dict = new Dictionary<string, object?>();
+                    foreach (var prop in Entry.Properties)
+                    {
+                        if (ShouldSkipProperty(prop)) continue;
+                        dict[prop.Metadata.Name] = prop.CurrentValue;
+                    }
+                    newValues = JsonSerializer.Serialize(dict, JsonOptions);
+                    break;
+                }
+                case AuditAction.Edit:
+                {
+                    var oldDict = new Dictionary<string, object?>();
+                    var newDict = new Dictionary<string, object?>();
+                    foreach (var prop in Entry.Properties)
+                    {
+                        if (ShouldSkipProperty(prop)) continue;
+                        if (!prop.IsModified) continue;
+                        oldDict[prop.Metadata.Name] = prop.OriginalValue;
+                        newDict[prop.Metadata.Name] = prop.CurrentValue;
+                    }
+                    if (oldDict.Count == 0) return null;
+                    oldValues = JsonSerializer.Serialize(oldDict, JsonOptions);
+                    newValues = JsonSerializer.Serialize(newDict, JsonOptions);
+                    break;
+                }
+                case AuditAction.Delete:
+                {
+                    var dict = new Dictionary<string, object?>();
+                    foreach (var prop in Entry.Properties)
+                    {
+                        if (ShouldSkipProperty(prop)) continue;
+                        dict[prop.Metadata.Name] = prop.OriginalValue ?? prop.CurrentValue;
+                    }
+                    oldValues = JsonSerializer.Serialize(dict, JsonOptions);
+                    break;
+                }
+            }
+
+            return new AuditLog
+            {
+                UserId = UserId,
+                Action = Action,
+                EntityName = entityName,
+                EntityId = entityId,
+                OldValues = oldValues,
+                NewValues = newValues,
+                Timestamp = DateTime.UtcNow,
+                CreatedBy = CreatedBy
+            };
+        }
     }
 }
