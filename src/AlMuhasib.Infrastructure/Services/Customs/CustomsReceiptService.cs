@@ -2,6 +2,7 @@ using AlMuhasib.Core.Constants;
 using AlMuhasib.Core.Entities.Customs;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Enums.Customs;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services.Customs;
 using AlMuhasib.Core.Models.Customs;
 using AlMuhasib.Infrastructure.Data.Customs;
@@ -180,7 +181,10 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         await ValidateRequestAsync(db, request, excludeReceiptId: null, cancellationToken);
 
-        var fxRate = await ResolveFxRateAsync(db, request.Currency, request.ReceiptDate, request.FxRate, cancellationToken);
+        var fxRate = CustomsFinancialRules.NormalizeFxRate(
+            request.Currency,
+            await ResolveFxRateAsync(db, request.Currency, request.ReceiptDate, request.FxRate, cancellationToken),
+            "الوصل");
         var user = request.UserName ?? "System";
 
         var receipt = new CustomsReceipt
@@ -210,8 +214,10 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         await db.CustomsReceipts.AddAsync(receipt, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
 
-        await ApplyAllocationsAsync(db, receipt.Allocations.ToList(), sign: +1, cancellationToken);
-        await RecomputeCustomerBalanceAsync(db, request.CustomerId, cancellationToken);
+        // Rule 5: Paid/Remaining from allocation sum (independent receipt record), not a bare invoice field.
+        var invoiceIds = receipt.Allocations.Select(a => a.InvoiceId).Distinct().ToList();
+        await CustomsSettlementHelper.RecomputeInvoiceSettlementAsync(db, invoiceIds, cancellationToken);
+        await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, request.CustomerId, cancellationToken);
 
         await CustomsAuditWriter.WriteAsync(
             db,
@@ -252,7 +258,10 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         await ValidateRequestAsync(db, request, excludeReceiptId: id, cancellationToken);
 
         var user = request.UserName ?? "System";
-        var fxRate = await ResolveFxRateAsync(db, request.Currency, request.ReceiptDate, request.FxRate, cancellationToken);
+        var fxRate = CustomsFinancialRules.NormalizeFxRate(
+            request.Currency,
+            await ResolveFxRateAsync(db, request.Currency, request.ReceiptDate, request.FxRate, cancellationToken),
+            "الوصل");
 
         var oldSnapshot = new
         {
@@ -265,8 +274,13 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
                 .ToList()
         };
 
-        // Reverse previous allocations before applying the new set
-        await ApplyAllocationsAsync(db, receipt.Allocations.Where(a => !a.IsDeleted).ToList(), sign: -1, cancellationToken);
+        var previousCustomerId = receipt.CustomerId;
+        var affectedInvoiceIds = receipt.Allocations
+            .Where(a => !a.IsDeleted)
+            .Select(a => a.InvoiceId)
+            .Concat(request.Allocations.Where(a => a.Amount > 0).Select(a => a.InvoiceId))
+            .Distinct()
+            .ToList();
 
         receipt.CustomerId = request.CustomerId;
         receipt.ReceiptDate = request.ReceiptDate.Date;
@@ -284,8 +298,10 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         await db.SaveChangesAsync(cancellationToken);
 
         var active = receipt.Allocations.Where(a => !a.IsDeleted).ToList();
-        await ApplyAllocationsAsync(db, active, sign: +1, cancellationToken);
-        await RecomputeCustomerBalanceAsync(db, request.CustomerId, cancellationToken);
+        await CustomsSettlementHelper.RecomputeInvoiceSettlementAsync(db, affectedInvoiceIds, cancellationToken);
+        await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, request.CustomerId, cancellationToken);
+        if (previousCustomerId != request.CustomerId)
+            await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, previousCustomerId, cancellationToken);
 
         await CustomsAuditWriter.WriteAsync(
             db,
@@ -308,7 +324,8 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
     }
 
     /// <summary>
-    /// Cancels a receipt by reversing allocations and soft-deleting the row — balances are recomputed; no silent erase without audit.
+    /// Cancels a receipt by soft-deleting the row and allocations, then recomputing Paid/Remaining from remaining allocations.
+    /// Audit trail is retained (soft-delete + CustomsReceipt.Cancel log) — no hard-delete of financial trail.
     /// </summary>
     public async Task CancelAsync(int id, string userName, CancellationToken cancellationToken = default)
     {
@@ -328,14 +345,16 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
             Allocations = active.Select(a => new { a.InvoiceId, a.Amount }).ToList()
         };
 
-        await ApplyAllocationsAsync(db, active, sign: -1, cancellationToken);
-
+        var invoiceIds = active.Select(a => a.InvoiceId).Distinct().ToList();
         foreach (var a in active)
             a.MarkSoftDeleted(userName);
 
         var customerId = receipt.CustomerId;
         receipt.MarkSoftDeleted(userName);
-        await RecomputeCustomerBalanceAsync(db, customerId, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+
+        await CustomsSettlementHelper.RecomputeInvoiceSettlementAsync(db, invoiceIds, cancellationToken);
+        await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, customerId, cancellationToken);
 
         await CustomsAuditWriter.WriteAsync(
             db,
@@ -438,8 +457,7 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
             if (inv.Status != CustomsInvoiceStatus.Approved)
                 throw new InvalidOperationException($"الفاتورة {inv.InvoiceNumber} غير معتمدة");
 
-            if (inv.Currency != request.Currency)
-                throw new InvalidOperationException($"عملة الفاتورة {inv.InvoiceNumber} تختلف عن عملة الوصل");
+            CustomsFinancialRules.EnsureReceiptMatchesInvoiceCurrency(request.Currency, inv.Currency);
 
             var prior = priorByInvoice is not null && priorByInvoice.TryGetValue(inv.Id, out var p) ? p : 0m;
             var available = inv.RemainingAmount + prior;
@@ -447,55 +465,6 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
                 throw new InvalidOperationException(
                     $"التوزيع على {inv.InvoiceNumber} ({line.Amount:N0}) يتجاوز المتبقي ({available:N0})");
         }
-    }
-
-    private static async Task ApplyAllocationsAsync(
-        CustomsDbContext db,
-        IReadOnlyList<CustomsReceiptAllocation> allocations,
-        int sign,
-        CancellationToken cancellationToken)
-    {
-        if (allocations.Count == 0) return;
-
-        var invoiceIds = allocations.Select(a => a.InvoiceId).Distinct().ToList();
-        var invoices = await db.CustomsInvoices
-            .Where(i => invoiceIds.Contains(i.Id))
-            .ToDictionaryAsync(i => i.Id, cancellationToken);
-
-        foreach (var group in allocations.GroupBy(a => a.InvoiceId))
-        {
-            if (!invoices.TryGetValue(group.Key, out var invoice))
-                continue;
-
-            var delta = group.Sum(a => a.Amount) * sign;
-            invoice.PaidAmount = Math.Max(0, invoice.PaidAmount + delta);
-            if (invoice.PaidAmount > invoice.TotalAmount)
-                invoice.PaidAmount = invoice.TotalAmount;
-            invoice.RemainingAmount = Math.Max(0, invoice.TotalAmount - invoice.PaidAmount);
-            invoice.UpdatedAt = DateTime.UtcNow;
-        }
-    }
-
-    private static async Task RecomputeCustomerBalanceAsync(
-        CustomsDbContext db,
-        int customerId,
-        CancellationToken cancellationToken)
-    {
-        var customer = await db.CustomsCustomers.FirstOrDefaultAsync(c => c.Id == customerId, cancellationToken);
-        if (customer is null) return;
-
-        var approved = await db.CustomsInvoices.AsNoTracking()
-            .Where(i => i.CustomerId == customerId && i.Status == CustomsInvoiceStatus.Approved)
-            .Select(i => new { i.Currency, i.RemainingAmount })
-            .ToListAsync(cancellationToken);
-
-        customer.BalanceIqd = approved
-            .Where(i => i.Currency == AccountingCurrency.IQD)
-            .Sum(i => i.RemainingAmount);
-        customer.BalanceUsd = approved
-            .Where(i => i.Currency == AccountingCurrency.USD)
-            .Sum(i => i.RemainingAmount);
-        customer.UpdatedAt = DateTime.UtcNow;
     }
 
     private static async Task<decimal> ResolveFxRateAsync(

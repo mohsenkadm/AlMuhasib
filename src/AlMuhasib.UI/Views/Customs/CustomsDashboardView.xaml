@@ -206,7 +206,7 @@
                                                Visibility="{Binding CanViewExpenses, Converter={StaticResource BoolToVis}}"/>
 
                     <controls:DashboardKpiCard Grid.Column="2" Margin="4,0,4,0"
-                                               Title="الأرباح"
+                                               Title="الربح الداخلي"
                                                Value="{Binding ProfitDisplay}"
                                                Icon="ChartLine"
                                                AccentBrush="#0277BD"
