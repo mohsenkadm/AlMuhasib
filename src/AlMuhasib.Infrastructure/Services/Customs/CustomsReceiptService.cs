@@ -139,6 +139,7 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
 
     public async Task<string> PreviewNextReceiptNumberAsync(CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Receipts);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         return await CustomsReceiptNumberHelper.GetNextAsync(db, cancellationToken);
     }

@@ -35,7 +35,8 @@
                     <controls:AnimatedStatCard Title="الربح الداخلي" TextValue="{Binding ProfitIqd}" Icon="ChartLine" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"
                                                Visibility="{Binding CanViewProfit, Converter={StaticResource BoolToVis}}"/>
                 </UniformGrid>
-                <controls:ChartCard Title="الفواتير اليومية" Margin="0,0,0,12">
+                <controls:ChartCard Title="الفواتير اليومية" Margin="0,0,0,12"
+                                    IsEmpty="{Binding IsDailyChartEmpty}">
                     <controls:ChartCard.ChartContent>
                         <lvc:CartesianChart Series="{Binding DailySeries}" XAxes="{Binding DailyXAxes}" YAxes="{Binding DailyYAxes}" Height="260"/>
                     </controls:ChartCard.ChartContent>

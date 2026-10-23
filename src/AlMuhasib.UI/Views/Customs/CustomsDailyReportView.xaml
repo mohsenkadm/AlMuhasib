@@ -42,7 +42,8 @@
                                                Visibility="{Binding CanViewExpenses, Converter={StaticResource BoolToVis}}"/>
                     <controls:AnimatedStatCard Title="سيارات" TextValue="{Binding VehicleCount}" Icon="Car" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="{DynamicResource DashboardKpiBlueBrush}" ValueForeground="{DynamicResource DashboardKpiBlueBrush}"/>
                 </UniformGrid>
-                <controls:ChartCard Title="توزيع الحركات" Margin="0,0,0,12">
+                <controls:ChartCard Title="توزيع الحركات" Margin="0,0,0,12"
+                                    IsEmpty="{Binding IsTypeChartEmpty}">
                     <controls:ChartCard.ChartContent>
                         <lvc:PieChart Series="{Binding TypeSeries}" Height="260"/>
                     </controls:ChartCard.ChartContent>

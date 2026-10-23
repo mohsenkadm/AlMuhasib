@@ -32,7 +32,8 @@
                     <controls:AnimatedStatCard Title="مصاريف نفس العملة" TextValue="{Binding ExpensesText}" Icon="CashMinus" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
                     <controls:AnimatedStatCard Title="الربح الداخلي" TextValue="{Binding ProfitText}" Icon="ChartAreaspline" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                 </UniformGrid>
-                <controls:ChartCard Title="الربح الشهري" Margin="0,0,0,12">
+                <controls:ChartCard Title="الربح الشهري" Margin="0,0,0,12"
+                                    IsEmpty="{Binding IsMonthlyChartEmpty}">
                     <controls:ChartCard.ChartContent>
                         <lvc:CartesianChart Series="{Binding MonthlySeries}" XAxes="{Binding MonthlyXAxes}" YAxes="{Binding MonthlyYAxes}" Height="260"/>
                     </controls:ChartCard.ChartContent>

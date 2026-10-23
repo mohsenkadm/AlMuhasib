@@ -47,6 +47,8 @@ public partial class CustomsDashboardViewModel : ViewModelBase
     [ObservableProperty] private Axis[] _monthlyXAxes = [];
     [ObservableProperty] private Axis[] _monthlyYAxes = [];
     [ObservableProperty] private ISeries[] _vehicleStatusSeries = [];
+    [ObservableProperty] private bool _isMonthlyChartEmpty = true;
+    [ObservableProperty] private bool _isVehicleStatusChartEmpty = true;
 
     public CustomsDashboardViewModel(
         ICustomsDashboardService dashboardService,
@@ -126,6 +128,7 @@ public partial class CustomsDashboardViewModel : ViewModelBase
             MonthlyInvoiceSeries = [];
             MonthlyXAxes = [ChartThemeConfig.CreateXAxis([])];
             MonthlyYAxes = [ChartThemeConfig.CreateYAxis(suffix: null)];
+            IsMonthlyChartEmpty = true;
         }
         else
         {
@@ -134,12 +137,14 @@ public partial class CustomsDashboardViewModel : ViewModelBase
             MonthlyInvoiceSeries = [ChartThemeConfig.Column(values, "الفواتير", 0)];
             MonthlyXAxes = [ChartThemeConfig.CreateXAxis(labels, labels.Length > 6 ? -35 : 0)];
             MonthlyYAxes = [ChartThemeConfig.CreateYAxis(suffix: null)];
+            IsMonthlyChartEmpty = false;
         }
 
         VehicleStatusSeries = stats.VehicleStatusChart
             .Where(p => p.Count > 0)
             .Select((p, i) => (ISeries)ChartThemeConfig.Pie(p.Count, p.Name, i))
             .ToArray();
+        IsVehicleStatusChartEmpty = VehicleStatusSeries.Length == 0;
     }
 
     private static string FormatDual(decimal iqd, decimal usd) =>

@@ -108,4 +108,22 @@ public class CustomsPermissionGuardTests
         await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
             h.Invoices.GetPagedAsync(1, 20));
     }
+
+    [Fact]
+    public async Task L01_preview_next_numbers_require_view()
+    {
+        var denied = CustomsTestHarness.CreateUser(); // no grants
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            denied.Invoices.PreviewNextInvoiceNumberAsync());
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+            denied.Receipts.PreviewNextReceiptNumberAsync());
+
+        var allowed = CustomsTestHarness.CreateUser(u =>
+        {
+            u.Grant(CustomsScreenNames.Invoices, view: true);
+            u.Grant(CustomsScreenNames.Receipts, view: true);
+        });
+        Assert.False(string.IsNullOrWhiteSpace(await allowed.Invoices.PreviewNextInvoiceNumberAsync()));
+        Assert.False(string.IsNullOrWhiteSpace(await allowed.Receipts.PreviewNextReceiptNumberAsync()));
+    }
 }

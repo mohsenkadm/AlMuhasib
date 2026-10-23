@@ -32,7 +32,8 @@
                     <controls:AnimatedStatCard Title="خارجة" TextValue="{Binding ExitedText}" Icon="TruckDelivery" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="{DynamicResource DashboardKpiBlueBrush}" ValueForeground="{DynamicResource DashboardKpiBlueBrush}"/>
                     <controls:AnimatedStatCard Title="واصلة" TextValue="{Binding ArrivedText}" Icon="CheckCircle" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                 </UniformGrid>
-                <controls:ChartCard Title="حسب الحالة" Margin="0,0,0,12">
+                <controls:ChartCard Title="حسب الحالة" Margin="0,0,0,12"
+                                    IsEmpty="{Binding IsStatusChartEmpty}">
                     <controls:ChartCard.ChartContent>
                         <lvc:PieChart Series="{Binding StatusSeries}" Height="260"/>
                     </controls:ChartCard.ChartContent>

@@ -25,6 +25,7 @@ public partial class CustomsProfitReportViewModel : CustomsReportViewModelBase
     [ObservableProperty] private ISeries[] _monthlySeries = [];
     [ObservableProperty] private Axis[] _monthlyXAxes = [];
     [ObservableProperty] private Axis[] _monthlyYAxes = [];
+    [ObservableProperty] private bool _isMonthlyChartEmpty = true;
 
     public ObservableCollection<CustomsCurrencyFilterOption> CurrencyOptions { get; } =
     [
@@ -80,12 +81,14 @@ public partial class CustomsProfitReportViewModel : CustomsReportViewModelBase
                 MonthlySeries = [ChartThemeConfig.Column(result.MonthlyChart.Select(d => d.Amount).ToArray(), "الربح", 2)];
                 MonthlyXAxes = [ChartThemeConfig.CreateXAxis(result.MonthlyChart.Select(d => d.Name).ToArray())];
                 MonthlyYAxes = [ChartThemeConfig.CreateYAxis(forceNonNegative: false)];
+                IsMonthlyChartEmpty = false;
             }
             else
             {
                 MonthlySeries = [];
                 MonthlyXAxes = [];
                 MonthlyYAxes = [];
+                IsMonthlyChartEmpty = true;
             }
 
             _allRows = result.Rows;

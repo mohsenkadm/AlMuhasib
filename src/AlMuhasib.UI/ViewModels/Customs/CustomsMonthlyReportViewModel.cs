@@ -26,6 +26,7 @@ public partial class CustomsMonthlyReportViewModel : CustomsReportViewModelBase
     [ObservableProperty] private ISeries[] _dailySeries = [];
     [ObservableProperty] private Axis[] _dailyXAxes = [];
     [ObservableProperty] private Axis[] _dailyYAxes = [];
+    [ObservableProperty] private bool _isDailyChartEmpty = true;
 
     private List<CustomsMonthlyReportRow> _allRows = [];
     public ObservableCollection<CustomsMonthlyReportRow> Rows { get; } = [];
@@ -75,12 +76,14 @@ public partial class CustomsMonthlyReportViewModel : CustomsReportViewModelBase
                 DailySeries = [ChartThemeConfig.Column(result.DailyChart.Select(d => d.Amount).ToArray(), "الفواتير", 0)];
                 DailyXAxes = [ChartThemeConfig.CreateXAxis(result.DailyChart.Select(d => d.Name).ToArray(), 45)];
                 DailyYAxes = [ChartThemeConfig.CreateYAxis()];
+                IsDailyChartEmpty = false;
             }
             else
             {
                 DailySeries = [];
                 DailyXAxes = [];
                 DailyYAxes = [];
+                IsDailyChartEmpty = true;
             }
 
             _allRows = result.Rows;
