@@ -202,6 +202,26 @@ public sealed class CustomsAuthService : IAuthService
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var existing = await context.Permissions.Where(p => p.UserId == userId).ToListAsync();
+
+        static object Snapshot(IEnumerable<Permission> items) =>
+            items
+                .OrderBy(p => p.ScreenName)
+                .Select(p => new
+                {
+                    p.ScreenName,
+                    p.CanView,
+                    p.CanAdd,
+                    p.CanEdit,
+                    p.CanDelete,
+                    p.CanPrint,
+                    p.CanExport,
+                    p.CanEditPrice,
+                    p.IsViewOnly
+                })
+                .ToList();
+
+        var oldValues = Snapshot(existing);
+
         context.Permissions.RemoveRange(existing);
 
         foreach (var p in permissions)
@@ -212,6 +232,15 @@ public sealed class CustomsAuthService : IAuthService
         }
 
         await context.Permissions.AddRangeAsync(permissions);
+
+        await Customs.CustomsAuditWriter.WriteAsync(
+            context,
+            AuditAction.Edit,
+            "UserPermissions",
+            userId,
+            oldValues: oldValues,
+            newValues: Snapshot(permissions));
+
         await context.SaveChangesAsync();
     }
 }

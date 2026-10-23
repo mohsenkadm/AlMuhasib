@@ -41,6 +41,7 @@ public sealed class CustomsClearanceSystemModule : ISystemModule
             ]),
         Item("المستخدمون", PackIconKind.AccountMultiple, typeof(UsersViewModel), CustomsPermissionRegistry.Users),
         Item("الصلاحيات", PackIconKind.ShieldKey, typeof(PermissionsViewModel), CustomsPermissionRegistry.Permissions),
+        Item("سجل العمليات", PackIconKind.History, typeof(AuditLogViewModel), CustomsPermissionRegistry.AuditLog),
         Item("إعدادات الطباعة", PackIconKind.PrinterSettings, typeof(PrintLayoutSettingsViewModel), CustomsPermissionRegistry.PrintSettings),
         Item("النسخ الاحتياطي", PackIconKind.DatabaseCog, typeof(BackupRestoreViewModel), CustomsPermissionRegistry.Backup),
         Item("ربط الحاسبات", PackIconKind.LanConnect, typeof(NetworkConnectionSettingsViewModel), ScreenPermissionRegistry.NetworkConnection),
