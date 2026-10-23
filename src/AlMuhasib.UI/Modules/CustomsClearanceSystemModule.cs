@@ -49,6 +49,13 @@ public sealed class CustomsClearanceSystemModule : ISystemModule
         },
         new NavigationMenuItem
         {
+            Title = "كشف حساب",
+            Icon = PackIconKind.FileDocumentOutline,
+            ViewModelType = typeof(CustomsStatementViewModel),
+            ScreenName = CustomsPermissionRegistry.Statement
+        },
+        new NavigationMenuItem
+        {
             Title = "المستخدمون",
             Icon = PackIconKind.AccountMultiple,
             ViewModelType = typeof(UsersViewModel),

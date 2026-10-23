@@ -1549,6 +1549,9 @@
                         <DataTemplate DataType="{x:Type customsVm:CustomsReceiptFormViewModel}">
                             <customsViews:CustomsReceiptFormView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type customsVm:CustomsStatementViewModel}">
+                            <customsViews:CustomsStatementView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:ProductsViewModel}">
                             <views:ProductsView />
                         </DataTemplate>

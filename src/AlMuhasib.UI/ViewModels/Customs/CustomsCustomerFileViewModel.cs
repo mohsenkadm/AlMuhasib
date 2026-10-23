@@ -163,6 +163,19 @@ public partial class CustomsCustomerFileViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task OpenStatementAsync()
+    {
+        if (_customerId <= 0) return;
+        CustomsStatementNavigationBridge.PendingCustomerId = _customerId;
+        await _mainWindow.OpenTabAsync(
+            typeof(CustomsStatementViewModel),
+            $"كشف حساب — {CustomerName}",
+            PackIconKind.FileDocumentOutline,
+            activateIfExists: false,
+            permissionScreenName: CustomsPermissionRegistry.Statement);
+    }
+
+    [RelayCommand]
     private async Task SaveNotesAsync()
     {
         if (_customerId <= 0 || !CanEdit) return;
