@@ -20,6 +20,7 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     private readonly ICustomsCustomerService _customerService;
     private readonly ICustomsExpenseTypeService _expenseTypeService;
     private readonly ICustomsAttachmentService _attachmentService;
+    private readonly ICustomsPrintService _printService;
     private readonly ICurrentUserService _currentUserService;
     private readonly MainWindowViewModel _mainWindow;
     private int? _editId;
@@ -105,6 +106,8 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     public bool IsEditMode => _editId.HasValue;
     public bool CanSave => (IsEditMode ? CanEdit : CanAdd) && Status != CustomsInvoiceStatus.Cancelled;
     public bool HasSavedInvoice => _editId.HasValue;
+    public bool CanPrintDocument => HasSavedInvoice && CanPrint;
+    public bool CanExportDocument => HasSavedInvoice && CanExport;
     public bool IsVehiclesReadOnly => !CanEdit || Status == CustomsInvoiceStatus.Cancelled;
     public bool CanAddVehicle => CanAdd && Status != CustomsInvoiceStatus.Cancelled;
     public bool CanDeleteVehicle => CanDelete && Status != CustomsInvoiceStatus.Cancelled;
@@ -122,6 +125,7 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         ICustomsCustomerService customerService,
         ICustomsExpenseTypeService expenseTypeService,
         ICustomsAttachmentService attachmentService,
+        ICustomsPrintService printService,
         ICurrentUserService currentUserService,
         MainWindowViewModel mainWindow)
     {
@@ -129,6 +133,7 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         _customerService = customerService;
         _expenseTypeService = expenseTypeService;
         _attachmentService = attachmentService;
+        _printService = printService;
         _currentUserService = currentUserService;
         _mainWindow = mainWindow;
         PageTitle = "فاتورة تخليص";
@@ -274,6 +279,8 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsEditMode));
         OnPropertyChanged(nameof(CanSave));
         OnPropertyChanged(nameof(HasSavedInvoice));
+        OnPropertyChanged(nameof(CanPrintDocument));
+        OnPropertyChanged(nameof(CanExportDocument));
         OnPropertyChanged(nameof(IsVehiclesReadOnly));
         OnPropertyChanged(nameof(CanAddVehicle));
         OnPropertyChanged(nameof(CanDeleteVehicle));
@@ -962,6 +969,76 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         {
             await _attachmentService.SoftDeleteAsync(item.Id, _currentUserService.Username);
             Attachments.Remove(item);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task PrintAsync()
+    {
+        if (!_editId.HasValue || !CanPrint)
+        {
+            BeautifulMessageDialog.ShowWarning(
+                !_editId.HasValue ? "احفظ الفاتورة أولاً قبل الطباعة" : "ليس لديك صلاحية الطباعة");
+            return;
+        }
+
+        try
+        {
+            var detail = await _invoiceService.GetByIdAsync(_editId.Value);
+            if (detail is null)
+            {
+                BeautifulMessageDialog.ShowError("الفاتورة غير موجودة");
+                return;
+            }
+
+            // Customer copy via ICustomsPrintService — no expenses / InternalNotes / profit.
+            _printService.PrintCustomerInvoice(detail, SelectedCustomer?.Phone);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportPdfAsync()
+    {
+        if (!_editId.HasValue || !CanExport)
+        {
+            BeautifulMessageDialog.ShowWarning(
+                !_editId.HasValue ? "احفظ الفاتورة أولاً قبل التصدير" : "ليس لديك صلاحية التصدير");
+            return;
+        }
+
+        try
+        {
+            var detail = await _invoiceService.GetByIdAsync(_editId.Value);
+            if (detail is null)
+            {
+                BeautifulMessageDialog.ShowError("الفاتورة غير موجودة");
+                return;
+            }
+
+            var temp = _printService.ExportCustomerInvoicePdf(detail, SelectedCustomer?.Phone);
+            var dlg = new SaveFileDialog
+            {
+                Filter = "PDF (*.pdf)|*.pdf",
+                FileName = $"{detail.InvoiceNumber}.pdf",
+                DefaultExt = ".pdf"
+            };
+            if (dlg.ShowDialog() == true)
+            {
+                File.Copy(temp, dlg.FileName, overwrite: true);
+                BeautifulMessageDialog.ShowSuccess("تم حفظ ملف PDF");
+            }
+            else
+            {
+                Process.Start(new ProcessStartInfo { FileName = temp, UseShellExecute = true });
+            }
         }
         catch (Exception ex)
         {

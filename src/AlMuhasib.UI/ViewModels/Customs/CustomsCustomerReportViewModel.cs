@@ -28,9 +28,10 @@ public partial class CustomsCustomerReportViewModel : CustomsReportViewModelBase
 
     public CustomsCustomerReportViewModel(
         ICustomsReportService reportService,
+        ICustomsPrintService printService,
         IExportService exportService,
         ICurrentUserService currentUserService)
-        : base(reportService, exportService, currentUserService)
+        : base(reportService, printService, exportService, currentUserService)
     {
         PageTitle = "تقرير العملاء — التخليص";
         RegisterThemeChartReload(LoadDataAsync);

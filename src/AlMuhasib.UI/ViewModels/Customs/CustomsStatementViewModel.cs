@@ -18,6 +18,7 @@ public partial class CustomsStatementViewModel : ViewModelBase
 {
     private readonly ICustomsStatementService _statementService;
     private readonly ICustomsCustomerService _customerService;
+    private readonly ICustomsPrintService _printService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private System.Timers.Timer? _customerSearchTimer;
@@ -63,11 +64,13 @@ public partial class CustomsStatementViewModel : ViewModelBase
     public CustomsStatementViewModel(
         ICustomsStatementService statementService,
         ICustomsCustomerService customerService,
+        ICustomsPrintService printService,
         IExportService exportService,
         ICurrentUserService currentUserService)
     {
         _statementService = statementService;
         _customerService = customerService;
+        _printService = printService;
         _exportService = exportService;
         _currentUserService = currentUserService;
         PageTitle = "كشف حساب عميل";
@@ -275,6 +278,12 @@ public partial class CustomsStatementViewModel : ViewModelBase
     [RelayCommand]
     private void Print()
     {
+        if (!CanPrint)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
+            return;
+        }
+
         if (_allRows.Count == 0)
         {
             BeautifulMessageDialog.ShowWarning("لا توجد بيانات للطباعة");
@@ -293,16 +302,27 @@ public partial class CustomsStatementViewModel : ViewModelBase
             r.RunningBalance.ToString("N0")
         }).ToList();
 
-        _exportService.PrintTable(
-            $"كشف حساب تخليص — {CustomerName} — {PeriodLabel}",
+        var model = _printService.BuildCustomerStatement(
+            CustomerName,
+            SelectedCustomer?.Phone,
+            DateFrom,
+            DateTo,
             cols,
             rows,
             BuildSummaryLines());
+        model.Title = $"{model.Title} — {PeriodLabel}";
+        _printService.PrintCustomerStatement(model);
     }
 
     [RelayCommand]
     private void ExportPdf()
     {
+        if (!CanExport)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية التصدير");
+            return;
+        }
+
         if (_allRows.Count == 0 || SelectedCustomer is null)
         {
             BeautifulMessageDialog.ShowWarning("يرجى تحميل كشف الحساب أولاً");
@@ -311,28 +331,28 @@ public partial class CustomsStatementViewModel : ViewModelBase
 
         try
         {
-            var model = new StatementPrintModel
+            var cols = new[] { "التاريخ", "البيان", "النوع", "العملة", "مدين", "دائن", "الرصيد" };
+            IList<object[]> rows = _allRows.Select(r => new object[]
             {
-                Title = $"كشف حساب تخليص — {CustomerName}",
-                PartyName = CustomerName,
-                PartyPhone = SelectedCustomer.Phone,
-                FromDate = DateFrom,
-                ToDate = DateTo,
-                Columns = ["التاريخ", "البيان", "النوع", "العملة", "مدين", "دائن", "الرصيد"],
-                Rows = _allRows.Select(r => new object[]
-                {
-                    r.Date.ToString("yyyy/MM/dd"),
-                    r.Description,
-                    r.TransactionTypeLabel,
-                    r.CurrencyLabel,
-                    r.Debit,
-                    r.Credit,
-                    r.RunningBalance
-                }).ToList(),
-                SummaryLines = BuildSummaryLines()
-            };
+                r.Date.ToString("yyyy/MM/dd"),
+                r.Description,
+                r.TransactionTypeLabel,
+                r.CurrencyLabel,
+                r.Debit,
+                r.Credit,
+                r.RunningBalance
+            }).ToList();
 
-            var temp = _exportService.ExportStatementToPdf(model);
+            var model = _printService.BuildCustomerStatement(
+                CustomerName,
+                SelectedCustomer.Phone,
+                DateFrom,
+                DateTo,
+                cols,
+                rows,
+                BuildSummaryLines());
+
+            var temp = _printService.ExportCustomerStatementPdf(model);
             var dlg = new SaveFileDialog
             {
                 Filter = "PDF (*.pdf)|*.pdf",

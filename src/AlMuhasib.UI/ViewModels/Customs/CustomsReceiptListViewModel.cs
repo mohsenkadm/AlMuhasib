@@ -19,6 +19,7 @@ namespace AlMuhasib.UI.ViewModels.Customs;
 public partial class CustomsReceiptListViewModel : ViewModelBase
 {
     private readonly ICustomsReceiptService _receiptService;
+    private readonly ICustomsPrintService _printService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private readonly MainWindowViewModel _mainWindow;
@@ -49,11 +50,13 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
 
     public CustomsReceiptListViewModel(
         ICustomsReceiptService receiptService,
+        ICustomsPrintService printService,
         IExportService exportService,
         ICurrentUserService currentUserService,
         MainWindowViewModel mainWindow)
     {
         _receiptService = receiptService;
+        _printService = printService;
         _exportService = exportService;
         _currentUserService = currentUserService;
         _mainWindow = mainWindow;
@@ -213,8 +216,7 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
         {
             var detail = await _receiptService.GetByIdAsync(item.Id);
             if (detail is null) return;
-            var model = CustomsReceiptPrintHelper.ToVoucherPrintModel(detail);
-            var path = _exportService.ExportVoucherToPdf(model);
+            var path = _printService.ExportReceiptPdf(detail);
             Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
         }
         catch (Exception ex)
@@ -227,13 +229,12 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
     private async Task ExportReceiptPdfAsync(CustomsReceiptListItem? item)
     {
         item ??= SelectedReceipt;
-        if (item is null || !CanPrint) return;
+        if (item is null || !CanExport) return;
         try
         {
             var detail = await _receiptService.GetByIdAsync(item.Id);
             if (detail is null) return;
-            var model = CustomsReceiptPrintHelper.ToVoucherPrintModel(detail);
-            var path = _exportService.ExportVoucherToPdf(model);
+            var path = _printService.ExportReceiptPdf(detail);
 
             var dialog = new SaveFileDialog
             {
@@ -319,28 +320,3 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
 }
 
 public sealed record CustomsCurrencyFilterOption(AccountingCurrency? Value, string Label);
-
-public static class CustomsReceiptPrintHelper
-{
-    public static VoucherPrintModel ToVoucherPrintModel(CustomsReceiptDetail detail)
-    {
-        var allocNotes = detail.Allocations.Count == 0
-            ? detail.Notes
-            : string.Join(" | ", detail.Allocations.Select(a => $"{a.InvoiceNumber}:{a.Amount:N0}"))
-              + (string.IsNullOrWhiteSpace(detail.Notes) ? string.Empty : $" — {detail.Notes}");
-
-        return new VoucherPrintModel
-        {
-            Title = "وصل قبض — التخليص الكمركي",
-            VoucherNumber = detail.ReceiptNumber,
-            VoucherTypeLabel = detail.PaymentMethodLabel,
-            Date = detail.ReceiptDate,
-            Amount = detail.Amount,
-            CurrencyLabel = detail.CurrencyLabel,
-            PartyLabel = "العميل",
-            PartyName = detail.CustomerName,
-            PartyPhone = detail.CustomerPhone,
-            Notes = allocNotes
-        };
-    }
-}

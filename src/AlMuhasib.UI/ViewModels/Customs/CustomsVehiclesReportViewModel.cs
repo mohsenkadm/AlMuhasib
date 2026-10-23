@@ -39,9 +39,10 @@ public partial class CustomsVehiclesReportViewModel : CustomsReportViewModelBase
 
     public CustomsVehiclesReportViewModel(
         ICustomsReportService reportService,
+        ICustomsPrintService printService,
         IExportService exportService,
         ICurrentUserService currentUserService)
-        : base(reportService, exportService, currentUserService)
+        : base(reportService, printService, exportService, currentUserService)
     {
         PageTitle = "تقرير السيارات — التخليص";
         SelectedStatus = StatusOptions[0];
@@ -112,13 +113,15 @@ public partial class CustomsVehiclesReportViewModel : CustomsReportViewModelBase
     [RelayCommand] private void Print()
     {
         var (c, r, s) = BuildExport();
-        PrintTable("تقرير السيارات — التخليص", c, r, s);
+        PrintStaffReport(CustomsPrintDocumentKind.VehicleReport, "تقرير السيارات — التخليص", c, r, s);
     }
 
     [RelayCommand] private void ExportToPdf()
     {
         var (c, r, s) = BuildExport();
-        ExportPdfDocument("تقرير السيارات — التخليص", "الفترة المحددة", c, r, s,
+        ExportStaffReportPdf(
+            CustomsPrintDocumentKind.VehicleReport,
+            "تقرير السيارات — التخليص", "الفترة المحددة", c, r, s,
             $"تقرير_سيارات_تخليص_{DateTime.Now:yyyyMMdd}.pdf");
     }
 }

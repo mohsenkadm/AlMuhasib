@@ -49,6 +49,16 @@
                             Style="{StaticResource OutlinedButton}"
                             md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0"
                             Visibility="{Binding CanCancelInvoice, Converter={StaticResource BoolToVis}}"/>
+                    <Button Content="طباعة" Command="{Binding PrintCommand}"
+                            Style="{StaticResource OutlinedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="16,8" Margin="0,0,8,0"
+                            IsEnabled="{Binding CanPrintDocument}"
+                            ToolTip="نسخة عميل — بدون مصاريف أو ربح داخلي"/>
+                    <Button Content="PDF" Command="{Binding ExportPdfCommand}"
+                            Style="{StaticResource OutlinedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="16,8" Margin="0,0,8,0"
+                            IsEnabled="{Binding CanExportDocument}"
+                            ToolTip="تصدير PDF — نسخة عميل"/>
                     <Button Content="إغلاق" Command="{Binding CloseCommand}" Style="{StaticResource FlatButton}"/>
                 </StackPanel>
             </DockPanel>

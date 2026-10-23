@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
@@ -18,6 +19,7 @@ namespace AlMuhasib.UI.ViewModels.Customs;
 public abstract partial class CustomsReportViewModelBase : ViewModelBase
 {
     protected readonly ICustomsReportService ReportService;
+    protected readonly ICustomsPrintService PrintService;
     protected readonly IExportService ExportService;
     protected readonly ICurrentUserService CurrentUserService;
 
@@ -33,10 +35,12 @@ public abstract partial class CustomsReportViewModelBase : ViewModelBase
 
     protected CustomsReportViewModelBase(
         ICustomsReportService reportService,
+        ICustomsPrintService printService,
         IExportService exportService,
         ICurrentUserService currentUserService)
     {
         ReportService = reportService;
+        PrintService = printService;
         ExportService = exportService;
         CurrentUserService = currentUserService;
     }
@@ -135,7 +139,37 @@ public abstract partial class CustomsReportViewModelBase : ViewModelBase
         ExportService.PrintTable(title, columns, rows, summaryLines);
     }
 
+    /// <summary>Staff operational report print via document-kind key (full internal data allowed).</summary>
+    protected void PrintStaffReport(
+        CustomsPrintDocumentKind kind,
+        string title,
+        string[] columns,
+        IList<object[]> rows,
+        IList<string>? summaryLines = null)
+    {
+        if (!CanPrint)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
+            return;
+        }
+
+        PrintService.PrintReportTable(kind, title, columns, rows, summaryLines);
+    }
+
     protected void ExportPdfDocument(
+        string title,
+        string partyName,
+        string[] columns,
+        IList<object[]> rows,
+        IList<string>? summaryLines,
+        string suggestedFileName)
+    {
+        ExportStaffReportPdf(null, title, partyName, columns, rows, summaryLines, suggestedFileName);
+    }
+
+    /// <summary>Staff operational report PDF via document-kind key (full internal data allowed).</summary>
+    protected void ExportStaffReportPdf(
+        CustomsPrintDocumentKind? kind,
         string title,
         string partyName,
         string[] columns,
@@ -168,7 +202,10 @@ public abstract partial class CustomsReportViewModelBase : ViewModelBase
                 SummaryLines = summaryLines
             };
 
-            var temp = ExportService.ExportStatementToPdf(model);
+            var temp = kind is CustomsPrintDocumentKind k
+                ? PrintService.ExportReportPdf(k, model)
+                : ExportService.ExportStatementToPdf(model);
+
             var dlg = new SaveFileDialog
             {
                 Filter = "PDF (*.pdf)|*.pdf",

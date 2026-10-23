@@ -4,7 +4,6 @@ using System.IO;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Interfaces;
-using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Customs;
 using AlMuhasib.Core.Models.Customs;
 using AlMuhasib.UI.Controls;
@@ -20,7 +19,7 @@ public partial class CustomsReceiptFormViewModel : ViewModelBase
     private readonly ICustomsReceiptService _receiptService;
     private readonly ICustomsCustomerService _customerService;
     private readonly ICustomsAttachmentService _attachmentService;
-    private readonly IExportService _exportService;
+    private readonly ICustomsPrintService _printService;
     private readonly ICurrentUserService _currentUserService;
     private readonly MainWindowViewModel _mainWindow;
     private int? _editId;
@@ -67,14 +66,14 @@ public partial class CustomsReceiptFormViewModel : ViewModelBase
         ICustomsReceiptService receiptService,
         ICustomsCustomerService customerService,
         ICustomsAttachmentService attachmentService,
-        IExportService exportService,
+        ICustomsPrintService printService,
         ICurrentUserService currentUserService,
         MainWindowViewModel mainWindow)
     {
         _receiptService = receiptService;
         _customerService = customerService;
         _attachmentService = attachmentService;
-        _exportService = exportService;
+        _printService = printService;
         _currentUserService = currentUserService;
         _mainWindow = mainWindow;
         PageTitle = "وصل قبض";
@@ -369,7 +368,7 @@ public partial class CustomsReceiptFormViewModel : ViewModelBase
         {
             var detail = await _receiptService.GetByIdAsync(_editId.Value);
             if (detail is null) return;
-            var path = _exportService.ExportVoucherToPdf(CustomsReceiptPrintHelper.ToVoucherPrintModel(detail));
+            var path = _printService.ExportReceiptPdf(detail);
             Process.Start(new ProcessStartInfo { FileName = path, UseShellExecute = true });
         }
         catch (Exception ex)
@@ -381,12 +380,12 @@ public partial class CustomsReceiptFormViewModel : ViewModelBase
     [RelayCommand]
     private async Task ExportPdfAsync()
     {
-        if (!_editId.HasValue || !CanPrint) return;
+        if (!_editId.HasValue || !CanExport) return;
         try
         {
             var detail = await _receiptService.GetByIdAsync(_editId.Value);
             if (detail is null) return;
-            var temp = _exportService.ExportVoucherToPdf(CustomsReceiptPrintHelper.ToVoucherPrintModel(detail));
+            var temp = _printService.ExportReceiptPdf(detail);
             var dialog = new SaveFileDialog
             {
                 Filter = "PDF (*.pdf)|*.pdf",
