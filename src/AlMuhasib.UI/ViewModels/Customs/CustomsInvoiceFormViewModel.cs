@@ -47,6 +47,12 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     [ObservableProperty] private decimal _totalAmount;
     [ObservableProperty] private decimal _remainingAmount;
 
+    [ObservableProperty] private string _vehicleSearchText = string.Empty;
+    [ObservableProperty] private bool _isVehicleDetailDialogOpen;
+    [ObservableProperty] private CustomsInvoiceVehicleRow? _detailVehicle;
+    [ObservableProperty] private bool _isVehicleAttachmentsDialogOpen;
+    [ObservableProperty] private CustomsInvoiceVehicleRow? _attachmentsVehicle;
+
     [ObservableProperty] private string _newExpenseTypeName = string.Empty;
     [ObservableProperty] private CustomsExpenseTypeItem? _selectedExpenseType;
     [ObservableProperty] private string _expenseDescription = string.Empty;
@@ -57,8 +63,10 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
 
     public ObservableCollection<CustomsCustomerListItem> Customers { get; } = [];
     public ObservableCollection<CustomsInvoiceVehicleRow> Vehicles { get; } = [];
+    public ObservableCollection<CustomsInvoiceVehicleRow> FilteredVehicles { get; } = [];
     public ObservableCollection<CustomsInvoiceExpenseRow> Expenses { get; } = [];
     public ObservableCollection<CustomsAttachmentItem> Attachments { get; } = [];
+    public ObservableCollection<CustomsAttachmentItem> VehicleAttachments { get; } = [];
     public ObservableCollection<CustomsExpenseTypeItem> ExpenseTypes { get; } = [];
 
     public IReadOnlyList<CustomsServiceTypeOption> ServiceTypeOptions { get; } =
@@ -84,6 +92,11 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     public bool IsEditMode => _editId.HasValue;
     public bool CanSave => (IsEditMode ? CanEdit : CanAdd) && Status != CustomsInvoiceStatus.Cancelled;
     public bool HasSavedInvoice => _editId.HasValue;
+    public bool IsVehiclesReadOnly => !CanEdit || Status == CustomsInvoiceStatus.Cancelled;
+    public bool CanAddVehicle => CanAdd && Status != CustomsInvoiceStatus.Cancelled;
+    public bool CanDeleteVehicle => CanDelete && Status != CustomsInvoiceStatus.Cancelled;
+    public bool HasSavedDetailVehicle => DetailVehicle?.Id is > 0;
+    public bool HasSavedAttachmentsVehicle => AttachmentsVehicle?.Id is > 0;
 
     public CustomsInvoiceFormViewModel(
         ICustomsInvoiceService invoiceService,
@@ -149,13 +162,15 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         CanCancelInvoice = false;
         FormError = string.Empty;
         Vehicles.Clear();
+        FilteredVehicles.Clear();
         Expenses.Clear();
         Attachments.Clear();
+        VehicleAttachments.Clear();
+        CloseVehicleDetail();
+        CloseVehicleAttachments();
         AddVehicleRow();
         RecalculateTotals();
-        OnPropertyChanged(nameof(IsEditMode));
-        OnPropertyChanged(nameof(CanSave));
-        OnPropertyChanged(nameof(HasSavedInvoice));
+        NotifyFormStateChanged();
     }
 
     private async Task LoadInvoiceAsync(int id)
@@ -195,9 +210,11 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
 
             Vehicles.Clear();
             foreach (var v in detail.Vehicles)
-                Vehicles.Add(CustomsInvoiceVehicleRow.FromDraft(v));
+                Vehicles.Add(CreateVehicleRow(v));
             if (Vehicles.Count == 0)
                 AddVehicleRow();
+            else
+                RefreshFilteredVehicles();
 
             Expenses.Clear();
             foreach (var e in detail.Expenses)
@@ -208,9 +225,7 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
                 Attachments.Add(a);
 
             RecalculateTotals();
-            OnPropertyChanged(nameof(IsEditMode));
-            OnPropertyChanged(nameof(CanSave));
-            OnPropertyChanged(nameof(HasSavedInvoice));
+            NotifyFormStateChanged();
         }
         catch (Exception ex)
         {
@@ -228,6 +243,29 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
 
     partial void OnDiscountAmountChanged(decimal value) => RecalculateTotals();
 
+    partial void OnVehicleSearchTextChanged(string value) => RefreshFilteredVehicles();
+
+    protected override void OnColumnFiltersChanged() => RefreshFilteredVehicles();
+
+    private void NotifyFormStateChanged()
+    {
+        OnPropertyChanged(nameof(IsEditMode));
+        OnPropertyChanged(nameof(CanSave));
+        OnPropertyChanged(nameof(HasSavedInvoice));
+        OnPropertyChanged(nameof(IsVehiclesReadOnly));
+        OnPropertyChanged(nameof(CanAddVehicle));
+        OnPropertyChanged(nameof(CanDeleteVehicle));
+    }
+
+    private CustomsInvoiceVehicleRow CreateVehicleRow(CustomsInvoiceVehicleDraft? draft = null)
+    {
+        var row = draft is null
+            ? new CustomsInvoiceVehicleRow { Status = CustomsVehicleStatus.InProgress }
+            : CustomsInvoiceVehicleRow.FromDraft(draft);
+        row.PriceChanged = RecalculateTotals;
+        return row;
+    }
+
     private void RecalculateTotals()
     {
         VehiclesSum = Vehicles.Sum(v => v.VehiclePrice);
@@ -235,25 +273,197 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         RemainingAmount = Math.Max(0, TotalAmount - PaidAmount);
     }
 
+    private void RefreshFilteredVehicles()
+    {
+        IEnumerable<CustomsInvoiceVehicleRow> query = Vehicles;
+
+        if (!string.IsNullOrWhiteSpace(VehicleSearchText))
+        {
+            var term = VehicleSearchText.Trim();
+            query = query.Where(v =>
+                (v.SerialNumber?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (v.IraqiPlate?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (v.IraqiDriver?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (v.SyrianPlate?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (v.SyrianDriver?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (v.CargoType?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (v.StatusLabel?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (v.Notes?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        var filtered = ColumnFilterEngine.Apply(query, ColumnFilters);
+        FilteredVehicles.Clear();
+        foreach (var row in filtered)
+            FilteredVehicles.Add(row);
+    }
+
     [RelayCommand]
     private void AddVehicleRow()
     {
-        Vehicles.Add(new CustomsInvoiceVehicleRow { Status = CustomsVehicleStatus.InProgress });
+        if (!CanAddVehicle) return;
+        Vehicles.Add(CreateVehicleRow());
+        RefreshFilteredVehicles();
         RecalculateTotals();
     }
 
     [RelayCommand]
     private void RemoveVehicleRow(CustomsInvoiceVehicleRow? row)
     {
-        if (row is null) return;
+        if (row is null || !CanDeleteVehicle) return;
+        if (!BeautifulMessageDialog.ShowConfirm("حذف هذه السيارة من الفاتورة؟"))
+            return;
+
         Vehicles.Remove(row);
+        if (ReferenceEquals(DetailVehicle, row))
+            CloseVehicleDetail();
+        if (ReferenceEquals(AttachmentsVehicle, row))
+            CloseVehicleAttachments();
+
         if (Vehicles.Count == 0)
             AddVehicleRow();
+        else
+            RefreshFilteredVehicles();
         RecalculateTotals();
     }
 
     [RelayCommand]
     private void VehiclePriceChanged() => RecalculateTotals();
+
+    [RelayCommand]
+    private void OpenVehicleDetails(CustomsInvoiceVehicleRow? row)
+    {
+        if (row is null) return;
+        DetailVehicle = row;
+        IsVehicleDetailDialogOpen = true;
+        OnPropertyChanged(nameof(HasSavedDetailVehicle));
+        _ = LoadVehicleAttachmentsForDetailAsync();
+    }
+
+    [RelayCommand]
+    private void CloseVehicleDetail()
+    {
+        IsVehicleDetailDialogOpen = false;
+        DetailVehicle = null;
+        OnPropertyChanged(nameof(HasSavedDetailVehicle));
+        RecalculateTotals();
+        RefreshFilteredVehicles();
+    }
+
+    [RelayCommand]
+    private void ApplyVehicleDetail()
+    {
+        RecalculateTotals();
+        RefreshFilteredVehicles();
+        IsVehicleDetailDialogOpen = false;
+        DetailVehicle = null;
+        OnPropertyChanged(nameof(HasSavedDetailVehicle));
+    }
+
+    [RelayCommand]
+    private async Task OpenVehicleAttachmentsAsync(CustomsInvoiceVehicleRow? row)
+    {
+        if (row is null) return;
+        if (row.Id is null or <= 0)
+        {
+            BeautifulMessageDialog.ShowWarning("احفظ الفاتورة أولاً قبل إرفاق ملفات للسيارة");
+            return;
+        }
+
+        AttachmentsVehicle = row;
+        await LoadVehicleAttachmentsAsync(row.Id.Value);
+        IsVehicleAttachmentsDialogOpen = true;
+        OnPropertyChanged(nameof(HasSavedAttachmentsVehicle));
+    }
+
+    [RelayCommand]
+    private void CloseVehicleAttachments()
+    {
+        IsVehicleAttachmentsDialogOpen = false;
+        AttachmentsVehicle = null;
+        VehicleAttachments.Clear();
+        OnPropertyChanged(nameof(HasSavedAttachmentsVehicle));
+    }
+
+    private async Task LoadVehicleAttachmentsForDetailAsync()
+    {
+        VehicleAttachments.Clear();
+        if (DetailVehicle?.Id is not int id || id <= 0) return;
+        try
+        {
+            var items = await _attachmentService.GetByOwnerAsync(CustomsAttachmentOwnerType.Vehicle, id);
+            foreach (var item in items)
+                VehicleAttachments.Add(item);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    private async Task LoadVehicleAttachmentsAsync(int vehicleId)
+    {
+        VehicleAttachments.Clear();
+        var items = await _attachmentService.GetByOwnerAsync(CustomsAttachmentOwnerType.Vehicle, vehicleId);
+        foreach (var item in items)
+            VehicleAttachments.Add(item);
+    }
+
+    [RelayCommand]
+    private async Task AddVehicleAttachmentAsync()
+    {
+        var vehicleId = AttachmentsVehicle?.Id ?? DetailVehicle?.Id;
+        if (vehicleId is null or <= 0)
+        {
+            BeautifulMessageDialog.ShowWarning("احفظ الفاتورة أولاً قبل إرفاق ملفات للسيارة");
+            return;
+        }
+
+        var dialog = new OpenFileDialog
+        {
+            Filter = "صور ومستندات|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.pdf;*.doc;*.docx;*.xls;*.xlsx|كل الملفات|*.*",
+            Multiselect = true,
+            Title = "اختر مرفقات السيارة"
+        };
+        if (dialog.ShowDialog() != true) return;
+
+        try
+        {
+            foreach (var path in dialog.FileNames)
+            {
+                await _attachmentService.AddFromFileAsync(
+                    CustomsAttachmentOwnerType.Vehicle,
+                    vehicleId.Value,
+                    path,
+                    null,
+                    _currentUserService.Username);
+            }
+
+            await LoadVehicleAttachmentsAsync(vehicleId.Value);
+            BeautifulMessageDialog.ShowSuccess($"تم إرفاق {dialog.FileNames.Length} ملف");
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteVehicleAttachmentAsync(CustomsAttachmentItem? item)
+    {
+        if (item is null || !CanDelete) return;
+        if (!BeautifulMessageDialog.ShowConfirm($"حذف المرفق «{item.FileName}»؟"))
+            return;
+
+        try
+        {
+            await _attachmentService.SoftDeleteAsync(item.Id, _currentUserService.Username);
+            VehicleAttachments.Remove(item);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
 
     [RelayCommand]
     private async Task AddExpenseTypeAsync()
@@ -388,9 +598,7 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         finally
         {
             IsSaving = false;
-            OnPropertyChanged(nameof(IsEditMode));
-            OnPropertyChanged(nameof(CanSave));
-            OnPropertyChanged(nameof(HasSavedInvoice));
+            NotifyFormStateChanged();
         }
     }
 
@@ -513,6 +721,8 @@ public sealed record CustomsVehicleStatusOption(CustomsVehicleStatus Value, stri
 
 public partial class CustomsInvoiceVehicleRow : ObservableObject
 {
+    public Action? PriceChanged { get; set; }
+
     [ObservableProperty] private int? _id;
     [ObservableProperty] private string _serialNumber = string.Empty;
     [ObservableProperty] private string _iraqiPlate = string.Empty;
@@ -522,9 +732,18 @@ public partial class CustomsInvoiceVehicleRow : ObservableObject
     [ObservableProperty] private string _cargoType = string.Empty;
     [ObservableProperty] private DateTime? _loadingDate;
     [ObservableProperty] private DateTime? _exitDate;
+    [ObservableProperty] private DateTime? _warehouseArrivalDate;
+    [ObservableProperty] private DateTime? _unloadingDate;
     [ObservableProperty] private decimal _vehiclePrice;
     [ObservableProperty] private CustomsVehicleStatus _status = CustomsVehicleStatus.InProgress;
     [ObservableProperty] private string _notes = string.Empty;
+
+    public string StatusLabel => CustomsVehicleStatusDisplay.ToArabic(Status);
+
+    partial void OnVehiclePriceChanged(decimal value) => PriceChanged?.Invoke();
+
+    partial void OnStatusChanged(CustomsVehicleStatus value) =>
+        OnPropertyChanged(nameof(StatusLabel));
 
     public static CustomsInvoiceVehicleRow FromDraft(CustomsInvoiceVehicleDraft d) => new()
     {
@@ -537,6 +756,8 @@ public partial class CustomsInvoiceVehicleRow : ObservableObject
         CargoType = d.CargoType,
         LoadingDate = d.LoadingDate,
         ExitDate = d.ExitDate,
+        WarehouseArrivalDate = d.WarehouseArrivalDate,
+        UnloadingDate = d.UnloadingDate,
         VehiclePrice = d.VehiclePrice,
         Status = d.Status,
         Notes = d.Notes
@@ -553,6 +774,8 @@ public partial class CustomsInvoiceVehicleRow : ObservableObject
         CargoType = CargoType,
         LoadingDate = LoadingDate,
         ExitDate = ExitDate,
+        WarehouseArrivalDate = WarehouseArrivalDate,
+        UnloadingDate = UnloadingDate,
         VehiclePrice = VehiclePrice,
         Status = Status,
         Notes = Notes
