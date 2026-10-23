@@ -375,6 +375,8 @@ public static class DependencyInjection
         services.AddScoped<IGlobalSearchService, CustomsGlobalSearchService>();
         services.AddScoped<IAuditLogService, CustomsAuditLogService>();
         services.AddScoped<ICustomsDashboardService, CustomsDashboardService>();
+        services.AddScoped<ICustomsCustomerService, CustomsCustomerService>();
+        services.AddScoped<ICustomsAttachmentService, CustomsAttachmentService>();
         services.AddScoped<IUserLoginLogService, NoOpUserLoginLogService>();
         services.AddScoped<ISmartAlertService, NoOpSmartAlertService>();
         services.AddScoped<IUserTaskService, NoOpUserTaskService>();

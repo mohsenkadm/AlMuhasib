@@ -6,6 +6,7 @@ namespace AlMuhasib.UI.Services;
 public static class CustomsPermissionRegistry
 {
     public const string Dashboard = "CustomsDashboard";
+    public const string Customers = "CustomsCustomers";
     public const string Users = "Users";
     public const string Permissions = "Permissions";
     public const string PrintSettings = "PrintSettings";
@@ -15,6 +16,7 @@ public static class CustomsPermissionRegistry
     public static IReadOnlyList<(string Name, string Label)> Screens { get; } =
     [
         (Dashboard, "لوحة التحكم"),
+        (Customers, "العملاء"),
         (Users, "المستخدمون"),
         (Permissions, "الصلاحيات"),
         (PrintSettings, "إعدادات الطباعة"),
@@ -27,6 +29,8 @@ public static class CustomsPermissionRegistry
     private static readonly Dictionary<Type, string> ViewModelToScreen = new()
     {
         [typeof(CustomsDashboardViewModel)] = Dashboard,
+        [typeof(CustomsCustomersViewModel)] = Customers,
+        [typeof(CustomsCustomerFileViewModel)] = Customers,
         [typeof(UsersViewModel)] = Users,
         [typeof(PermissionsViewModel)] = Permissions,
         [typeof(PrintLayoutSettingsViewModel)] = PrintSettings,
@@ -39,6 +43,7 @@ public static class CustomsPermissionRegistry
     private static readonly Dictionary<string, Type> ScreenToDefaultViewModel = new()
     {
         [Dashboard] = typeof(CustomsDashboardViewModel),
+        [Customers] = typeof(CustomsCustomersViewModel),
         [Users] = typeof(UsersViewModel),
         [Permissions] = typeof(PermissionsViewModel),
         [PrintSettings] = typeof(PrintLayoutSettingsViewModel),
@@ -51,6 +56,7 @@ public static class CustomsPermissionRegistry
     private static readonly Dictionary<string, string> Labels = new()
     {
         [Dashboard] = "لوحة التحكم",
+        [Customers] = "العملاء",
         [Users] = "المستخدمون",
         [Permissions] = "الصلاحيات",
         [PrintSettings] = "إعدادات الطباعة",

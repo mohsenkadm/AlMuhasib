@@ -28,6 +28,13 @@ public sealed class CustomsClearanceSystemModule : ISystemModule
         },
         new NavigationMenuItem
         {
+            Title = "العملاء",
+            Icon = PackIconKind.AccountGroup,
+            ViewModelType = typeof(CustomsCustomersViewModel),
+            ScreenName = CustomsPermissionRegistry.Customers
+        },
+        new NavigationMenuItem
+        {
             Title = "المستخدمون",
             Icon = PackIconKind.AccountMultiple,
             ViewModelType = typeof(UsersViewModel),
