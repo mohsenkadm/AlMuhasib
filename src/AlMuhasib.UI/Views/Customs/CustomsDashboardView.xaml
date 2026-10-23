@@ -14,6 +14,64 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
+        <converters:InverseBooleanConverter x:Key="InverseBool"/>
+
+        <!-- Same pattern as Accounting DashboardQuickAction (local resource — does not alter Accounting) -->
+        <Style x:Key="DashboardQuickAction" TargetType="Button">
+            <Setter Property="Height" Value="56"/>
+            <Setter Property="MinWidth" Value="148"/>
+            <Setter Property="Margin" Value="0,0,8,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <materialDesign:Card x:Name="Card" UniformCornerRadius="12" Padding="10,8"
+                                             materialDesign:ElevationAssist.Elevation="Dp0"
+                                             Background="{TemplateBinding Background}"
+                                             BorderBrush="{DynamicResource DashboardQuickActionBorderBrush}" BorderThickness="1"
+                                             RenderTransformOrigin="0.5,0.5">
+                            <materialDesign:Card.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </materialDesign:Card.RenderTransform>
+                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                        </materialDesign:Card>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Card" Property="materialDesign:ElevationAssist.Elevation" Value="Dp2"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Card"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                             To="1.02" Duration="0:0:0.14"/>
+                                            <DoubleAnimation Storyboard.TargetName="Card"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                             To="1.02" Duration="0:0:0.14"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Card"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                                                             To="1" Duration="0:0:0.12"/>
+                                            <DoubleAnimation Storyboard.TargetName="Card"
+                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                                                             To="1" Duration="0:0:0.12"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -40,32 +98,255 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- Title -->
-                <Grid Grid.Row="0" Margin="0,0,0,18">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                        <TextBlock Text="لوحة التحكم — التخليص الكمركي"
-                                   FontSize="20" FontWeight="Bold"
-                                   Foreground="{DynamicResource PrimaryHueMidBrush}"/>
-                        <TextBlock Text="{Binding PeriodLabel}"
-                                   FontSize="12"
-                                   Foreground="{DynamicResource HintForegroundBrush}"
-                                   Margin="0,6,0,0"/>
-                    </StackPanel>
-                    <Button Grid.Column="1"
-                            Command="{Binding LoadDataCommand}"
-                            Style="{StaticResource OutlinedButton}"
-                            materialDesign:ButtonAssist.CornerRadius="8"
-                            ToolTip="تحديث">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18" Margin="0,0,6,0"/>
-                            <TextBlock Text="تحديث" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
-                </Grid>
+                <!-- Hero card (Accounting-style layout, Customs metrics only) -->
+                <materialDesign:Card Grid.Row="0" UniformCornerRadius="24" Padding="0"
+                                     Margin="0,0,0,20" ClipToBounds="True"
+                                     materialDesign:ElevationAssist.Elevation="Dp4"
+                                     BorderThickness="0">
+                    <Grid MinHeight="210">
+                        <Border CornerRadius="24">
+                            <Border.Background>
+                                <DynamicResource ResourceKey="DashboardHeroBrush"/>
+                            </Border.Background>
+                        </Border>
+
+                        <Ellipse Width="320" Height="320" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                 Margin="-90,-110,0,0" IsHitTestVisible="False" Opacity="0.18" Fill="{DynamicResource CardBrush}"/>
+                        <Ellipse Width="220" Height="220" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                 Margin="0,0,-50,-70" IsHitTestVisible="False" Opacity="0.14" Fill="#80DEEA"/>
+                        <Ellipse Width="140" Height="140" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                 Margin="0,20,80,0" IsHitTestVisible="False" Opacity="0.1" Fill="{DynamicResource CardBrush}"/>
+
+                        <Grid Margin="28,26">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <Border Background="#33FFFFFF" CornerRadius="20" Padding="10,4"
+                                            HorizontalAlignment="Right" Margin="0,0,0,10">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="Truck" Width="16" Height="16"
+                                                                     Foreground="White" VerticalAlignment="Center"/>
+                                            <TextBlock Text="التخليص الكمركي والنقل" FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="White" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock FontSize="28" FontWeight="Bold" Foreground="White">
+                                        <Run Text="{Binding WelcomeGreeting, Mode=OneWay}"/>
+                                        <Run Text="، "/>
+                                        <Run Text="{Binding UserDisplayName, Mode=OneWay}"/>
+                                    </TextBlock>
+                                    <TextBlock Text="مؤشرات معتمدة — فواتير ومركبات ومقبوضات مفصولة بالعملة"
+                                               FontSize="14" Foreground="#E3F2FD" Margin="0,8,0,0" Opacity="0.95"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                        <materialDesign:PackIcon Kind="CalendarToday" Width="16" Height="16"
+                                                                 Foreground="#B3E5FC" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding DisplayDate, Mode=OneWay}"
+                                                   FontSize="12" Foreground="#B3E5FC"
+                                                   Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="  ·  " Foreground="#B3E5FC" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding PeriodLabel, Mode=OneWay}"
+                                                   FontSize="12" Foreground="#B3E5FC" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Top" Margin="20,0,0,0">
+                                    <Button Command="{Binding LoadDataCommand}"
+                                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                                            ToolTip="تحديث الإحصائيات"
+                                            Style="{StaticResource MaterialDesignIconButton}"
+                                            Foreground="White" Width="40" Height="40"
+                                            HorizontalAlignment="Left" Margin="0,0,0,10">
+                                        <materialDesign:PackIcon Kind="Refresh" Width="22" Height="22"/>
+                                    </Button>
+
+                                    <Border Background="{DynamicResource DashboardGlassChipBrush}" CornerRadius="18"
+                                            Padding="14,12" Margin="0,0,0,10" BorderBrush="#33FFFFFF" BorderThickness="1"
+                                            MinWidth="168">
+                                        <StackPanel>
+                                            <TextBlock Text="فواتير / مفتوحة" FontSize="11" Foreground="#E1F5FE" Margin="0,0,0,8"/>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Margin="4,0">
+                                                    <TextBlock Text="الكل" FontSize="10" Foreground="#B3E5FC"/>
+                                                    <TextBlock Text="{Binding InvoiceCountDisplay}" FontSize="16" FontWeight="Bold"
+                                                               Foreground="White" Margin="0,3,0,0"/>
+                                                </StackPanel>
+                                                <Border Grid.Column="1" Width="1" Margin="4,4" Background="#40FFFFFF"/>
+                                                <StackPanel Grid.Column="2" Margin="4,0">
+                                                    <TextBlock Text="غير مسددة" FontSize="10" Foreground="#FFCDD2"/>
+                                                    <TextBlock Text="{Binding UnpaidInvoiceCountDisplay}" FontSize="16" FontWeight="Bold"
+                                                               Foreground="White" Margin="0,3,0,0"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Background="{DynamicResource DashboardGlassChipBrush}" CornerRadius="16"
+                                            Padding="16,12" BorderBrush="#33FFFFFF" BorderThickness="1" MinWidth="168">
+                                        <StackPanel>
+                                            <TextBlock Text="المقبوضات" FontSize="11" Foreground="#E1F5FE"/>
+                                            <TextBlock Text="{Binding ReceiptsDisplay}" FontSize="13" FontWeight="Bold"
+                                                       Foreground="White" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+
+                            <TextBlock Grid.Row="1" Text="إجراءات سريعة" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="#E1F5FE" Margin="0,18,0,8"/>
+
+                            <WrapPanel Grid.Row="2" Orientation="Horizontal">
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Command="{Binding OpenAddCustomerCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#5C6BC0" Offset="0"/>
+                                                    <GradientStop Color="#3949AB" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="AccountPlus" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="إضافة عميل" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiBlueBrush}"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Command="{Binding OpenClearanceInvoiceCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#43A047" Offset="0"/>
+                                                    <GradientStop Color="#2E7D32" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="FileDocumentPlus" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="فاتورة تخليص" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiGreenBrush}"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Command="{Binding OpenTransportInvoiceCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#FB8C00" Offset="0"/>
+                                                    <GradientStop Color="#EF6C00" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="Truck" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="فاتورة نقل" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiOrangeBrush}"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Command="{Binding OpenClearanceAndTransportInvoiceCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#00897B" Offset="0"/>
+                                                    <GradientStop Color="#00695C" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="SwapHorizontal" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="تخليص + نقل" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiTealBrush}"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Command="{Binding OpenNewReceiptCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#66BB6A" Offset="0"/>
+                                                    <GradientStop Color="#388E3C" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="CashPlus" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="إضافة إيصال" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiGreenBrush}"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Command="{Binding OpenInvoicesListCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#42A5F5" Offset="0"/>
+                                                    <GradientStop Color="#1565C0" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="FormatListBulleted" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="قائمة الفواتير" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiBlueBrush}"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DashboardQuickAction}"
+                                        Command="{Binding OpenVehiclesReportCommand}"
+                                        Background="{DynamicResource DashboardQuickActionBrush}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
+                                            <Border.Background>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#8E24AA" Offset="0"/>
+                                                    <GradientStop Color="#6A1B9A" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <materialDesign:PackIcon Kind="Car" Width="18" Height="18"
+                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="المركبات / الشحنات" FontWeight="SemiBold" FontSize="12"
+                                                   VerticalAlignment="Center"
+                                                   Foreground="{DynamicResource DashboardKpiPurpleBrush}"/>
+                                    </StackPanel>
+                                </Button>
+                            </WrapPanel>
+                        </Grid>
+                    </Grid>
+                </materialDesign:Card>
 
                 <!-- Row 1: customers | invoices | vehicles | unpaid -->
                 <Grid Grid.Row="1" Margin="0,0,0,14">
@@ -142,7 +423,7 @@
                                                ValueBrush="{DynamicResource DashboardKpiGreenBrush}"/>
                 </Grid>
 
-                <!-- Row 3: receipts | expenses | profit | debts (dual currency) -->
+                <!-- Row 3: receipts | expenses | profit | debts -->
                 <Grid Grid.Row="3" Margin="0,0,0,16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -186,7 +467,7 @@
                                                ValueBrush="{DynamicResource DashboardKpiRedBrush}"/>
                 </Grid>
 
-                <!-- Charts: monthly invoices | vehicle status -->
+                <!-- Charts -->
                 <Grid Grid.Row="4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="2*"/>

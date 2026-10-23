@@ -80,6 +80,8 @@ public partial class CustomsCustomersViewModel : ViewModelBase
     {
         LoadPermissions(_currentUserService, CustomsPermissionRegistry.Customers);
         await LoadCustomersAsync();
+        if (CustomsCustomersNavigationBridge.TakePendingOpenAdd() && CanAdd)
+            OpenAddDialog();
     }
 
     private async Task LoadCustomersAsync()

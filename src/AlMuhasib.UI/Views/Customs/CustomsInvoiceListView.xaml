@@ -108,34 +108,126 @@
                         <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat=N0}" SortMemberPath="PaidAmount" Width="90"/>
                         <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" SortMemberPath="RemainingAmount" Width="90"/>
                         <DataGridTextColumn Header="الحالة" Binding="{Binding StatusLabel}" SortMemberPath="Status" Width="90"/>
-                        <DataGridTemplateColumn Header="الإجراءات" Width="160" MinWidth="160" CanUserSort="False">
+                        <DataGridTemplateColumn Header="الإجراءات" Width="420" MinWidth="360" CanUserSort="False">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
                             </DataGridTemplateColumn.CellStyle>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <Button Command="{Binding DataContext.EditInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                    <WrapPanel Orientation="Horizontal" Margin="4,6">
+                                        <Button Command="{Binding DataContext.ViewDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
-                                                Style="{StaticResource TableEditIconButton}"
-                                                ToolTip="فتح / تعديل"
-                                                IsEnabled="{Binding CanEdit}">
-                                            <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                                Style="{StaticResource OutlinedButton}"
+                                                md:ButtonAssist.CornerRadius="6"
+                                                Height="30" Padding="10,0" Margin="0,0,6,4"
+                                                FontSize="11" ToolTip="عرض تفاصيل الفاتورة">
+                                            <StackPanel Orientation="Horizontal">
+                                                <md:PackIcon Kind="Eye" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                <TextBlock Text="عرض التفاصيل" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.ApproveInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource OutlinedButton}"
+                                                md:ButtonAssist.CornerRadius="6"
+                                                Height="30" Padding="10,0" Margin="0,0,6,4"
+                                                FontSize="11" ToolTip="اعتماد المسودة"
+                                                IsEnabled="{Binding CanApprove}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <md:PackIcon Kind="CheckCircleOutline" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="#2E7D32"/>
+                                                <TextBlock Text="اعتماد" VerticalAlignment="Center"/>
+                                            </StackPanel>
                                         </Button>
                                         <Button Command="{Binding DataContext.ConfirmCancelCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
-                                                Style="{StaticResource TableDeleteIconButton}"
-                                                ToolTip="إلغاء"
+                                                Style="{StaticResource OutlinedButton}"
+                                                md:ButtonAssist.CornerRadius="6"
+                                                Height="30" Padding="10,0" Margin="0,0,6,4"
+                                                FontSize="11" ToolTip="إلغاء الفاتورة"
                                                 IsEnabled="{Binding CanCancel}">
-                                            <md:PackIcon Kind="Cancel" Width="18" Height="18"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <md:PackIcon Kind="Cancel" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="#C62828"/>
+                                                <TextBlock Text="إلغاء" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.PreviewInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource OutlinedButton}"
+                                                md:ButtonAssist.CornerRadius="6"
+                                                Height="30" Padding="10,0" Margin="0,0,6,4"
+                                                FontSize="11" ToolTip="معاينة PDF — نسخة عميل">
+                                            <StackPanel Orientation="Horizontal">
+                                                <md:PackIcon Kind="FileEye" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                <TextBlock Text="معاينة" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.PrintInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource OutlinedButton}"
+                                                md:ButtonAssist.CornerRadius="6"
+                                                Height="30" Padding="10,0" Margin="0,0,6,4"
+                                                FontSize="11" ToolTip="طباعة نسخة العميل عبر CustomsPrintService">
+                                            <StackPanel Orientation="Horizontal">
+                                                <md:PackIcon Kind="Printer" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                <TextBlock Text="طباعة" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.ExportInvoicePdfCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource OutlinedButton}"
+                                                md:ButtonAssist.CornerRadius="6"
+                                                Height="30" Padding="10,0" Margin="0,0,6,4"
+                                                FontSize="11" ToolTip="تصدير PDF">
+                                            <StackPanel Orientation="Horizontal">
+                                                <md:PackIcon Kind="FilePdfBox" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                <TextBlock Text="PDF" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.ViewInvoiceExpensesCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource OutlinedButton}"
+                                                md:ButtonAssist.CornerRadius="6"
+                                                Height="30" Padding="10,0" Margin="0,0,6,4"
+                                                FontSize="11" ToolTip="مصاريف الفاتورة">
+                                            <StackPanel Orientation="Horizontal">
+                                                <md:PackIcon Kind="CashMinus" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                <TextBlock Text="مصاريف الفاتورة" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.ViewInvoiceAttachmentsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource OutlinedButton}"
+                                                md:ButtonAssist.CornerRadius="6"
+                                                Height="30" Padding="10,0" Margin="0,0,6,4"
+                                                FontSize="11" ToolTip="مرفقات الفاتورة">
+                                            <StackPanel Orientation="Horizontal">
+                                                <md:PackIcon Kind="Paperclip" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                <TextBlock Text="مرفقات الفاتورة" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.ViewInvoiceVehiclesCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource OutlinedButton}"
+                                                md:ButtonAssist.CornerRadius="6"
+                                                Height="30" Padding="10,0" Margin="0,0,6,4"
+                                                FontSize="11" ToolTip="المركبات والشحنات">
+                                            <StackPanel Orientation="Horizontal">
+                                                <md:PackIcon Kind="Car" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                <TextBlock Text="المركبات" VerticalAlignment="Center"/>
+                                            </StackPanel>
                                         </Button>
                                         <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
-                                                Style="{StaticResource TableDeleteIconButton}"
-                                                ToolTip="حذف مسودة">
-                                            <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                                Style="{StaticResource OutlinedButton}"
+                                                md:ButtonAssist.CornerRadius="6"
+                                                Height="30" Padding="10,0" Margin="0,0,0,4"
+                                                FontSize="11" ToolTip="حذف مسودة فقط">
+                                            <StackPanel Orientation="Horizontal">
+                                                <md:PackIcon Kind="DeleteOutline" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="#C62828"/>
+                                                <TextBlock Text="حذف مسودة" VerticalAlignment="Center"/>
+                                            </StackPanel>
                                         </Button>
-                                    </StackPanel>
+                                    </WrapPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>

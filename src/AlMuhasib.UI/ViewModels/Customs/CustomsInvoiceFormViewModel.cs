@@ -118,6 +118,10 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     [ObservableProperty] private bool _canViewExpenses;
     [ObservableProperty] private bool _canViewProfit;
 
+    /// <summary>UI banner after navigation from list (expenses / attachments / vehicles).</summary>
+    [ObservableProperty] private string _focusSectionHint = string.Empty;
+    public bool HasFocusSectionHint => !string.IsNullOrWhiteSpace(FocusSectionHint);
+
     public CustomsInvoiceFormViewModel(
         ICustomsInvoiceService invoiceService,
         ICustomsCustomerService customerService,
@@ -147,11 +151,38 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         await LoadLookupsAsync();
 
         var pendingId = CustomsInvoiceNavigationBridge.TakePendingEditInvoiceId();
+        var pendingFocus = CustomsInvoiceNavigationBridge.TakePendingFocusSection();
         if (pendingId is int editId)
             await LoadInvoiceAsync(editId);
         else
             await ResetForNewAsync();
+
+        ApplyPendingServiceType();
+        ApplyFocusSectionHint(pendingFocus);
     }
+
+    private void ApplyPendingServiceType()
+    {
+        var pendingType = CustomsInvoiceNavigationBridge.TakePendingServiceType();
+        if (pendingType is null || _editId.HasValue)
+            return;
+        ServiceType = pendingType.Value;
+    }
+
+    private void ApplyFocusSectionHint(string? section)
+    {
+        FocusSectionHint = section switch
+        {
+            "expenses" => "انتقل إلى قسم المصاريف أدناه لعرض مصاريف هذه الفاتورة.",
+            "attachments" => "انتقل إلى قسم المرفقات أدناه لعرض مرفقات هذه الفاتورة.",
+            "vehicles" => "انتقل إلى جدول السيارات والشحنات أدناه.",
+            _ => string.Empty
+        };
+        OnPropertyChanged(nameof(HasFocusSectionHint));
+    }
+
+    partial void OnFocusSectionHintChanged(string value) =>
+        OnPropertyChanged(nameof(HasFocusSectionHint));
 
     private async Task LoadLookupsAsync()
     {
