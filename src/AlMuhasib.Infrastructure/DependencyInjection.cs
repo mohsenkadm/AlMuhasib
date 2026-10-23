@@ -1,6 +1,7 @@
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.Core.Interfaces.Services.Customs;
 using AlMuhasib.Core.Interfaces.Services.Gold;
 using AlMuhasib.Core.Interfaces.Services.Hotel;
 using AlMuhasib.Infrastructure.Data;
@@ -373,6 +374,7 @@ public static class DependencyInjection
 
         services.AddScoped<IGlobalSearchService, CustomsGlobalSearchService>();
         services.AddScoped<IAuditLogService, CustomsAuditLogService>();
+        services.AddScoped<ICustomsDashboardService, CustomsDashboardService>();
         services.AddScoped<IUserLoginLogService, NoOpUserLoginLogService>();
         services.AddScoped<ISmartAlertService, NoOpSmartAlertService>();
         services.AddScoped<IUserTaskService, NoOpUserTaskService>();
