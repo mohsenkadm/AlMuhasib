@@ -9,6 +9,7 @@ using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MaterialDesignThemes.Wpf;
 using Microsoft.Win32;
 
 namespace AlMuhasib.UI.ViewModels.Customs;
@@ -18,6 +19,7 @@ public partial class CustomsCustomerFileViewModel : ViewModelBase
     private readonly ICustomsCustomerService _customerService;
     private readonly ICustomsAttachmentService _attachmentService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly MainWindowViewModel _mainWindow;
     private int _customerId;
 
     [ObservableProperty] private bool _isLoaded;
@@ -53,11 +55,13 @@ public partial class CustomsCustomerFileViewModel : ViewModelBase
     public CustomsCustomerFileViewModel(
         ICustomsCustomerService customerService,
         ICustomsAttachmentService attachmentService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        MainWindowViewModel mainWindow)
     {
         _customerService = customerService;
         _attachmentService = attachmentService;
         _currentUserService = currentUserService;
+        _mainWindow = mainWindow;
         PageTitle = "ملف العميل";
     }
 
@@ -143,6 +147,19 @@ public partial class CustomsCustomerFileViewModel : ViewModelBase
         Attachments.Clear();
         foreach (var row in file.Attachments)
             Attachments.Add(row);
+    }
+
+    [RelayCommand]
+    private async Task OpenInvoiceAsync(CustomsCustomerInvoiceRow? row)
+    {
+        if (row is null) return;
+        CustomsInvoiceNavigationBridge.PendingEditInvoiceId = row.Id;
+        await _mainWindow.OpenTabAsync(
+            typeof(CustomsInvoiceFormViewModel),
+            $"تعديل {row.InvoiceNumber}",
+            PackIconKind.FileDocumentEdit,
+            activateIfExists: false,
+            permissionScreenName: CustomsPermissionRegistry.Invoices);
     }
 
     [RelayCommand]

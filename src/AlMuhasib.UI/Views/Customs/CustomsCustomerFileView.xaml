@@ -141,6 +141,18 @@
                                     <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat=N0}" Width="100"/>
                                     <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="100"/>
                                     <DataGridTextColumn Header="الحالة" Binding="{Binding StatusLabel}" Width="90"/>
+                                    <DataGridTemplateColumn Header="فتح" Width="70">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Command="{Binding DataContext.OpenInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource TableViewIconButton}"
+                                                        ToolTip="فتح الفاتورة">
+                                                    <materialDesign:PackIcon Kind="OpenInNew" Width="16" Height="16"/>
+                                                </Button>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </TabItem>

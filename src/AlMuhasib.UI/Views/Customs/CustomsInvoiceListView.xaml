@@ -1,0 +1,195 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Customs.CustomsInvoiceListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="تحديث" Command="{Binding RefreshCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="فاتورة جديدة" Command="{Binding OpenNewInvoiceCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="FileDocumentPlus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تصدير Excel" Command="{Binding ExportToExcelCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="طباعة الجدول" Command="{Binding PrintTableCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+    </UserControl.Resources>
+
+    <Grid Margin="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
+            <StackPanel>
+                <TextBlock Text="فواتير التخليص الكمركي" FontSize="16" FontWeight="Bold"
+                           Foreground="#0277BD" Margin="0,0,0,12"/>
+                <WrapPanel>
+                    <Button Command="{Binding OpenNewInvoiceCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Background="#0277BD"
+                            md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,8"
+                            IsEnabled="{Binding CanAdd}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="FileDocumentPlus" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="فاتورة جديدة"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding RefreshCommand}" Style="{StaticResource FlatButton}"
+                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تحديث"/>
+                        </StackPanel>
+                    </Button>
+                    <TextBox md:HintAssist.Hint="بحث برقم الفاتورة أو العميل..."
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}" MinWidth="220" Margin="0,0,8,8"/>
+                    <ComboBox ItemsSource="{Binding StatusOptions}"
+                              SelectedValue="{Binding StatusFilter}"
+                              SelectedValuePath="Value"
+                              DisplayMemberPath="Label"
+                              md:HintAssist.Hint="الحالة"
+                              Style="{StaticResource FilledComboBox}"
+                              Width="140" Margin="0,0,8,8"/>
+                    <DatePicker SelectedDate="{Binding DateFrom}"
+                                md:HintAssist.Hint="من تاريخ"
+                                Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                Width="140" Margin="0,0,8,8"/>
+                    <DatePicker SelectedDate="{Binding DateTo}"
+                                md:HintAssist.Hint="إلى تاريخ"
+                                Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                Width="140" Margin="0,0,0,8"/>
+                </WrapPanel>
+            </StackPanel>
+        </md:Card>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="قائمة الفواتير"
+                                             TargetDataGrid="{Binding ElementName=InvoicesGrid}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
+
+                <DataGrid x:Name="InvoicesGrid" Grid.Row="1"
+                          ItemsSource="{Binding Invoices}"
+                          SelectedItem="{Binding SelectedInvoice}"
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          CanUserAddRows="False" SelectionMode="Single"
+                          Style="{StaticResource ModernDataGrid}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="الرقم" Binding="{Binding InvoiceNumber}" Width="110"/>
+                        <DataGridTextColumn Header="التاريخ" Binding="{Binding InvoiceDate, StringFormat=yyyy/MM/dd}" Width="100"/>
+                        <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"/>
+                        <DataGridTextColumn Header="الخدمة" Binding="{Binding ServiceTypeLabel}" Width="110"/>
+                        <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70"/>
+                        <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" Width="100"/>
+                        <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat=N0}" Width="90"/>
+                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="90"/>
+                        <DataGridTextColumn Header="الحالة" Binding="{Binding StatusLabel}" Width="90"/>
+                        <DataGridTemplateColumn Header="الإجراءات" Width="160" MinWidth="160">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                            </DataGridTemplateColumn.CellStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <Button Command="{Binding DataContext.EditInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableEditIconButton}"
+                                                ToolTip="فتح / تعديل"
+                                                IsEnabled="{Binding CanEdit}">
+                                            <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.ConfirmCancelCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableDeleteIconButton}"
+                                                ToolTip="إلغاء"
+                                                IsEnabled="{Binding CanCancel}">
+                                            <md:PackIcon Kind="Cancel" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableDeleteIconButton}"
+                                                ToolTip="حذف مسودة">
+                                            <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <controls:PaginationBar Grid.Row="2"/>
+            </Grid>
+        </md:Card>
+
+        <md:DialogHost IsOpen="{Binding IsCancelDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="400">
+                    <StackPanel>
+                        <TextBlock Text="تأكيد الإلغاء" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
+                        <TextBlock Margin="0,0,0,12">
+                            <Run Text="إلغاء الفاتورة "/>
+                            <Run Text="{Binding InvoiceToCancel.InvoiceNumber, Mode=OneWay}" FontWeight="Bold"/>
+                            <Run Text="؟"/>
+                        </TextBlock>
+                        <TextBox Text="{Binding CancelReason, UpdateSourceTrigger=PropertyChanged}"
+                                 md:HintAssist.Hint="سبب الإلغاء (اختياري)"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,16"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="إلغاء الفاتورة" Command="{Binding ExecuteCancelCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Background="#D32F2F" Foreground="White"
+                                    md:ButtonAssist.CornerRadius="8" Padding="20,8" Margin="0,0,8,0"/>
+                            <Button Content="رجوع" Command="{Binding CloseCancelDialogCommand}" Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
+        <md:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="360">
+                    <StackPanel>
+                        <TextBlock Text="حذف المسودة" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
+                        <TextBlock Margin="0,0,0,16">
+                            <Run Text="حذف المسودة "/>
+                            <Run Text="{Binding InvoiceToDelete.InvoiceNumber, Mode=OneWay}" FontWeight="Bold"/>
+                            <Run Text="؟"/>
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="حذف" Command="{Binding ExecuteDeleteCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Background="#D32F2F" Foreground="White"
+                                    md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
+                            <Button Content="إلغاء" Command="{Binding CancelDeleteCommand}" Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+    </Grid>
+</UserControl>

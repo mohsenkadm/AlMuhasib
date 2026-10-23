@@ -1,0 +1,468 @@
+using AlMuhasib.Core.Entities.Customs;
+using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Enums.Customs;
+using AlMuhasib.Core.Interfaces.Services.Customs;
+using AlMuhasib.Core.Models.Customs;
+using AlMuhasib.Infrastructure.Data.Customs;
+using Microsoft.EntityFrameworkCore;
+
+namespace AlMuhasib.Infrastructure.Services.Customs;
+
+public sealed class CustomsInvoiceService : ICustomsInvoiceService
+{
+    private readonly IDbContextFactory<CustomsDbContext> _contextFactory;
+
+    public CustomsInvoiceService(IDbContextFactory<CustomsDbContext> contextFactory)
+    {
+        _contextFactory = contextFactory;
+    }
+
+    public async Task<(IReadOnlyList<CustomsInvoiceListItem> Items, int TotalCount)> GetPagedAsync(
+        int page,
+        int pageSize,
+        string? search = null,
+        CustomsInvoiceStatus? status = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        int? customerId = null,
+        CancellationToken cancellationToken = default)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, 200);
+
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var query = db.CustomsInvoices.AsNoTracking().AsQueryable();
+
+        if (status.HasValue)
+            query = query.Where(i => i.Status == status.Value);
+
+        if (customerId.HasValue)
+            query = query.Where(i => i.CustomerId == customerId.Value);
+
+        if (fromDate.HasValue)
+        {
+            var from = fromDate.Value.Date;
+            query = query.Where(i => i.InvoiceDate >= from);
+        }
+
+        if (toDate.HasValue)
+        {
+            var toExclusive = toDate.Value.Date.AddDays(1);
+            query = query.Where(i => i.InvoiceDate < toExclusive);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(i =>
+                i.InvoiceNumber.Contains(term) ||
+                i.Customer.Name.Contains(term) ||
+                i.Customer.Phone.Contains(term) ||
+                i.Description.Contains(term));
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var rows = await query
+            .OrderByDescending(i => i.InvoiceDate)
+            .ThenByDescending(i => i.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(i => new CustomsInvoiceListItem
+            {
+                Id = i.Id,
+                InvoiceNumber = i.InvoiceNumber,
+                InvoiceDate = i.InvoiceDate,
+                CustomerId = i.CustomerId,
+                CustomerName = i.Customer.Name,
+                ServiceType = i.ServiceType,
+                Currency = i.Currency,
+                TotalAmount = i.TotalAmount,
+                PaidAmount = i.PaidAmount,
+                RemainingAmount = i.RemainingAmount,
+                Status = i.Status,
+                VehicleCount = i.Vehicles.Count
+            })
+            .ToListAsync(cancellationToken);
+
+        foreach (var item in rows)
+        {
+            item.ServiceTypeLabel = CustomsServiceTypeDisplay.ToArabic(item.ServiceType);
+            item.CurrencyLabel = item.Currency == AccountingCurrency.USD ? "$" : "د.ع";
+            item.StatusLabel = CustomsInvoiceStatusDisplay.ToArabic(item.Status);
+        }
+
+        return (rows, totalCount);
+    }
+
+    public async Task<CustomsInvoiceDetail?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var invoice = await db.CustomsInvoices.AsNoTracking()
+            .Include(i => i.Customer)
+            .Include(i => i.Vehicles)
+            .Include(i => i.Expenses).ThenInclude(e => e.ExpenseType)
+            .FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
+        if (invoice is null)
+            return null;
+
+        var attachments = await db.CustomsAttachments.AsNoTracking()
+            .Where(a => a.OwnerType == CustomsAttachmentOwnerType.Invoice && a.OwnerId == id)
+            .OrderByDescending(a => a.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        return ToDetail(invoice, attachments);
+    }
+
+    public async Task<string> PreviewNextInvoiceNumberAsync(CancellationToken cancellationToken = default)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await CustomsInvoiceNumberHelper.GetNextAsync(db, cancellationToken);
+    }
+
+    public async Task<CustomsInvoiceDetail> CreateAsync(
+        CustomsInvoiceSaveRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateRequest(request);
+
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        await EnsureCustomerExistsAsync(db, request.CustomerId, cancellationToken);
+
+        var fxRate = await ResolveFxRateAsync(db, request.Currency, request.InvoiceDate, request.FxRate, cancellationToken);
+        var vehiclesSum = request.Vehicles.Sum(v => v.VehiclePrice);
+        var total = Math.Max(0, vehiclesSum - request.DiscountAmount);
+
+        var invoice = new CustomsInvoice
+        {
+            CustomerId = request.CustomerId,
+            InvoiceNumber = await CustomsInvoiceNumberHelper.GetNextAsync(db, cancellationToken),
+            InvoiceDate = request.InvoiceDate.Date,
+            ServiceType = request.ServiceType,
+            Currency = request.Currency,
+            FxRate = fxRate,
+            Description = request.Description?.Trim() ?? string.Empty,
+            DiscountAmount = request.DiscountAmount,
+            TotalAmount = total,
+            PaidAmount = 0,
+            RemainingAmount = total,
+            Status = CustomsInvoiceStatus.Draft,
+            InternalNotes = request.InternalNotes?.Trim() ?? string.Empty,
+            CustomerNotes = request.CustomerNotes?.Trim() ?? string.Empty,
+            CreatedBy = request.UserName
+        };
+
+        foreach (var v in request.Vehicles)
+            invoice.Vehicles.Add(CreateVehicle(v, request.Currency));
+
+        foreach (var e in request.Expenses)
+            invoice.Expenses.Add(await CreateExpenseAsync(db, e, cancellationToken));
+
+        await db.CustomsInvoices.AddAsync(invoice, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+
+        return (await GetByIdAsync(invoice.Id, cancellationToken))!;
+    }
+
+    public async Task<CustomsInvoiceDetail> UpdateAsync(
+        int id,
+        CustomsInvoiceSaveRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ValidateRequest(request);
+
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var invoice = await db.CustomsInvoices
+            .Include(i => i.Vehicles)
+            .Include(i => i.Expenses)
+            .FirstOrDefaultAsync(i => i.Id == id, cancellationToken)
+            ?? throw new InvalidOperationException("الفاتورة غير موجودة");
+
+        if (invoice.Status == CustomsInvoiceStatus.Cancelled)
+            throw new InvalidOperationException("لا يمكن تعديل فاتورة ملغاة");
+
+        await EnsureCustomerExistsAsync(db, request.CustomerId, cancellationToken);
+
+        var fxRate = await ResolveFxRateAsync(db, request.Currency, request.InvoiceDate, request.FxRate, cancellationToken);
+        var vehiclesSum = request.Vehicles.Sum(v => v.VehiclePrice);
+        var total = Math.Max(0, vehiclesSum - request.DiscountAmount);
+
+        if (invoice.Status == CustomsInvoiceStatus.Approved && total < invoice.PaidAmount)
+            throw new InvalidOperationException("الإجمالي الجديد أقل من المدفوع — لا يمكن الحفظ");
+
+        invoice.CustomerId = request.CustomerId;
+        invoice.InvoiceDate = request.InvoiceDate.Date;
+        invoice.ServiceType = request.ServiceType;
+        invoice.Currency = request.Currency;
+        invoice.FxRate = fxRate;
+        invoice.Description = request.Description?.Trim() ?? string.Empty;
+        invoice.DiscountAmount = request.DiscountAmount;
+        invoice.TotalAmount = total;
+        invoice.RemainingAmount = Math.Max(0, total - invoice.PaidAmount);
+        invoice.InternalNotes = request.InternalNotes?.Trim() ?? string.Empty;
+        invoice.CustomerNotes = request.CustomerNotes?.Trim() ?? string.Empty;
+        invoice.UpdatedBy = request.UserName;
+        invoice.UpdatedAt = DateTime.UtcNow;
+
+        var user = request.UserName ?? "System";
+        foreach (var old in invoice.Vehicles.ToList())
+            old.MarkSoftDeleted(user);
+        foreach (var old in invoice.Expenses.ToList())
+            old.MarkSoftDeleted(user);
+
+        foreach (var v in request.Vehicles)
+            invoice.Vehicles.Add(CreateVehicle(v, request.Currency));
+
+        foreach (var e in request.Expenses)
+            invoice.Expenses.Add(await CreateExpenseAsync(db, e, cancellationToken));
+
+        await db.SaveChangesAsync(cancellationToken);
+        return (await GetByIdAsync(invoice.Id, cancellationToken))!;
+    }
+
+    public async Task ApproveAsync(int id, string userName, CancellationToken cancellationToken = default)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var invoice = await db.CustomsInvoices
+            .Include(i => i.Vehicles)
+            .FirstOrDefaultAsync(i => i.Id == id, cancellationToken)
+            ?? throw new InvalidOperationException("الفاتورة غير موجودة");
+
+        if (invoice.Status != CustomsInvoiceStatus.Draft)
+            throw new InvalidOperationException("يمكن اعتماد المسودات فقط");
+
+        if (invoice.CustomerId <= 0)
+            throw new InvalidOperationException("العميل مطلوب للاعتماد");
+
+        if (string.IsNullOrWhiteSpace(invoice.InvoiceNumber))
+            throw new InvalidOperationException("رقم الفاتورة مطلوب");
+
+        if (invoice.Vehicles.Count == 0)
+            throw new InvalidOperationException("أضف سيارة واحدة على الأقل قبل الاعتماد");
+
+        invoice.Status = CustomsInvoiceStatus.Approved;
+        invoice.UpdatedBy = userName;
+        invoice.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task CancelAsync(
+        int id,
+        string userName,
+        string? reason = null,
+        CancellationToken cancellationToken = default)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var invoice = await db.CustomsInvoices.FirstOrDefaultAsync(i => i.Id == id, cancellationToken)
+            ?? throw new InvalidOperationException("الفاتورة غير موجودة");
+
+        if (invoice.Status == CustomsInvoiceStatus.Cancelled)
+            throw new InvalidOperationException("الفاتورة ملغاة مسبقاً");
+
+        if (invoice.PaidAmount > 0)
+            throw new InvalidOperationException("لا يمكن إلغاء فاتورة عليها مبالغ مدفوعة");
+
+        invoice.Status = CustomsInvoiceStatus.Cancelled;
+        if (!string.IsNullOrWhiteSpace(reason))
+        {
+            var note = reason.Trim();
+            invoice.InternalNotes = string.IsNullOrWhiteSpace(invoice.InternalNotes)
+                ? $"إلغاء: {note}"
+                : $"{invoice.InternalNotes}\nإلغاء: {note}";
+        }
+
+        invoice.UpdatedBy = userName;
+        invoice.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task SoftDeleteAsync(int id, string deletedBy, CancellationToken cancellationToken = default)
+    {
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var invoice = await db.CustomsInvoices
+            .Include(i => i.Vehicles)
+            .Include(i => i.Expenses)
+            .FirstOrDefaultAsync(i => i.Id == id, cancellationToken)
+            ?? throw new InvalidOperationException("الفاتورة غير موجودة");
+
+        if (invoice.Status != CustomsInvoiceStatus.Draft)
+            throw new InvalidOperationException("يمكن حذف المسودات فقط — استخدم الإلغاء للفواتير المعتمدة");
+
+        if (invoice.PaidAmount > 0)
+            throw new InvalidOperationException("لا يمكن حذف فاتورة عليها مبالغ مدفوعة");
+
+        foreach (var v in invoice.Vehicles)
+            v.MarkSoftDeleted(deletedBy);
+        foreach (var e in invoice.Expenses)
+            e.MarkSoftDeleted(deletedBy);
+
+        invoice.MarkSoftDeleted(deletedBy);
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static void ValidateRequest(CustomsInvoiceSaveRequest request)
+    {
+        if (request.CustomerId <= 0)
+            throw new InvalidOperationException("اختر العميل");
+
+        if (request.DiscountAmount < 0)
+            throw new InvalidOperationException("الخصم لا يمكن أن يكون سالباً");
+
+        foreach (var v in request.Vehicles)
+        {
+            if (v.VehiclePrice < 0)
+                throw new InvalidOperationException("سعر السيارة لا يمكن أن يكون سالباً");
+        }
+
+        foreach (var e in request.Expenses)
+        {
+            if (e.ExpenseTypeId <= 0)
+                throw new InvalidOperationException("نوع المصروف مطلوب");
+            if (e.Amount < 0)
+                throw new InvalidOperationException("مبلغ المصروف لا يمكن أن يكون سالباً");
+        }
+    }
+
+    private static async Task EnsureCustomerExistsAsync(
+        CustomsDbContext db,
+        int customerId,
+        CancellationToken cancellationToken)
+    {
+        var exists = await db.CustomsCustomers.AnyAsync(c => c.Id == customerId && c.IsActive, cancellationToken);
+        if (!exists)
+            throw new InvalidOperationException("العميل غير موجود أو غير نشط");
+    }
+
+    private static async Task<decimal> ResolveFxRateAsync(
+        CustomsDbContext db,
+        AccountingCurrency currency,
+        DateTime invoiceDate,
+        decimal? requested,
+        CancellationToken cancellationToken)
+    {
+        if (currency == AccountingCurrency.IQD)
+            return 1m;
+
+        if (requested is > 0)
+            return requested.Value;
+
+        var date = invoiceDate.Date;
+        var rate = await db.CustomsFxRates.AsNoTracking()
+            .Where(r => r.RateDate <= date)
+            .OrderByDescending(r => r.RateDate)
+            .Select(r => (decimal?)r.UsdToIqd)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (rate is null or <= 0)
+            throw new InvalidOperationException("لا يوجد سعر صرف محفوظ لتاريخ الفاتورة — أدخل FxRate يدوياً");
+
+        return rate.Value;
+    }
+
+    private static CustomsVehicle CreateVehicle(CustomsInvoiceVehicleDraft draft, AccountingCurrency currency) =>
+        new()
+        {
+            SerialNumber = draft.SerialNumber?.Trim() ?? string.Empty,
+            IraqiPlate = draft.IraqiPlate?.Trim() ?? string.Empty,
+            IraqiDriver = draft.IraqiDriver?.Trim() ?? string.Empty,
+            SyrianPlate = draft.SyrianPlate?.Trim() ?? string.Empty,
+            SyrianDriver = draft.SyrianDriver?.Trim() ?? string.Empty,
+            CargoType = draft.CargoType?.Trim() ?? string.Empty,
+            LoadingDate = draft.LoadingDate,
+            ExitDate = draft.ExitDate,
+            WarehouseArrivalDate = draft.WarehouseArrivalDate,
+            UnloadingDate = draft.UnloadingDate,
+            VehiclePrice = draft.VehiclePrice,
+            Currency = currency,
+            Status = draft.Status,
+            Notes = draft.Notes?.Trim() ?? string.Empty
+        };
+
+    private static async Task<CustomsExpense> CreateExpenseAsync(
+        CustomsDbContext db,
+        CustomsInvoiceExpenseDraft draft,
+        CancellationToken cancellationToken)
+    {
+        var typeExists = await db.CustomsExpenseTypes.AnyAsync(t => t.Id == draft.ExpenseTypeId, cancellationToken);
+        if (!typeExists)
+            throw new InvalidOperationException("نوع المصروف غير موجود");
+
+        var currency = draft.Currency;
+        var fx = currency == AccountingCurrency.IQD ? 1m : (draft.FxRate > 0 ? draft.FxRate : 1m);
+
+        return new CustomsExpense
+        {
+            ExpenseTypeId = draft.ExpenseTypeId,
+            Description = draft.Description?.Trim() ?? string.Empty,
+            Amount = draft.Amount,
+            Currency = currency,
+            FxRate = fx,
+            ExpenseDate = draft.ExpenseDate.Date,
+            Recipient = draft.Recipient?.Trim() ?? string.Empty
+        };
+    }
+
+    private static CustomsInvoiceDetail ToDetail(CustomsInvoice i, List<CustomsAttachment> attachments)
+    {
+        var vehiclesSum = i.Vehicles.Sum(v => v.VehiclePrice);
+        return new CustomsInvoiceDetail
+        {
+            Id = i.Id,
+            InvoiceNumber = i.InvoiceNumber,
+            InvoiceDate = i.InvoiceDate,
+            CustomerId = i.CustomerId,
+            CustomerName = i.Customer?.Name ?? string.Empty,
+            ServiceType = i.ServiceType,
+            ServiceTypeLabel = CustomsServiceTypeDisplay.ToArabic(i.ServiceType),
+            Currency = i.Currency,
+            CurrencyLabel = i.Currency == AccountingCurrency.USD ? "$" : "د.ع",
+            FxRate = i.FxRate,
+            Description = i.Description,
+            DiscountAmount = i.DiscountAmount,
+            VehiclesSum = vehiclesSum,
+            TotalAmount = i.TotalAmount,
+            PaidAmount = i.PaidAmount,
+            RemainingAmount = i.RemainingAmount,
+            Status = i.Status,
+            StatusLabel = CustomsInvoiceStatusDisplay.ToArabic(i.Status),
+            InternalNotes = i.InternalNotes,
+            CustomerNotes = i.CustomerNotes,
+            Vehicles = i.Vehicles.Select(v => new CustomsInvoiceVehicleDraft
+            {
+                Id = v.Id,
+                SerialNumber = v.SerialNumber,
+                IraqiPlate = v.IraqiPlate,
+                IraqiDriver = v.IraqiDriver,
+                SyrianPlate = v.SyrianPlate,
+                SyrianDriver = v.SyrianDriver,
+                CargoType = v.CargoType,
+                LoadingDate = v.LoadingDate,
+                ExitDate = v.ExitDate,
+                WarehouseArrivalDate = v.WarehouseArrivalDate,
+                UnloadingDate = v.UnloadingDate,
+                VehiclePrice = v.VehiclePrice,
+                Status = v.Status,
+                Notes = v.Notes
+            }).ToList(),
+            Expenses = i.Expenses.Select(e => new CustomsInvoiceExpenseDraft
+            {
+                Id = e.Id,
+                ExpenseTypeId = e.ExpenseTypeId,
+                ExpenseTypeName = e.ExpenseType?.Name ?? string.Empty,
+                Description = e.Description,
+                Amount = e.Amount,
+                Currency = e.Currency,
+                FxRate = e.FxRate,
+                ExpenseDate = e.ExpenseDate,
+                Recipient = e.Recipient
+            }).ToList(),
+            Attachments = attachments.Select(a => new CustomsAttachmentItem
+            {
+                Id = a.Id,
+                FileName = a.FileName,
+                FilePath = a.FilePath,
+                Description = a.Description,
+                CreatedAt = a.CreatedAt
+            }).ToList()
+        };
+    }
+}
