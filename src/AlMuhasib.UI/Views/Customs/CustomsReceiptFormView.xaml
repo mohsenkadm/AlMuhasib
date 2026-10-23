@@ -169,42 +169,15 @@
                 </md:Card>
 
                 <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12">
-                    <StackPanel>
-                        <DockPanel Margin="0,0,0,10">
-                            <TextBlock Text="المرفقات" FontWeight="Bold" FontSize="15" VerticalAlignment="Center"/>
-                            <Button DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                    Command="{Binding AddAttachmentCommand}"
-                                    Style="{StaticResource FlatButton}" Content="+ إضافة مرفق"
-                                    IsEnabled="{Binding HasSavedReceipt}"/>
-                        </DockPanel>
-                        <TextBlock Text="احفظ الوصل أولاً لتفعيل المرفقات" FontSize="12"
-                                   Foreground="{DynamicResource HintForegroundBrush}" Margin="0,0,0,8"
-                                   Visibility="{Binding HasSavedReceipt, Converter={StaticResource InvBoolToVis}}"/>
-                        <DataGrid ItemsSource="{Binding Attachments}" AutoGenerateColumns="False"
-                                  IsReadOnly="True" CanUserAddRows="False"
-                                  Style="{StaticResource ModernDataGrid}" MaxHeight="180">
-                            <DataGrid.Columns>
-                                <DataGridTextColumn Header="اسم الملف" Binding="{Binding FileName}" Width="*"/>
-                                <DataGridTextColumn Header="التاريخ" Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd HH:mm}" Width="140"/>
-                                <DataGridTemplateColumn Header="إجراءات" Width="100">
-                                    <DataGridTemplateColumn.CellTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal">
-                                                <Button Command="{Binding DataContext.OpenAttachmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                        CommandParameter="{Binding}" Style="{StaticResource TableViewIconButton}">
-                                                    <md:PackIcon Kind="Eye" Width="16" Height="16"/>
-                                                </Button>
-                                                <Button Command="{Binding DataContext.DeleteAttachmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                        CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}">
-                                                    <md:PackIcon Kind="DeleteOutline" Width="16" Height="16"/>
-                                                </Button>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </DataGridTemplateColumn.CellTemplate>
-                                </DataGridTemplateColumn>
-                            </DataGrid.Columns>
-                        </DataGrid>
-                    </StackPanel>
+                    <controls:CustomsAttachmentsPanel
+                        Title="المرفقات"
+                        SaveFirstHint="احفظ الوصل أولاً لتفعيل المرفقات"
+                        Items="{Binding Attachments}"
+                        HasSavedOwner="{Binding HasSavedReceipt}"
+                        CanDelete="{Binding CanDelete}"
+                        AddCommand="{Binding AddAttachmentCommand}"
+                        OpenCommand="{Binding OpenAttachmentCommand}"
+                        DeleteCommand="{Binding DeleteAttachmentCommand}"/>
                 </md:Card>
             </StackPanel>
         </ScrollViewer>

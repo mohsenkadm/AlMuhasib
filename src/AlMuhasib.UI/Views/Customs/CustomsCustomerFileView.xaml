@@ -224,48 +224,17 @@
                         <!-- Attachments -->
                         <TabItem Header="المرفقات">
                             <StackPanel Margin="0,12,0,0">
-                                <Button Command="{Binding AddAttachmentCommand}"
-                                        Style="{StaticResource MaterialDesignRaisedButton}"
-                                        Background="#0277BD"
-                                        materialDesign:ButtonAssist.CornerRadius="8"
-                                        Padding="16,8" Margin="0,0,0,12"
-                                        HorizontalAlignment="Left"
-                                        IsEnabled="{Binding CanEdit}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="FileDocumentPlusOutline" Margin="0,0,6,0"/>
-                                        <TextBlock Text="إضافة مرفق"/>
-                                    </StackPanel>
-                                </Button>
-                                <DataGrid ItemsSource="{Binding Attachments}"
-                                          Style="{StaticResource ModernDataGrid}" AutoGenerateColumns="False"
-                                          IsReadOnly="True" CanUserAddRows="False" MaxHeight="360">
-                                    <DataGrid.Columns>
-                                        <DataGridTextColumn Header="اسم الملف" Binding="{Binding FileName}" Width="*"/>
-                                        <DataGridTextColumn Header="التاريخ" Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd HH:mm}" Width="140"/>
-                                        <DataGridTemplateColumn Header="إجراءات" Width="110" MinWidth="110">
-                                            <DataGridTemplateColumn.CellStyle>
-                                                <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
-                                            </DataGridTemplateColumn.CellStyle>
-                                            <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                        <Button Command="{Binding DataContext.OpenAttachmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                                CommandParameter="{Binding}"
-                                                                Style="{StaticResource TableViewIconButton}" ToolTip="فتح">
-                                                            <materialDesign:PackIcon Kind="Eye" Width="18" Height="18"/>
-                                                        </Button>
-                                                        <Button Command="{Binding DataContext.DeleteAttachmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                                CommandParameter="{Binding}"
-                                                                Style="{StaticResource TableDeleteIconButton}"
-                                                                IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}">
-                                                            <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
-                                                        </Button>
-                                                    </StackPanel>
-                                                </DataTemplate>
-                                            </DataGridTemplateColumn.CellTemplate>
-                                        </DataGridTemplateColumn>
-                                    </DataGrid.Columns>
-                                </DataGrid>
+                                <controls:CustomsAttachmentsPanel
+                                    Title="المرفقات"
+                                    SaveFirstHint=""
+                                    MaxGridHeight="360"
+                                    Items="{Binding Attachments}"
+                                    HasSavedOwner="{Binding IsLoaded}"
+                                    CanManage="{Binding CanEdit}"
+                                    CanDelete="{Binding CanDelete}"
+                                    AddCommand="{Binding AddAttachmentCommand}"
+                                    OpenCommand="{Binding OpenAttachmentCommand}"
+                                    DeleteCommand="{Binding DeleteAttachmentCommand}"/>
                             </StackPanel>
                         </TabItem>
 
