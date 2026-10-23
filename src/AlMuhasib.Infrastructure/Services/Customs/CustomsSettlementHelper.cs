@@ -52,9 +52,10 @@ internal static class CustomsSettlementHelper
         var customer = await db.CustomsCustomers.FirstOrDefaultAsync(c => c.Id == customerId, cancellationToken);
         if (customer is null) return;
 
-        var approved = await db.CustomsInvoices.AsNoTracking()
+        // Use tracked RemainingAmount when settlement just updated invoices in this context
+        // (AsNoTracking would read the store before SaveChanges and leave balances stale).
+        var approved = await db.CustomsInvoices
             .Where(i => i.CustomerId == customerId && i.Status == CustomsInvoiceStatus.Approved)
-            .Select(i => new { i.Currency, i.RemainingAmount })
             .ToListAsync(cancellationToken);
 
         customer.BalanceIqd = approved
