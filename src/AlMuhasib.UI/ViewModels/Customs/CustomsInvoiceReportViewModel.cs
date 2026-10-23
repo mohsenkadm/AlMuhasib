@@ -58,9 +58,10 @@ public partial class CustomsInvoiceReportViewModel : CustomsReportViewModelBase
 
     public CustomsInvoiceReportViewModel(
         ICustomsReportService reportService,
+        ICustomsPrintService printService,
         IExportService exportService,
         ICurrentUserService currentUserService)
-        : base(reportService, exportService, currentUserService)
+        : base(reportService, printService, exportService, currentUserService)
     {
         PageTitle = "تقرير الفواتير — التخليص";
         SelectedStatus = StatusOptions[0];

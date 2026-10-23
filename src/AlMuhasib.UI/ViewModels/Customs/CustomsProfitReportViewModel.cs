@@ -38,9 +38,10 @@ public partial class CustomsProfitReportViewModel : CustomsReportViewModelBase
 
     public CustomsProfitReportViewModel(
         ICustomsReportService reportService,
+        ICustomsPrintService printService,
         IExportService exportService,
         ICurrentUserService currentUserService)
-        : base(reportService, exportService, currentUserService)
+        : base(reportService, printService, exportService, currentUserService)
     {
         PageTitle = "تقرير الربح — التخليص";
         SelectedCurrency = CurrencyOptions[0];

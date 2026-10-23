@@ -29,9 +29,10 @@ public partial class CustomsDailyReportViewModel : CustomsReportViewModelBase
 
     public CustomsDailyReportViewModel(
         ICustomsReportService reportService,
+        ICustomsPrintService printService,
         IExportService exportService,
         ICurrentUserService currentUserService)
-        : base(reportService, exportService, currentUserService)
+        : base(reportService, printService, exportService, currentUserService)
     {
         PageTitle = "التقرير اليومي — التخليص";
         DateFrom = DateTo = DateTime.Today;

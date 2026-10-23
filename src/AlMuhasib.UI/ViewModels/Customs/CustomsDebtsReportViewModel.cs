@@ -36,9 +36,10 @@ public partial class CustomsDebtsReportViewModel : CustomsReportViewModelBase
 
     public CustomsDebtsReportViewModel(
         ICustomsReportService reportService,
+        ICustomsPrintService printService,
         IExportService exportService,
         ICurrentUserService currentUserService)
-        : base(reportService, exportService, currentUserService)
+        : base(reportService, printService, exportService, currentUserService)
     {
         PageTitle = "تقرير الديون — التخليص";
         SelectedCurrency = CurrencyOptions[0];

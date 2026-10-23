@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Customs;
@@ -29,9 +30,10 @@ public partial class CustomsMonthlyReportViewModel : CustomsReportViewModelBase
 
     public CustomsMonthlyReportViewModel(
         ICustomsReportService reportService,
+        ICustomsPrintService printService,
         IExportService exportService,
         ICurrentUserService currentUserService)
-        : base(reportService, exportService, currentUserService)
+        : base(reportService, printService, exportService, currentUserService)
     {
         PageTitle = "التقرير الشهري — التخليص";
         var today = DateTime.Today;
@@ -115,13 +117,16 @@ public partial class CustomsMonthlyReportViewModel : CustomsReportViewModelBase
     [RelayCommand] private void Print()
     {
         var (c, r, s) = BuildExport();
-        PrintTable("التقرير الشهري — التخليص", c, r, s);
+        // Staff report — full internal totals including profit are intentional here.
+        PrintStaffReport(CustomsPrintDocumentKind.MonthlyReport, "التقرير الشهري — التخليص", c, r, s);
     }
 
     [RelayCommand] private void ExportToPdf()
     {
         var (c, r, s) = BuildExport();
-        ExportPdfDocument("التقرير الشهري — التخليص", "الفترة المحددة", c, r, s,
+        ExportStaffReportPdf(
+            CustomsPrintDocumentKind.MonthlyReport,
+            "التقرير الشهري — التخليص", "الفترة المحددة", c, r, s,
             $"تقرير_شهري_تخليص_{DateTime.Now:yyyyMMdd}.pdf");
     }
 }
