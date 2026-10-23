@@ -20,6 +20,7 @@ public sealed class CustomsInvoiceListItem
     public CustomsInvoiceStatus Status { get; set; }
     public string StatusLabel { get; set; } = string.Empty;
     public int VehicleCount { get; set; }
+    public bool CanApprove => Status == CustomsInvoiceStatus.Draft;
     public bool CanCancel => Status != CustomsInvoiceStatus.Cancelled && PaidAmount <= 0;
     public bool CanEdit => Status != CustomsInvoiceStatus.Cancelled;
 }

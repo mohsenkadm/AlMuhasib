@@ -33,33 +33,59 @@
                     </Border>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
-                    <Button Content="حفظ مسودة" Command="{Binding SaveCommand}"
+                    <Button Command="{Binding SaveCommand}"
                             Style="{StaticResource MaterialDesignRaisedButton}"
-                            md:ButtonAssist.CornerRadius="8" Padding="18,8" Margin="0,0,8,0"
-                            IsEnabled="{Binding CanSave}"/>
-                    <Button Content="حفظ واعتماد" Command="{Binding SaveAndApproveCommand}"
+                            md:ButtonAssist.CornerRadius="8" Padding="22,10" Margin="0,0,10,0"
+                            MinWidth="140" Height="40"
+                            IsEnabled="{Binding CanSave}"
+                            ToolTip="حفظ الفاتورة كمسودة">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="ContentSave" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="حفظ الفاتورة" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding SaveAndApproveCommand}"
                             Style="{StaticResource MaterialDesignRaisedButton}" Background="#2E7D32"
-                            md:ButtonAssist.CornerRadius="8" Padding="18,8" Margin="0,0,8,0"
-                            IsEnabled="{Binding CanSave}"/>
+                            md:ButtonAssist.CornerRadius="8" Padding="22,10" Margin="0,0,10,0"
+                            MinWidth="130" Height="40"
+                            IsEnabled="{Binding CanSave}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="CheckBold" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="حفظ واعتماد" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
                     <Button Content="اعتماد" Command="{Binding ApproveCommand}"
                             Style="{StaticResource OutlinedButton}"
-                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0"
+                            md:ButtonAssist.CornerRadius="8" Padding="18,10" Margin="0,0,10,0" Height="40"
                             Visibility="{Binding CanApprove, Converter={StaticResource BoolToVis}}"/>
                     <Button Content="إلغاء الفاتورة" Command="{Binding CancelInvoiceCommand}"
                             Style="{StaticResource OutlinedButton}"
-                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0"
+                            md:ButtonAssist.CornerRadius="8" Padding="18,10" Margin="0,0,10,0" Height="40"
                             Visibility="{Binding CanCancelInvoice, Converter={StaticResource BoolToVis}}"/>
+                    <Button Content="معاينة" Command="{Binding ExportPdfCommand}"
+                            Style="{StaticResource OutlinedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="16,10" Margin="0,0,8,0" Height="40"
+                            IsEnabled="{Binding CanExportDocument}"
+                            ToolTip="معاينة PDF — نسخة عميل"/>
                     <Button Content="طباعة" Command="{Binding PrintCommand}"
                             Style="{StaticResource OutlinedButton}"
-                            md:ButtonAssist.CornerRadius="8" Padding="16,8" Margin="0,0,8,0"
+                            md:ButtonAssist.CornerRadius="8" Padding="16,10" Margin="0,0,8,0" Height="40"
                             IsEnabled="{Binding CanPrintDocument}"
                             ToolTip="نسخة عميل — بدون مصاريف أو ربح داخلي"/>
                     <Button Content="PDF" Command="{Binding ExportPdfCommand}"
                             Style="{StaticResource OutlinedButton}"
-                            md:ButtonAssist.CornerRadius="8" Padding="16,8" Margin="0,0,8,0"
+                            md:ButtonAssist.CornerRadius="8" Padding="16,10" Margin="0,0,10,0" Height="40"
                             IsEnabled="{Binding CanExportDocument}"
                             ToolTip="تصدير PDF — نسخة عميل"/>
-                    <Button Content="إغلاق" Command="{Binding CloseCommand}" Style="{StaticResource FlatButton}"/>
+                    <Button Command="{Binding CloseCommand}"
+                            Style="{StaticResource OutlinedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="20,10" Height="40"
+                            ToolTip="إغلاق بدون حفظ إضافي">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Close" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="إلغاء" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
             </DockPanel>
         </md:Card>
@@ -68,6 +94,19 @@
             <StackPanel>
                 <TextBlock Text="{Binding FormError}" Foreground="#D32F2F" Margin="0,0,0,8"
                            Visibility="{Binding FormError, Converter={StaticResource NullToCollapsedConverter}}"/>
+
+                <Border Background="{DynamicResource DashboardKpiBlueLightBrush}"
+                        CornerRadius="10" Padding="14,10" Margin="0,0,0,12"
+                        Visibility="{Binding HasFocusSectionHint, Converter={StaticResource BoolToVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Kind="InformationOutline" Width="18" Height="18"
+                                     Foreground="{DynamicResource PrimaryHueMidBrush}"
+                                     VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="{Binding FocusSectionHint}" FontSize="13"
+                                   Foreground="{DynamicResource PrimaryHueMidBrush}"
+                                   TextWrapping="Wrap" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
 
                 <!-- Header fields -->
                 <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12">
@@ -163,9 +202,12 @@
                                   IsReadOnly="{Binding IsVehiclesReadOnly}"
                                   SelectionMode="Single"
                                   SelectionUnit="Cell"
-                                  MaxHeight="320"
-                                  MinHeight="160"
+                                  MaxHeight="420"
+                                  MinHeight="200"
+                                  RowHeight="64"
+                                  FontSize="13"
                                   Style="{StaticResource InvoiceItemsDataGrid}"
+                                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
                                   behaviors:InvoiceDataGridBehavior.Enable="True"
                                   behaviors:InvoiceDataGridBehavior.AddRowCommand="{Binding AddVehicleRowCommand}"
                                   behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
@@ -175,33 +217,33 @@
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="تسلسل"
                                                     Binding="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="80"
+                                                    Width="90" MinWidth="80"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SerialNumber"/>
                                 <DataGridTextColumn Header="لوحة عراقية"
                                                     Binding="{Binding IraqiPlate, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="100"
+                                                    Width="120" MinWidth="100"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="IraqiPlate"/>
                                 <DataGridTextColumn Header="سائق عراقي"
                                                     Binding="{Binding IraqiDriver, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="100"
+                                                    Width="120" MinWidth="100"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="IraqiDriver"/>
                                 <DataGridTextColumn Header="لوحة سورية"
                                                     Binding="{Binding SyrianPlate, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="100"
+                                                    Width="120" MinWidth="100"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SyrianPlate"/>
                                 <DataGridTextColumn Header="سائق سوري"
                                                     Binding="{Binding SyrianDriver, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="100"
+                                                    Width="120" MinWidth="100"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SyrianDriver"/>
                                 <DataGridTextColumn Header="الحمولة"
                                                     Binding="{Binding CargoType, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="*"
+                                                    Width="*" MinWidth="140"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CargoType"/>
                                 <DataGridTextColumn Header="السعر"
                                                     Binding="{Binding VehiclePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
-                                                    Width="100"
+                                                    Width="110" MinWidth="90"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="VehiclePrice"/>
-                                <DataGridTemplateColumn Header="الحالة" Width="120"
+                                <DataGridTemplateColumn Header="الحالة" Width="130" MinWidth="120"
                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StatusLabel">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -210,33 +252,50 @@
                                                       SelectedValuePath="Value"
                                                       DisplayMemberPath="Label"
                                                       IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                      Style="{StaticResource FilledComboBox}"/>
+                                                      Style="{StaticResource FilledComboBox}"
+                                                      Margin="4,6"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="إجراءات" Width="120"
+                                <DataGridTemplateColumn Header="إجراءات" Width="260" MinWidth="240"
                                                         behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="4,4">
                                                 <Button Command="{Binding DataContext.OpenVehicleDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                         CommandParameter="{Binding}"
-                                                        Style="{StaticResource TableViewIconButton}"
-                                                        ToolTip="تفاصيل ومرفقات السيارة">
-                                                    <md:PackIcon Kind="Eye" Width="16" Height="16"/>
+                                                        Style="{StaticResource OutlinedButton}"
+                                                        md:ButtonAssist.CornerRadius="6"
+                                                        Height="30" Padding="10,0" Margin="0,0,6,0"
+                                                        FontSize="11" ToolTip="تفاصيل ومرفقات السيارة">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <md:PackIcon Kind="Eye" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                        <TextBlock Text="تفاصيل" VerticalAlignment="Center"/>
+                                                    </StackPanel>
                                                 </Button>
                                                 <Button Command="{Binding DataContext.OpenVehicleDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                         CommandParameter="{Binding}"
-                                                        Style="{StaticResource TableAttachIconButton}"
-                                                        ToolTip="مرفقات السيارة">
-                                                    <md:PackIcon Kind="Attachment" Width="16" Height="16"/>
+                                                        Style="{StaticResource OutlinedButton}"
+                                                        md:ButtonAssist.CornerRadius="6"
+                                                        Height="30" Padding="10,0" Margin="0,0,6,0"
+                                                        FontSize="11" ToolTip="مرفقات السيارة">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <md:PackIcon Kind="Attachment" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                        <TextBlock Text="مرفقات" VerticalAlignment="Center"/>
+                                                    </StackPanel>
                                                 </Button>
                                                 <Button Command="{Binding DataContext.RemoveVehicleRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                         CommandParameter="{Binding}"
-                                                        Style="{StaticResource TableDeleteIconButton}"
+                                                        Style="{StaticResource OutlinedButton}"
+                                                        md:ButtonAssist.CornerRadius="6"
+                                                        Height="30" Padding="10,0"
+                                                        FontSize="11"
                                                         IsEnabled="{Binding DataContext.CanDeleteVehicle, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                        ToolTip="حذف">
-                                                    <md:PackIcon Kind="DeleteOutline" Width="16" Height="16"/>
+                                                        ToolTip="حذف الصف">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <md:PackIcon Kind="DeleteOutline" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="#C62828"/>
+                                                        <TextBlock Text="حذف" VerticalAlignment="Center"/>
+                                                    </StackPanel>
                                                 </Button>
                                             </StackPanel>
                                         </DataTemplate>
@@ -422,16 +481,38 @@
             </StackPanel>
         </ScrollViewer>
 
-        <Border Grid.Row="2" Background="{DynamicResource CardBrush}" Padding="12,8" Margin="0,8,0,0"
+        <Border Grid.Row="2" Background="{DynamicResource CardBrush}" Padding="16,12" Margin="0,8,0,0"
                 BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" CornerRadius="8">
-            <TextBlock FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}">
-                <Run Text="رقم:"/>
-                <Run Text="{Binding InvoiceNumber, Mode=OneWay}" FontWeight="Bold"/>
-                <Run Text="  |  إجمالي:"/>
-                <Run Text="{Binding TotalAmount, Mode=OneWay, StringFormat=N0}" FontWeight="Bold"/>
-                <Run Text="  |  متبقي:"/>
-                <Run Text="{Binding RemainingAmount, Mode=OneWay, StringFormat=N0}" FontWeight="Bold"/>
-            </TextBlock>
+            <DockPanel>
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
+                    <Button Command="{Binding SaveCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="24,10" Margin="0,0,10,0"
+                            MinWidth="150" Height="42"
+                            IsEnabled="{Binding CanSave}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="ContentSave" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="حفظ الفاتورة" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding CloseCommand}"
+                            Style="{StaticResource OutlinedButton}"
+                            md:ButtonAssist.CornerRadius="8" Padding="22,10" Height="42" MinWidth="110">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Close" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="إلغاء" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+                <TextBlock FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center">
+                    <Run Text="رقم:"/>
+                    <Run Text="{Binding InvoiceNumber, Mode=OneWay}" FontWeight="Bold"/>
+                    <Run Text="  |  إجمالي:"/>
+                    <Run Text="{Binding TotalAmount, Mode=OneWay, StringFormat=N0}" FontWeight="Bold"/>
+                    <Run Text="  |  متبقي:"/>
+                    <Run Text="{Binding RemainingAmount, Mode=OneWay, StringFormat=N0}" FontWeight="Bold"/>
+                </TextBlock>
+            </DockPanel>
         </Border>
 
         <!-- Vehicle detail dialog -->
@@ -550,20 +631,31 @@
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
                                       behaviors:ScrollViewerMouseWheel.IsEnabled="True">
                             <StackPanel Margin="24,20,24,8">
-                                <DockPanel Margin="0,0,0,12">
-                                    <ComboBox ItemsSource="{Binding ExpenseTypes}"
-                                              SelectedItem="{Binding SelectedExpenseType}"
-                                              DisplayMemberPath="Name"
-                                              md:HintAssist.Hint="نوع المصروف *"
-                                              Style="{StaticResource FilledComboBox}"
-                                              DockPanel.Dock="Left" Width="260" Margin="0,0,8,0"/>
+                                <TextBlock Text="نوع المصروف" FontWeight="SemiBold" FontSize="13"
+                                           Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                <ComboBox ItemsSource="{Binding ExpenseTypes}"
+                                          SelectedItem="{Binding SelectedExpenseType}"
+                                          DisplayMemberPath="Name"
+                                          md:HintAssist.Hint="اختر نوع المصروف *"
+                                          Style="{StaticResource FilledComboBox}"
+                                          Margin="0,0,0,14"/>
+                                <TextBlock Text="إضافة نوع جديد" FontWeight="SemiBold" FontSize="12"
+                                           Foreground="{DynamicResource HintForegroundBrush}" Margin="0,0,0,6"/>
+                                <DockPanel Margin="0,0,0,14">
+                                    <Button Command="{Binding AddExpenseTypeCommand}"
+                                            Style="{StaticResource OutlinedButton}"
+                                            md:ButtonAssist.CornerRadius="8"
+                                            DockPanel.Dock="Right"
+                                            VerticalAlignment="Center" Padding="14,8" Margin="8,0,0,0"
+                                            ToolTip="يضيف نوع مصروف جديداً إلى القائمة (وليس مصروفاً على الفاتورة)">
+                                        <StackPanel Orientation="Horizontal">
+                                            <md:PackIcon Kind="Plus" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                            <TextBlock Text="إضافة نوع جديد" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
                                     <TextBox Text="{Binding NewExpenseTypeName, UpdateSourceTrigger=PropertyChanged}"
-                                             md:HintAssist.Hint="نوع جديد"
-                                             Style="{StaticResource FilledTextBox}"
-                                             Margin="0,0,4,0"/>
-                                    <Button Content="+" Command="{Binding AddExpenseTypeCommand}"
-                                            Style="{StaticResource FlatButton}" DockPanel.Dock="Right"
-                                            VerticalAlignment="Center" Padding="8,4"/>
+                                             md:HintAssist.Hint="اسم النوع الجديد"
+                                             Style="{StaticResource FilledTextBox}"/>
                                 </DockPanel>
                                 <TextBox Text="{Binding ExpenseDescription, UpdateSourceTrigger=PropertyChanged}"
                                          md:HintAssist.Hint="الوصف"
@@ -594,8 +686,9 @@
                                 <controls:AttachmentsPanel
                                     Title="مرفقات المصروف"
                                     AddButtonText="+ مرفق"
-                                    SaveFirstHint="احفظ الفاتورة أولاً لتفعيل مرفقات هذا المصروف"
+                                    SaveFirstHint="يجب حفظ الفاتورة أولاً لإضافة مرفق للمصروف."
                                     MaxGridHeight="140"
+                                    UseLabeledActions="True"
                                     Items="{Binding ExpenseAttachments}"
                                     HasSavedOwner="{Binding HasSavedEditingExpense}"
                                     CanManage="{Binding CanManageAttachments}"

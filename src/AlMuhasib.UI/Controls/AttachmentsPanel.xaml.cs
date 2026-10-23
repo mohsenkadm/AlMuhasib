@@ -43,6 +43,14 @@ public partial class AttachmentsPanel : UserControl
         DependencyProperty.Register(nameof(MaxGridHeight), typeof(double), typeof(AttachmentsPanel),
             new PropertyMetadata(180d));
 
+    /// <summary>
+    /// When true, shows Icon+Text action buttons (Customs customer file).
+    /// Default false keeps compact icon buttons for Accounting and other systems.
+    /// </summary>
+    public static readonly DependencyProperty UseLabeledActionsProperty =
+        DependencyProperty.Register(nameof(UseLabeledActions), typeof(bool), typeof(AttachmentsPanel),
+            new PropertyMetadata(false, OnUseLabeledActionsChanged));
+
     public static readonly DependencyProperty AddCommandProperty =
         DependencyProperty.Register(nameof(AddCommand), typeof(ICommand), typeof(AttachmentsPanel),
             new PropertyMetadata(null));
@@ -109,6 +117,12 @@ public partial class AttachmentsPanel : UserControl
         set => SetValue(MaxGridHeightProperty, value);
     }
 
+    public bool UseLabeledActions
+    {
+        get => (bool)GetValue(UseLabeledActionsProperty);
+        set => SetValue(UseLabeledActionsProperty, value);
+    }
+
     public ICommand? AddCommand
     {
         get => (ICommand?)GetValue(AddCommandProperty);
@@ -130,7 +144,11 @@ public partial class AttachmentsPanel : UserControl
     public AttachmentsPanel()
     {
         InitializeComponent();
-        Loaded += (_, _) => UpdateAddEnabled();
+        Loaded += (_, _) =>
+        {
+            UpdateAddEnabled();
+            UpdateActionsColumnWidth();
+        };
     }
 
     private static void OnAddEnablementChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -139,9 +157,23 @@ public partial class AttachmentsPanel : UserControl
             panel.UpdateAddEnabled();
     }
 
+    private static void OnUseLabeledActionsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is AttachmentsPanel panel)
+            panel.UpdateActionsColumnWidth();
+    }
+
     private void UpdateAddEnabled()
     {
         if (AddButton is not null)
             AddButton.IsEnabled = HasSavedOwner && CanManage;
+    }
+
+    private void UpdateActionsColumnWidth()
+    {
+        if (ActionsColumn is null)
+            return;
+        ActionsColumn.Width = new DataGridLength(UseLabeledActions ? 220 : 100);
+        ActionsColumn.MinWidth = UseLabeledActions ? 200 : 80;
     }
 }

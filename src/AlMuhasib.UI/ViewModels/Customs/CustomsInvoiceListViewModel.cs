@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Interfaces;
@@ -17,6 +19,7 @@ namespace AlMuhasib.UI.ViewModels.Customs;
 public partial class CustomsInvoiceListViewModel : ViewModelBase
 {
     private readonly ICustomsInvoiceService _invoiceService;
+    private readonly ICustomsPrintService _printService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private readonly MainWindowViewModel _mainWindow;
@@ -54,11 +57,13 @@ public partial class CustomsInvoiceListViewModel : ViewModelBase
 
     public CustomsInvoiceListViewModel(
         ICustomsInvoiceService invoiceService,
+        ICustomsPrintService printService,
         IExportService exportService,
         ICurrentUserService currentUserService,
         MainWindowViewModel mainWindow)
     {
         _invoiceService = invoiceService;
+        _printService = printService;
         _exportService = exportService;
         _currentUserService = currentUserService;
         _mainWindow = mainWindow;
@@ -181,6 +186,22 @@ public partial class CustomsInvoiceListViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task ViewDetailsAsync(CustomsInvoiceListItem? item)
+    {
+        item ??= SelectedInvoice;
+        if (item is null)
+            return;
+
+        CustomsInvoiceNavigationBridge.PendingEditInvoiceId = item.Id;
+        await _mainWindow.OpenTabAsync(
+            typeof(CustomsInvoiceFormViewModel),
+            item.CanEdit ? $"فاتورة {item.InvoiceNumber}" : $"عرض {item.InvoiceNumber}",
+            PackIconKind.FileDocumentOutline,
+            activateIfExists: false,
+            permissionScreenName: CustomsPermissionRegistry.Invoices);
+    }
+
+    [RelayCommand]
     private async Task EditInvoiceAsync(CustomsInvoiceListItem? item)
     {
         item ??= SelectedInvoice;
@@ -201,12 +222,187 @@ public partial class CustomsInvoiceListViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task ApproveInvoiceAsync(CustomsInvoiceListItem? item)
+    {
+        item ??= SelectedInvoice;
+        if (item is null || !item.CanApprove || !CanEdit)
+        {
+            if (item is not null && !item.CanApprove)
+                BeautifulMessageDialog.ShowWarning("يمكن اعتماد المسودات فقط");
+            else if (item is not null)
+                BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية اعتماد الفاتورة");
+            return;
+        }
+
+        if (!BeautifulMessageDialog.ShowConfirm(
+                $"اعتماد الفاتورة {item.InvoiceNumber}؟",
+                "تأكيد الاعتماد"))
+            return;
+
+        try
+        {
+            await _invoiceService.ApproveAsync(item.Id, _currentUserService.Username);
+            BeautifulMessageDialog.ShowSuccess("تم اعتماد الفاتورة");
+            await LoadInvoicesAsync();
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
     private void ConfirmCancel(CustomsInvoiceListItem? item)
     {
         if (item is null || !item.CanCancel || !CanEdit) return;
         InvoiceToCancel = item;
         CancelReason = string.Empty;
         IsCancelDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private async Task PrintInvoiceAsync(CustomsInvoiceListItem? item)
+    {
+        item ??= SelectedInvoice;
+        if (item is null) return;
+        if (!CanPrint)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
+            return;
+        }
+
+        try
+        {
+            var detail = await _invoiceService.GetByIdAsync(item.Id);
+            if (detail is null)
+            {
+                BeautifulMessageDialog.ShowError("الفاتورة غير موجودة");
+                return;
+            }
+
+            _printService.PrintCustomerInvoice(detail, null);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task PreviewInvoiceAsync(CustomsInvoiceListItem? item)
+    {
+        item ??= SelectedInvoice;
+        if (item is null) return;
+        if (!CanPrint && !CanExport)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية المعاينة أو التصدير");
+            return;
+        }
+
+        try
+        {
+            var detail = await _invoiceService.GetByIdAsync(item.Id);
+            if (detail is null)
+            {
+                BeautifulMessageDialog.ShowError("الفاتورة غير موجودة");
+                return;
+            }
+
+            var temp = _printService.ExportCustomerInvoicePdf(detail, null);
+            Process.Start(new ProcessStartInfo { FileName = temp, UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExportInvoicePdfAsync(CustomsInvoiceListItem? item)
+    {
+        item ??= SelectedInvoice;
+        if (item is null) return;
+        if (!CanExport)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية التصدير");
+            return;
+        }
+
+        try
+        {
+            var detail = await _invoiceService.GetByIdAsync(item.Id);
+            if (detail is null)
+            {
+                BeautifulMessageDialog.ShowError("الفاتورة غير موجودة");
+                return;
+            }
+
+            var temp = _printService.ExportCustomerInvoicePdf(detail, null);
+            var dlg = new SaveFileDialog
+            {
+                Filter = "PDF (*.pdf)|*.pdf",
+                FileName = $"{detail.InvoiceNumber}.pdf",
+                DefaultExt = ".pdf"
+            };
+            if (dlg.ShowDialog() == true)
+            {
+                File.Copy(temp, dlg.FileName, overwrite: true);
+                BeautifulMessageDialog.ShowSuccess("تم حفظ ملف PDF");
+            }
+            else
+            {
+                Process.Start(new ProcessStartInfo { FileName = temp, UseShellExecute = true });
+            }
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    [RelayCommand]
+    private async Task ViewInvoiceExpensesAsync(CustomsInvoiceListItem? item)
+    {
+        item ??= SelectedInvoice;
+        if (item is null) return;
+        CustomsInvoiceNavigationBridge.PendingEditInvoiceId = item.Id;
+        CustomsInvoiceNavigationBridge.PendingFocusSection = "expenses";
+        await _mainWindow.OpenTabAsync(
+            typeof(CustomsInvoiceFormViewModel),
+            $"مصاريف {item.InvoiceNumber}",
+            PackIconKind.CashMinus,
+            activateIfExists: false,
+            permissionScreenName: CustomsPermissionRegistry.Invoices);
+    }
+
+    [RelayCommand]
+    private async Task ViewInvoiceAttachmentsAsync(CustomsInvoiceListItem? item)
+    {
+        item ??= SelectedInvoice;
+        if (item is null) return;
+        CustomsInvoiceNavigationBridge.PendingEditInvoiceId = item.Id;
+        CustomsInvoiceNavigationBridge.PendingFocusSection = "attachments";
+        await _mainWindow.OpenTabAsync(
+            typeof(CustomsInvoiceFormViewModel),
+            $"مرفقات {item.InvoiceNumber}",
+            PackIconKind.Paperclip,
+            activateIfExists: false,
+            permissionScreenName: CustomsPermissionRegistry.Invoices);
+    }
+
+    [RelayCommand]
+    private async Task ViewInvoiceVehiclesAsync(CustomsInvoiceListItem? item)
+    {
+        item ??= SelectedInvoice;
+        if (item is null) return;
+        CustomsInvoiceNavigationBridge.PendingEditInvoiceId = item.Id;
+        CustomsInvoiceNavigationBridge.PendingFocusSection = "vehicles";
+        await _mainWindow.OpenTabAsync(
+            typeof(CustomsInvoiceFormViewModel),
+            $"مركبات {item.InvoiceNumber}",
+            PackIconKind.Car,
+            activateIfExists: false,
+            permissionScreenName: CustomsPermissionRegistry.Invoices);
     }
 
     [RelayCommand]

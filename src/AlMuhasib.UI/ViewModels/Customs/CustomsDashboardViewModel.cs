@@ -1,3 +1,5 @@
+using System.Globalization;
+using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services.Customs;
 using AlMuhasib.Core.Models.Customs;
@@ -7,6 +9,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
+using MaterialDesignThemes.Wpf;
 
 namespace AlMuhasib.UI.ViewModels.Customs;
 
@@ -14,8 +17,13 @@ public partial class CustomsDashboardViewModel : ViewModelBase
 {
     private readonly ICustomsDashboardService _dashboardService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly MainWindowViewModel _mainWindow;
 
     [ObservableProperty] private bool _isLoaded;
+
+    [ObservableProperty] private string _welcomeGreeting = "مرحباً";
+    [ObservableProperty] private string _userDisplayName = string.Empty;
+    [ObservableProperty] private string _displayDate = string.Empty;
 
     [ObservableProperty] private int _customerCount;
     [ObservableProperty] private int _invoiceCount;
@@ -52,10 +60,12 @@ public partial class CustomsDashboardViewModel : ViewModelBase
 
     public CustomsDashboardViewModel(
         ICustomsDashboardService dashboardService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        MainWindowViewModel mainWindow)
     {
         _dashboardService = dashboardService;
         _currentUserService = currentUserService;
+        _mainWindow = mainWindow;
         PageTitle = "لوحة التحكم";
     }
 
@@ -66,7 +76,30 @@ public partial class CustomsDashboardViewModel : ViewModelBase
             || _currentUserService.CanView(CustomsPermissionRegistry.Expenses);
         CanViewProfit = _currentUserService.IsAdmin
             || _currentUserService.CanView(CustomsPermissionRegistry.ProfitReport);
+        ApplyWelcome();
         await LoadDataAsync();
+    }
+
+    private void ApplyWelcome()
+    {
+        var hour = DateTime.Now.Hour;
+        WelcomeGreeting = hour switch
+        {
+            < 12 => "صباح الخير",
+            < 17 => "مرحباً",
+            _ => "مساء الخير"
+        };
+        UserDisplayName = string.IsNullOrWhiteSpace(_currentUserService.Username)
+            ? "مستخدم"
+            : _currentUserService.Username;
+        try
+        {
+            DisplayDate = DateTime.Now.ToString("dddd، d MMMM yyyy", new CultureInfo("ar-IQ"));
+        }
+        catch
+        {
+            DisplayDate = DateTime.Now.ToString("yyyy/MM/dd", CultureInfo.InvariantCulture);
+        }
     }
 
     [RelayCommand]
@@ -76,6 +109,7 @@ public partial class CustomsDashboardViewModel : ViewModelBase
         IsLoaded = false;
         try
         {
+            ApplyWelcome();
             var today = DateTime.Today;
             var from = new DateTime(today.Year, today.Month, 1);
             PeriodLabel = $"الفترة: {from:yyyy/MM/dd} — {today:yyyy/MM/dd}";
@@ -149,4 +183,72 @@ public partial class CustomsDashboardViewModel : ViewModelBase
 
     private static string FormatDual(decimal iqd, decimal usd) =>
         $"{iqd:N0} د.ع\n{usd:N2} $";
+
+    [RelayCommand]
+    private async Task OpenAddCustomerAsync()
+    {
+        CustomsCustomersNavigationBridge.PendingOpenAdd = true;
+        await _mainWindow.OpenTabAsync(
+            typeof(CustomsCustomersViewModel),
+            "العملاء",
+            PackIconKind.AccountGroup,
+            activateIfExists: true,
+            permissionScreenName: CustomsPermissionRegistry.Customers);
+    }
+
+    [RelayCommand]
+    private Task OpenClearanceInvoiceAsync() =>
+        OpenNewInvoiceAsync(CustomsServiceType.Clearance, "فاتورة تخليص");
+
+    [RelayCommand]
+    private Task OpenTransportInvoiceAsync() =>
+        OpenNewInvoiceAsync(CustomsServiceType.Transport, "فاتورة نقل");
+
+    [RelayCommand]
+    private Task OpenClearanceAndTransportInvoiceAsync() =>
+        OpenNewInvoiceAsync(CustomsServiceType.ClearanceAndTransport, "فاتورة تخليص ونقل");
+
+    private async Task OpenNewInvoiceAsync(CustomsServiceType serviceType, string title)
+    {
+        CustomsInvoiceNavigationBridge.PendingServiceType = serviceType;
+        await _mainWindow.OpenTabAsync(
+            typeof(CustomsInvoiceFormViewModel),
+            title,
+            PackIconKind.FileDocumentPlus,
+            activateIfExists: false,
+            permissionScreenName: CustomsPermissionRegistry.Invoices);
+    }
+
+    [RelayCommand]
+    private async Task OpenNewReceiptAsync()
+    {
+        await _mainWindow.OpenTabAsync(
+            typeof(CustomsReceiptFormViewModel),
+            "وصل قبض جديد",
+            PackIconKind.CashPlus,
+            activateIfExists: false,
+            permissionScreenName: CustomsPermissionRegistry.Receipts);
+    }
+
+    [RelayCommand]
+    private async Task OpenInvoicesListAsync()
+    {
+        await _mainWindow.OpenTabAsync(
+            typeof(CustomsInvoiceListViewModel),
+            "الفواتير",
+            PackIconKind.FileDocumentOutline,
+            activateIfExists: true,
+            permissionScreenName: CustomsPermissionRegistry.Invoices);
+    }
+
+    [RelayCommand]
+    private async Task OpenVehiclesReportAsync()
+    {
+        await _mainWindow.OpenTabAsync(
+            typeof(CustomsVehiclesReportViewModel),
+            "تقرير السيارات",
+            PackIconKind.Car,
+            activateIfExists: true,
+            permissionScreenName: CustomsPermissionRegistry.Reports);
+    }
 }

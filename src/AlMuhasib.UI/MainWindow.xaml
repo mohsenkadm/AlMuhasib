@@ -1014,6 +1014,85 @@
                     Padding="12,8,12,4">
                 <ScrollViewer Style="{StaticResource ModernHorizontalScrollViewer}">
                     <StackPanel Orientation="Horizontal">
+                        <!-- Customs Clearance quick actions (visible only when ShowQuickCustoms* is true) -->
+                        <Button Command="{Binding QuickCustomsCustomerCommand}"
+                                Visibility="{Binding ShowQuickCustomsCustomer, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="عميل جديد — التخليص الكمركي">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="AccountPlus" Width="18" Height="18" VerticalAlignment="Center" Foreground="#1565C0"/>
+                                <TextBlock Text="عميل جديد" Margin="6,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickCustomsInvoiceCommand}"
+                                Visibility="{Binding ShowQuickCustomsInvoice, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="فاتورة تخليص / نقل جديدة">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FileDocumentPlus" Width="18" Height="18" VerticalAlignment="Center" Foreground="#2E7D32"/>
+                                <TextBlock Text="فاتورة جديدة" Margin="6,0,0,0" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickCustomsReceiptCommand}"
+                                Visibility="{Binding ShowQuickCustomsReceipt, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="إيصال قبض جديد">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CashPlus" Width="18" Height="18" VerticalAlignment="Center" Foreground="#2E7D32"/>
+                                <TextBlock Text="إيصال جديد" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickCustomsVehiclesCommand}"
+                                Visibility="{Binding ShowQuickCustomsVehicles, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="تقرير المركبات والشحنات">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Car" Width="18" Height="18" VerticalAlignment="Center" Foreground="#EF6C00"/>
+                                <TextBlock Text="مركبة / شحنة" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickCustomsExpensesCommand}"
+                                Visibility="{Binding ShowQuickCustomsExpenses, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="المصروفات تُدار من داخل الفاتورة — فتح قائمة الفواتير">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CashMinus" Width="18" Height="18" VerticalAlignment="Center" Foreground="#C62828"/>
+                                <TextBlock Text="المصروفات" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickCustomsReportsCommand}"
+                                Visibility="{Binding ShowQuickCustomsReports, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="التقارير">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="ChartBar" Width="18" Height="18" VerticalAlignment="Center" Foreground="#0277BD"/>
+                                <TextBlock Text="التقارير" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding QuickCustomsAttachmentsCommand}"
+                                Visibility="{Binding ShowQuickCustomsAttachments, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                Style="{StaticResource OutlinedButton}"
+                                Height="34" Padding="12,0" Margin="0,0,6,0"
+                                materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
+                                ToolTip="المرفقات من ملف العميل">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Paperclip" Width="18" Height="18" VerticalAlignment="Center" Foreground="#6A1B9A"/>
+                                <TextBlock Text="الأرشيف / المرفقات" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
                         <Button Command="{Binding QuickNewCarContractCommand}"
                                 Visibility="{Binding ShowQuickNewCarContract, Converter={StaticResource BooleanToVisibilityConverter}}"
                                 Style="{StaticResource OutlinedButton}"

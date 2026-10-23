@@ -1,7 +1,9 @@
+using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Ux;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Services;
+using AlMuhasib.UI.ViewModels.Customs;
 using AlMuhasib.UI.ViewModels.Gold;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -31,6 +33,15 @@ public partial class MainWindowViewModel
     [ObservableProperty] private bool _showQuickGoldFx;
     [ObservableProperty] private bool _showQuickAccountingFx;
 
+    // Customs Clearance quick bar (isolated — Accounting actions stay unchanged)
+    [ObservableProperty] private bool _showQuickCustomsCustomer;
+    [ObservableProperty] private bool _showQuickCustomsInvoice;
+    [ObservableProperty] private bool _showQuickCustomsReceipt;
+    [ObservableProperty] private bool _showQuickCustomsVehicles;
+    [ObservableProperty] private bool _showQuickCustomsExpenses;
+    [ObservableProperty] private bool _showQuickCustomsReports;
+    [ObservableProperty] private bool _showQuickCustomsAttachments;
+
     public string WorkspaceProfileDisplay => WorkspaceProfile switch
     {
         WorkspaceProfile.Cashier => "كاشير",
@@ -48,6 +59,8 @@ public partial class MainWindowViewModel
 
     private void ApplyWorkspaceProfile()
     {
+        ClearCustomsQuickActions();
+
         if (_moduleRegistry.IsHotelManagement)
         {
             ShowQuickPos = false;
@@ -69,6 +82,33 @@ public partial class MainWindowViewModel
 
         ShowQuickNewReservation = false;
         ShowQuickCheckIn = false;
+
+        if (_moduleRegistry.IsCustomsClearance)
+        {
+            ShowQuickPos = false;
+            ShowQuickSale = false;
+            ShowQuickPurchase = false;
+            ShowQuickReceipt = false;
+            ShowQuickPayment = false;
+            ShowQuickInstallments = false;
+            ShowQuickInstallmentInvoice = false;
+            ShowQuickReturn = false;
+            ShowQuickAssistant = false;
+            ShowQuickNewCarContract = false;
+            ShowQuickCarContractsList = false;
+            ShowQuickGoldFx = false;
+            ShowQuickAccountingFx = false;
+
+            ShowQuickCustomsCustomer = _currentUserService.CanView(CustomsPermissionRegistry.Customers);
+            ShowQuickCustomsInvoice = _currentUserService.CanView(CustomsPermissionRegistry.Invoices);
+            ShowQuickCustomsReceipt = _currentUserService.CanView(CustomsPermissionRegistry.Receipts);
+            ShowQuickCustomsVehicles = _currentUserService.CanView(CustomsPermissionRegistry.Reports);
+            ShowQuickCustomsExpenses = _currentUserService.IsAdmin
+                || _currentUserService.CanView(CustomsPermissionRegistry.Expenses);
+            ShowQuickCustomsReports = _currentUserService.CanView(CustomsPermissionRegistry.Reports);
+            ShowQuickCustomsAttachments = _currentUserService.CanView(CustomsPermissionRegistry.Customers);
+            return;
+        }
 
         if (_moduleRegistry.IsCarContracts)
         {
@@ -176,6 +216,17 @@ public partial class MainWindowViewModel
             ShowQuickReturn = false;
     }
 
+    private void ClearCustomsQuickActions()
+    {
+        ShowQuickCustomsCustomer = false;
+        ShowQuickCustomsInvoice = false;
+        ShowQuickCustomsReceipt = false;
+        ShowQuickCustomsVehicles = false;
+        ShowQuickCustomsExpenses = false;
+        ShowQuickCustomsReports = false;
+        ShowQuickCustomsAttachments = false;
+    }
+
     [RelayCommand]
     private void SetWorkspaceProfileFull() => SaveWorkspaceProfile(WorkspaceProfile.Full);
 
@@ -223,6 +274,87 @@ public partial class MainWindowViewModel
         {
             _toast.ShowError(ex.Message);
         }
+    }
+
+    [RelayCommand]
+    private async Task QuickCustomsCustomerAsync()
+    {
+        CustomsCustomersNavigationBridge.PendingOpenAdd = true;
+        await OpenTabAsync(
+            typeof(CustomsCustomersViewModel),
+            "العملاء",
+            PackIconKind.AccountPlus,
+            activateIfExists: true,
+            permissionScreenName: CustomsPermissionRegistry.Customers);
+    }
+
+    [RelayCommand]
+    private async Task QuickCustomsInvoiceAsync()
+    {
+        CustomsInvoiceNavigationBridge.PendingServiceType = CustomsServiceType.Clearance;
+        await OpenTabAsync(
+            typeof(CustomsInvoiceFormViewModel),
+            "فاتورة جديدة",
+            PackIconKind.FileDocumentPlus,
+            activateIfExists: false,
+            permissionScreenName: CustomsPermissionRegistry.Invoices);
+    }
+
+    [RelayCommand]
+    private async Task QuickCustomsReceiptAsync()
+    {
+        await OpenTabAsync(
+            typeof(CustomsReceiptFormViewModel),
+            "وصل قبض جديد",
+            PackIconKind.CashPlus,
+            activateIfExists: false,
+            permissionScreenName: CustomsPermissionRegistry.Receipts);
+    }
+
+    [RelayCommand]
+    private async Task QuickCustomsVehiclesAsync()
+    {
+        await OpenTabAsync(
+            typeof(CustomsVehiclesReportViewModel),
+            "تقرير السيارات",
+            PackIconKind.Car,
+            activateIfExists: true,
+            permissionScreenName: CustomsPermissionRegistry.Reports);
+    }
+
+    [RelayCommand]
+    private async Task QuickCustomsExpensesAsync()
+    {
+        // Expenses live on the invoice form — open invoice list so the user picks a bill.
+        await OpenTabAsync(
+            typeof(CustomsInvoiceListViewModel),
+            "الفواتير",
+            PackIconKind.CashMinus,
+            activateIfExists: true,
+            permissionScreenName: CustomsPermissionRegistry.Invoices);
+    }
+
+    [RelayCommand]
+    private async Task QuickCustomsReportsAsync()
+    {
+        await OpenTabAsync(
+            typeof(CustomsDailyReportViewModel),
+            "التقرير اليومي",
+            PackIconKind.ChartBar,
+            activateIfExists: true,
+            permissionScreenName: CustomsPermissionRegistry.Reports);
+    }
+
+    [RelayCommand]
+    private async Task QuickCustomsAttachmentsAsync()
+    {
+        // Attachments are managed from the customer file — open customers list.
+        await OpenTabAsync(
+            typeof(CustomsCustomersViewModel),
+            "العملاء",
+            PackIconKind.Paperclip,
+            activateIfExists: true,
+            permissionScreenName: CustomsPermissionRegistry.Customers);
     }
 
     [RelayCommand]

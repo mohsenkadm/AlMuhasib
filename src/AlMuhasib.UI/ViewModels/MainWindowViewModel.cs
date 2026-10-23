@@ -1018,6 +1018,17 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         ConsumePartnerListPendingOpenAdd(viewModel);
+        ConsumeCustomsCustomersPendingOpenAdd(viewModel);
+    }
+
+    private static void ConsumeCustomsCustomersPendingOpenAdd(ViewModelBase viewModel)
+    {
+        if (viewModel is not Customs.CustomsCustomersViewModel customers)
+            return;
+        if (!CustomsCustomersNavigationBridge.TakePendingOpenAdd())
+            return;
+        if (customers.OpenAddDialogCommand.CanExecute(null))
+            customers.OpenAddDialogCommand.Execute(null);
     }
 
     private static void ConsumePartnerListPendingOpenAdd(ViewModelBase viewModel)
