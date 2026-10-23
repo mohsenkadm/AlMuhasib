@@ -415,7 +415,7 @@ public partial class HotelRatePlansViewModel : PagedViewModelBase
     {
         var headers = new[] { "الاسم", "السعر", "نشط" };
         var data = RatePlans.Select(p => new object?[] { p.Name, p.BasePrice, p.IsActive ? "نعم" : "لا" }).ToList();
-        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "RatePlans", "خطط الأسعار", headers, data);
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "RatePlans", "خطط الأسعار", headers, ListTableExportHelper.ToRows(data));
     }
 
     [RelayCommand]
@@ -423,6 +423,6 @@ public partial class HotelRatePlansViewModel : PagedViewModelBase
     {
         var headers = new[] { "الاسم", "السعر", "نشط" };
         var data = RatePlans.Select(p => new object?[] { p.Name, p.BasePrice, p.IsActive ? "نعم" : "لا" }).ToList();
-        ListTableExportHelper.Print(_exportService, CanPrint, "خطط الأسعار", headers, data);
+        ListTableExportHelper.Print(_exportService, CanPrint, "خطط الأسعار", headers, ListTableExportHelper.ToRows(data));
     }
 }

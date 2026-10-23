@@ -218,7 +218,7 @@ public partial class RestaurantInventoryViewModel : ViewModelBase
         {
             i.Name, i.Unit, i.Stock?.Quantity, i.MinQuantity, i.AverageCost
         }).ToList();
-        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "RestaurantInventory", "المخزون", headers, data);
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "RestaurantInventory", "المخزون", headers, ListTableExportHelper.ToRows(data));
     }
 
     [RelayCommand]
@@ -229,6 +229,6 @@ public partial class RestaurantInventoryViewModel : ViewModelBase
         {
             i.Name, i.Unit, i.Stock?.Quantity, i.MinQuantity, i.AverageCost
         }).ToList();
-        ListTableExportHelper.Print(_exportService, CanPrint, "مخزون المطبخ", headers, data);
+        ListTableExportHelper.Print(_exportService, CanPrint, "مخزون المطبخ", headers, ListTableExportHelper.ToRows(data));
     }
 }

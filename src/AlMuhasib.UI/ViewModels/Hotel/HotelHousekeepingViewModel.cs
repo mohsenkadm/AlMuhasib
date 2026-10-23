@@ -251,7 +251,7 @@ public partial class HotelHousekeepingViewModel : HotelListPreviewViewModelBase
     {
         var headers = new[] { "الغرفة", "الحالة", "المسؤول", "ملاحظات" };
         var data = Tasks.Select(t => new object?[] { t.RoomNumber, t.StatusLabel, t.AssignedTo, t.Notes }).ToList();
-        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "Housekeeping", "النظافة", headers, data);
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "Housekeeping", "النظافة", headers, ListTableExportHelper.ToRows(data));
     }
 
     [RelayCommand]
@@ -259,7 +259,7 @@ public partial class HotelHousekeepingViewModel : HotelListPreviewViewModelBase
     {
         var headers = new[] { "الغرفة", "الحالة", "المسؤول", "ملاحظات" };
         var data = Tasks.Select(t => new object?[] { t.RoomNumber, t.StatusLabel, t.AssignedTo, t.Notes }).ToList();
-        ListTableExportHelper.Print(_exportService, CanPrint, "مهام النظافة", headers, data);
+        ListTableExportHelper.Print(_exportService, CanPrint, "مهام النظافة", headers, ListTableExportHelper.ToRows(data));
     }
 }
 

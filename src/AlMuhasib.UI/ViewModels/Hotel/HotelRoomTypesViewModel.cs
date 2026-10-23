@@ -233,7 +233,7 @@ public partial class HotelRoomTypesViewModel : PagedViewModelBase
     {
         var headers = new[] { "الاسم", "السعة", "السعر الأساسي", "الترتيب" };
         var data = RoomTypes.Select(r => new object?[] { r.Name, r.Capacity, r.BasePrice, r.SortOrder }).ToList();
-        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "RoomTypes", "أنواع الغرف", headers, data);
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "RoomTypes", "أنواع الغرف", headers, ListTableExportHelper.ToRows(data));
     }
 
     [RelayCommand]
@@ -241,6 +241,6 @@ public partial class HotelRoomTypesViewModel : PagedViewModelBase
     {
         var headers = new[] { "الاسم", "السعة", "السعر الأساسي", "الترتيب" };
         var data = RoomTypes.Select(r => new object?[] { r.Name, r.Capacity, r.BasePrice, r.SortOrder }).ToList();
-        ListTableExportHelper.Print(_exportService, CanPrint, "قائمة أنواع الغرف", headers, data);
+        ListTableExportHelper.Print(_exportService, CanPrint, "قائمة أنواع الغرف", headers, ListTableExportHelper.ToRows(data));
     }
 }

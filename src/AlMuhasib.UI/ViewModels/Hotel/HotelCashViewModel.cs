@@ -268,7 +268,7 @@ public partial class HotelCashViewModel : PagedViewModelBase
         {
             v.VoucherNumber, v.VoucherDate.ToString("yyyy/MM/dd"), v.Type, v.Amount, v.Description
         }).ToList();
-        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "HotelCash", "السندات", headers, data);
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "HotelCash", "السندات", headers, ListTableExportHelper.ToRows(data));
     }
 
     [RelayCommand]
@@ -279,6 +279,6 @@ public partial class HotelCashViewModel : PagedViewModelBase
         {
             v.VoucherNumber, v.VoucherDate.ToString("yyyy/MM/dd"), v.Type, v.Amount, v.Description
         }).ToList();
-        ListTableExportHelper.Print(_exportService, CanPrint, "سندات القبض والصرف", headers, data);
+        ListTableExportHelper.Print(_exportService, CanPrint, "سندات القبض والصرف", headers, ListTableExportHelper.ToRows(data));
     }
 }

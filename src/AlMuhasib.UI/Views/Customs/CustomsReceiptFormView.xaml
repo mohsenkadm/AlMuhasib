@@ -166,7 +166,7 @@
                 </md:Card>
 
                 <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12">
-                    <controls:CustomsAttachmentsPanel
+                    <controls:AttachmentsPanel
                         Title="المرفقات"
                         SaveFirstHint="احفظ الوصل أولاً لتفعيل المرفقات"
                         Items="{Binding Attachments}"

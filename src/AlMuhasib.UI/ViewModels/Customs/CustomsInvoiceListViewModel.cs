@@ -260,40 +260,25 @@ public partial class CustomsInvoiceListViewModel : ViewModelBase
     [RelayCommand]
     private async Task ExportToExcel()
     {
-        if (!CanExport)
-        {
-            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية التصدير");
-            return;
-        }
-
         try
         {
             var (allItems, _) = await _invoiceService.GetPagedAsync(1, int.MaxValue, null, StatusFilter, DateFrom, DateTo);
-            var exportData = allItems.Select(i => new
+            var columns = new[] { "الرقم", "التاريخ", "العميل", "الخدمة", "العملة", "الإجمالي", "المدفوع", "المتبقي", "الحالة" };
+            IList<object[]> rows = allItems.Select(i => new object[]
             {
-                الرقم = i.InvoiceNumber,
-                التاريخ = i.InvoiceDate.ToString("yyyy/MM/dd"),
-                العميل = i.CustomerName,
-                الخدمة = i.ServiceTypeLabel,
-                العملة = i.CurrencyLabel,
-                الإجمالي = i.TotalAmount,
-                المدفوع = i.PaidAmount,
-                المتبقي = i.RemainingAmount,
-                الحالة = i.StatusLabel
-            });
-
-            var dialog = new SaveFileDialog
-            {
-                Filter = "Excel Files (*.xlsx)|*.xlsx",
-                FileName = $"فواتير_التخليص_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
-                DefaultExt = ".xlsx"
-            };
-
-            if (dialog.ShowDialog() == true)
-            {
-                await _exportService.ExportToExcelFileAsync(exportData, dialog.FileName, "الفواتير");
-                BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
-            }
+                i.InvoiceNumber,
+                i.InvoiceDate.ToString("yyyy/MM/dd"),
+                i.CustomerName,
+                i.ServiceTypeLabel,
+                i.CurrencyLabel,
+                i.TotalAmount,
+                i.PaidAmount,
+                i.RemainingAmount,
+                i.StatusLabel
+            }).ToList();
+            ListTableExportHelper.ExportExcel(
+                _exportService, toast: null, CanExport,
+                "فواتير_التخليص", "الفواتير", columns, rows);
         }
         catch (Exception ex)
         {
@@ -304,12 +289,6 @@ public partial class CustomsInvoiceListViewModel : ViewModelBase
     [RelayCommand]
     private async Task PrintTable()
     {
-        if (!CanPrint)
-        {
-            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
-            return;
-        }
-
         try
         {
             var (allItems, _) = await _invoiceService.GetPagedAsync(1, int.MaxValue, null, StatusFilter, DateFrom, DateTo);
@@ -325,7 +304,10 @@ public partial class CustomsInvoiceListViewModel : ViewModelBase
                 i.RemainingAmount.ToString("N0"),
                 i.StatusLabel
             }).ToList();
-            _exportService.PrintTable("فواتير التخليص الكمركي", columns, rows);
+            ListTableExportHelper.Print(
+                _exportService, CanPrint,
+                "فواتير التخليص الكمركي", columns, rows,
+                warnOnDenied: true);
         }
         catch (Exception ex)
         {

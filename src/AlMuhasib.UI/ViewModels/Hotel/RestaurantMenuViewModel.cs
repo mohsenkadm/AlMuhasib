@@ -272,7 +272,7 @@ public partial class RestaurantMenuViewModel : ViewModelBase
     {
         var headers = new[] { "الاسم", "السعر", "نشط" };
         var data = MenuItems.Select(m => new object?[] { m.Name, m.SalePrice, m.IsActive ? "نعم" : "لا" }).ToList();
-        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "RestaurantMenu", "الأصناف", headers, data);
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "RestaurantMenu", "الأصناف", headers, ListTableExportHelper.ToRows(data));
     }
 
     [RelayCommand]
@@ -280,6 +280,6 @@ public partial class RestaurantMenuViewModel : ViewModelBase
     {
         var headers = new[] { "الاسم", "السعر", "نشط" };
         var data = MenuItems.Select(m => new object?[] { m.Name, m.SalePrice, m.IsActive ? "نعم" : "لا" }).ToList();
-        ListTableExportHelper.Print(_exportService, CanPrint, "أصناف قائمة المطعم", headers, data);
+        ListTableExportHelper.Print(_exportService, CanPrint, "أصناف قائمة المطعم", headers, ListTableExportHelper.ToRows(data));
     }
 }

@@ -270,40 +270,25 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
     [RelayCommand]
     private async Task ExportToExcel()
     {
-        if (!CanExport)
-        {
-            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية التصدير");
-            return;
-        }
-
         try
         {
             var (allItems, _) = await _receiptService.GetPagedAsync(
                 1, int.MaxValue, null, DateFrom, DateTo, null, CurrencyFilter);
-            var exportData = allItems.Select(r => new
+            var columns = new[] { "الرقم", "التاريخ", "العميل", "المبلغ", "العملة", "الطريقة", "المستلم", "الفواتير" };
+            IList<object[]> rows = allItems.Select(r => new object[]
             {
-                الرقم = r.ReceiptNumber,
-                التاريخ = r.ReceiptDate.ToString("yyyy/MM/dd"),
-                العميل = r.CustomerName,
-                المبلغ = r.Amount,
-                العملة = r.CurrencyLabel,
-                الطريقة = r.PaymentMethodLabel,
-                المستلم = r.ReceiverName,
-                الفواتير = r.AllocationCount
-            });
-
-            var dialog = new SaveFileDialog
-            {
-                Filter = "Excel Files (*.xlsx)|*.xlsx",
-                FileName = $"وصولات_القبض_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
-                DefaultExt = ".xlsx"
-            };
-
-            if (dialog.ShowDialog() == true)
-            {
-                await _exportService.ExportToExcelFileAsync(exportData, dialog.FileName, "الوصولات");
-                BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
-            }
+                r.ReceiptNumber,
+                r.ReceiptDate.ToString("yyyy/MM/dd"),
+                r.CustomerName,
+                r.Amount,
+                r.CurrencyLabel,
+                r.PaymentMethodLabel,
+                r.ReceiverName,
+                r.AllocationCount
+            }).ToList();
+            ListTableExportHelper.ExportExcel(
+                _exportService, toast: null, CanExport,
+                "وصولات_القبض", "الوصولات", columns, rows);
         }
         catch (Exception ex)
         {
@@ -314,12 +299,6 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
     [RelayCommand]
     private async Task PrintTable()
     {
-        if (!CanPrint)
-        {
-            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
-            return;
-        }
-
         try
         {
             var (allItems, _) = await _receiptService.GetPagedAsync(
@@ -335,7 +314,10 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
                 r.PaymentMethodLabel,
                 r.ReceiverName
             }).ToList();
-            _exportService.PrintTable("وصولات القبض — التخليص الكمركي", columns, rows);
+            ListTableExportHelper.Print(
+                _exportService, CanPrint,
+                "وصولات القبض — التخليص الكمركي", columns, rows,
+                warnOnDenied: true);
         }
         catch (Exception ex)
         {

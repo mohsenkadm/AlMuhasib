@@ -468,7 +468,7 @@ public partial class HotelReservationsViewModel : HotelListPreviewViewModelBase
             r.CheckInDate.ToString("yyyy/MM/dd"), r.CheckOutDate.ToString("yyyy/MM/dd"),
             r.RemainingAmount, r.Status
         }).ToList();
-        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "HotelReservations", "الحجوزات", headers, data);
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "HotelReservations", "الحجوزات", headers, ListTableExportHelper.ToRows(data));
     }
 
     [RelayCommand]
@@ -481,7 +481,7 @@ public partial class HotelReservationsViewModel : HotelListPreviewViewModelBase
             r.CheckInDate.ToString("yyyy/MM/dd"), r.CheckOutDate.ToString("yyyy/MM/dd"),
             r.RemainingAmount, r.Status
         }).ToList();
-        ListTableExportHelper.Print(_exportService, CanPrint, "قائمة الحجوزات", headers, data);
+        ListTableExportHelper.Print(_exportService, CanPrint, "قائمة الحجوزات", headers, ListTableExportHelper.ToRows(data));
     }
 }
 

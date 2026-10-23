@@ -223,7 +223,7 @@
                         <!-- Attachments -->
                         <TabItem Header="المرفقات">
                             <StackPanel Margin="0,12,0,0">
-                                <controls:CustomsAttachmentsPanel
+                                <controls:AttachmentsPanel
                                     Title="المرفقات"
                                     SaveFirstHint=""
                                     MaxGridHeight="360"
