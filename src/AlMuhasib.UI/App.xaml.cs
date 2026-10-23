@@ -484,6 +484,7 @@ public partial class App : Application
         services.AddTransient<CustomsInvoiceFormViewModel>();
         services.AddTransient<CustomsReceiptListViewModel>();
         services.AddTransient<CustomsReceiptFormViewModel>();
+        services.AddTransient<CustomsStatementViewModel>();
 
         services.AddSingleton<MainWindowViewModel>();
 

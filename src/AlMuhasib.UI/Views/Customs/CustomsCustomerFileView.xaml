@@ -193,6 +193,17 @@
                                                                Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
                                                                IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                                 </UniformGrid>
+                                <Button Command="{Binding OpenStatementCommand}"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Background="#0277BD"
+                                        materialDesign:ButtonAssist.CornerRadius="8"
+                                        Padding="18,8" Margin="0,0,0,12"
+                                        HorizontalAlignment="Left">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="FileDocumentOutline" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="فتح كشف الحساب"/>
+                                    </StackPanel>
+                                </Button>
                                 <TextBlock Text="المقبوضات" FontWeight="SemiBold" Margin="0,0,0,8"/>
                                 <DataGrid ItemsSource="{Binding Receipts}"
                                           Style="{StaticResource ModernDataGrid}" AutoGenerateColumns="False"
