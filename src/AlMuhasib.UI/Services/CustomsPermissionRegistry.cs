@@ -10,6 +10,8 @@ public static class CustomsPermissionRegistry
     public const string Invoices = "CustomsInvoices";
     public const string Receipts = "CustomsReceipts";
     public const string Statement = "CustomsStatement";
+    public const string Reports = "CustomsReports";
+    public const string ProfitReport = "CustomsProfitReport";
     public const string Users = "Users";
     public const string Permissions = "Permissions";
     public const string PrintSettings = "PrintSettings";
@@ -23,6 +25,8 @@ public static class CustomsPermissionRegistry
         (Invoices, "الفواتير"),
         (Receipts, "وصولات القبض"),
         (Statement, "كشف حساب"),
+        (Reports, "التقارير"),
+        (ProfitReport, "تقرير الربح"),
         (Users, "المستخدمون"),
         (Permissions, "الصلاحيات"),
         (PrintSettings, "إعدادات الطباعة"),
@@ -42,6 +46,13 @@ public static class CustomsPermissionRegistry
         [typeof(CustomsReceiptListViewModel)] = Receipts,
         [typeof(CustomsReceiptFormViewModel)] = Receipts,
         [typeof(CustomsStatementViewModel)] = Statement,
+        [typeof(CustomsDailyReportViewModel)] = Reports,
+        [typeof(CustomsMonthlyReportViewModel)] = Reports,
+        [typeof(CustomsCustomerReportViewModel)] = Reports,
+        [typeof(CustomsInvoiceReportViewModel)] = Reports,
+        [typeof(CustomsVehiclesReportViewModel)] = Reports,
+        [typeof(CustomsDebtsReportViewModel)] = Reports,
+        [typeof(CustomsProfitReportViewModel)] = ProfitReport,
         [typeof(UsersViewModel)] = Users,
         [typeof(PermissionsViewModel)] = Permissions,
         [typeof(PrintLayoutSettingsViewModel)] = PrintSettings,
@@ -58,6 +69,8 @@ public static class CustomsPermissionRegistry
         [Invoices] = typeof(CustomsInvoiceListViewModel),
         [Receipts] = typeof(CustomsReceiptListViewModel),
         [Statement] = typeof(CustomsStatementViewModel),
+        [Reports] = typeof(CustomsDailyReportViewModel),
+        [ProfitReport] = typeof(CustomsProfitReportViewModel),
         [Users] = typeof(UsersViewModel),
         [Permissions] = typeof(PermissionsViewModel),
         [PrintSettings] = typeof(PrintLayoutSettingsViewModel),
@@ -74,6 +87,8 @@ public static class CustomsPermissionRegistry
         [Invoices] = "الفواتير",
         [Receipts] = "وصولات القبض",
         [Statement] = "كشف حساب",
+        [Reports] = "التقارير",
+        [ProfitReport] = "تقرير الربح",
         [Users] = "المستخدمون",
         [Permissions] = "الصلاحيات",
         [PrintSettings] = "إعدادات الطباعة",

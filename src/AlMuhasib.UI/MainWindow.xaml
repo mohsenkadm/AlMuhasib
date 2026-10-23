@@ -1552,6 +1552,27 @@
                         <DataTemplate DataType="{x:Type customsVm:CustomsStatementViewModel}">
                             <customsViews:CustomsStatementView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type customsVm:CustomsDailyReportViewModel}">
+                            <customsViews:CustomsDailyReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type customsVm:CustomsMonthlyReportViewModel}">
+                            <customsViews:CustomsMonthlyReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type customsVm:CustomsCustomerReportViewModel}">
+                            <customsViews:CustomsCustomerReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type customsVm:CustomsInvoiceReportViewModel}">
+                            <customsViews:CustomsInvoiceReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type customsVm:CustomsVehiclesReportViewModel}">
+                            <customsViews:CustomsVehiclesReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type customsVm:CustomsDebtsReportViewModel}">
+                            <customsViews:CustomsDebtsReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type customsVm:CustomsProfitReportViewModel}">
+                            <customsViews:CustomsProfitReportView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:ProductsViewModel}">
                             <views:ProductsView />
                         </DataTemplate>

@@ -1,0 +1,89 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Customs.CustomsCustomerReportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="بحث / تحديث" Command="{Binding LoadDataCommand}"/>
+            <Separator/>
+            <MenuItem Header="تصدير Excel" Command="{Binding ExportToExcelCommand}"/>
+            <MenuItem Header="تصدير PDF" Command="{Binding ExportToPdfCommand}"/>
+            <Separator/>
+            <MenuItem Header="طباعة" Command="{Binding PrintCommand}"/>
+        </ContextMenu>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+    <Grid behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="24,24,24,8">
+                <TextBlock Text="تقرير العملاء" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" Foreground="#0277BD"/>
+                <UniformGrid Columns="4" Margin="0,0,0,16">
+                    <controls:AnimatedStatCard Title="العملاء" TextValue="{Binding CustomerCount}" Icon="AccountGroup" IconBackground="#E1F5FE" IconForeground="#0277BD" ValueForeground="#0277BD"/>
+                    <controls:AnimatedStatCard Title="رصيد د.ع" TextValue="{Binding BalanceIqd}" Icon="Cash" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
+                    <controls:AnimatedStatCard Title="رصيد $" TextValue="{Binding BalanceUsd}" Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="{DynamicResource DashboardKpiTealBrush}" ValueForeground="{DynamicResource DashboardKpiTealBrush}"/>
+                    <controls:AnimatedStatCard Title="فواتير الفترة" TextValue="{Binding InvoiceCount}" Icon="FileDocument" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                </UniformGrid>
+                <controls:ChartCard Title="أعلى عملاء حسب المتبقي" Margin="0,0,0,12">
+                    <controls:ChartCard.ChartContent>
+                        <lvc:PieChart Series="{Binding TopSeries}" Height="260"/>
+                    </controls:ChartCard.ChartContent>
+                </controls:ChartCard>
+                <Border Style="{StaticResource FilterBar}">
+                    <StackPanel Orientation="Horizontal">
+                        <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}" md:HintAssist.Hint="من" Width="140" Margin="0,0,12,0"/>
+                        <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}" md:HintAssist.Hint="إلى" Width="140" Margin="0,0,12,0"/>
+                        <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding SelectedCustomer}" DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}" md:HintAssist.Hint="العميل" Width="200" Margin="0,0,12,0"/>
+                        <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+        <md:Card Grid.Row="1" md:ElevationAssist.Elevation="Dp2" Margin="24,0,24,16">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <controls:ListTableHeaderBar Grid.Row="0" Title="العملاء"
+                    TargetDataGrid="{Binding ElementName=ReportGrid}"
+                    IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                    ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                    ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                    ExportCommand="{Binding ExportToExcelCommand}"
+                    PrintCommand="{Binding PrintCommand}" ShowCardToggle="False"/>
+                <DataGrid x:Name="ReportGrid" Grid.Row="1" ItemsSource="{Binding Rows}" Style="{StaticResource ModernDataGrid}"
+                          IsReadOnly="True" AutoGenerateColumns="False" CanUserAddRows="False" MinHeight="280"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="العميل" Binding="{Binding Name}" Width="*" behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Name"/>
+                        <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="110"/>
+                        <DataGridTextColumn Header="رصيد د.ع" Binding="{Binding BalanceIqd, StringFormat=N0}" Width="100"/>
+                        <DataGridTextColumn Header="رصيد $" Binding="{Binding BalanceUsd, StringFormat=N2}" Width="90"/>
+                        <DataGridTextColumn Header="فواتير" Binding="{Binding InvoiceCount}" Width="70"/>
+                        <DataGridTextColumn Header="إيراد د.ع" Binding="{Binding RevenueIqd, StringFormat=N0}" Width="100"/>
+                        <DataGridTextColumn Header="إيراد $" Binding="{Binding RevenueUsd, StringFormat=N2}" Width="90"/>
+                        <DataGridTextColumn Header="متبقي د.ع" Binding="{Binding RemainingIqd, StringFormat=N0}" Width="100"/>
+                        <DataGridTextColumn Header="متبقي $" Binding="{Binding RemainingUsd, StringFormat=N2}" Width="90"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <controls:PaginationBar Grid.Row="2"/>
+            </Grid>
+        </md:Card>
+        <Border Grid.RowSpan="2" Background="#80FFFFFF" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True" Width="48" Height="48"
+                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+    </Grid>
+</UserControl>
