@@ -171,6 +171,12 @@ public partial class CustomsCustomersViewModel : ViewModelBase
     [RelayCommand]
     private void OpenAddDialog()
     {
+        if (!CanAdd)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية إضافة عميل");
+            return;
+        }
+
         _editingId = null;
         IsEditMode = false;
         DialogTitle = "إضافة عميل";
@@ -190,6 +196,12 @@ public partial class CustomsCustomersViewModel : ViewModelBase
     private async Task OpenEditDialog(CustomsCustomerListItem? item)
     {
         if (item is null) return;
+        if (!CanEdit)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية تعديل العميل");
+            return;
+        }
+
         try
         {
             var entity = await _customerService.GetByIdAsync(item.Id);
@@ -225,6 +237,12 @@ public partial class CustomsCustomersViewModel : ViewModelBase
     [RelayCommand]
     private async Task SaveCustomerAsync()
     {
+        if (IsEditMode ? !CanEdit : !CanAdd)
+        {
+            DialogError = "ليس لديك صلاحية الحفظ";
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(EditName))
         {
             DialogError = "اسم العميل مطلوب";
@@ -295,7 +313,7 @@ public partial class CustomsCustomersViewModel : ViewModelBase
     [RelayCommand]
     private async Task ExecuteDeleteAsync()
     {
-        if (CustomerToDelete is null) return;
+        if (CustomerToDelete is null || !CanDelete) return;
         try
         {
             await _customerService.SoftDeleteAsync(CustomerToDelete.Id, _currentUserService.Username);
@@ -326,6 +344,12 @@ public partial class CustomsCustomersViewModel : ViewModelBase
     [RelayCommand]
     private async Task ExportToExcel()
     {
+        if (!CanExport)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية التصدير");
+            return;
+        }
+
         try
         {
             var (allItems, _) = await _customerService.GetPagedAsync(1, int.MaxValue, null, activeOnly: null);
@@ -364,6 +388,12 @@ public partial class CustomsCustomersViewModel : ViewModelBase
     [RelayCommand]
     private async Task PrintTable()
     {
+        if (!CanPrint)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
+            return;
+        }
+
         try
         {
             var (allItems, _) = await _customerService.GetPagedAsync(1, int.MaxValue, null, activeOnly: null);

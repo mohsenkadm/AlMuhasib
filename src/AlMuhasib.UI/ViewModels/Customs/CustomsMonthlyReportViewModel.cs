@@ -21,6 +21,8 @@ public partial class CustomsMonthlyReportViewModel : CustomsReportViewModelBase
     [ObservableProperty] private string _invoicesUsd = "0";
     [ObservableProperty] private string _receiptsIqd = "0";
     [ObservableProperty] private string _profitIqd = "0";
+    [ObservableProperty] private bool _canViewExpenses;
+    [ObservableProperty] private bool _canViewProfit;
     [ObservableProperty] private ISeries[] _dailySeries = [];
     [ObservableProperty] private Axis[] _dailyXAxes = [];
     [ObservableProperty] private Axis[] _dailyYAxes = [];
@@ -45,6 +47,10 @@ public partial class CustomsMonthlyReportViewModel : CustomsReportViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(CurrentUserService, CustomsPermissionRegistry.Reports);
+        CanViewExpenses = CurrentUserService.IsAdmin
+            || CurrentUserService.CanView(CustomsPermissionRegistry.Expenses);
+        CanViewProfit = CurrentUserService.IsAdmin
+            || CurrentUserService.CanView(CustomsPermissionRegistry.ProfitReport);
         await LoadDataAsync();
     }
 
@@ -88,24 +94,51 @@ public partial class CustomsMonthlyReportViewModel : CustomsReportViewModelBase
 
     private (string[] Cols, IList<object[]> Rows, List<string> Summary) BuildExport()
     {
-        var cols = new[]
+        var colList = new List<string>
         {
-            "التاريخ", "فواتير", "فواتير د.ع", "فواتير $", "قبض د.ع", "قبض $",
-            "مصروف د.ع", "مصروف $", "ربح د.ع", "ربح $"
+            "التاريخ", "فواتير", "فواتير د.ع", "فواتير $", "قبض د.ع", "قبض $"
         };
-        IList<object[]> rows = _allRows.Select(r => new object[]
+        if (CanViewExpenses)
         {
-            r.Date.ToString("yyyy/MM/dd"), r.InvoiceCount,
-            r.InvoicesIqd, r.InvoicesUsd, r.ReceiptsIqd, r.ReceiptsUsd,
-            r.ExpensesIqd, r.ExpensesUsd, r.ProfitIqd, r.ProfitUsd
+            colList.Add("مصروف د.ع");
+            colList.Add("مصروف $");
+        }
+
+        if (CanViewProfit && CanViewExpenses)
+        {
+            colList.Add("ربح د.ع");
+            colList.Add("ربح $");
+        }
+
+        IList<object[]> rows = _allRows.Select(r =>
+        {
+            var cells = new List<object>
+            {
+                r.Date.ToString("yyyy/MM/dd"), r.InvoiceCount,
+                r.InvoicesIqd, r.InvoicesUsd, r.ReceiptsIqd, r.ReceiptsUsd
+            };
+            if (CanViewExpenses)
+            {
+                cells.Add(r.ExpensesIqd);
+                cells.Add(r.ExpensesUsd);
+            }
+
+            if (CanViewProfit && CanViewExpenses)
+            {
+                cells.Add(r.ProfitIqd);
+                cells.Add(r.ProfitUsd);
+            }
+
+            return cells.ToArray();
         }).ToList();
         var summary = new List<string>
         {
             $"فواتير د.ع: {InvoicesIqd}",
-            $"فواتير $: {InvoicesUsd}",
-            $"الربح: {ProfitIqd}"
+            $"فواتير $: {InvoicesUsd}"
         };
-        return (cols, rows, summary);
+        if (CanViewProfit && CanViewExpenses)
+            summary.Add($"الربح: {ProfitIqd}");
+        return (colList.ToArray(), rows, summary);
     }
 
     [RelayCommand] private void ExportToExcel()

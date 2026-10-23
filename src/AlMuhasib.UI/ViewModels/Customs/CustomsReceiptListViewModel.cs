@@ -152,19 +152,32 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task OpenNewReceiptAsync() =>
+    private async Task OpenNewReceiptAsync()
+    {
+        if (!CanAdd)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية إنشاء وصل قبض");
+            return;
+        }
+
         await _mainWindow.OpenTabAsync(
             typeof(CustomsReceiptFormViewModel),
             "وصل قبض جديد",
             PackIconKind.CashPlus,
             activateIfExists: false,
             permissionScreenName: CustomsPermissionRegistry.Receipts);
+    }
 
     [RelayCommand]
     private async Task EditReceiptAsync(CustomsReceiptListItem? item)
     {
         item ??= SelectedReceipt;
-        if (item is null || !item.CanEdit) return;
+        if (item is null || !item.CanEdit || !CanEdit)
+        {
+            if (item is not null && !CanEdit)
+                BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية تعديل الوصل");
+            return;
+        }
 
         CustomsReceiptNavigationBridge.PendingEditReceiptId = item.Id;
         await _mainWindow.OpenTabAsync(
@@ -193,7 +206,7 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
     [RelayCommand]
     private async Task ExecuteCancelAsync()
     {
-        if (ReceiptToCancel is null) return;
+        if (ReceiptToCancel is null || !CanDelete) return;
         try
         {
             await _receiptService.CancelAsync(ReceiptToCancel.Id, _currentUserService.Username);
@@ -257,6 +270,12 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
     [RelayCommand]
     private async Task ExportToExcel()
     {
+        if (!CanExport)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية التصدير");
+            return;
+        }
+
         try
         {
             var (allItems, _) = await _receiptService.GetPagedAsync(
@@ -295,6 +314,12 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
     [RelayCommand]
     private async Task PrintTable()
     {
+        if (!CanPrint)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
+            return;
+        }
+
         try
         {
             var (allItems, _) = await _receiptService.GetPagedAsync(

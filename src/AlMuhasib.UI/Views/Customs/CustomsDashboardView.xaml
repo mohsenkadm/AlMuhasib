@@ -202,7 +202,8 @@
                                                Icon="CashMinus"
                                                AccentBrush="{DynamicResource DashboardKpiOrangeBrush}"
                                                AccentLightBrush="{DynamicResource DashboardKpiOrangeLightBrush}"
-                                               ValueBrush="{DynamicResource DashboardKpiOrangeBrush}"/>
+                                               ValueBrush="{DynamicResource DashboardKpiOrangeBrush}"
+                                               Visibility="{Binding CanViewExpenses, Converter={StaticResource BoolToVis}}"/>
 
                     <controls:DashboardKpiCard Grid.Column="2" Margin="4,0,4,0"
                                                Title="الأرباح"
@@ -210,7 +211,8 @@
                                                Icon="ChartLine"
                                                AccentBrush="#0277BD"
                                                AccentLightBrush="#E1F5FE"
-                                               ValueBrush="#01579B"/>
+                                               ValueBrush="#01579B"
+                                               Visibility="{Binding CanViewProfit, Converter={StaticResource BoolToVis}}"/>
 
                     <controls:DashboardKpiCard Grid.Column="3" Margin="8,0,0,0"
                                                Title="الديون"

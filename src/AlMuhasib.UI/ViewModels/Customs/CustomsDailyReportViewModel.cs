@@ -21,6 +21,7 @@ public partial class CustomsDailyReportViewModel : CustomsReportViewModelBase
     [ObservableProperty] private string _receiptsIqd = "0";
     [ObservableProperty] private string _expensesIqd = "0";
     [ObservableProperty] private string _vehicleCount = "0";
+    [ObservableProperty] private bool _canViewExpenses;
     [ObservableProperty] private CustomsReportCustomerOption? _selectedCustomer;
     [ObservableProperty] private ISeries[] _typeSeries = [];
 
@@ -42,6 +43,8 @@ public partial class CustomsDailyReportViewModel : CustomsReportViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(CurrentUserService, CustomsPermissionRegistry.Reports);
+        CanViewExpenses = CurrentUserService.IsAdmin
+            || CurrentUserService.CanView(CustomsPermissionRegistry.Expenses);
         await LoadCustomerOptionsAsync();
         SelectedCustomer = Customers.FirstOrDefault();
         await LoadDataAsync();

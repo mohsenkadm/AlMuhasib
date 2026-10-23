@@ -1,3 +1,4 @@
+using AlMuhasib.Core.Constants;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Helpers;
@@ -11,15 +12,25 @@ namespace AlMuhasib.Infrastructure.Services.Customs;
 public sealed class CustomsReportService : ICustomsReportService
 {
     private readonly IDbContextFactory<CustomsDbContext> _contextFactory;
+    private readonly CustomsPermissionGuard _permissions;
 
-    public CustomsReportService(IDbContextFactory<CustomsDbContext> contextFactory)
+    public CustomsReportService(
+        IDbContextFactory<CustomsDbContext> contextFactory,
+        CustomsPermissionGuard permissions)
     {
         _contextFactory = contextFactory;
+        _permissions = permissions;
     }
 
     public async Task<IReadOnlyList<CustomsReportCustomerOption>> GetCustomerOptionsAsync(
         CancellationToken cancellationToken = default)
     {
+        if (!_permissions.CanView(CustomsScreenNames.Reports)
+            && !_permissions.CanViewProfit)
+        {
+            _permissions.EnsureView(CustomsScreenNames.Reports);
+        }
+
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         return await db.CustomsCustomers.AsNoTracking()
             .Where(c => c.IsActive)
@@ -33,6 +44,7 @@ public sealed class CustomsReportService : ICustomsReportService
         int? customerId = null,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Reports);
         var from = day.Date;
         var toEx = from.AddDays(1);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
@@ -109,17 +121,21 @@ public sealed class CustomsReportService : ICustomsReportService
             Amount = r.Amount,
             Description = r.Notes
         }));
-        rows.AddRange(expenses.Select(e => new CustomsDailyReportRow
+        if (_permissions.CanViewExpenses)
         {
-            Date = e.ExpenseDate,
-            Kind = "مصروف",
-            Reference = e.InvoiceNumber,
-            CustomerName = e.CustomerName,
-            CurrencyLabel = CurrencyLabel(e.Currency),
-            Amount = e.Amount,
-            Description = string.IsNullOrWhiteSpace(e.Description) ? e.TypeName : e.Description
-        }));
+            rows.AddRange(expenses.Select(e => new CustomsDailyReportRow
+            {
+                Date = e.ExpenseDate,
+                Kind = "مصروف",
+                Reference = e.InvoiceNumber,
+                CustomerName = e.CustomerName,
+                CurrencyLabel = CurrencyLabel(e.Currency),
+                Amount = e.Amount,
+                Description = string.IsNullOrWhiteSpace(e.Description) ? e.TypeName : e.Description
+            }));
+        }
 
+        var showExpenses = _permissions.CanViewExpenses;
         return new CustomsDailyReportResult
         {
             InvoiceCount = invoices.Count,
@@ -127,14 +143,14 @@ public sealed class CustomsReportService : ICustomsReportService
             InvoicesUsd = invoices.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.TotalAmount),
             ReceiptsIqd = receipts.Where(r => r.Currency == AccountingCurrency.IQD).Sum(r => r.Amount),
             ReceiptsUsd = receipts.Where(r => r.Currency == AccountingCurrency.USD).Sum(r => r.Amount),
-            ExpensesIqd = expenses.Where(e => e.Currency == AccountingCurrency.IQD).Sum(e => e.Amount),
-            ExpensesUsd = expenses.Where(e => e.Currency == AccountingCurrency.USD).Sum(e => e.Amount),
+            ExpensesIqd = showExpenses ? expenses.Where(e => e.Currency == AccountingCurrency.IQD).Sum(e => e.Amount) : 0,
+            ExpensesUsd = showExpenses ? expenses.Where(e => e.Currency == AccountingCurrency.USD).Sum(e => e.Amount) : 0,
             VehicleCount = vehicleCount,
             ByTypeChart =
             [
                 new() { Name = "فواتير", Amount = invoices.Count },
                 new() { Name = "قبض", Amount = receipts.Count },
-                new() { Name = "مصاريف", Amount = expenses.Count },
+                new() { Name = "مصاريف", Amount = showExpenses ? expenses.Count : 0 },
                 new() { Name = "سيارات", Amount = vehicleCount }
             ],
             Rows = rows.OrderBy(r => r.Date).ThenBy(r => r.Kind).ToList()
@@ -146,6 +162,7 @@ public sealed class CustomsReportService : ICustomsReportService
         DateTime toDate,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Reports);
         var from = fromDate.Date;
         var toEx = toDate.Date.AddDays(1);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
@@ -215,16 +232,42 @@ public sealed class CustomsReportService : ICustomsReportService
         }
 
         var ordered = dayRows.Values.OrderBy(r => r.Date).ToList();
+        var showExpenses = _permissions.CanViewExpenses;
+        var showProfit = _permissions.CanViewProfit;
+        if (!showExpenses || !showProfit)
+        {
+            foreach (var row in ordered)
+            {
+                if (!showExpenses)
+                {
+                    row.ExpensesIqd = 0;
+                    row.ExpensesUsd = 0;
+                }
+
+                if (!showProfit)
+                {
+                    row.ProfitIqd = 0;
+                    row.ProfitUsd = 0;
+                }
+                else if (!showExpenses)
+                {
+                    // Profit without expense visibility must not leak expense-derived figures.
+                    row.ProfitIqd = 0;
+                    row.ProfitUsd = 0;
+                }
+            }
+        }
+
         return new CustomsMonthlyReportResult
         {
             InvoicesIqd = ordered.Sum(r => r.InvoicesIqd),
             InvoicesUsd = ordered.Sum(r => r.InvoicesUsd),
             ReceiptsIqd = ordered.Sum(r => r.ReceiptsIqd),
             ReceiptsUsd = ordered.Sum(r => r.ReceiptsUsd),
-            ExpensesIqd = ordered.Sum(r => r.ExpensesIqd),
-            ExpensesUsd = ordered.Sum(r => r.ExpensesUsd),
-            ProfitIqd = ordered.Sum(r => r.ProfitIqd),
-            ProfitUsd = ordered.Sum(r => r.ProfitUsd),
+            ExpensesIqd = showExpenses ? ordered.Sum(r => r.ExpensesIqd) : 0,
+            ExpensesUsd = showExpenses ? ordered.Sum(r => r.ExpensesUsd) : 0,
+            ProfitIqd = showProfit && showExpenses ? ordered.Sum(r => r.ProfitIqd) : 0,
+            ProfitUsd = showProfit && showExpenses ? ordered.Sum(r => r.ProfitUsd) : 0,
             DailyChart = ordered.Select(r => new CustomsReportNameAmountPoint
             {
                 Name = r.Date.ToString("MM/dd"),
@@ -240,6 +283,7 @@ public sealed class CustomsReportService : ICustomsReportService
         int? customerId = null,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Reports);
         var from = fromDate.Date;
         var toEx = toDate.Date.AddDays(1);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
@@ -317,6 +361,7 @@ public sealed class CustomsReportService : ICustomsReportService
         CustomsServiceType? serviceType = null,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Reports);
         var from = fromDate.Date;
         var toEx = toDate.Date.AddDays(1);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
@@ -388,6 +433,7 @@ public sealed class CustomsReportService : ICustomsReportService
         CustomsVehicleStatus? status = null,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Reports);
         var from = fromDate.Date;
         var toEx = toDate.Date.AddDays(1);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
@@ -456,6 +502,7 @@ public sealed class CustomsReportService : ICustomsReportService
         AccountingCurrency? currency = null,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Reports);
         var asOf = asOfDate.Date;
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -529,6 +576,7 @@ public sealed class CustomsReportService : ICustomsReportService
         AccountingCurrency? currency = null,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.ProfitReport);
         var from = fromDate.Date;
         var toEx = toDate.Date.AddDays(1);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);

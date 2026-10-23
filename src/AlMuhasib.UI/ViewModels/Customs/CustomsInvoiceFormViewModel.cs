@@ -108,17 +108,21 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     public bool HasSavedInvoice => _editId.HasValue;
     public bool CanPrintDocument => HasSavedInvoice && CanPrint;
     public bool CanExportDocument => HasSavedInvoice && CanExport;
+    public bool CanManageAttachments => CanEdit && Status != CustomsInvoiceStatus.Cancelled;
     public bool IsVehiclesReadOnly => !CanEdit || Status == CustomsInvoiceStatus.Cancelled;
     public bool CanAddVehicle => CanAdd && Status != CustomsInvoiceStatus.Cancelled;
     public bool CanDeleteVehicle => CanDelete && Status != CustomsInvoiceStatus.Cancelled;
     public bool HasSavedDetailVehicle => DetailVehicle?.Id is > 0;
     public bool HasSavedAttachmentsVehicle => AttachmentsVehicle?.Id is > 0;
-    public bool CanAddExpense => CanAdd && Status != CustomsInvoiceStatus.Cancelled;
-    public bool CanEditExpense => CanEdit && Status != CustomsInvoiceStatus.Cancelled;
-    public bool CanDeleteExpense => CanDelete && Status != CustomsInvoiceStatus.Cancelled;
+    public bool CanAddExpense => CanViewExpenses && CanAdd && Status != CustomsInvoiceStatus.Cancelled;
+    public bool CanEditExpense => CanViewExpenses && CanEdit && Status != CustomsInvoiceStatus.Cancelled;
+    public bool CanDeleteExpense => CanViewExpenses && CanDelete && Status != CustomsInvoiceStatus.Cancelled;
     public bool HasSavedEditingExpense => _editingExpenseRow?.Id is > 0;
     public bool HasSavedAttachmentsExpense => AttachmentsExpense?.Id is > 0;
     public string InvoiceCurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
+
+    [ObservableProperty] private bool _canViewExpenses;
+    [ObservableProperty] private bool _canViewProfit;
 
     public CustomsInvoiceFormViewModel(
         ICustomsInvoiceService invoiceService,
@@ -142,6 +146,10 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, CustomsPermissionRegistry.Invoices);
+        CanViewExpenses = _currentUserService.IsAdmin
+            || _currentUserService.CanView(CustomsPermissionRegistry.Expenses);
+        CanViewProfit = _currentUserService.IsAdmin
+            || _currentUserService.CanView(CustomsPermissionRegistry.ProfitReport);
         await LoadLookupsAsync();
 
         var pendingId = CustomsInvoiceNavigationBridge.TakePendingEditInvoiceId();
@@ -158,10 +166,13 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         foreach (var c in customers)
             Customers.Add(c);
 
-        var types = await _expenseTypeService.GetActiveAsync();
         ExpenseTypes.Clear();
-        foreach (var t in types)
-            ExpenseTypes.Add(t);
+        if (CanViewExpenses)
+        {
+            var types = await _expenseTypeService.GetActiveAsync();
+            foreach (var t in types)
+                ExpenseTypes.Add(t);
+        }
     }
 
     private async Task ResetForNewAsync()
@@ -281,6 +292,7 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasSavedInvoice));
         OnPropertyChanged(nameof(CanPrintDocument));
         OnPropertyChanged(nameof(CanExportDocument));
+        OnPropertyChanged(nameof(CanManageAttachments));
         OnPropertyChanged(nameof(IsVehiclesReadOnly));
         OnPropertyChanged(nameof(CanAddVehicle));
         OnPropertyChanged(nameof(CanDeleteVehicle));
@@ -458,6 +470,12 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     [RelayCommand]
     private async Task AddVehicleAttachmentAsync()
     {
+        if (!CanManageAttachments)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية إضافة مرفقات");
+            return;
+        }
+
         var vehicleId = AttachmentsVehicle?.Id ?? DetailVehicle?.Id;
         if (vehicleId is null or <= 0)
         {
@@ -640,6 +658,12 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     [RelayCommand]
     private async Task AddExpenseAttachmentAsync()
     {
+        if (!CanManageAttachments || !CanViewExpenses)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية إضافة مرفقات المصروف");
+            return;
+        }
+
         var expenseId = AttachmentsExpense?.Id ?? _editingExpenseRow?.Id;
         if (expenseId is null or <= 0)
         {
@@ -905,6 +929,12 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     [RelayCommand]
     private async Task AddAttachmentAsync()
     {
+        if (!CanManageAttachments)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية إضافة مرفقات");
+            return;
+        }
+
         if (!_editId.HasValue)
         {
             BeautifulMessageDialog.ShowWarning("احفظ الفاتورة أولاً قبل إرفاق الملفات");

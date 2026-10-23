@@ -1,3 +1,4 @@
+using AlMuhasib.Core.Constants;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Interfaces.Services.Customs;
@@ -10,10 +11,14 @@ namespace AlMuhasib.Infrastructure.Services.Customs;
 public sealed class CustomsDashboardService : ICustomsDashboardService
 {
     private readonly IDbContextFactory<CustomsDbContext> _contextFactory;
+    private readonly CustomsPermissionGuard _permissions;
 
-    public CustomsDashboardService(IDbContextFactory<CustomsDbContext> contextFactory)
+    public CustomsDashboardService(
+        IDbContextFactory<CustomsDbContext> contextFactory,
+        CustomsPermissionGuard permissions)
     {
         _contextFactory = contextFactory;
+        _permissions = permissions;
     }
 
     public async Task<CustomsDashboardStats> GetDashboardStatsAsync(
@@ -21,6 +26,7 @@ public sealed class CustomsDashboardService : ICustomsDashboardService
         DateTime? toDate = null,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Dashboard);
         var to = (toDate ?? DateTime.Today).Date;
         var from = (fromDate ?? new DateTime(to.Year, to.Month, 1)).Date;
         var toExclusive = to.AddDays(1);
@@ -145,12 +151,12 @@ public sealed class CustomsDashboardService : ICustomsDashboardService
             UnpaidInvoiceCount = unpaidInvoiceCount,
             ReceiptsIqd = receiptsIqd,
             ReceiptsUsd = receiptsUsd,
-            ExpensesIqd = expensesIqd,
-            ExpensesUsd = expensesUsd,
+            ExpensesIqd = _permissions.CanViewExpenses ? expensesIqd : 0,
+            ExpensesUsd = _permissions.CanViewExpenses ? expensesUsd : 0,
             DebtsIqd = debtsIqd,
             DebtsUsd = debtsUsd,
-            ProfitIqd = profitIqd,
-            ProfitUsd = profitUsd,
+            ProfitIqd = _permissions.CanViewProfit && _permissions.CanViewExpenses ? profitIqd : 0,
+            ProfitUsd = _permissions.CanViewProfit && _permissions.CanViewExpenses ? profitUsd : 0,
             MonthlyInvoices = filledMonthly,
             VehicleStatusChart =
             [

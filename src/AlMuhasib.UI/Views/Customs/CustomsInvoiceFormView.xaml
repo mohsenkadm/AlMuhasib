@@ -279,7 +279,8 @@
 
                 <!-- Expenses DataTable + internal profit -->
                 <md:Card Style="{StaticResource ElevatedCard}" Padding="0" Margin="0,0,0,12"
-                         md:ElevationAssist.Elevation="Dp2">
+                         md:ElevationAssist.Elevation="Dp2"
+                         Visibility="{Binding CanViewExpenses, Converter={StaticResource BoolToVis}}">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -356,7 +357,8 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <StackPanel Grid.Row="2" Margin="16,4,16,16">
+                        <StackPanel Grid.Row="2" Margin="16,4,16,16"
+                                    Visibility="{Binding CanViewProfit, Converter={StaticResource BoolToVis}}">
                             <TextBlock FontSize="12" Foreground="{DynamicResource HintForegroundBrush}"
                                        TextWrapping="Wrap" Margin="0,0,0,10"
                                        Text="الربح الداخلي = الإيراد − مصاريف نفس عملة الفاتورة — رصيد العميل (المدفوع/المتبقي) ليس ربحاً"/>
@@ -390,6 +392,7 @@
                         SaveFirstHint="احفظ الفاتورة أولاً لتفعيل المرفقات"
                         Items="{Binding Attachments}"
                         HasSavedOwner="{Binding HasSavedInvoice}"
+                        CanManage="{Binding CanManageAttachments}"
                         CanDelete="{Binding CanDelete}"
                         AddCommand="{Binding AddAttachmentCommand}"
                         OpenCommand="{Binding OpenAttachmentCommand}"
@@ -503,6 +506,7 @@
                                     MaxGridHeight="140"
                                     Items="{Binding DataContext.VehicleAttachments, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     HasSavedOwner="{Binding DataContext.HasSavedDetailVehicle, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CanManage="{Binding DataContext.CanManageAttachments, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     CanDelete="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     AddCommand="{Binding DataContext.AddVehicleAttachmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                     OpenCommand="{Binding DataContext.OpenAttachmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -557,6 +561,7 @@
                                 MaxGridHeight="320"
                                 Items="{Binding VehicleAttachments}"
                                 HasSavedOwner="{Binding HasSavedAttachmentsVehicle}"
+                                CanManage="{Binding CanManageAttachments}"
                                 CanDelete="{Binding CanDelete}"
                                 AddCommand="{Binding AddVehicleAttachmentCommand}"
                                 OpenCommand="{Binding OpenAttachmentCommand}"
@@ -644,6 +649,7 @@
                                     MaxGridHeight="140"
                                     Items="{Binding ExpenseAttachments}"
                                     HasSavedOwner="{Binding HasSavedEditingExpense}"
+                                    CanManage="{Binding CanManageAttachments}"
                                     CanDelete="{Binding CanDelete}"
                                     AddCommand="{Binding AddExpenseAttachmentCommand}"
                                     OpenCommand="{Binding OpenAttachmentCommand}"
@@ -697,6 +703,7 @@
                                 MaxGridHeight="320"
                                 Items="{Binding ExpenseAttachments}"
                                 HasSavedOwner="{Binding HasSavedAttachmentsExpense}"
+                                CanManage="{Binding CanManageAttachments}"
                                 CanDelete="{Binding CanDelete}"
                                 AddCommand="{Binding AddExpenseAttachmentCommand}"
                                 OpenCommand="{Binding OpenAttachmentCommand}"

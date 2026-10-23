@@ -1,3 +1,4 @@
+using AlMuhasib.Core.Constants;
 using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
@@ -14,10 +15,12 @@ namespace AlMuhasib.Infrastructure.Services.Customs;
 public sealed class CustomsPrintService : ICustomsPrintService
 {
     private readonly IExportService _exportService;
+    private readonly CustomsPermissionGuard _permissions;
 
-    public CustomsPrintService(IExportService exportService)
+    public CustomsPrintService(IExportService exportService, CustomsPermissionGuard permissions)
     {
         _exportService = exportService;
+        _permissions = permissions;
     }
 
     public CustomsPrintDocumentKind ResolveInvoiceKind(CustomsServiceType serviceType) =>
@@ -54,13 +57,19 @@ public sealed class CustomsPrintService : ICustomsPrintService
 
     public void PrintCustomerInvoice(
         CustomsInvoiceDetail detail,
-        string? customerPhone = null) =>
+        string? customerPhone = null)
+    {
+        _permissions.EnsurePrint(CustomsScreenNames.Invoices);
         _exportService.PrintInvoice(BuildCustomerInvoice(detail, customerPhone));
+    }
 
     public string ExportCustomerInvoicePdf(
         CustomsInvoiceDetail detail,
-        string? customerPhone = null) =>
-        _exportService.ExportInvoiceToPdf(BuildCustomerInvoice(detail, customerPhone));
+        string? customerPhone = null)
+    {
+        _permissions.EnsureExport(CustomsScreenNames.Invoices);
+        return _exportService.ExportInvoiceToPdf(BuildCustomerInvoice(detail, customerPhone));
+    }
 
     public VoucherPrintModel BuildReceipt(CustomsReceiptDetail detail)
     {
@@ -84,8 +93,12 @@ public sealed class CustomsPrintService : ICustomsPrintService
         };
     }
 
-    public string ExportReceiptPdf(CustomsReceiptDetail detail) =>
-        _exportService.ExportVoucherToPdf(BuildReceipt(detail));
+    public string ExportReceiptPdf(CustomsReceiptDetail detail)
+    {
+        // List/form print and PDF export both call this helper.
+        _permissions.EnsurePrintOrExport(CustomsScreenNames.Receipts);
+        return _exportService.ExportVoucherToPdf(BuildReceipt(detail));
+    }
 
     public StatementPrintModel BuildCustomerStatement(
         string customerName,
@@ -107,15 +120,21 @@ public sealed class CustomsPrintService : ICustomsPrintService
             SummaryLines = summaryLines
         };
 
-    public void PrintCustomerStatement(StatementPrintModel model) =>
+    public void PrintCustomerStatement(StatementPrintModel model)
+    {
+        _permissions.EnsurePrint(CustomsScreenNames.Statement);
         _exportService.PrintTable(
             model.Title,
             model.Columns,
             model.Rows,
             model.SummaryLines);
+    }
 
-    public string ExportCustomerStatementPdf(StatementPrintModel model) =>
-        _exportService.ExportStatementToPdf(model);
+    public string ExportCustomerStatementPdf(StatementPrintModel model)
+    {
+        _permissions.EnsureExport(CustomsScreenNames.Statement);
+        return _exportService.ExportStatementToPdf(model);
+    }
 
     public void PrintReportTable(
         CustomsPrintDocumentKind kind,
@@ -125,6 +144,7 @@ public sealed class CustomsPrintService : ICustomsPrintService
         IList<string>? summaryLines = null)
     {
         _ = kind; // reserved for future official report templates
+        _permissions.EnsurePrint(CustomsScreenNames.Reports);
         _exportService.PrintTable(title, columns, rows, summaryLines);
     }
 
@@ -133,6 +153,7 @@ public sealed class CustomsPrintService : ICustomsPrintService
         StatementPrintModel model)
     {
         _ = kind;
+        _permissions.EnsureExport(CustomsScreenNames.Reports);
         return _exportService.ExportStatementToPdf(model);
     }
 
