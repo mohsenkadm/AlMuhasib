@@ -480,6 +480,8 @@ public partial class App : Application
         services.AddTransient<CustomsDashboardViewModel>();
         services.AddTransient<CustomsCustomersViewModel>();
         services.AddTransient<CustomsCustomerFileViewModel>();
+        services.AddTransient<CustomsInvoiceListViewModel>();
+        services.AddTransient<CustomsInvoiceFormViewModel>();
 
         services.AddSingleton<MainWindowViewModel>();
 

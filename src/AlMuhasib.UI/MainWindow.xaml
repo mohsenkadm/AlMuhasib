@@ -1537,6 +1537,12 @@
                         <DataTemplate DataType="{x:Type customsVm:CustomsCustomerFileViewModel}">
                             <customsViews:CustomsCustomerFileView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type customsVm:CustomsInvoiceListViewModel}">
+                            <customsViews:CustomsInvoiceListView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type customsVm:CustomsInvoiceFormViewModel}">
+                            <customsViews:CustomsInvoiceFormView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:ProductsViewModel}">
                             <views:ProductsView />
                         </DataTemplate>

@@ -7,6 +7,7 @@ public static class CustomsPermissionRegistry
 {
     public const string Dashboard = "CustomsDashboard";
     public const string Customers = "CustomsCustomers";
+    public const string Invoices = "CustomsInvoices";
     public const string Users = "Users";
     public const string Permissions = "Permissions";
     public const string PrintSettings = "PrintSettings";
@@ -17,6 +18,7 @@ public static class CustomsPermissionRegistry
     [
         (Dashboard, "لوحة التحكم"),
         (Customers, "العملاء"),
+        (Invoices, "الفواتير"),
         (Users, "المستخدمون"),
         (Permissions, "الصلاحيات"),
         (PrintSettings, "إعدادات الطباعة"),
@@ -31,6 +33,8 @@ public static class CustomsPermissionRegistry
         [typeof(CustomsDashboardViewModel)] = Dashboard,
         [typeof(CustomsCustomersViewModel)] = Customers,
         [typeof(CustomsCustomerFileViewModel)] = Customers,
+        [typeof(CustomsInvoiceListViewModel)] = Invoices,
+        [typeof(CustomsInvoiceFormViewModel)] = Invoices,
         [typeof(UsersViewModel)] = Users,
         [typeof(PermissionsViewModel)] = Permissions,
         [typeof(PrintLayoutSettingsViewModel)] = PrintSettings,
@@ -44,6 +48,7 @@ public static class CustomsPermissionRegistry
     {
         [Dashboard] = typeof(CustomsDashboardViewModel),
         [Customers] = typeof(CustomsCustomersViewModel),
+        [Invoices] = typeof(CustomsInvoiceListViewModel),
         [Users] = typeof(UsersViewModel),
         [Permissions] = typeof(PermissionsViewModel),
         [PrintSettings] = typeof(PrintLayoutSettingsViewModel),
@@ -57,6 +62,7 @@ public static class CustomsPermissionRegistry
     {
         [Dashboard] = "لوحة التحكم",
         [Customers] = "العملاء",
+        [Invoices] = "الفواتير",
         [Users] = "المستخدمون",
         [Permissions] = "الصلاحيات",
         [PrintSettings] = "إعدادات الطباعة",

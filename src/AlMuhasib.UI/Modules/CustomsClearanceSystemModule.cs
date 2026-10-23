@@ -35,6 +35,13 @@ public sealed class CustomsClearanceSystemModule : ISystemModule
         },
         new NavigationMenuItem
         {
+            Title = "الفواتير",
+            Icon = PackIconKind.FileDocumentOutline,
+            ViewModelType = typeof(CustomsInvoiceListViewModel),
+            ScreenName = CustomsPermissionRegistry.Invoices
+        },
+        new NavigationMenuItem
+        {
             Title = "المستخدمون",
             Icon = PackIconKind.AccountMultiple,
             ViewModelType = typeof(UsersViewModel),
