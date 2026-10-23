@@ -13,6 +13,8 @@ public interface ICustomsReceiptService
         DateTime? toDate = null,
         int? customerId = null,
         AccountingCurrency? currency = null,
+        string? sortBy = null,
+        bool sortDescending = true,
         CancellationToken cancellationToken = default);
 
     Task<CustomsReceiptDetail?> GetByIdAsync(int id, CancellationToken cancellationToken = default);

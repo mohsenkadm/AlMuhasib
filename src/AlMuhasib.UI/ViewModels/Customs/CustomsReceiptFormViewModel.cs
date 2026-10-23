@@ -277,6 +277,8 @@ public partial class CustomsReceiptFormViewModel : ViewModelBase
     [RelayCommand]
     private async Task SaveAsync()
     {
+        if (IsSaving) return;
+
         FormError = string.Empty;
         if (!CanSave)
         {

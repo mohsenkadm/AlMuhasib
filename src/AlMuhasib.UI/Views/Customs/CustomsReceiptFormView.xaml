@@ -186,5 +186,17 @@
                 <Run Text="بعد الحفظ يُحدَّث تلقائياً: المدفوع · المتبقي · رصيد العميل (بنفس العملة)"/>
             </TextBlock>
         </Border>
+
+        <!-- M-02: save loading overlay -->
+        <Border Style="{StaticResource PageLoading}"
+                Visibility="{Binding IsSaving, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             IsIndeterminate="True" Width="40" Height="40" Value="0"/>
+                <TextBlock Text="جارٍ الحفظ..." FontSize="13"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           HorizontalAlignment="Center" Margin="0,10,0,0"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>

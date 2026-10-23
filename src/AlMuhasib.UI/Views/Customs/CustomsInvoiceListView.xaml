@@ -24,6 +24,7 @@
                 <MenuItem.Icon><md:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
     <Grid Margin="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
@@ -95,18 +96,19 @@
                           SelectedItem="{Binding SelectedInvoice}"
                           AutoGenerateColumns="False" IsReadOnly="True"
                           CanUserAddRows="False" SelectionMode="Single"
-                          Style="{StaticResource ModernDataGrid}">
+                          Style="{StaticResource ModernDataGrid}"
+                          Sorting="InvoicesGrid_Sorting">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="الرقم" Binding="{Binding InvoiceNumber}" Width="110"/>
-                        <DataGridTextColumn Header="التاريخ" Binding="{Binding InvoiceDate, StringFormat=yyyy/MM/dd}" Width="100"/>
-                        <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"/>
-                        <DataGridTextColumn Header="الخدمة" Binding="{Binding ServiceTypeLabel}" Width="110"/>
-                        <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70"/>
-                        <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" Width="100"/>
-                        <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat=N0}" Width="90"/>
-                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="90"/>
-                        <DataGridTextColumn Header="الحالة" Binding="{Binding StatusLabel}" Width="90"/>
-                        <DataGridTemplateColumn Header="الإجراءات" Width="160" MinWidth="160">
+                        <DataGridTextColumn Header="الرقم" Binding="{Binding InvoiceNumber}" SortMemberPath="InvoiceNumber" Width="110"/>
+                        <DataGridTextColumn Header="التاريخ" Binding="{Binding InvoiceDate, StringFormat=yyyy/MM/dd}" SortMemberPath="InvoiceDate" Width="100"/>
+                        <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*" CanUserSort="False"/>
+                        <DataGridTextColumn Header="الخدمة" Binding="{Binding ServiceTypeLabel}" Width="110" CanUserSort="False"/>
+                        <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70" CanUserSort="False"/>
+                        <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" SortMemberPath="TotalAmount" Width="100"/>
+                        <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat=N0}" SortMemberPath="PaidAmount" Width="90"/>
+                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" SortMemberPath="RemainingAmount" Width="90"/>
+                        <DataGridTextColumn Header="الحالة" Binding="{Binding StatusLabel}" SortMemberPath="Status" Width="90"/>
+                        <DataGridTemplateColumn Header="الإجراءات" Width="160" MinWidth="160" CanUserSort="False">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
                             </DataGridTemplateColumn.CellStyle>
@@ -190,5 +192,12 @@
                 </md:Card>
             </md:DialogHost.DialogContent>
         </md:DialogHost>
+
+        <!-- M-02: loading overlay (same pattern as Customs reports) -->
+        <Border Grid.RowSpan="2" Background="#80FFFFFF"
+                Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True"
+                         Width="48" Height="48" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
     </Grid>
 </UserControl>

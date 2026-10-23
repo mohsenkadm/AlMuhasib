@@ -25,6 +25,7 @@
                 <MenuItem.Icon><md:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
     <Grid Margin="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
@@ -99,27 +100,28 @@
                           SelectionMode="Single"
                           HeadersVisibility="Column"
                           Style="{StaticResource ModernDataGrid}"
+                          Sorting="CustomsCustomersGrid_Sorting"
                           behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                           behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                           behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" Width="*"
+                        <DataGridTextColumn Header="الاسم" Binding="{Binding Name}" SortMemberPath="Name" Width="*"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Name"/>
-                        <DataGridTextColumn Header="النوع" Binding="{Binding CustomerTypeLabel}" Width="90"
+                        <DataGridTextColumn Header="النوع" Binding="{Binding CustomerTypeLabel}" Width="90" CanUserSort="False"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerTypeLabel"/>
-                        <DataGridTextColumn Header="الشركة" Binding="{Binding CompanyName}" Width="140"
+                        <DataGridTextColumn Header="الشركة" Binding="{Binding CompanyName}" Width="140" CanUserSort="False"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CompanyName"/>
-                        <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" Width="120"
+                        <DataGridTextColumn Header="الهاتف" Binding="{Binding Phone}" SortMemberPath="Phone" Width="120"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Phone"/>
-                        <DataGridTextColumn Header="العنوان" Binding="{Binding Address}" Width="150"
+                        <DataGridTextColumn Header="العنوان" Binding="{Binding Address}" Width="150" CanUserSort="False"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Address"/>
-                        <DataGridTextColumn Header="رصيد د.ع" Binding="{Binding BalanceIqd, StringFormat=N0}" Width="110"
+                        <DataGridTextColumn Header="رصيد د.ع" Binding="{Binding BalanceIqd, StringFormat=N0}" SortMemberPath="BalanceIqd" Width="110"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="BalanceIqd"/>
-                        <DataGridTextColumn Header="رصيد $" Binding="{Binding BalanceUsd, StringFormat=N2}" Width="100"
+                        <DataGridTextColumn Header="رصيد $" Binding="{Binding BalanceUsd, StringFormat=N2}" SortMemberPath="BalanceUsd" Width="100"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="BalanceUsd"/>
-                        <DataGridTextColumn Header="الحالة" Binding="{Binding StatusLabel}" Width="80"
+                        <DataGridTextColumn Header="الحالة" Binding="{Binding StatusLabel}" Width="80" CanUserSort="False"
                                             behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StatusLabel"/>
-                        <DataGridTemplateColumn Header="الإجراءات" Width="160" MinWidth="160"
+                        <DataGridTemplateColumn Header="الإجراءات" Width="160" MinWidth="160" CanUserSort="False"
                                                 behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
@@ -222,5 +224,12 @@
                 </md:Card>
             </md:DialogHost.DialogContent>
         </md:DialogHost>
+
+        <!-- M-02: loading overlay (same pattern as Customs reports) -->
+        <Border Grid.RowSpan="2" Background="#80FFFFFF"
+                Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True"
+                         Width="48" Height="48" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
     </Grid>
 </UserControl>

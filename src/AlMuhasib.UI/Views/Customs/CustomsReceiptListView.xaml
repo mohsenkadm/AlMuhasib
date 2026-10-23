@@ -24,6 +24,7 @@
                 <MenuItem.Icon><md:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
     <Grid Margin="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
@@ -95,17 +96,18 @@
                           SelectedItem="{Binding SelectedReceipt}"
                           AutoGenerateColumns="False" IsReadOnly="True"
                           CanUserAddRows="False" SelectionMode="Single"
-                          Style="{StaticResource ModernDataGrid}">
+                          Style="{StaticResource ModernDataGrid}"
+                          Sorting="ReceiptsGrid_Sorting">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="الرقم" Binding="{Binding ReceiptNumber}" Width="110"/>
-                        <DataGridTextColumn Header="التاريخ" Binding="{Binding ReceiptDate, StringFormat=yyyy/MM/dd}" Width="100"/>
-                        <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"/>
-                        <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="110"/>
-                        <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70"/>
-                        <DataGridTextColumn Header="الطريقة" Binding="{Binding PaymentMethodLabel}" Width="90"/>
-                        <DataGridTextColumn Header="المستلم" Binding="{Binding ReceiverName}" Width="120"/>
-                        <DataGridTextColumn Header="فواتير" Binding="{Binding AllocationCount}" Width="70"/>
-                        <DataGridTemplateColumn Header="الإجراءات" Width="180" MinWidth="180">
+                        <DataGridTextColumn Header="الرقم" Binding="{Binding ReceiptNumber}" SortMemberPath="ReceiptNumber" Width="110"/>
+                        <DataGridTextColumn Header="التاريخ" Binding="{Binding ReceiptDate, StringFormat=yyyy/MM/dd}" SortMemberPath="ReceiptDate" Width="100"/>
+                        <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*" CanUserSort="False"/>
+                        <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" SortMemberPath="Amount" Width="110"/>
+                        <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70" CanUserSort="False"/>
+                        <DataGridTextColumn Header="الطريقة" Binding="{Binding PaymentMethodLabel}" Width="90" CanUserSort="False"/>
+                        <DataGridTextColumn Header="المستلم" Binding="{Binding ReceiverName}" Width="120" CanUserSort="False"/>
+                        <DataGridTextColumn Header="فواتير" Binding="{Binding AllocationCount}" Width="70" CanUserSort="False"/>
+                        <DataGridTemplateColumn Header="الإجراءات" Width="180" MinWidth="180" CanUserSort="False">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
                             </DataGridTemplateColumn.CellStyle>
@@ -171,5 +173,12 @@
                 </md:Card>
             </md:DialogHost.DialogContent>
         </md:DialogHost>
+
+        <!-- M-02: loading overlay (same pattern as Customs reports) -->
+        <Border Grid.RowSpan="2" Background="#80FFFFFF"
+                Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True"
+                         Width="48" Height="48" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
     </Grid>
 </UserControl>
