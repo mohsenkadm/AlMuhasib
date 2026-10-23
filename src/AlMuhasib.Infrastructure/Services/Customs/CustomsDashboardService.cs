@@ -1,6 +1,7 @@
 using AlMuhasib.Core.Constants;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Enums.Customs;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services.Customs;
 using AlMuhasib.Core.Models.Customs;
 using AlMuhasib.Infrastructure.Data.Customs;
@@ -44,7 +45,8 @@ public sealed class CustomsDashboardService : ICustomsDashboardService
                 i.InvoiceDate,
                 i.Currency,
                 i.TotalAmount,
-                i.RemainingAmount
+                i.RemainingAmount,
+                i.Status
             })
             .ToListAsync(cancellationToken);
 
@@ -52,12 +54,15 @@ public sealed class CustomsDashboardService : ICustomsDashboardService
             .Where(i => i.InvoiceDate.Date >= from && i.InvoiceDate.Date < toExclusive)
             .ToList();
 
-        var unpaidInvoiceCount = invoices.Count(i => i.RemainingAmount > 0);
-
-        var debtsIqd = invoices
+        // Rule 8: debts / unpaid = approved outstanding only (not drafts; not profit).
+        var approvedOpen = invoices
+            .Where(i => i.Status == CustomsInvoiceStatus.Approved && i.RemainingAmount > 0)
+            .ToList();
+        var unpaidInvoiceCount = approvedOpen.Count;
+        var debtsIqd = approvedOpen
             .Where(i => i.Currency == AccountingCurrency.IQD)
             .Sum(i => i.RemainingAmount);
-        var debtsUsd = invoices
+        var debtsUsd = approvedOpen
             .Where(i => i.Currency == AccountingCurrency.USD)
             .Sum(i => i.RemainingAmount);
 
@@ -87,33 +92,34 @@ public sealed class CustomsDashboardService : ICustomsDashboardService
         var expensesIqd = expenses.Where(e => e.Currency == AccountingCurrency.IQD).Sum(e => e.Amount);
         var expensesUsd = expenses.Where(e => e.Currency == AccountingCurrency.USD).Sum(e => e.Amount);
 
-        // Same-currency profit: period invoices' totals minus all expenses on those invoices.
+        // Rule 6: InternalProfit per invoice = revenue − same-currency expenses only (never mix IQD/USD).
         var periodInvoiceIds = periodInvoices.Select(i => i.Id).ToList();
-        decimal periodExpenseIqd = 0;
-        decimal periodExpenseUsd = 0;
-        if (periodInvoiceIds.Count > 0)
-        {
-            var periodInvoiceExpenses = await db.CustomsExpenses.AsNoTracking()
+        var periodInvoiceExpenses = periodInvoiceIds.Count == 0
+            ? []
+            : await db.CustomsExpenses.AsNoTracking()
                 .Where(e => periodInvoiceIds.Contains(e.InvoiceId)
                             && e.Invoice.Status != CustomsInvoiceStatus.Cancelled)
-                .Select(e => new { e.Currency, e.Amount })
+                .Select(e => new { e.InvoiceId, e.Currency, e.Amount })
                 .ToListAsync(cancellationToken);
 
-            periodExpenseIqd = periodInvoiceExpenses
-                .Where(e => e.Currency == AccountingCurrency.IQD)
-                .Sum(e => e.Amount);
-            periodExpenseUsd = periodInvoiceExpenses
-                .Where(e => e.Currency == AccountingCurrency.USD)
-                .Sum(e => e.Amount);
+        var expensesByInvoice = periodInvoiceExpenses
+            .GroupBy(e => e.InvoiceId)
+            .ToDictionary(g => g.Key, g => g.Select(x => (x.Currency, x.Amount)).ToList());
+
+        decimal profitIqd = 0;
+        decimal profitUsd = 0;
+        foreach (var inv in periodInvoices)
+        {
+            expensesByInvoice.TryGetValue(inv.Id, out var invExpenses);
+            var profit = CustomsFinancialRules.ComputeInternalProfit(
+                inv.TotalAmount,
+                inv.Currency,
+                invExpenses ?? []);
+            if (inv.Currency == AccountingCurrency.IQD)
+                profitIqd += profit;
+            else
+                profitUsd += profit;
         }
-
-        var profitIqd = periodInvoices
-            .Where(i => i.Currency == AccountingCurrency.IQD)
-            .Sum(i => i.TotalAmount) - periodExpenseIqd;
-
-        var profitUsd = periodInvoices
-            .Where(i => i.Currency == AccountingCurrency.USD)
-            .Sum(i => i.TotalAmount) - periodExpenseUsd;
 
         var chartStart = new DateTime(to.Year, to.Month, 1).AddMonths(-11);
         var monthlyInvoices = invoices

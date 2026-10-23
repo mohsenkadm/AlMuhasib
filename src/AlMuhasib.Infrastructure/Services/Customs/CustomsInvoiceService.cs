@@ -2,6 +2,7 @@ using AlMuhasib.Core.Constants;
 using AlMuhasib.Core.Entities.Customs;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Enums.Customs;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services.Customs;
 using AlMuhasib.Core.Models.Customs;
 using AlMuhasib.Infrastructure.Data.Customs;
@@ -142,7 +143,10 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         await EnsureCustomerExistsAsync(db, request.CustomerId, cancellationToken);
 
-        var fxRate = await ResolveFxRateAsync(db, request.Currency, request.InvoiceDate, request.FxRate, cancellationToken);
+        var fxRate = CustomsFinancialRules.NormalizeFxRate(
+            request.Currency,
+            await ResolveFxRateAsync(db, request.Currency, request.InvoiceDate, request.FxRate, cancellationToken),
+            "الفاتورة");
         var vehiclesSum = request.Vehicles.Sum(v => v.VehiclePrice);
         var total = Math.Max(0, vehiclesSum - request.DiscountAmount);
 
@@ -158,7 +162,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
             DiscountAmount = request.DiscountAmount,
             TotalAmount = total,
             PaidAmount = 0,
-            RemainingAmount = total,
+            RemainingAmount = CustomsFinancialRules.ComputeRemaining(total, 0),
             Status = CustomsInvoiceStatus.Draft,
             InternalNotes = request.InternalNotes?.Trim() ?? string.Empty,
             CustomerNotes = request.CustomerNotes?.Trim() ?? string.Empty,
@@ -220,7 +224,14 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
 
         await EnsureCustomerExistsAsync(db, request.CustomerId, cancellationToken);
 
+        var previousCustomerId = invoice.CustomerId;
+        var hasAllocations = await db.CustomsReceiptAllocations.AsNoTracking()
+            .AnyAsync(a => a.InvoiceId == invoice.Id, cancellationToken);
+        if ((invoice.PaidAmount > 0 || hasAllocations) && request.Currency != invoice.Currency)
+            throw new InvalidOperationException("لا يمكن تغيير عملة فاتورة عليها مقبوضات/تخصيصات");
+
         var fxRate = await ResolveFxRateAsync(db, request.Currency, request.InvoiceDate, request.FxRate, cancellationToken);
+        fxRate = CustomsFinancialRules.NormalizeFxRate(request.Currency, fxRate, "الفاتورة");
         var vehiclesSum = request.Vehicles.Sum(v => v.VehiclePrice);
         var total = Math.Max(0, vehiclesSum - request.DiscountAmount);
 
@@ -248,7 +259,6 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         invoice.Description = request.Description?.Trim() ?? string.Empty;
         invoice.DiscountAmount = request.DiscountAmount;
         invoice.TotalAmount = total;
-        invoice.RemainingAmount = Math.Max(0, total - invoice.PaidAmount);
         invoice.InternalNotes = request.InternalNotes?.Trim() ?? string.Empty;
         invoice.CustomerNotes = request.CustomerNotes?.Trim() ?? string.Empty;
         invoice.UpdatedBy = request.UserName;
@@ -259,6 +269,17 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         // Without expenses permission, leave existing expense rows untouched (UI hides that section).
         if (canManageExpenses)
             await UpsertExpensesAsync(db, invoice, request.Expenses, user, cancellationToken);
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        // Rule 5: Remaining = Total − allocated receipts (recompute Paid from allocations).
+        await CustomsSettlementHelper.RecomputeInvoiceSettlementAsync(db, [invoice.Id], cancellationToken);
+        if (invoice.Status == CustomsInvoiceStatus.Approved)
+        {
+            await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, invoice.CustomerId, cancellationToken);
+            if (previousCustomerId != invoice.CustomerId)
+                await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, previousCustomerId, cancellationToken);
+        }
 
         await CustomsAuditWriter.WriteAsync(
             db,
@@ -320,6 +341,9 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
             cancellationToken);
 
         await db.SaveChangesAsync(cancellationToken);
+        // Rule 8: customer balance is outstanding on approved invoices — not profit.
+        await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, invoice.CustomerId, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     public async Task CancelAsync(
@@ -339,9 +363,10 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         if (invoice.PaidAmount > 0)
             throw new InvalidOperationException("لا يمكن إلغاء فاتورة عليها مبالغ مدفوعة");
 
-        // Financial trail: Cancel keeps the row (Status = Cancelled); never hard-delete approved/cancelled invoices.
+        // Rule 9: Cancel keeps the row (Status = Cancelled) and audit trail; never hard-delete approved/cancelled invoices.
         var previousStatus = invoice.Status;
         var remaining = invoice.RemainingAmount;
+        var customerId = invoice.CustomerId;
         invoice.Status = CustomsInvoiceStatus.Cancelled;
         if (!string.IsNullOrWhiteSpace(reason))
         {
@@ -373,6 +398,8 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
             },
             cancellationToken);
 
+        await db.SaveChangesAsync(cancellationToken);
+        await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, customerId, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
     }
 
@@ -505,6 +532,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         CustomsInvoiceVehicleDraft draft,
         AccountingCurrency currency)
     {
+        // Rule 1: vehicle price shares the invoice Currency (forced here — no independent vehicle currency).
         vehicle.SerialNumber = draft.SerialNumber?.Trim() ?? string.Empty;
         vehicle.IraqiPlate = draft.IraqiPlate?.Trim() ?? string.Empty;
         vehicle.IraqiDriver = draft.IraqiDriver?.Trim() ?? string.Empty;
@@ -583,7 +611,8 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
     private static void ApplyExpenseFields(CustomsExpense expense, CustomsInvoiceExpenseDraft draft)
     {
         var currency = draft.Currency;
-        var fx = currency == AccountingCurrency.IQD ? 1m : (draft.FxRate > 0 ? draft.FxRate : 1m);
+        // Rule 1: every amount has Currency + valid Fx (no silent USD FxRate=1).
+        var fx = CustomsFinancialRules.NormalizeFxRate(currency, draft.FxRate, "المصروف");
 
         expense.ExpenseTypeId = draft.ExpenseTypeId;
         expense.Description = draft.Description?.Trim() ?? string.Empty;

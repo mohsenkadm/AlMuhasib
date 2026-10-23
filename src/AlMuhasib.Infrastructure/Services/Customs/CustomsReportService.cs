@@ -268,10 +268,11 @@ public sealed class CustomsReportService : ICustomsReportService
             ExpensesUsd = showExpenses ? ordered.Sum(r => r.ExpensesUsd) : 0,
             ProfitIqd = showProfit && showExpenses ? ordered.Sum(r => r.ProfitIqd) : 0,
             ProfitUsd = showProfit && showExpenses ? ordered.Sum(r => r.ProfitUsd) : 0,
+            // Rule 2: single-currency chart series (IQD) — never InvoicesIqd + InvoicesUsd.
             DailyChart = ordered.Select(r => new CustomsReportNameAmountPoint
             {
                 Name = r.Date.ToString("MM/dd"),
-                Amount = r.InvoicesIqd + r.InvoicesUsd
+                Amount = r.InvoicesIqd
             }).ToList(),
             Rows = ordered
         };
@@ -329,7 +330,8 @@ public sealed class CustomsReportService : ICustomsReportService
                 RemainingUsd = inv.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.RemainingAmount)
             };
         })
-        .OrderByDescending(r => r.RemainingIqd + r.RemainingUsd)
+        .OrderByDescending(r => r.RemainingIqd)
+        .ThenByDescending(r => r.RemainingUsd)
         .ThenBy(r => r.Name)
         .ToList();
 
@@ -339,13 +341,14 @@ public sealed class CustomsReportService : ICustomsReportService
             BalanceIqd = rows.Sum(r => r.BalanceIqd),
             BalanceUsd = rows.Sum(r => r.BalanceUsd),
             InvoiceCount = rows.Sum(r => r.InvoiceCount),
+            // Rule 2: chart Amount is IQD remaining only (USD kept in dual KPI columns).
             TopCustomersChart = rows
-                .OrderByDescending(r => r.RemainingIqd + r.RemainingUsd)
+                .OrderByDescending(r => r.RemainingIqd)
                 .Take(8)
                 .Select(r => new CustomsReportNameAmountPoint
                 {
                     Name = r.Name,
-                    Amount = r.RemainingIqd + r.RemainingUsd
+                    Amount = r.RemainingIqd
                 })
                 .ToList(),
             Rows = rows
@@ -507,7 +510,7 @@ public sealed class CustomsReportService : ICustomsReportService
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
         var query = db.CustomsInvoices.AsNoTracking()
-            .Where(i => i.Status != CustomsInvoiceStatus.Cancelled
+            .Where(i => i.Status == CustomsInvoiceStatus.Approved
                         && i.RemainingAmount > 0
                         && i.InvoiceDate <= asOf);
 
@@ -556,8 +559,16 @@ public sealed class CustomsReportService : ICustomsReportService
             DebtsIqd = data.Where(i => i.Currency == AccountingCurrency.IQD).Sum(i => i.RemainingAmount),
             DebtsUsd = data.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.RemainingAmount),
             UnpaidCount = rows.Count,
-            AgingChart = rows
-                .GroupBy(r => r.AgingBucket)
+            // Rule 2: aging chart uses one currency scope (filter currency, else IQD only).
+            AgingChart = data
+                .Where(i => currency.HasValue
+                    ? i.Currency == currency.Value
+                    : i.Currency == AccountingCurrency.IQD)
+                .GroupBy(i =>
+                {
+                    var days = Math.Max(0, (asOf - i.InvoiceDate.Date).Days);
+                    return Bucket(days);
+                })
                 .OrderBy(g => g.Key)
                 .Select(g => new CustomsReportNameAmountPoint
                 {
@@ -616,9 +627,9 @@ public sealed class CustomsReportService : ICustomsReportService
         var rows = invoices.Select(i =>
         {
             expenseMap.TryGetValue(i.Id, out var invExp);
-            var sameCurrency = (invExp ?? [])
-                .Where(e => e.Currency == i.Currency)
-                .Sum(e => e.Amount);
+            var expenseTuples = (invExp ?? []).Select(e => (e.Currency, e.Amount));
+            var profit = CustomsFinancialRules.ComputeInternalProfit(
+                i.TotalAmount, i.Currency, expenseTuples, out var sameCurrency);
             return new CustomsProfitReportRow
             {
                 InvoiceNumber = i.InvoiceNumber,
@@ -627,7 +638,7 @@ public sealed class CustomsReportService : ICustomsReportService
                 CurrencyLabel = CurrencyLabel(i.Currency),
                 Revenue = i.TotalAmount,
                 Expenses = sameCurrency,
-                Profit = i.TotalAmount - sameCurrency
+                Profit = profit
             };
         })
         .OrderByDescending(r => r.InvoiceDate)
@@ -638,7 +649,10 @@ public sealed class CustomsReportService : ICustomsReportService
         var expensesIqd = rows.Where(r => r.CurrencyLabel == "د.ع").Sum(r => r.Expenses);
         var expensesUsd = rows.Where(r => r.CurrencyLabel == "$").Sum(r => r.Expenses);
 
+        // Rule 2: monthly chart Amount is one currency (filter, else IQD profit only).
+        var chartCurrency = currency ?? AccountingCurrency.IQD;
         var monthlyChart = invoices
+            .Where(i => i.Currency == chartCurrency)
             .GroupBy(i => new DateTime(i.InvoiceDate.Year, i.InvoiceDate.Month, 1))
             .OrderBy(g => g.Key)
             .Select(g =>
@@ -646,8 +660,10 @@ public sealed class CustomsReportService : ICustomsReportService
                 var profit = g.Sum(i =>
                 {
                     expenseMap.TryGetValue(i.Id, out var invExp);
-                    var exp = (invExp ?? []).Where(e => e.Currency == i.Currency).Sum(e => e.Amount);
-                    return i.TotalAmount - exp;
+                    return CustomsFinancialRules.ComputeInternalProfit(
+                        i.TotalAmount,
+                        i.Currency,
+                        (invExp ?? []).Select(e => (e.Currency, e.Amount)));
                 });
                 return new CustomsReportNameAmountPoint
                 {
