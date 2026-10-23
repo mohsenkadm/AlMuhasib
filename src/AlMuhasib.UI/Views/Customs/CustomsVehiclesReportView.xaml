@@ -25,11 +25,11 @@
         </Grid.RowDefinitions>
         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="24,24,24,8">
-                <TextBlock Text="تقرير السيارات" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" Foreground="#0277BD"/>
+                <TextBlock Text="تقرير السيارات" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
                 <UniformGrid Columns="4" Margin="0,0,0,16">
-                    <controls:AnimatedStatCard Title="الإجمالي" TextValue="{Binding TotalText}" Icon="Car" IconBackground="#E1F5FE" IconForeground="#0277BD" ValueForeground="#0277BD"/>
+                    <controls:AnimatedStatCard Title="الإجمالي" TextValue="{Binding TotalText}" Icon="Car" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="{DynamicResource PrimaryHueMidBrush}" ValueForeground="{DynamicResource PrimaryHueMidBrush}"/>
                     <controls:AnimatedStatCard Title="قيد الإجراء" TextValue="{Binding InProgressText}" Icon="ProgressClock" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
-                    <controls:AnimatedStatCard Title="خارجة" TextValue="{Binding ExitedText}" Icon="TruckDelivery" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                    <controls:AnimatedStatCard Title="خارجة" TextValue="{Binding ExitedText}" Icon="TruckDelivery" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="{DynamicResource DashboardKpiBlueBrush}" ValueForeground="{DynamicResource DashboardKpiBlueBrush}"/>
                     <controls:AnimatedStatCard Title="واصلة" TextValue="{Binding ArrivedText}" Icon="CheckCircle" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                 </UniformGrid>
                 <controls:ChartCard Title="حسب الحالة" Margin="0,0,0,12">
@@ -41,7 +41,7 @@
                     <StackPanel Orientation="Horizontal">
                         <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}" md:HintAssist.Hint="من" Width="140" Margin="0,0,12,0"/>
                         <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}" md:HintAssist.Hint="إلى" Width="140" Margin="0,0,12,0"/>
-                        <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding SelectedCustomer}" DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}" md:HintAssist.Hint="العميل" Width="180" Margin="0,0,12,0"/>
+                        <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding SelectedCustomer}" Style="{StaticResource CustomerSearchableComboBox}" md:HintAssist.Hint="العميل" Width="180" Margin="0,0,12,0"/>
                         <ComboBox ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding SelectedStatus}" DisplayMemberPath="Label" Style="{StaticResource FilledComboBox}" md:HintAssist.Hint="الحالة" Width="140" Margin="0,0,12,0"/>
                         <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}"/>
                     </StackPanel>

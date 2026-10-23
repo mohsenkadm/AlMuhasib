@@ -33,14 +33,14 @@
         </Grid.RowDefinitions>
         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="24,24,24,8">
-                <TextBlock Text="التقرير اليومي" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" Foreground="#0277BD"/>
+                <TextBlock Text="التقرير اليومي" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
                 <UniformGrid Columns="5" Margin="0,0,0,16">
-                    <controls:AnimatedStatCard Title="فواتير" TextValue="{Binding InvoiceCount}" Icon="FileDocument" IconBackground="#E1F5FE" IconForeground="#0277BD" ValueForeground="#0277BD"/>
+                    <controls:AnimatedStatCard Title="فواتير" TextValue="{Binding InvoiceCount}" Icon="FileDocument" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="{DynamicResource PrimaryHueMidBrush}" ValueForeground="{DynamicResource PrimaryHueMidBrush}"/>
                     <controls:AnimatedStatCard Title="فواتير د.ع / $" TextValue="{Binding InvoicesIqd}" Icon="Cash" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard Title="مقبوضات" TextValue="{Binding ReceiptsIqd}" Icon="CashPlus" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="{DynamicResource DashboardKpiTealBrush}" ValueForeground="{DynamicResource DashboardKpiTealBrush}"/>
                     <controls:AnimatedStatCard Title="مصاريف" TextValue="{Binding ExpensesIqd}" Icon="CashMinus" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"
                                                Visibility="{Binding CanViewExpenses, Converter={StaticResource BoolToVis}}"/>
-                    <controls:AnimatedStatCard Title="سيارات" TextValue="{Binding VehicleCount}" Icon="Car" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                    <controls:AnimatedStatCard Title="سيارات" TextValue="{Binding VehicleCount}" Icon="Car" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="{DynamicResource DashboardKpiBlueBrush}" ValueForeground="{DynamicResource DashboardKpiBlueBrush}"/>
                 </UniformGrid>
                 <controls:ChartCard Title="توزيع الحركات" Margin="0,0,0,12">
                     <controls:ChartCard.ChartContent>
@@ -50,7 +50,7 @@
                 <Border Style="{StaticResource FilterBar}">
                     <StackPanel Orientation="Horizontal">
                         <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}" md:HintAssist.Hint="اليوم" Width="150" Margin="0,0,12,0"/>
-                        <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding SelectedCustomer}" DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}" md:HintAssist.Hint="العميل" Width="200" Margin="0,0,12,0"/>
+                        <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding SelectedCustomer}" Style="{StaticResource CustomerSearchableComboBox}" md:HintAssist.Hint="العميل" Width="200" Margin="0,0,12,0"/>
                         <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}"/>
                     </StackPanel>
                 </Border>

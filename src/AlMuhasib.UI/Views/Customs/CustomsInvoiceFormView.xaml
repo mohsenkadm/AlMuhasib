@@ -27,14 +27,14 @@
             <DockPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                     <TextBlock Text="فاتورة التخليص" FontSize="18" FontWeight="Bold"
-                               Foreground="#0277BD" VerticalAlignment="Center" Margin="0,0,16,0"/>
-                    <Border Background="#E1F5FE" CornerRadius="10" Padding="10,4" VerticalAlignment="Center">
-                        <TextBlock Text="{Binding StatusLabel}" FontWeight="SemiBold" Foreground="#0277BD"/>
+                               Foreground="{DynamicResource PrimaryHueMidBrush}" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <Border Background="{DynamicResource DashboardKpiBlueLightBrush}" CornerRadius="10" Padding="10,4" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding StatusLabel}" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryHueMidBrush}"/>
                     </Border>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
                     <Button Content="حفظ مسودة" Command="{Binding SaveCommand}"
-                            Style="{StaticResource MaterialDesignRaisedButton}" Background="#0277BD"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
                             md:ButtonAssist.CornerRadius="8" Padding="18,8" Margin="0,0,8,0"
                             IsEnabled="{Binding CanSave}"/>
                     <Button Content="حفظ واعتماد" Command="{Binding SaveAndApproveCommand}"
@@ -76,11 +76,8 @@
                         <UniformGrid Columns="3">
                             <ComboBox ItemsSource="{Binding Customers}"
                                       SelectedItem="{Binding SelectedCustomer}"
-                                      DisplayMemberPath="Name"
                                       md:HintAssist.Hint="العميل *"
-                                      Style="{StaticResource FilledComboBox}"
-                                      IsEditable="True"
-                                      IsTextSearchEnabled="True"
+                                      Style="{StaticResource CustomerSearchableComboBox}"
                                       Margin="0,0,8,10"/>
                             <TextBox Text="{Binding InvoiceNumber}" IsReadOnly="True"
                                      md:HintAssist.Hint="رقم الفاتورة"
@@ -256,8 +253,8 @@
                         <TextBlock Text="التسعير" FontWeight="Bold" FontSize="15" Margin="0,0,0,12"/>
                         <UniformGrid Columns="5">
                             <controls:AnimatedStatCard Title="مجموع السيارات" TextValue="{Binding VehiclesSum, StringFormat=N0}"
-                                                       Icon="Car" IconBackground="#E1F5FE" IconForeground="#0277BD"
-                                                       ValueForeground="#0277BD" Margin="0,0,8,0"/>
+                                                       Icon="Car" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="{DynamicResource PrimaryHueMidBrush}"
+                                                       ValueForeground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,8,0"/>
                             <StackPanel Margin="0,0,8,0">
                                 <TextBlock Text="الخصم" FontSize="12" Foreground="{DynamicResource HintForegroundBrush}" Margin="0,0,0,4"/>
                                 <TextBox Text="{Binding DiscountAmount, UpdateSourceTrigger=PropertyChanged}"
@@ -365,8 +362,8 @@
                             <UniformGrid Columns="4">
                                 <controls:AnimatedStatCard Title="الإيراد"
                                                            TextValue="{Binding TotalAmount, StringFormat=N0}"
-                                                           Icon="CashPlus" IconBackground="#E1F5FE" IconForeground="#0277BD"
-                                                           ValueForeground="#0277BD" Margin="0,0,8,0"/>
+                                                           Icon="CashPlus" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="{DynamicResource PrimaryHueMidBrush}"
+                                                           ValueForeground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,8,0"/>
                                 <controls:AnimatedStatCard Title="مصاريف نفس العملة"
                                                            TextValue="{Binding ExpensesSameCurrencySum, StringFormat=N0}"
                                                            Icon="CashMinus" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}"
@@ -448,7 +445,7 @@
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <Border Grid.Row="0" Background="#0277BD" Padding="16,12,16,14" CornerRadius="16,16,0,0">
+                        <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,12,16,14" CornerRadius="16,16,0,0">
                             <StackPanel>
                                 <Button Command="{Binding CloseVehicleDetailCommand}" HorizontalAlignment="Left"
                                         Style="{StaticResource FlatButton}" Foreground="White" Padding="2" Margin="0,0,0,8">
@@ -456,7 +453,7 @@
                                 </Button>
                                 <TextBlock Text="تفاصيل السيارة" FontSize="18" FontWeight="Bold" Foreground="White"/>
                                 <TextBlock Text="عدّل البيانات والتواريخ ثم طبّق — المرفقات بعد حفظ الفاتورة"
-                                           FontSize="12" Foreground="#B3E5FC" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                           FontSize="12" Foreground="#BBDEFB" Margin="0,6,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="24,16"
@@ -516,7 +513,7 @@
                         <Border Grid.Row="2" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0" Padding="20,14">
                             <StackPanel Orientation="Horizontal">
                                 <Button Content="تطبيق" Command="{Binding ApplyVehicleDetailCommand}"
-                                        Style="{StaticResource MaterialDesignRaisedButton}" Background="#0277BD"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
                                         md:ButtonAssist.CornerRadius="8" Padding="28,10" Margin="0,0,8,0"/>
                                 <Button Content="إغلاق" Command="{Binding CloseVehicleDetailCommand}"
                                         Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8" Padding="24,10"/>
@@ -539,14 +536,14 @@
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <Border Grid.Row="0" Background="#0277BD" Padding="16,12,16,14" CornerRadius="16,16,0,0">
+                        <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,12,16,14" CornerRadius="16,16,0,0">
                             <StackPanel>
                                 <Button Command="{Binding CloseVehicleAttachmentsCommand}" HorizontalAlignment="Left"
                                         Style="{StaticResource FlatButton}" Foreground="White" Padding="2" Margin="0,0,0,8">
                                     <md:PackIcon Kind="Close" Width="22" Height="22"/>
                                 </Button>
                                 <TextBlock Text="مرفقات السيارة" FontSize="18" FontWeight="Bold" Foreground="White"/>
-                                <TextBlock FontSize="12" Foreground="#B3E5FC" Margin="0,6,0,0">
+                                <TextBlock FontSize="12" Foreground="#BBDEFB" Margin="0,6,0,0">
                                     <Run Text="لوحة:"/>
                                     <Run Text="{Binding AttachmentsVehicle.IraqiPlate, Mode=OneWay}"/>
                                     <Run Text=" / "/>
@@ -587,7 +584,7 @@
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <Border Grid.Row="0" Background="#0277BD" Padding="16,12,16,14" CornerRadius="16,16,0,0">
+                        <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,12,16,14" CornerRadius="16,16,0,0">
                             <StackPanel>
                                 <Button Command="{Binding CloseExpenseDialogCommand}" HorizontalAlignment="Left"
                                         Style="{StaticResource FlatButton}" Foreground="White" Padding="2" Margin="0,0,0,8">
@@ -595,7 +592,7 @@
                                 </Button>
                                 <TextBlock Text="{Binding ExpenseDialogTitle}" FontSize="18" FontWeight="Bold" Foreground="White"/>
                                 <TextBlock Text="نوع · مبلغ · عملة · تاريخ — المرفقات بعد حفظ الفاتورة"
-                                           FontSize="12" Foreground="#B3E5FC" Margin="0,6,0,0"/>
+                                           FontSize="12" Foreground="#BBDEFB" Margin="0,6,0,0"/>
                             </StackPanel>
                         </Border>
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
@@ -659,7 +656,7 @@
                         <Border Grid.Row="2" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0" Padding="20,14">
                             <StackPanel Orientation="Horizontal">
                                 <Button Content="حفظ" Command="{Binding SaveExpenseDialogCommand}"
-                                        Style="{StaticResource MaterialDesignRaisedButton}" Background="#0277BD"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
                                         md:ButtonAssist.CornerRadius="8" Padding="28,10" Margin="0,0,8,0"/>
                                 <Button Content="إلغاء" Command="{Binding CloseExpenseDialogCommand}"
                                         Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8" Padding="24,10"/>
@@ -682,14 +679,14 @@
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        <Border Grid.Row="0" Background="#0277BD" Padding="16,12,16,14" CornerRadius="16,16,0,0">
+                        <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,12,16,14" CornerRadius="16,16,0,0">
                             <StackPanel>
                                 <Button Command="{Binding CloseExpenseAttachmentsCommand}" HorizontalAlignment="Left"
                                         Style="{StaticResource FlatButton}" Foreground="White" Padding="2" Margin="0,0,0,8">
                                     <md:PackIcon Kind="Close" Width="22" Height="22"/>
                                 </Button>
                                 <TextBlock Text="مرفقات المصروف" FontSize="18" FontWeight="Bold" Foreground="White"/>
-                                <TextBlock FontSize="12" Foreground="#B3E5FC" Margin="0,6,0,0">
+                                <TextBlock FontSize="12" Foreground="#BBDEFB" Margin="0,6,0,0">
                                     <Run Text="{Binding AttachmentsExpense.ExpenseTypeName, Mode=OneWay}"/>
                                     <Run Text=" — "/>
                                     <Run Text="{Binding AttachmentsExpense.Amount, Mode=OneWay, StringFormat=N0}"/>

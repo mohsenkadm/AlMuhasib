@@ -25,9 +25,9 @@
         </Grid.RowDefinitions>
         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="24,24,24,8">
-                <TextBlock Text="تقرير الفواتير" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" Foreground="#0277BD"/>
+                <TextBlock Text="تقرير الفواتير" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
                 <UniformGrid Columns="4" Margin="0,0,0,16">
-                    <controls:AnimatedStatCard Title="العدد" TextValue="{Binding CountText}" Icon="FileDocumentMultiple" IconBackground="#E1F5FE" IconForeground="#0277BD" ValueForeground="#0277BD"/>
+                    <controls:AnimatedStatCard Title="العدد" TextValue="{Binding CountText}" Icon="FileDocumentMultiple" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="{DynamicResource PrimaryHueMidBrush}" ValueForeground="{DynamicResource PrimaryHueMidBrush}"/>
                     <controls:AnimatedStatCard Title="إجمالي د.ع" TextValue="{Binding TotalIqd}" Icon="Cash" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard Title="إجمالي $" TextValue="{Binding TotalUsd}" Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="{DynamicResource DashboardKpiTealBrush}" ValueForeground="{DynamicResource DashboardKpiTealBrush}"/>
                     <controls:AnimatedStatCard Title="المتبقي" TextValue="{Binding RemainingText}" Icon="CashClock" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
@@ -41,7 +41,7 @@
                     <StackPanel Orientation="Horizontal">
                         <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}" md:HintAssist.Hint="من" Width="130" Margin="0,0,8,0"/>
                         <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}" md:HintAssist.Hint="إلى" Width="130" Margin="0,0,8,0"/>
-                        <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding SelectedCustomer}" DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}" md:HintAssist.Hint="العميل" Width="160" Margin="0,0,8,0"/>
+                        <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding SelectedCustomer}" Style="{StaticResource CustomerSearchableComboBox}" md:HintAssist.Hint="العميل" Width="160" Margin="0,0,8,0"/>
                         <ComboBox ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding SelectedStatus}" DisplayMemberPath="Label" Style="{StaticResource FilledComboBox}" md:HintAssist.Hint="الحالة" Width="140" Margin="0,0,8,0"/>
                         <ComboBox ItemsSource="{Binding CurrencyOptions}" SelectedItem="{Binding SelectedCurrency}" DisplayMemberPath="Label" Style="{StaticResource FilledComboBox}" md:HintAssist.Hint="العملة" Width="110" Margin="0,0,8,0"/>
                         <ComboBox ItemsSource="{Binding ServiceTypeOptions}" SelectedItem="{Binding SelectedServiceType}" DisplayMemberPath="Label" Style="{StaticResource FilledComboBox}" md:HintAssist.Hint="الخدمة" Width="130" Margin="0,0,8,0"/>

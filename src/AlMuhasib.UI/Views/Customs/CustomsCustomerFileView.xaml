@@ -32,7 +32,7 @@
 
                 <!-- Hero header -->
                 <Border CornerRadius="24" Padding="24,22" Margin="0,0,0,16"
-                        BorderThickness="1" BorderBrush="#81D4FA"
+                        BorderThickness="1" BorderBrush="{DynamicResource CardBorderBrush}"
                         Background="{DynamicResource CardBrush}">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -42,19 +42,19 @@
                         </Grid.ColumnDefinitions>
 
                         <Border Width="72" Height="72" CornerRadius="36"
-                                Background="#E1F5FE" Margin="0,0,18,0">
+                                Background="{DynamicResource DashboardKpiBlueLightBrush}" Margin="0,0,18,0">
                             <materialDesign:PackIcon Kind="Account"
                                                      Width="34" Height="34"
-                                                     Foreground="#0277BD"
+                                                     Foreground="{DynamicResource PrimaryHueMidBrush}"
                                                      HorizontalAlignment="Center"
                                                      VerticalAlignment="Center"/>
                         </Border>
 
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                <Border CornerRadius="12" Padding="10,3" Margin="0,0,10,0" Background="#E1F5FE">
+                                <Border CornerRadius="12" Padding="10,3" Margin="0,0,10,0" Background="{DynamicResource DashboardKpiBlueLightBrush}">
                                     <TextBlock Text="{Binding CustomerTypeLabel}" FontSize="12" FontWeight="Bold"
-                                               Foreground="#0277BD"/>
+                                               Foreground="{DynamicResource PrimaryHueMidBrush}"/>
                                 </Border>
                                 <Border CornerRadius="12" Padding="10,3" Background="{DynamicResource DashboardKpiGreenLightBrush}">
                                     <TextBlock Text="{Binding StatusLabel}" FontSize="12" FontWeight="SemiBold"
@@ -103,8 +103,8 @@
                 <!-- Account summary -->
                 <UniformGrid Columns="4" Margin="0,0,0,16">
                     <controls:AnimatedStatCard Title="رصيد د.ع" TextValue="{Binding BalanceIqdDisplay}"
-                                               Icon="Cash" IconBackground="#E1F5FE" IconForeground="#0277BD"
-                                               ValueForeground="#0277BD" Margin="0,0,10,0"/>
+                                               Icon="Cash" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="{DynamicResource PrimaryHueMidBrush}"
+                                               ValueForeground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,10,0"/>
                     <controls:AnimatedStatCard Title="رصيد $" TextValue="{Binding BalanceUsdDisplay}"
                                                Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiTealLightBrush}"
                                                IconForeground="{DynamicResource DashboardKpiTealBrush}"
@@ -195,7 +195,6 @@
                                 </UniformGrid>
                                 <Button Command="{Binding OpenStatementCommand}"
                                         Style="{StaticResource MaterialDesignRaisedButton}"
-                                        Background="#0277BD"
                                         materialDesign:ButtonAssist.CornerRadius="8"
                                         Padding="18,8" Margin="0,0,0,12"
                                         HorizontalAlignment="Left">
@@ -251,7 +250,6 @@
                                 <Button Content="حفظ الملاحظات"
                                         Command="{Binding SaveNotesCommand}"
                                         Style="{StaticResource MaterialDesignRaisedButton}"
-                                        Background="#0277BD"
                                         materialDesign:ButtonAssist.CornerRadius="8"
                                         Padding="24,8" Margin="0,12,0,0"
                                         HorizontalAlignment="Left"
