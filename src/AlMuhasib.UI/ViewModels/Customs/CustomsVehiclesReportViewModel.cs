@@ -25,6 +25,7 @@ public partial class CustomsVehiclesReportViewModel : CustomsReportViewModelBase
     [ObservableProperty] private CustomsReportCustomerOption? _selectedCustomer;
     [ObservableProperty] private CustomsVehicleStatusFilterOption? _selectedStatus;
     [ObservableProperty] private ISeries[] _statusSeries = [];
+    [ObservableProperty] private bool _isStatusChartEmpty = true;
 
     public ObservableCollection<CustomsVehicleStatusFilterOption> StatusOptions { get; } =
     [
@@ -77,6 +78,7 @@ public partial class CustomsVehiclesReportViewModel : CustomsReportViewModelBase
             ArrivedText = result.Arrived.ToString("N0");
             StatusSeries = ChartThemeConfig.PieFromNameAmount(
                 result.StatusChart.Select(p => new NameAmountPoint { Name = p.Name, Amount = p.Amount }).ToList());
+            IsStatusChartEmpty = result.StatusChart.Count == 0 || StatusSeries.Length == 0;
 
             _allRows = result.Rows;
             CurrentPage = 1;

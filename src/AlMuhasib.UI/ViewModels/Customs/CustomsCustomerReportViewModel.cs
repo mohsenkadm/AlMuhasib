@@ -22,6 +22,7 @@ public partial class CustomsCustomerReportViewModel : CustomsReportViewModelBase
     [ObservableProperty] private string _invoiceCount = "0";
     [ObservableProperty] private CustomsReportCustomerOption? _selectedCustomer;
     [ObservableProperty] private ISeries[] _topSeries = [];
+    [ObservableProperty] private bool _isTopChartEmpty = true;
 
     private List<CustomsCustomerReportRow> _allRows = [];
     public ObservableCollection<CustomsCustomerReportRow> Rows { get; } = [];
@@ -63,6 +64,7 @@ public partial class CustomsCustomerReportViewModel : CustomsReportViewModelBase
             InvoiceCount = result.InvoiceCount.ToString("N0");
             TopSeries = ChartThemeConfig.PieFromNameAmount(
                 result.TopCustomersChart.Select(p => new NameAmountPoint { Name = p.Name, Amount = p.Amount }).ToList());
+            IsTopChartEmpty = result.TopCustomersChart.Count == 0 || TopSeries.Length == 0;
 
             _allRows = result.Rows;
             CurrentPage = 1;

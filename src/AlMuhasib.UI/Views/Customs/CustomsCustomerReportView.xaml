@@ -32,7 +32,8 @@
                     <controls:AnimatedStatCard Title="رصيد $" TextValue="{Binding BalanceUsd}" Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="{DynamicResource DashboardKpiTealBrush}" ValueForeground="{DynamicResource DashboardKpiTealBrush}"/>
                     <controls:AnimatedStatCard Title="فواتير الفترة" TextValue="{Binding InvoiceCount}" Icon="FileDocument" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                 </UniformGrid>
-                <controls:ChartCard Title="أعلى عملاء حسب المتبقي" Margin="0,0,0,12">
+                <controls:ChartCard Title="أعلى عملاء حسب المتبقي" Margin="0,0,0,12"
+                                    IsEmpty="{Binding IsTopChartEmpty}">
                     <controls:ChartCard.ChartContent>
                         <lvc:PieChart Series="{Binding TopSeries}" Height="260"/>
                     </controls:ChartCard.ChartContent>

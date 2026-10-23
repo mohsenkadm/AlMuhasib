@@ -31,7 +31,8 @@
                     <controls:AnimatedStatCard Title="ديون $" TextValue="{Binding DebtsUsd}" Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="{DynamicResource DashboardKpiTealBrush}" ValueForeground="{DynamicResource DashboardKpiTealBrush}"/>
                     <controls:AnimatedStatCard Title="فواتير غير مسددة" TextValue="{Binding UnpaidCount}" Icon="FileAlert" IconBackground="#FFEBEE" IconForeground="#C62828" ValueForeground="#C62828"/>
                 </UniformGrid>
-                <controls:ChartCard Title="أعمار الذمم" Margin="0,0,0,12">
+                <controls:ChartCard Title="أعمار الذمم" Margin="0,0,0,12"
+                                    IsEmpty="{Binding IsAgingChartEmpty}">
                     <controls:ChartCard.ChartContent>
                         <lvc:PieChart Series="{Binding AgingSeries}" Height="260"/>
                     </controls:ChartCard.ChartContent>

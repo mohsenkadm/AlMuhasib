@@ -62,6 +62,8 @@ public sealed class CustomsCustomerService : ICustomsCustomerService
         var customerIds = customers.Select(c => c.Id).ToList();
         var invoiceStats = customerIds.Count == 0
             ? new Dictionary<int, (int OpenCount, DateTime? LastDate)>()
+            // OpenCount aligned with M-03 Unpaid: Approved && Remaining > 0 (exclude Draft/Cancelled).
+            // LastDate still from non-cancelled invoices (unchanged).
             : await db.CustomsInvoices.AsNoTracking()
                 .Where(i => customerIds.Contains(i.CustomerId)
                             && i.Status != CustomsInvoiceStatus.Cancelled)
@@ -69,7 +71,8 @@ public sealed class CustomsCustomerService : ICustomsCustomerService
                 .Select(g => new
                 {
                     CustomerId = g.Key,
-                    OpenCount = g.Count(x => x.RemainingAmount > 0),
+                    OpenCount = g.Count(x =>
+                        x.Status == CustomsInvoiceStatus.Approved && x.RemainingAmount > 0),
                     LastDate = g.Max(x => (DateTime?)x.InvoiceDate)
                 })
                 .ToDictionaryAsync(

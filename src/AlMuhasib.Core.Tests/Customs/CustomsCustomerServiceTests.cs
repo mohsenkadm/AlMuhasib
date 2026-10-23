@@ -136,4 +136,34 @@ public class CustomsCustomerServiceTests
         Assert.Equal(1, file!.UnpaidInvoiceCount);
         Assert.Equal(100_000m, file.BalanceIqd);
     }
+
+    [Fact]
+    public async Task OpenCount_list_matches_approved_unpaid_only()
+    {
+        var h = CustomsTestHarness.CreateAdmin();
+        var customer = await h.SeedCustomerAsync("عداد مفتوح قائمة");
+
+        var approvedUnpaid = await h.Invoices.CreateAsync(
+            CustomsTestHarness.InvoiceRequest(customer.Id, AccountingCurrency.IQD, 100_000m, vehiclePlate: "قائمة1"));
+        await h.Invoices.ApproveAsync(approvedUnpaid.Id, "admin");
+
+        var approvedPaid = await h.Invoices.CreateAsync(
+            CustomsTestHarness.InvoiceRequest(customer.Id, AccountingCurrency.IQD, 40_000m, vehiclePlate: "قائمة2"));
+        await h.Invoices.ApproveAsync(approvedPaid.Id, "admin");
+        await h.Receipts.CreateAsync(
+            CustomsTestHarness.ReceiptRequest(customer.Id, approvedPaid.Id, 40_000m, AccountingCurrency.IQD));
+
+        await h.Invoices.CreateAsync(
+            CustomsTestHarness.InvoiceRequest(customer.Id, AccountingCurrency.IQD, 90_000m, vehiclePlate: "قائمة3"));
+
+        var cancelled = await h.Invoices.CreateAsync(
+            CustomsTestHarness.InvoiceRequest(customer.Id, AccountingCurrency.IQD, 60_000m, vehiclePlate: "قائمة4"));
+        await h.Invoices.ApproveAsync(cancelled.Id, "admin");
+        await h.Invoices.CancelAsync(cancelled.Id, "admin", "اختبار");
+
+        var (items, _) = await h.Customers.GetPagedAsync(1, 50, search: "عداد مفتوح قائمة");
+        var row = Assert.Single(items);
+        Assert.Equal(1, row.OpenInvoiceCount);
+        Assert.Equal(100_000m, row.BalanceIqd);
+    }
 }

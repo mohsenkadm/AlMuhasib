@@ -23,6 +23,7 @@ public partial class CustomsDebtsReportViewModel : CustomsReportViewModelBase
     [ObservableProperty] private CustomsReportCustomerOption? _selectedCustomer;
     [ObservableProperty] private CustomsCurrencyFilterOption? _selectedCurrency;
     [ObservableProperty] private ISeries[] _agingSeries = [];
+    [ObservableProperty] private bool _isAgingChartEmpty = true;
 
     public ObservableCollection<CustomsCurrencyFilterOption> CurrencyOptions { get; } =
     [
@@ -73,6 +74,7 @@ public partial class CustomsDebtsReportViewModel : CustomsReportViewModelBase
             UnpaidCount = result.UnpaidCount.ToString("N0");
             AgingSeries = ChartThemeConfig.PieFromNameAmount(
                 result.AgingChart.Select(p => new NameAmountPoint { Name = p.Name, Amount = p.Amount }).ToList());
+            IsAgingChartEmpty = result.AgingChart.Count == 0 || AgingSeries.Length == 0;
 
             _allRows = result.Rows;
             CurrentPage = 1;

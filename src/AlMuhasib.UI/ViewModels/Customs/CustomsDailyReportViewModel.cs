@@ -24,6 +24,7 @@ public partial class CustomsDailyReportViewModel : CustomsReportViewModelBase
     [ObservableProperty] private bool _canViewExpenses;
     [ObservableProperty] private CustomsReportCustomerOption? _selectedCustomer;
     [ObservableProperty] private ISeries[] _typeSeries = [];
+    [ObservableProperty] private bool _isTypeChartEmpty = true;
 
     private List<CustomsDailyReportRow> _allRows = [];
     public ObservableCollection<CustomsDailyReportRow> Rows { get; } = [];
@@ -70,6 +71,7 @@ public partial class CustomsDailyReportViewModel : CustomsReportViewModelBase
 
             TypeSeries = ChartThemeConfig.PieFromNameAmount(
                 result.ByTypeChart.Select(p => new NameAmountPoint { Name = p.Name, Amount = p.Amount }).ToList());
+            IsTypeChartEmpty = result.ByTypeChart.Count == 0 || TypeSeries.Length == 0;
 
             _allRows = result.Rows;
             CurrentPage = 1;

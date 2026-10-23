@@ -29,6 +29,7 @@ public partial class CustomsInvoiceReportViewModel : CustomsReportViewModelBase
     [ObservableProperty] private CustomsCurrencyFilterOption? _selectedCurrency;
     [ObservableProperty] private CustomsServiceFilterOption? _selectedServiceType;
     [ObservableProperty] private ISeries[] _statusSeries = [];
+    [ObservableProperty] private bool _isStatusChartEmpty = true;
 
     public ObservableCollection<CustomsStatusFilterOption> StatusOptions { get; } =
     [
@@ -100,6 +101,7 @@ public partial class CustomsInvoiceReportViewModel : CustomsReportViewModelBase
             RemainingText = $"{FormatCurrency(result.RemainingIqd)} / {FormatCurrency(result.RemainingUsd, AccountingCurrency.USD)}";
             StatusSeries = ChartThemeConfig.PieFromNameAmount(
                 result.StatusChart.Select(p => new NameAmountPoint { Name = p.Name, Amount = p.Amount }).ToList());
+            IsStatusChartEmpty = result.StatusChart.Count == 0 || StatusSeries.Length == 0;
 
             _allRows = result.Rows;
             CurrentPage = 1;

@@ -127,6 +127,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
 
     public async Task<string> PreviewNextInvoiceNumberAsync(CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Invoices);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         return await CustomsInvoiceNumberHelper.GetNextAsync(db, cancellationToken);
     }
