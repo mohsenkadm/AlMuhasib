@@ -29,11 +29,11 @@ public partial class CustomsAttachmentsPanel : UserControl
 
     public static readonly DependencyProperty CanManageProperty =
         DependencyProperty.Register(nameof(CanManage), typeof(bool), typeof(CustomsAttachmentsPanel),
-            new PropertyMetadata(true, OnAddEnablementChanged));
+            new PropertyMetadata(false, OnAddEnablementChanged));
 
     public static readonly DependencyProperty CanDeleteProperty =
         DependencyProperty.Register(nameof(CanDelete), typeof(bool), typeof(CustomsAttachmentsPanel),
-            new PropertyMetadata(true));
+            new PropertyMetadata(false));
 
     public static readonly DependencyProperty ShowHeaderProperty =
         DependencyProperty.Register(nameof(ShowHeader), typeof(bool), typeof(CustomsAttachmentsPanel),

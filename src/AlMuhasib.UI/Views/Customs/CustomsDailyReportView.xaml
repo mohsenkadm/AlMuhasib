@@ -38,7 +38,8 @@
                     <controls:AnimatedStatCard Title="فواتير" TextValue="{Binding InvoiceCount}" Icon="FileDocument" IconBackground="#E1F5FE" IconForeground="#0277BD" ValueForeground="#0277BD"/>
                     <controls:AnimatedStatCard Title="فواتير د.ع / $" TextValue="{Binding InvoicesIqd}" Icon="Cash" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard Title="مقبوضات" TextValue="{Binding ReceiptsIqd}" Icon="CashPlus" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="{DynamicResource DashboardKpiTealBrush}" ValueForeground="{DynamicResource DashboardKpiTealBrush}"/>
-                    <controls:AnimatedStatCard Title="مصاريف" TextValue="{Binding ExpensesIqd}" Icon="CashMinus" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
+                    <controls:AnimatedStatCard Title="مصاريف" TextValue="{Binding ExpensesIqd}" Icon="CashMinus" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"
+                                               Visibility="{Binding CanViewExpenses, Converter={StaticResource BoolToVis}}"/>
                     <controls:AnimatedStatCard Title="سيارات" TextValue="{Binding VehicleCount}" Icon="Car" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
                 </UniformGrid>
                 <controls:ChartCard Title="توزيع الحركات" Margin="0,0,0,12">

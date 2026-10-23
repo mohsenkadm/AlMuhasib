@@ -1,3 +1,4 @@
+using AlMuhasib.Core.Constants;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Interfaces.Services.Customs;
@@ -10,16 +11,21 @@ namespace AlMuhasib.Infrastructure.Services.Customs;
 public sealed class CustomsStatementService : ICustomsStatementService
 {
     private readonly IDbContextFactory<CustomsDbContext> _contextFactory;
+    private readonly CustomsPermissionGuard _permissions;
 
-    public CustomsStatementService(IDbContextFactory<CustomsDbContext> contextFactory)
+    public CustomsStatementService(
+        IDbContextFactory<CustomsDbContext> contextFactory,
+        CustomsPermissionGuard permissions)
     {
         _contextFactory = contextFactory;
+        _permissions = permissions;
     }
 
     public async Task<IReadOnlyList<CustomsStatementInvoiceOption>> GetInvoiceOptionsAsync(
         int customerId,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Statement);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var invoices = await db.CustomsInvoices.AsNoTracking()
             .Where(i => i.CustomerId == customerId && i.Status == CustomsInvoiceStatus.Approved)
@@ -54,6 +60,7 @@ public sealed class CustomsStatementService : ICustomsStatementService
         int? invoiceId = null,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Statement);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
         var customer = await db.CustomsCustomers.AsNoTracking()

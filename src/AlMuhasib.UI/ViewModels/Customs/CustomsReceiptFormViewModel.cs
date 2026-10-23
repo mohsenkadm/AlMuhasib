@@ -61,6 +61,7 @@ public partial class CustomsReceiptFormViewModel : ViewModelBase
     public bool IsEditMode => _editId.HasValue;
     public bool CanSave => (IsEditMode ? CanEdit : CanAdd);
     public bool HasSavedReceipt => _editId.HasValue;
+    public bool CanManageAttachments => CanEdit;
 
     public CustomsReceiptFormViewModel(
         ICustomsReceiptService receiptService,
@@ -242,6 +243,7 @@ public partial class CustomsReceiptFormViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsEditMode));
         OnPropertyChanged(nameof(CanSave));
         OnPropertyChanged(nameof(HasSavedReceipt));
+        OnPropertyChanged(nameof(CanManageAttachments));
     }
 
     [RelayCommand]
@@ -407,6 +409,12 @@ public partial class CustomsReceiptFormViewModel : ViewModelBase
     [RelayCommand]
     private async Task AddAttachmentAsync()
     {
+        if (!CanManageAttachments)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية إضافة مرفقات");
+            return;
+        }
+
         if (!_editId.HasValue)
         {
             BeautifulMessageDialog.ShowWarning("احفظ الوصل أولاً قبل إرفاق الملفات");

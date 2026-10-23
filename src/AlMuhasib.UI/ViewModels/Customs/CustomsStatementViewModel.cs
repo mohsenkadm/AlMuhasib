@@ -247,6 +247,12 @@ public partial class CustomsStatementViewModel : ViewModelBase
     [RelayCommand]
     private void ExportToExcel()
     {
+        if (!CanExport)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية التصدير");
+            return;
+        }
+
         if (_allRows.Count == 0)
         {
             BeautifulMessageDialog.ShowWarning("لا توجد بيانات للتصدير");

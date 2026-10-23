@@ -152,19 +152,32 @@ public partial class CustomsInvoiceListViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task OpenNewInvoiceAsync() =>
+    private async Task OpenNewInvoiceAsync()
+    {
+        if (!CanAdd)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية إنشاء فاتورة");
+            return;
+        }
+
         await _mainWindow.OpenTabAsync(
             typeof(CustomsInvoiceFormViewModel),
             "فاتورة جديدة",
             PackIconKind.FileDocumentPlus,
             activateIfExists: false,
             permissionScreenName: CustomsPermissionRegistry.Invoices);
+    }
 
     [RelayCommand]
     private async Task EditInvoiceAsync(CustomsInvoiceListItem? item)
     {
         item ??= SelectedInvoice;
-        if (item is null || !item.CanEdit) return;
+        if (item is null || !item.CanEdit || !CanEdit)
+        {
+            if (item is not null && !CanEdit)
+                BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية تعديل الفاتورة");
+            return;
+        }
 
         CustomsInvoiceNavigationBridge.PendingEditInvoiceId = item.Id;
         await _mainWindow.OpenTabAsync(
@@ -195,7 +208,7 @@ public partial class CustomsInvoiceListViewModel : ViewModelBase
     [RelayCommand]
     private async Task ExecuteCancelAsync()
     {
-        if (InvoiceToCancel is null) return;
+        if (InvoiceToCancel is null || !CanEdit) return;
         try
         {
             await _invoiceService.CancelAsync(
@@ -230,7 +243,7 @@ public partial class CustomsInvoiceListViewModel : ViewModelBase
     [RelayCommand]
     private async Task ExecuteDeleteAsync()
     {
-        if (InvoiceToDelete is null) return;
+        if (InvoiceToDelete is null || !CanDelete) return;
         try
         {
             await _invoiceService.SoftDeleteAsync(InvoiceToDelete.Id, _currentUserService.Username);
@@ -247,6 +260,12 @@ public partial class CustomsInvoiceListViewModel : ViewModelBase
     [RelayCommand]
     private async Task ExportToExcel()
     {
+        if (!CanExport)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية التصدير");
+            return;
+        }
+
         try
         {
             var (allItems, _) = await _invoiceService.GetPagedAsync(1, int.MaxValue, null, StatusFilter, DateFrom, DateTo);
@@ -285,6 +304,12 @@ public partial class CustomsInvoiceListViewModel : ViewModelBase
     [RelayCommand]
     private async Task PrintTable()
     {
+        if (!CanPrint)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
+            return;
+        }
+
         try
         {
             var (allItems, _) = await _invoiceService.GetPagedAsync(1, int.MaxValue, null, StatusFilter, DateFrom, DateTo);

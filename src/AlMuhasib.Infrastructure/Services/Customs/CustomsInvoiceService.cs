@@ -1,3 +1,4 @@
+using AlMuhasib.Core.Constants;
 using AlMuhasib.Core.Entities.Customs;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Enums.Customs;
@@ -11,10 +12,14 @@ namespace AlMuhasib.Infrastructure.Services.Customs;
 public sealed class CustomsInvoiceService : ICustomsInvoiceService
 {
     private readonly IDbContextFactory<CustomsDbContext> _contextFactory;
+    private readonly CustomsPermissionGuard _permissions;
 
-    public CustomsInvoiceService(IDbContextFactory<CustomsDbContext> contextFactory)
+    public CustomsInvoiceService(
+        IDbContextFactory<CustomsDbContext> contextFactory,
+        CustomsPermissionGuard permissions)
     {
         _contextFactory = contextFactory;
+        _permissions = permissions;
     }
 
     public async Task<(IReadOnlyList<CustomsInvoiceListItem> Items, int TotalCount)> GetPagedAsync(
@@ -27,6 +32,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         int? customerId = null,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Invoices);
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
@@ -96,6 +102,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
 
     public async Task<CustomsInvoiceDetail?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Invoices);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var invoice = await db.CustomsInvoices.AsNoTracking()
             .Include(i => i.Customer)
@@ -110,7 +117,10 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
             .OrderByDescending(a => a.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        return ToDetail(invoice, attachments);
+        var detail = ToDetail(invoice, attachments);
+        if (!_permissions.CanViewExpenses)
+            detail.Expenses = [];
+        return detail;
     }
 
     public async Task<string> PreviewNextInvoiceNumberAsync(CancellationToken cancellationToken = default)
@@ -123,6 +133,10 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         CustomsInvoiceSaveRequest request,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureAdd(CustomsScreenNames.Invoices);
+        var canManageExpenses = _permissions.CanViewExpenses;
+        if (!canManageExpenses && request.Expenses.Count > 0)
+            _permissions.EnsureView(CustomsScreenNames.Expenses);
         ValidateRequest(request);
 
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
@@ -154,8 +168,11 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         foreach (var v in request.Vehicles)
             invoice.Vehicles.Add(CreateVehicle(v, request.Currency));
 
-        foreach (var e in request.Expenses)
-            invoice.Expenses.Add(await CreateExpenseAsync(db, e, cancellationToken));
+        if (canManageExpenses)
+        {
+            foreach (var e in request.Expenses)
+                invoice.Expenses.Add(await CreateExpenseAsync(db, e, cancellationToken));
+        }
 
         await db.CustomsInvoices.AddAsync(invoice, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
@@ -187,6 +204,8 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         CustomsInvoiceSaveRequest request,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureEdit(CustomsScreenNames.Invoices);
+        var canManageExpenses = _permissions.CanViewExpenses;
         ValidateRequest(request);
 
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
@@ -237,7 +256,9 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
 
         var user = request.UserName ?? "System";
         UpsertVehicles(invoice, request.Vehicles, request.Currency, user);
-        await UpsertExpensesAsync(db, invoice, request.Expenses, user, cancellationToken);
+        // Without expenses permission, leave existing expense rows untouched (UI hides that section).
+        if (canManageExpenses)
+            await UpsertExpensesAsync(db, invoice, request.Expenses, user, cancellationToken);
 
         await CustomsAuditWriter.WriteAsync(
             db,
@@ -265,6 +286,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
 
     public async Task ApproveAsync(int id, string userName, CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureEdit(CustomsScreenNames.Invoices);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var invoice = await db.CustomsInvoices
             .Include(i => i.Vehicles)
@@ -306,6 +328,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         string? reason = null,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureEdit(CustomsScreenNames.Invoices);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var invoice = await db.CustomsInvoices.FirstOrDefaultAsync(i => i.Id == id, cancellationToken)
             ?? throw new InvalidOperationException("الفاتورة غير موجودة");
@@ -358,6 +381,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
     /// </summary>
     public async Task SoftDeleteAsync(int id, string deletedBy, CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureDelete(CustomsScreenNames.Invoices);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var invoice = await db.CustomsInvoices
             .Include(i => i.Vehicles)

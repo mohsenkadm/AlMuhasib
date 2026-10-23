@@ -10,10 +10,14 @@ namespace AlMuhasib.Infrastructure.Services.Customs;
 public sealed class CustomsAttachmentService : ICustomsAttachmentService
 {
     private readonly IDbContextFactory<CustomsDbContext> _contextFactory;
+    private readonly CustomsPermissionGuard _permissions;
 
-    public CustomsAttachmentService(IDbContextFactory<CustomsDbContext> contextFactory)
+    public CustomsAttachmentService(
+        IDbContextFactory<CustomsDbContext> contextFactory,
+        CustomsPermissionGuard permissions)
     {
         _contextFactory = contextFactory;
+        _permissions = permissions;
     }
 
     public static string GetOwnerFolder(CustomsAttachmentOwnerType ownerType, int ownerId) =>
@@ -29,6 +33,7 @@ public sealed class CustomsAttachmentService : ICustomsAttachmentService
         int ownerId,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(_permissions.ScreenForOwner(ownerType));
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var items = await db.CustomsAttachments.AsNoTracking()
             .Where(a => a.OwnerType == ownerType && a.OwnerId == ownerId)
@@ -46,6 +51,7 @@ public sealed class CustomsAttachmentService : ICustomsAttachmentService
         string createdBy,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureEdit(_permissions.ScreenForOwner(ownerType));
         if (string.IsNullOrWhiteSpace(sourceFilePath) || !File.Exists(sourceFilePath))
             throw new InvalidOperationException("الملف غير موجود");
 
@@ -78,6 +84,7 @@ public sealed class CustomsAttachmentService : ICustomsAttachmentService
         var entity = await db.CustomsAttachments.FirstOrDefaultAsync(a => a.Id == attachmentId, cancellationToken)
             ?? throw new InvalidOperationException("المرفق غير موجود");
 
+        _permissions.EnsureDelete(_permissions.ScreenForOwner(entity.OwnerType));
         var path = entity.FilePath;
         entity.MarkSoftDeleted(deletedBy);
         await db.SaveChangesAsync(cancellationToken);

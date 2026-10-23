@@ -1,3 +1,4 @@
+using AlMuhasib.Core.Constants;
 using AlMuhasib.Core.Entities.Customs;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Enums.Customs;
@@ -11,10 +12,14 @@ namespace AlMuhasib.Infrastructure.Services.Customs;
 public sealed class CustomsCustomerService : ICustomsCustomerService
 {
     private readonly IDbContextFactory<CustomsDbContext> _contextFactory;
+    private readonly CustomsPermissionGuard _permissions;
 
-    public CustomsCustomerService(IDbContextFactory<CustomsDbContext> contextFactory)
+    public CustomsCustomerService(
+        IDbContextFactory<CustomsDbContext> contextFactory,
+        CustomsPermissionGuard permissions)
     {
         _contextFactory = contextFactory;
+        _permissions = permissions;
     }
 
     public async Task<(IReadOnlyList<CustomsCustomerListItem> Items, int TotalCount)> GetPagedAsync(
@@ -24,6 +29,7 @@ public sealed class CustomsCustomerService : ICustomsCustomerService
         bool? activeOnly = null,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Customers);
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
@@ -96,6 +102,7 @@ public sealed class CustomsCustomerService : ICustomsCustomerService
 
     public async Task<CustomsCustomer?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Customers);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         return await db.CustomsCustomers.AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
@@ -103,6 +110,7 @@ public sealed class CustomsCustomerService : ICustomsCustomerService
 
     public async Task<CustomsCustomer> CreateAsync(CustomsCustomer customer, CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureAdd(CustomsScreenNames.Customers);
         if (string.IsNullOrWhiteSpace(customer.Name))
             throw new InvalidOperationException("اسم العميل مطلوب");
 
@@ -122,6 +130,7 @@ public sealed class CustomsCustomerService : ICustomsCustomerService
 
     public async Task<CustomsCustomer> UpdateAsync(CustomsCustomer customer, CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureEdit(CustomsScreenNames.Customers);
         if (string.IsNullOrWhiteSpace(customer.Name))
             throw new InvalidOperationException("اسم العميل مطلوب");
 
@@ -147,6 +156,7 @@ public sealed class CustomsCustomerService : ICustomsCustomerService
 
     public async Task SoftDeleteAsync(int id, string deletedBy, CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureDelete(CustomsScreenNames.Customers);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var customer = await db.CustomsCustomers.FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
             ?? throw new InvalidOperationException("العميل غير موجود");
@@ -169,6 +179,7 @@ public sealed class CustomsCustomerService : ICustomsCustomerService
         int customerId,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Customers);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var customer = await db.CustomsCustomers.AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == customerId, cancellationToken);

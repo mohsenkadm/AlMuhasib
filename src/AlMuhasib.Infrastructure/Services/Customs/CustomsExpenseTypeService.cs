@@ -1,3 +1,4 @@
+using AlMuhasib.Core.Constants;
 using AlMuhasib.Core.Entities.Customs;
 using AlMuhasib.Core.Interfaces.Services.Customs;
 using AlMuhasib.Core.Models.Customs;
@@ -9,15 +10,20 @@ namespace AlMuhasib.Infrastructure.Services.Customs;
 public sealed class CustomsExpenseTypeService : ICustomsExpenseTypeService
 {
     private readonly IDbContextFactory<CustomsDbContext> _contextFactory;
+    private readonly CustomsPermissionGuard _permissions;
 
-    public CustomsExpenseTypeService(IDbContextFactory<CustomsDbContext> contextFactory)
+    public CustomsExpenseTypeService(
+        IDbContextFactory<CustomsDbContext> contextFactory,
+        CustomsPermissionGuard permissions)
     {
         _contextFactory = contextFactory;
+        _permissions = permissions;
     }
 
     public async Task<IReadOnlyList<CustomsExpenseTypeItem>> GetActiveAsync(
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Expenses);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         return await db.CustomsExpenseTypes.AsNoTracking()
             .Where(t => t.IsActive)
@@ -36,6 +42,9 @@ public sealed class CustomsExpenseTypeService : ICustomsExpenseTypeService
         string createdBy,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Expenses);
+        _permissions.EnsureEdit(CustomsScreenNames.Invoices);
+
         if (string.IsNullOrWhiteSpace(name))
             throw new InvalidOperationException("اسم نوع المصروف مطلوب");
 

@@ -1,3 +1,4 @@
+using AlMuhasib.Core.Constants;
 using AlMuhasib.Core.Entities.Customs;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Enums.Customs;
@@ -11,10 +12,14 @@ namespace AlMuhasib.Infrastructure.Services.Customs;
 public sealed class CustomsReceiptService : ICustomsReceiptService
 {
     private readonly IDbContextFactory<CustomsDbContext> _contextFactory;
+    private readonly CustomsPermissionGuard _permissions;
 
-    public CustomsReceiptService(IDbContextFactory<CustomsDbContext> contextFactory)
+    public CustomsReceiptService(
+        IDbContextFactory<CustomsDbContext> contextFactory,
+        CustomsPermissionGuard permissions)
     {
         _contextFactory = contextFactory;
+        _permissions = permissions;
     }
 
     public async Task<(IReadOnlyList<CustomsReceiptListItem> Items, int TotalCount)> GetPagedAsync(
@@ -27,6 +32,7 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         AccountingCurrency? currency = null,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Receipts);
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, 200);
 
@@ -93,6 +99,7 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
 
     public async Task<CustomsReceiptDetail?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Receipts);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var receipt = await db.CustomsReceipts.AsNoTracking()
             .Include(r => r.Customer)
@@ -121,6 +128,7 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         int? excludeReceiptId = null,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureView(CustomsScreenNames.Receipts);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
         var invoices = await db.CustomsInvoices.AsNoTracking()
@@ -168,6 +176,7 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         CustomsReceiptSaveRequest request,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureAdd(CustomsScreenNames.Receipts);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         await ValidateRequestAsync(db, request, excludeReceiptId: null, cancellationToken);
 
@@ -233,6 +242,7 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         CustomsReceiptSaveRequest request,
         CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureEdit(CustomsScreenNames.Receipts);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var receipt = await db.CustomsReceipts
             .Include(r => r.Allocations)
@@ -302,6 +312,7 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
     /// </summary>
     public async Task CancelAsync(int id, string userName, CancellationToken cancellationToken = default)
     {
+        _permissions.EnsureDelete(CustomsScreenNames.Receipts);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var receipt = await db.CustomsReceipts
             .Include(r => r.Allocations)

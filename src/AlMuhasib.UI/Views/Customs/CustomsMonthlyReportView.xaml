@@ -32,7 +32,8 @@
                     <controls:AnimatedStatCard Title="فواتير د.ع" TextValue="{Binding InvoicesIqd}" Icon="Cash" IconBackground="#E1F5FE" IconForeground="#0277BD" ValueForeground="#0277BD"/>
                     <controls:AnimatedStatCard Title="فواتير $" TextValue="{Binding InvoicesUsd}" Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="{DynamicResource DashboardKpiTealBrush}" ValueForeground="{DynamicResource DashboardKpiTealBrush}"/>
                     <controls:AnimatedStatCard Title="مقبوضات" TextValue="{Binding ReceiptsIqd}" Icon="CashPlus" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
-                    <controls:AnimatedStatCard Title="الربح الداخلي" TextValue="{Binding ProfitIqd}" Icon="ChartLine" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
+                    <controls:AnimatedStatCard Title="الربح الداخلي" TextValue="{Binding ProfitIqd}" Icon="ChartLine" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"
+                                               Visibility="{Binding CanViewProfit, Converter={StaticResource BoolToVis}}"/>
                 </UniformGrid>
                 <controls:ChartCard Title="الفواتير اليومية" Margin="0,0,0,12">
                     <controls:ChartCard.ChartContent>
@@ -74,10 +75,14 @@
                         <DataGridTextColumn Header="فواتير $" Binding="{Binding InvoicesUsd, StringFormat=N2}" Width="90"/>
                         <DataGridTextColumn Header="قبض د.ع" Binding="{Binding ReceiptsIqd, StringFormat=N0}" Width="90"/>
                         <DataGridTextColumn Header="قبض $" Binding="{Binding ReceiptsUsd, StringFormat=N2}" Width="80"/>
-                        <DataGridTextColumn Header="مصروف د.ع" Binding="{Binding ExpensesIqd, StringFormat=N0}" Width="100"/>
-                        <DataGridTextColumn Header="مصروف $" Binding="{Binding ExpensesUsd, StringFormat=N2}" Width="90"/>
-                        <DataGridTextColumn Header="ربح د.ع" Binding="{Binding ProfitIqd, StringFormat=N0}" Width="90"/>
-                        <DataGridTextColumn Header="ربح $" Binding="{Binding ProfitUsd, StringFormat=N2}" Width="80"/>
+                        <DataGridTextColumn Header="مصروف د.ع" Binding="{Binding ExpensesIqd, StringFormat=N0}" Width="100"
+                                            Visibility="{Binding DataContext.CanViewExpenses, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BoolToVis}}"/>
+                        <DataGridTextColumn Header="مصروف $" Binding="{Binding ExpensesUsd, StringFormat=N2}" Width="90"
+                                            Visibility="{Binding DataContext.CanViewExpenses, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BoolToVis}}"/>
+                        <DataGridTextColumn Header="ربح د.ع" Binding="{Binding ProfitIqd, StringFormat=N0}" Width="90"
+                                            Visibility="{Binding DataContext.CanViewProfit, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BoolToVis}}"/>
+                        <DataGridTextColumn Header="ربح $" Binding="{Binding ProfitUsd, StringFormat=N2}" Width="80"
+                                            Visibility="{Binding DataContext.CanViewProfit, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BoolToVis}}"/>
                     </DataGrid.Columns>
                 </DataGrid>
                 <controls:PaginationBar Grid.Row="2"/>

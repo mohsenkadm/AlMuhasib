@@ -1,3 +1,4 @@
+using AlMuhasib.Core.Constants;
 using AlMuhasib.UI.ViewModels;
 using AlMuhasib.UI.ViewModels.Customs;
 
@@ -5,13 +6,14 @@ namespace AlMuhasib.UI.Services;
 
 public static class CustomsPermissionRegistry
 {
-    public const string Dashboard = "CustomsDashboard";
-    public const string Customers = "CustomsCustomers";
-    public const string Invoices = "CustomsInvoices";
-    public const string Receipts = "CustomsReceipts";
-    public const string Statement = "CustomsStatement";
-    public const string Reports = "CustomsReports";
-    public const string ProfitReport = "CustomsProfitReport";
+    public const string Dashboard = CustomsScreenNames.Dashboard;
+    public const string Customers = CustomsScreenNames.Customers;
+    public const string Invoices = CustomsScreenNames.Invoices;
+    public const string Receipts = CustomsScreenNames.Receipts;
+    public const string Statement = CustomsScreenNames.Statement;
+    public const string Reports = CustomsScreenNames.Reports;
+    public const string ProfitReport = CustomsScreenNames.ProfitReport;
+    public const string Expenses = CustomsScreenNames.Expenses;
     public const string Users = "Users";
     public const string Permissions = "Permissions";
     public const string AuditLog = "AuditLog";
@@ -28,6 +30,7 @@ public static class CustomsPermissionRegistry
         (Statement, "كشف حساب"),
         (Reports, "التقارير"),
         (ProfitReport, "تقرير الربح"),
+        (Expenses, "المصاريف"),
         (Users, "المستخدمون"),
         (Permissions, "الصلاحيات"),
         (AuditLog, "سجل العمليات"),
@@ -93,6 +96,7 @@ public static class CustomsPermissionRegistry
         [Statement] = "كشف حساب",
         [Reports] = "التقارير",
         [ProfitReport] = "تقرير الربح",
+        [Expenses] = "المصاريف",
         [Users] = "المستخدمون",
         [Permissions] = "الصلاحيات",
         [AuditLog] = "سجل العمليات",

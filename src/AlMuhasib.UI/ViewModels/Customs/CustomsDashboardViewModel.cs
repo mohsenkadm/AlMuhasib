@@ -38,6 +38,9 @@ public partial class CustomsDashboardViewModel : ViewModelBase
     [ObservableProperty] private string _profitDisplay = "—";
     [ObservableProperty] private string _debtsDisplay = "—";
 
+    [ObservableProperty] private bool _canViewExpenses;
+    [ObservableProperty] private bool _canViewProfit;
+
     [ObservableProperty] private string _periodLabel = string.Empty;
 
     [ObservableProperty] private ISeries[] _monthlyInvoiceSeries = [];
@@ -57,6 +60,10 @@ public partial class CustomsDashboardViewModel : ViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(_currentUserService, CustomsPermissionRegistry.Dashboard);
+        CanViewExpenses = _currentUserService.IsAdmin
+            || _currentUserService.CanView(CustomsPermissionRegistry.Expenses);
+        CanViewProfit = _currentUserService.IsAdmin
+            || _currentUserService.CanView(CustomsPermissionRegistry.ProfitReport);
         await LoadDataAsync();
     }
 
