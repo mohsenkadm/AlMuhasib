@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
+using AlMuhasib.Core.Constants;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Helpers;
@@ -22,6 +23,9 @@ public abstract partial class CustomsReportViewModelBase : ViewModelBase
     protected readonly ICustomsPrintService PrintService;
     protected readonly IExportService ExportService;
     protected readonly ICurrentUserService CurrentUserService;
+
+    /// <summary>Screen used for Print/Export service-layer guards (Reports or ProfitReport).</summary>
+    protected string PermissionScreen { get; set; } = CustomsScreenNames.Reports;
 
     [ObservableProperty] private DateTime? _dateFrom = DateTime.Today.AddMonths(-1);
     [ObservableProperty] private DateTime? _dateTo = DateTime.Today;
@@ -114,25 +118,54 @@ public abstract partial class CustomsReportViewModelBase : ViewModelBase
     protected static string FormatCurrency(decimal value, AccountingCurrency currency = AccountingCurrency.IQD)
         => AccountingCurrencyHelper.Format(value, currency);
 
-    protected void ExportExcel(string fileName, string sheetTitle, string[] columns, IList<object[]> rows) =>
-        ListTableExportHelper.ExportExcel(
-            ExportService,
-            toast: null,
-            CanExport,
-            fileName,
-            sheetTitle,
-            columns,
-            rows);
+    protected void ExportExcel(string fileName, string sheetTitle, string[] columns, IList<object[]> rows)
+    {
+        if (!CanExport)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية التصدير");
+            return;
+        }
 
-    protected void PrintTable(string title, string[] columns, IList<object[]> rows, IList<string>? summaryLines = null) =>
-        ListTableExportHelper.Print(
-            ExportService,
-            CanPrint,
-            title,
-            columns,
-            rows,
-            summaryLines,
-            warnOnDenied: true);
+        var resolved = fileName.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase)
+            ? fileName
+            : $"{fileName}_{DateTime.Now:yyyyMMdd_HHmm}.xlsx";
+
+        var dialog = new SaveFileDialog
+        {
+            Filter = "Excel (*.xlsx)|*.xlsx",
+            FileName = resolved,
+            DefaultExt = ".xlsx"
+        };
+        if (dialog.ShowDialog() != true) return;
+
+        try
+        {
+            PrintService.ExportReportExcel(PermissionScreen, dialog.FileName, sheetTitle, columns, rows);
+            BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    protected void PrintTable(string title, string[] columns, IList<object[]> rows, IList<string>? summaryLines = null)
+    {
+        if (!CanPrint)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
+            return;
+        }
+
+        try
+        {
+            PrintService.PrintReportTable(PermissionScreen, title, columns, rows, summaryLines);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
 
     /// <summary>Staff operational report print via document-kind key (full internal data allowed).</summary>
     protected void PrintStaffReport(
@@ -148,7 +181,14 @@ public abstract partial class CustomsReportViewModelBase : ViewModelBase
             return;
         }
 
-        PrintService.PrintReportTable(kind, title, columns, rows, summaryLines);
+        try
+        {
+            PrintService.PrintReportTable(PermissionScreen, title, columns, rows, summaryLines, kind);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
     }
 
     protected void ExportPdfDocument(
@@ -197,9 +237,8 @@ public abstract partial class CustomsReportViewModelBase : ViewModelBase
                 SummaryLines = summaryLines
             };
 
-            var temp = kind is CustomsPrintDocumentKind k
-                ? PrintService.ExportReportPdf(k, model)
-                : ExportService.ExportStatementToPdf(model);
+            // H-04: always go through PrintService so EnsureExport(screen) cannot be bypassed.
+            var temp = PrintService.ExportReportPdf(PermissionScreen, model, kind);
 
             var dlg = new SaveFileDialog
             {

@@ -363,6 +363,12 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         if (invoice.PaidAmount > 0)
             throw new InvalidOperationException("لا يمكن إلغاء فاتورة عليها مبالغ مدفوعة");
 
+        // H-02: reject even when PaidAmount is stale/zero but active allocations still exist.
+        var hasActiveAllocations = await db.CustomsReceiptAllocations.AsNoTracking()
+            .AnyAsync(a => a.InvoiceId == invoice.Id, cancellationToken);
+        if (hasActiveAllocations)
+            throw new InvalidOperationException("لا يمكن إلغاء فاتورة عليها توزيعات قبض نشطة — ألغِ الوصولات أولاً");
+
         // Rule 9: Cancel keeps the row (Status = Cancelled) and audit trail; never hard-delete approved/cancelled invoices.
         var previousStatus = invoice.Status;
         var remaining = invoice.RemainingAmount;
@@ -421,6 +427,11 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
 
         if (invoice.PaidAmount > 0)
             throw new InvalidOperationException("لا يمكن حذف فاتورة عليها مبالغ مدفوعة");
+
+        var hasActiveAllocations = await db.CustomsReceiptAllocations.AsNoTracking()
+            .AnyAsync(a => a.InvoiceId == invoice.Id, cancellationToken);
+        if (hasActiveAllocations)
+            throw new InvalidOperationException("لا يمكن حذف فاتورة عليها توزيعات قبض نشطة — ألغِ الوصولات أولاً");
 
         foreach (var v in invoice.Vehicles)
             v.MarkSoftDeleted(deletedBy);

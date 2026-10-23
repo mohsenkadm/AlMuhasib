@@ -51,6 +51,7 @@ public partial class CustomsProfitReportViewModel : CustomsReportViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(CurrentUserService, CustomsPermissionRegistry.ProfitReport);
+        PermissionScreen = CustomsPermissionRegistry.ProfitReport;
         await LoadCustomerOptionsAsync();
         SelectedCustomer = Customers.FirstOrDefault();
         await LoadDataAsync();

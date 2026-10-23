@@ -137,24 +137,37 @@ public sealed class CustomsPrintService : ICustomsPrintService
     }
 
     public void PrintReportTable(
-        CustomsPrintDocumentKind kind,
+        string screenName,
         string title,
         string[] columns,
         IList<object[]> rows,
-        IList<string>? summaryLines = null)
+        IList<string>? summaryLines = null,
+        CustomsPrintDocumentKind? kind = null)
     {
         _ = kind; // reserved for future official report templates
-        _permissions.EnsurePrint(CustomsScreenNames.Reports);
+        _permissions.EnsurePrint(screenName);
         _exportService.PrintTable(title, columns, rows, summaryLines);
     }
 
     public string ExportReportPdf(
-        CustomsPrintDocumentKind kind,
-        StatementPrintModel model)
+        string screenName,
+        StatementPrintModel model,
+        CustomsPrintDocumentKind? kind = null)
     {
         _ = kind;
-        _permissions.EnsureExport(CustomsScreenNames.Reports);
+        _permissions.EnsureExport(screenName);
         return _exportService.ExportStatementToPdf(model);
+    }
+
+    public void ExportReportExcel(
+        string screenName,
+        string filePath,
+        string sheetName,
+        string[] columns,
+        IList<object[]> rows)
+    {
+        _permissions.EnsureExport(screenName);
+        _exportService.ExportToExcel(filePath, sheetName, columns, rows);
     }
 
     private static InvoicePrintModel BuildCustomerInvoiceCore(

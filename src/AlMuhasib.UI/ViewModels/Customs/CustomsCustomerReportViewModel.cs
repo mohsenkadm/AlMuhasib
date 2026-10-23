@@ -40,6 +40,7 @@ public partial class CustomsCustomerReportViewModel : CustomsReportViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(CurrentUserService, CustomsPermissionRegistry.Reports);
+        PermissionScreen = CustomsPermissionRegistry.Reports;
         await LoadCustomerOptionsAsync();
         SelectedCustomer = Customers.FirstOrDefault();
         await LoadDataAsync();
