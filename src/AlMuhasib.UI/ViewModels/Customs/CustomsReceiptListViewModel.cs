@@ -35,6 +35,8 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
     [ObservableProperty] private int _totalPages = 1;
     [ObservableProperty] private string _paginationText = string.Empty;
     [ObservableProperty] private CustomsReceiptListItem? _selectedReceipt;
+    [ObservableProperty] private string? _sortBy;
+    [ObservableProperty] private bool _sortDescending = true;
 
     [ObservableProperty] private bool _isCancelDialogOpen;
     [ObservableProperty] private CustomsReceiptListItem? _receiptToCancel;
@@ -77,7 +79,8 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
         {
             var search = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim();
             var (items, totalCount) = await _receiptService.GetPagedAsync(
-                CurrentPage, PageSize, search, DateFrom, DateTo, null, CurrencyFilter);
+                CurrentPage, PageSize, search, DateFrom, DateTo, null, CurrencyFilter,
+                sortBy: SortBy, sortDescending: SortDescending);
 
             TotalCount = totalCount;
             TotalPages = PaginationHelper.ComputeTotalPages(totalCount, PageSize);
@@ -95,6 +98,15 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>M-04: server-side sort from DataGrid header (allowlisted columns only).</summary>
+    public Task ApplyServerSortAsync(string sortBy, bool sortDescending)
+    {
+        SortBy = sortBy;
+        SortDescending = sortDescending;
+        CurrentPage = 1;
+        return LoadReceiptsAsync();
     }
 
     partial void OnSearchTextChanged(string value)

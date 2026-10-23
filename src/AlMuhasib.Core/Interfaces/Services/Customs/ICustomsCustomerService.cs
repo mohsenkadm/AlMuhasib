@@ -10,6 +10,8 @@ public interface ICustomsCustomerService
         int pageSize,
         string? search = null,
         bool? activeOnly = null,
+        string? sortBy = null,
+        bool sortDescending = true,
         CancellationToken cancellationToken = default);
 
     Task<CustomsCustomer?> GetByIdAsync(int id, CancellationToken cancellationToken = default);

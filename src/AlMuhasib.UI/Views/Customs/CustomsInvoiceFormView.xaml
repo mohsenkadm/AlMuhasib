@@ -222,10 +222,10 @@
                                                 <Button Command="{Binding DataContext.OpenVehicleDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                         CommandParameter="{Binding}"
                                                         Style="{StaticResource TableViewIconButton}"
-                                                        ToolTip="تفاصيل السيارة">
+                                                        ToolTip="تفاصيل ومرفقات السيارة">
                                                     <md:PackIcon Kind="Eye" Width="16" Height="16"/>
                                                 </Button>
-                                                <Button Command="{Binding DataContext.OpenVehicleAttachmentsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                <Button Command="{Binding DataContext.OpenVehicleDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                         CommandParameter="{Binding}"
                                                         Style="{StaticResource TableAttachIconButton}"
                                                         ToolTip="مرفقات السيارة">
@@ -331,12 +331,13 @@
                                                         CommandParameter="{Binding}"
                                                         Style="{StaticResource TableEditIconButton}"
                                                         IsEnabled="{Binding DataContext.CanEditExpense, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                        ToolTip="تعديل">
+                                                        ToolTip="تعديل ومرفقات">
                                                     <md:PackIcon Kind="PencilOutline" Width="16" Height="16"/>
                                                 </Button>
-                                                <Button Command="{Binding DataContext.OpenExpenseAttachmentsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                <Button Command="{Binding DataContext.OpenEditExpenseDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                         CommandParameter="{Binding}"
                                                         Style="{StaticResource TableAttachIconButton}"
+                                                        IsEnabled="{Binding DataContext.CanEditExpense, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                         ToolTip="مرفقات المصروف">
                                                     <md:PackIcon Kind="Attachment" Width="16" Height="16"/>
                                                 </Button>
@@ -524,55 +525,6 @@
             </md:DialogHost.DialogContent>
         </md:DialogHost>
 
-        <!-- Vehicle attachments dialog -->
-        <md:DialogHost IsOpen="{Binding IsVehicleAttachmentsDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="3"
-                       Style="{StaticResource ModernDialogHost}">
-            <md:DialogHost.DialogContent>
-                <md:Card MinWidth="520" MaxWidth="600" MaxHeight="560" UniformCornerRadius="16"
-                         md:ElevationAssist.Elevation="Dp8">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,12,16,14" CornerRadius="16,16,0,0">
-                            <StackPanel>
-                                <Button Command="{Binding CloseVehicleAttachmentsCommand}" HorizontalAlignment="Left"
-                                        Style="{StaticResource FlatButton}" Foreground="White" Padding="2" Margin="0,0,0,8">
-                                    <md:PackIcon Kind="Close" Width="22" Height="22"/>
-                                </Button>
-                                <TextBlock Text="مرفقات السيارة" FontSize="18" FontWeight="Bold" Foreground="White"/>
-                                <TextBlock FontSize="12" Foreground="#BBDEFB" Margin="0,6,0,0">
-                                    <Run Text="لوحة:"/>
-                                    <Run Text="{Binding AttachmentsVehicle.IraqiPlate, Mode=OneWay}"/>
-                                    <Run Text=" / "/>
-                                    <Run Text="{Binding AttachmentsVehicle.SyrianPlate, Mode=OneWay}"/>
-                                </TextBlock>
-                            </StackPanel>
-                        </Border>
-                        <StackPanel Grid.Row="1" Margin="24,16">
-                            <controls:AttachmentsPanel
-                                Title="المرفقات"
-                                SaveFirstHint="احفظ الفاتورة أولاً لتفعيل مرفقات هذه السيارة"
-                                MaxGridHeight="320"
-                                Items="{Binding VehicleAttachments}"
-                                HasSavedOwner="{Binding HasSavedAttachmentsVehicle}"
-                                CanManage="{Binding CanManageAttachments}"
-                                CanDelete="{Binding CanDelete}"
-                                AddCommand="{Binding AddVehicleAttachmentCommand}"
-                                OpenCommand="{Binding OpenAttachmentCommand}"
-                                DeleteCommand="{Binding DeleteVehicleAttachmentCommand}"/>
-                        </StackPanel>
-                        <Border Grid.Row="2" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0" Padding="20,14">
-                            <Button Content="إغلاق" Command="{Binding CloseVehicleAttachmentsCommand}"
-                                    Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8" Padding="24,10"/>
-                        </Border>
-                    </Grid>
-                </md:Card>
-            </md:DialogHost.DialogContent>
-        </md:DialogHost>
-
         <!-- Expense add/edit dialog -->
         <md:DialogHost IsOpen="{Binding IsExpenseDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="3"
                        Style="{StaticResource ModernDialogHost}">
@@ -667,52 +619,16 @@
             </md:DialogHost.DialogContent>
         </md:DialogHost>
 
-        <!-- Expense attachments dialog -->
-        <md:DialogHost IsOpen="{Binding IsExpenseAttachmentsDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="3"
-                       Style="{StaticResource ModernDialogHost}">
-            <md:DialogHost.DialogContent>
-                <md:Card MinWidth="520" MaxWidth="600" MaxHeight="560" UniformCornerRadius="16"
-                         md:ElevationAssist.Elevation="Dp8">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <Border Grid.Row="0" Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,12,16,14" CornerRadius="16,16,0,0">
-                            <StackPanel>
-                                <Button Command="{Binding CloseExpenseAttachmentsCommand}" HorizontalAlignment="Left"
-                                        Style="{StaticResource FlatButton}" Foreground="White" Padding="2" Margin="0,0,0,8">
-                                    <md:PackIcon Kind="Close" Width="22" Height="22"/>
-                                </Button>
-                                <TextBlock Text="مرفقات المصروف" FontSize="18" FontWeight="Bold" Foreground="White"/>
-                                <TextBlock FontSize="12" Foreground="#BBDEFB" Margin="0,6,0,0">
-                                    <Run Text="{Binding AttachmentsExpense.ExpenseTypeName, Mode=OneWay}"/>
-                                    <Run Text=" — "/>
-                                    <Run Text="{Binding AttachmentsExpense.Amount, Mode=OneWay, StringFormat=N0}"/>
-                                </TextBlock>
-                            </StackPanel>
-                        </Border>
-                        <StackPanel Grid.Row="1" Margin="24,16">
-                            <controls:AttachmentsPanel
-                                Title="المرفقات"
-                                SaveFirstHint="احفظ الفاتورة أولاً لتفعيل مرفقات هذا المصروف"
-                                MaxGridHeight="320"
-                                Items="{Binding ExpenseAttachments}"
-                                HasSavedOwner="{Binding HasSavedAttachmentsExpense}"
-                                CanManage="{Binding CanManageAttachments}"
-                                CanDelete="{Binding CanDelete}"
-                                AddCommand="{Binding AddExpenseAttachmentCommand}"
-                                OpenCommand="{Binding OpenAttachmentCommand}"
-                                DeleteCommand="{Binding DeleteExpenseAttachmentCommand}"/>
-                        </StackPanel>
-                        <Border Grid.Row="2" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0" Padding="20,14">
-                            <Button Content="إغلاق" Command="{Binding CloseExpenseAttachmentsCommand}"
-                                    Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8" Padding="24,10"/>
-                        </Border>
-                    </Grid>
-                </md:Card>
-            </md:DialogHost.DialogContent>
-        </md:DialogHost>
+        <!-- M-02: save/approve loading overlay -->
+        <Border Style="{StaticResource PageLoading}"
+                Visibility="{Binding IsSaving, Converter={StaticResource BoolToVis}}">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                             IsIndeterminate="True" Width="40" Height="40" Value="0"/>
+                <TextBlock Text="جارٍ الحفظ..." FontSize="13"
+                           Foreground="{DynamicResource TextSecondaryBrush}"
+                           HorizontalAlignment="Center" Margin="0,10,0,0"/>
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>

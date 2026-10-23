@@ -13,6 +13,8 @@ public interface ICustomsInvoiceService
         DateTime? fromDate = null,
         DateTime? toDate = null,
         int? customerId = null,
+        string? sortBy = null,
+        bool sortDescending = true,
         CancellationToken cancellationToken = default);
 
     Task<CustomsInvoiceDetail?> GetByIdAsync(int id, CancellationToken cancellationToken = default);

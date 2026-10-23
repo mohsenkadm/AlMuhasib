@@ -31,6 +31,8 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         DateTime? toDate = null,
         int? customerId = null,
         AccountingCurrency? currency = null,
+        string? sortBy = null,
+        bool sortDescending = true,
         CancellationToken cancellationToken = default)
     {
         _permissions.EnsureView(CustomsScreenNames.Receipts);
@@ -69,9 +71,7 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
-        var rows = await query
-            .OrderByDescending(r => r.ReceiptDate)
-            .ThenByDescending(r => r.Id)
+        var rows = await ApplyReceiptSort(query, sortBy, sortDescending)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(r => new CustomsReceiptListItem
@@ -96,6 +96,26 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         }
 
         return (rows, totalCount);
+    }
+
+    /// <summary>M-04: allowlisted receipt list sort. Default remains ReceiptDate DESC, Id DESC.</summary>
+    private static IOrderedQueryable<CustomsReceipt> ApplyReceiptSort(
+        IQueryable<CustomsReceipt> query,
+        string? sortBy,
+        bool sortDescending)
+    {
+        var key = string.IsNullOrWhiteSpace(sortBy) ? "ReceiptDate" : sortBy.Trim();
+        return key switch
+        {
+            "ReceiptDate" => CustomsListSort.ThenByDir(
+                CustomsListSort.By(query, sortDescending, r => r.ReceiptDate),
+                sortDescending,
+                r => r.Id),
+            "Id" => CustomsListSort.By(query, sortDescending, r => r.Id),
+            "ReceiptNumber" => CustomsListSort.By(query, sortDescending, r => r.ReceiptNumber),
+            "Amount" => CustomsListSort.By(query, sortDescending, r => r.Amount),
+            _ => throw new InvalidOperationException($"عمود الفرز غير مسموح: {key}")
+        };
     }
 
     public async Task<CustomsReceiptDetail?> GetByIdAsync(int id, CancellationToken cancellationToken = default)

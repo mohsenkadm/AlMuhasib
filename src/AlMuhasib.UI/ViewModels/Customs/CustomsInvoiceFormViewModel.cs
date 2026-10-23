@@ -54,8 +54,6 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     [ObservableProperty] private string _vehicleSearchText = string.Empty;
     [ObservableProperty] private bool _isVehicleDetailDialogOpen;
     [ObservableProperty] private CustomsInvoiceVehicleRow? _detailVehicle;
-    [ObservableProperty] private bool _isVehicleAttachmentsDialogOpen;
-    [ObservableProperty] private CustomsInvoiceVehicleRow? _attachmentsVehicle;
 
     [ObservableProperty] private bool _isExpenseDialogOpen;
     [ObservableProperty] private bool _isExpenseEditMode;
@@ -69,8 +67,6 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     [ObservableProperty] private bool _showExpenseFxRate;
     [ObservableProperty] private DateTime _expenseDate = DateTime.Today;
     [ObservableProperty] private string _expenseRecipient = string.Empty;
-    [ObservableProperty] private bool _isExpenseAttachmentsDialogOpen;
-    [ObservableProperty] private CustomsInvoiceExpenseRow? _attachmentsExpense;
 
     private CustomsInvoiceExpenseRow? _editingExpenseRow;
 
@@ -113,12 +109,10 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     public bool CanAddVehicle => CanAdd && Status != CustomsInvoiceStatus.Cancelled;
     public bool CanDeleteVehicle => CanDelete && Status != CustomsInvoiceStatus.Cancelled;
     public bool HasSavedDetailVehicle => DetailVehicle?.Id is > 0;
-    public bool HasSavedAttachmentsVehicle => AttachmentsVehicle?.Id is > 0;
     public bool CanAddExpense => CanViewExpenses && CanAdd && Status != CustomsInvoiceStatus.Cancelled;
     public bool CanEditExpense => CanViewExpenses && CanEdit && Status != CustomsInvoiceStatus.Cancelled;
     public bool CanDeleteExpense => CanViewExpenses && CanDelete && Status != CustomsInvoiceStatus.Cancelled;
     public bool HasSavedEditingExpense => _editingExpenseRow?.Id is > 0;
-    public bool HasSavedAttachmentsExpense => AttachmentsExpense?.Id is > 0;
     public string InvoiceCurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
 
     [ObservableProperty] private bool _canViewExpenses;
@@ -203,8 +197,6 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         VehicleAttachments.Clear();
         ExpenseAttachments.Clear();
         CloseVehicleDetail();
-        CloseVehicleAttachments();
-        CloseExpenseAttachments();
         CloseExpenseDialog();
         AddVehicleRow();
         RecalculateTotals();
@@ -375,8 +367,6 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         Vehicles.Remove(row);
         if (ReferenceEquals(DetailVehicle, row))
             CloseVehicleDetail();
-        if (ReferenceEquals(AttachmentsVehicle, row))
-            CloseVehicleAttachments();
 
         if (Vehicles.Count == 0)
             AddVehicleRow();
@@ -418,31 +408,6 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasSavedDetailVehicle));
     }
 
-    [RelayCommand]
-    private async Task OpenVehicleAttachmentsAsync(CustomsInvoiceVehicleRow? row)
-    {
-        if (row is null) return;
-        if (row.Id is null or <= 0)
-        {
-            BeautifulMessageDialog.ShowWarning("احفظ الفاتورة أولاً قبل إرفاق ملفات للسيارة");
-            return;
-        }
-
-        AttachmentsVehicle = row;
-        await LoadVehicleAttachmentsAsync(row.Id.Value);
-        IsVehicleAttachmentsDialogOpen = true;
-        OnPropertyChanged(nameof(HasSavedAttachmentsVehicle));
-    }
-
-    [RelayCommand]
-    private void CloseVehicleAttachments()
-    {
-        IsVehicleAttachmentsDialogOpen = false;
-        AttachmentsVehicle = null;
-        VehicleAttachments.Clear();
-        OnPropertyChanged(nameof(HasSavedAttachmentsVehicle));
-    }
-
     private async Task LoadVehicleAttachmentsForDetailAsync()
     {
         VehicleAttachments.Clear();
@@ -476,7 +441,7 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
             return;
         }
 
-        var vehicleId = AttachmentsVehicle?.Id ?? DetailVehicle?.Id;
+        var vehicleId = DetailVehicle?.Id;
         if (vehicleId is null or <= 0)
         {
             BeautifulMessageDialog.ShowWarning("احفظ الفاتورة أولاً قبل إرفاق ملفات للسيارة");
@@ -606,31 +571,6 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasSavedEditingExpense));
     }
 
-    [RelayCommand]
-    private async Task OpenExpenseAttachmentsAsync(CustomsInvoiceExpenseRow? row)
-    {
-        if (row is null) return;
-        if (row.Id is null or <= 0)
-        {
-            BeautifulMessageDialog.ShowWarning("احفظ الفاتورة أولاً قبل إرفاق ملفات للمصروف");
-            return;
-        }
-
-        AttachmentsExpense = row;
-        await LoadExpenseAttachmentsAsync(row.Id.Value);
-        IsExpenseAttachmentsDialogOpen = true;
-        OnPropertyChanged(nameof(HasSavedAttachmentsExpense));
-    }
-
-    [RelayCommand]
-    private void CloseExpenseAttachments()
-    {
-        IsExpenseAttachmentsDialogOpen = false;
-        AttachmentsExpense = null;
-        ExpenseAttachments.Clear();
-        OnPropertyChanged(nameof(HasSavedAttachmentsExpense));
-    }
-
     private async Task LoadExpenseAttachmentsForEditAsync()
     {
         ExpenseAttachments.Clear();
@@ -664,7 +604,7 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
             return;
         }
 
-        var expenseId = AttachmentsExpense?.Id ?? _editingExpenseRow?.Id;
+        var expenseId = _editingExpenseRow?.Id;
         if (expenseId is null or <= 0)
         {
             BeautifulMessageDialog.ShowWarning("احفظ الفاتورة أولاً قبل إرفاق ملفات للمصروف");
@@ -796,8 +736,6 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         if (!BeautifulMessageDialog.ShowConfirm("حذف هذا المصروف من الفاتورة؟"))
             return;
 
-        if (ReferenceEquals(AttachmentsExpense, row))
-            CloseExpenseAttachments();
         if (ReferenceEquals(_editingExpenseRow, row))
             CloseExpenseDialog();
 
@@ -813,6 +751,8 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
 
     private async Task SaveInternalAsync(bool approveAfterSave)
     {
+        if (IsSaving) return;
+
         FormError = string.Empty;
         if (!CanSave)
         {
@@ -894,7 +834,8 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     [RelayCommand]
     private async Task ApproveAsync()
     {
-        if (!_editId.HasValue || !CanApprove) return;
+        if (!_editId.HasValue || !CanApprove || IsSaving) return;
+        IsSaving = true;
         try
         {
             await _invoiceService.ApproveAsync(_editId.Value, _currentUserService.Username);
@@ -904,6 +845,11 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         catch (Exception ex)
         {
             BeautifulMessageDialog.ShowError(ex.Message);
+        }
+        finally
+        {
+            IsSaving = false;
+            NotifyFormStateChanged();
         }
     }
 

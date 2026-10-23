@@ -27,6 +27,8 @@ public sealed class CustomsCustomerService : ICustomsCustomerService
         int pageSize,
         string? search = null,
         bool? activeOnly = null,
+        string? sortBy = null,
+        bool sortDescending = true,
         CancellationToken cancellationToken = default)
     {
         _permissions.EnsureView(CustomsScreenNames.Customers);
@@ -52,8 +54,7 @@ public sealed class CustomsCustomerService : ICustomsCustomerService
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
-        var customers = await query
-            .OrderByDescending(c => c.CreatedAt)
+        var customers = await ApplyCustomerSort(query, sortBy, sortDescending)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
@@ -98,6 +99,24 @@ public sealed class CustomsCustomerService : ICustomsCustomerService
         }).ToList();
 
         return (items, totalCount);
+    }
+
+    /// <summary>M-04: allowlisted customer list sort. Default remains CreatedAt DESC.</summary>
+    private static IOrderedQueryable<CustomsCustomer> ApplyCustomerSort(
+        IQueryable<CustomsCustomer> query,
+        string? sortBy,
+        bool sortDescending)
+    {
+        var key = string.IsNullOrWhiteSpace(sortBy) ? "CreatedAt" : sortBy.Trim();
+        return key switch
+        {
+            "CreatedAt" => CustomsListSort.By(query, sortDescending, c => c.CreatedAt),
+            "Name" => CustomsListSort.By(query, sortDescending, c => c.Name),
+            "Phone" => CustomsListSort.By(query, sortDescending, c => c.Phone),
+            "BalanceIqd" => CustomsListSort.By(query, sortDescending, c => c.BalanceIqd),
+            "BalanceUsd" => CustomsListSort.By(query, sortDescending, c => c.BalanceUsd),
+            _ => throw new InvalidOperationException($"عمود الفرز غير مسموح: {key}")
+        };
     }
 
     public async Task<CustomsCustomer?> GetByIdAsync(int id, CancellationToken cancellationToken = default)

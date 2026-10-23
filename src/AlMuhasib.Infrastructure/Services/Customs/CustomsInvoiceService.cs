@@ -31,6 +31,8 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         DateTime? fromDate = null,
         DateTime? toDate = null,
         int? customerId = null,
+        string? sortBy = null,
+        bool sortDescending = true,
         CancellationToken cancellationToken = default)
     {
         _permissions.EnsureView(CustomsScreenNames.Invoices);
@@ -69,9 +71,8 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
-        var rows = await query
-            .OrderByDescending(i => i.InvoiceDate)
-            .ThenByDescending(i => i.Id)
+        var ordered = ApplyInvoiceSort(query, sortBy, sortDescending);
+        var rows = await ordered
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(i => new CustomsInvoiceListItem
@@ -471,6 +472,29 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
                 // Metadata already soft-deleted; ignore disk failures.
             }
         }
+    }
+
+    /// <summary>M-04: allowlisted invoice list sort. Default remains InvoiceDate DESC, Id DESC.</summary>
+    private static IOrderedQueryable<CustomsInvoice> ApplyInvoiceSort(
+        IQueryable<CustomsInvoice> query,
+        string? sortBy,
+        bool sortDescending)
+    {
+        var key = string.IsNullOrWhiteSpace(sortBy) ? "InvoiceDate" : sortBy.Trim();
+        return key switch
+        {
+            "InvoiceDate" => CustomsListSort.ThenByDir(
+                CustomsListSort.By(query, sortDescending, i => i.InvoiceDate),
+                sortDescending,
+                i => i.Id),
+            "Id" => CustomsListSort.By(query, sortDescending, i => i.Id),
+            "InvoiceNumber" => CustomsListSort.By(query, sortDescending, i => i.InvoiceNumber),
+            "RemainingAmount" => CustomsListSort.By(query, sortDescending, i => i.RemainingAmount),
+            "TotalAmount" => CustomsListSort.By(query, sortDescending, i => i.TotalAmount),
+            "PaidAmount" => CustomsListSort.By(query, sortDescending, i => i.PaidAmount),
+            "Status" => CustomsListSort.By(query, sortDescending, i => i.Status),
+            _ => throw new InvalidOperationException($"عمود الفرز غير مسموح: {key}")
+        };
     }
 
     private static void ValidateRequest(CustomsInvoiceSaveRequest request)

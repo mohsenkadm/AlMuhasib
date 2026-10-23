@@ -32,6 +32,8 @@ public partial class CustomsCustomersViewModel : ViewModelBase
     [ObservableProperty] private int _totalPages = 1;
     [ObservableProperty] private string _paginationText = string.Empty;
     [ObservableProperty] private CustomsCustomerListItem? _selectedCustomer;
+    [ObservableProperty] private string? _sortBy;
+    [ObservableProperty] private bool _sortDescending = true;
 
     [ObservableProperty] private bool _isDialogOpen;
     [ObservableProperty] private bool _isEditMode;
@@ -90,7 +92,8 @@ public partial class CustomsCustomersViewModel : ViewModelBase
 
             if (MasterDataColumnFilterHelper.HasActiveColumnFilters(ColumnFilters))
             {
-                var (allItems, _) = await _customerService.GetPagedAsync(1, int.MaxValue, search, activeOnly: null);
+                var (allItems, _) = await _customerService.GetPagedAsync(
+                    1, int.MaxValue, search, activeOnly: null, sortBy: SortBy, sortDescending: SortDescending);
                 var filtered = ColumnFilterEngine.Apply(allItems, ColumnFilters).ToList();
                 MasterDataColumnFilterHelper.ApplyClientPagination(
                     filtered, Customers, CurrentPage, PageSize,
@@ -102,7 +105,7 @@ public partial class CustomsCustomersViewModel : ViewModelBase
             }
 
             var (items, totalCount) = await _customerService.GetPagedAsync(
-                CurrentPage, PageSize, search, activeOnly: null);
+                CurrentPage, PageSize, search, activeOnly: null, sortBy: SortBy, sortDescending: SortDescending);
 
             TotalCount = totalCount;
             TotalPages = PaginationHelper.ComputeTotalPages(totalCount, PageSize);
@@ -120,6 +123,15 @@ public partial class CustomsCustomersViewModel : ViewModelBase
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>M-04: server-side sort from DataGrid header (allowlisted columns only).</summary>
+    public Task ApplyServerSortAsync(string sortBy, bool sortDescending)
+    {
+        SortBy = sortBy;
+        SortDescending = sortDescending;
+        CurrentPage = 1;
+        return LoadCustomersAsync();
     }
 
     protected override void OnColumnFiltersChanged()
