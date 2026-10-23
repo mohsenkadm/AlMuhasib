@@ -5,54 +5,54 @@ using System.Windows.Input;
 
 namespace AlMuhasib.UI.Controls;
 
-public partial class CustomsAttachmentsPanel : UserControl
+public partial class AttachmentsPanel : UserControl
 {
     public static readonly DependencyProperty TitleProperty =
-        DependencyProperty.Register(nameof(Title), typeof(string), typeof(CustomsAttachmentsPanel),
+        DependencyProperty.Register(nameof(Title), typeof(string), typeof(AttachmentsPanel),
             new PropertyMetadata("المرفقات"));
 
     public static readonly DependencyProperty SaveFirstHintProperty =
-        DependencyProperty.Register(nameof(SaveFirstHint), typeof(string), typeof(CustomsAttachmentsPanel),
+        DependencyProperty.Register(nameof(SaveFirstHint), typeof(string), typeof(AttachmentsPanel),
             new PropertyMetadata("احفظ السجل أولاً لتفعيل المرفقات"));
 
     public static readonly DependencyProperty AddButtonTextProperty =
-        DependencyProperty.Register(nameof(AddButtonText), typeof(string), typeof(CustomsAttachmentsPanel),
+        DependencyProperty.Register(nameof(AddButtonText), typeof(string), typeof(AttachmentsPanel),
             new PropertyMetadata("+ إضافة مرفق"));
 
     public static readonly DependencyProperty ItemsProperty =
-        DependencyProperty.Register(nameof(Items), typeof(IEnumerable), typeof(CustomsAttachmentsPanel),
+        DependencyProperty.Register(nameof(Items), typeof(IEnumerable), typeof(AttachmentsPanel),
             new PropertyMetadata(null));
 
     public static readonly DependencyProperty HasSavedOwnerProperty =
-        DependencyProperty.Register(nameof(HasSavedOwner), typeof(bool), typeof(CustomsAttachmentsPanel),
+        DependencyProperty.Register(nameof(HasSavedOwner), typeof(bool), typeof(AttachmentsPanel),
             new PropertyMetadata(false, OnAddEnablementChanged));
 
     public static readonly DependencyProperty CanManageProperty =
-        DependencyProperty.Register(nameof(CanManage), typeof(bool), typeof(CustomsAttachmentsPanel),
+        DependencyProperty.Register(nameof(CanManage), typeof(bool), typeof(AttachmentsPanel),
             new PropertyMetadata(false, OnAddEnablementChanged));
 
     public static readonly DependencyProperty CanDeleteProperty =
-        DependencyProperty.Register(nameof(CanDelete), typeof(bool), typeof(CustomsAttachmentsPanel),
+        DependencyProperty.Register(nameof(CanDelete), typeof(bool), typeof(AttachmentsPanel),
             new PropertyMetadata(false));
 
     public static readonly DependencyProperty ShowHeaderProperty =
-        DependencyProperty.Register(nameof(ShowHeader), typeof(bool), typeof(CustomsAttachmentsPanel),
+        DependencyProperty.Register(nameof(ShowHeader), typeof(bool), typeof(AttachmentsPanel),
             new PropertyMetadata(true));
 
     public static readonly DependencyProperty MaxGridHeightProperty =
-        DependencyProperty.Register(nameof(MaxGridHeight), typeof(double), typeof(CustomsAttachmentsPanel),
+        DependencyProperty.Register(nameof(MaxGridHeight), typeof(double), typeof(AttachmentsPanel),
             new PropertyMetadata(180d));
 
     public static readonly DependencyProperty AddCommandProperty =
-        DependencyProperty.Register(nameof(AddCommand), typeof(ICommand), typeof(CustomsAttachmentsPanel),
+        DependencyProperty.Register(nameof(AddCommand), typeof(ICommand), typeof(AttachmentsPanel),
             new PropertyMetadata(null));
 
     public static readonly DependencyProperty OpenCommandProperty =
-        DependencyProperty.Register(nameof(OpenCommand), typeof(ICommand), typeof(CustomsAttachmentsPanel),
+        DependencyProperty.Register(nameof(OpenCommand), typeof(ICommand), typeof(AttachmentsPanel),
             new PropertyMetadata(null));
 
     public static readonly DependencyProperty DeleteCommandProperty =
-        DependencyProperty.Register(nameof(DeleteCommand), typeof(ICommand), typeof(CustomsAttachmentsPanel),
+        DependencyProperty.Register(nameof(DeleteCommand), typeof(ICommand), typeof(AttachmentsPanel),
             new PropertyMetadata(null));
 
     public string Title
@@ -127,7 +127,7 @@ public partial class CustomsAttachmentsPanel : UserControl
         set => SetValue(DeleteCommandProperty, value);
     }
 
-    public CustomsAttachmentsPanel()
+    public AttachmentsPanel()
     {
         InitializeComponent();
         Loaded += (_, _) => UpdateAddEnabled();
@@ -135,7 +135,7 @@ public partial class CustomsAttachmentsPanel : UserControl
 
     private static void OnAddEnablementChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
-        if (d is CustomsAttachmentsPanel panel)
+        if (d is AttachmentsPanel panel)
             panel.UpdateAddEnabled();
     }
 

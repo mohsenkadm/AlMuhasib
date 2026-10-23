@@ -247,24 +247,11 @@ public partial class CustomsStatementViewModel : ViewModelBase
     [RelayCommand]
     private void ExportToExcel()
     {
-        if (!CanExport)
-        {
-            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية التصدير");
-            return;
-        }
-
         if (_allRows.Count == 0)
         {
             BeautifulMessageDialog.ShowWarning("لا توجد بيانات للتصدير");
             return;
         }
-
-        var dlg = new SaveFileDialog
-        {
-            Filter = "Excel|*.xlsx",
-            FileName = $"كشف_حساب_تخليص_{CustomerName}_{DateTime.Now:yyyyMMdd}.xlsx"
-        };
-        if (dlg.ShowDialog() != true) return;
 
         var cols = new[] { "التاريخ", "البيان", "النوع", "العملة", "مدين", "دائن", "الرصيد" };
         var rows = _allRows.Select(r => new object[]
@@ -277,8 +264,12 @@ public partial class CustomsStatementViewModel : ViewModelBase
             r.Credit,
             r.RunningBalance
         }).ToList();
-        _exportService.ExportToExcel(dlg.FileName, $"كشف حساب {CustomerName}", cols, rows);
-        BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
+        ListTableExportHelper.ExportExcel(
+            _exportService, toast: null, CanExport,
+            $"كشف_حساب_تخليص_{CustomerName}",
+            $"كشف حساب {CustomerName}",
+            cols,
+            rows);
     }
 
     [RelayCommand]

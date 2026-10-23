@@ -14,43 +14,6 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
-
-        <Style x:Key="SectionCard" TargetType="materialDesign:Card">
-            <Setter Property="UniformCornerRadius" Value="20"/>
-            <Setter Property="Padding" Value="24,20"/>
-            <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp1"/>
-            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-        </Style>
-
-        <Style x:Key="DashboardChartCard" TargetType="materialDesign:Card" BasedOn="{StaticResource SectionCard}">
-            <Setter Property="Padding" Value="0"/>
-            <Setter Property="ClipToBounds" Value="True"/>
-            <Setter Property="Background" Value="{DynamicResource DashboardChartCardBrush}"/>
-            <Setter Property="materialDesign:ElevationAssist.Elevation" Value="Dp2"/>
-        </Style>
-
-        <Style x:Key="DashboardChartHost" TargetType="Border">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="12,4,16,16"/>
-            <Setter Property="Margin" Value="4,0,4,4"/>
-            <Setter Property="ClipToBounds" Value="True"/>
-            <Setter Property="FlowDirection" Value="LeftToRight"/>
-        </Style>
-
-        <Style x:Key="DashboardChartHeader" TargetType="Border">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Padding" Value="20,16,20,8"/>
-            <Setter Property="BorderThickness" Value="0"/>
-        </Style>
-
-        <Style x:Key="SectionHeader" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="16"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-        </Style>
     </UserControl.Resources>
 
     <Grid>
@@ -231,101 +194,35 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <materialDesign:Card Grid.Column="0" Style="{StaticResource DashboardChartCard}">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="3"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="300"/>
-                            </Grid.RowDefinitions>
+                    <controls:ChartCard Grid.Column="0"
+                                        Title="الفواتير الشهرية"
+                                        Subtitle="عدد الفواتير خلال آخر 12 شهرًا"
+                                        Margin="0">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:CartesianChart Series="{Binding MonthlyInvoiceSeries}"
+                                                XAxes="{Binding MonthlyXAxes}"
+                                                YAxes="{Binding MonthlyYAxes}"
+                                                TooltipPosition="Top"
+                                                LegendPosition="Hidden"
+                                                Height="260"
+                                                FlowDirection="LeftToRight"
+                                                AnimationsSpeed="00:00:00.550"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
 
-                            <Border Grid.Row="0">
-                                <Border.Background>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                        <GradientStop Color="#1565C0" Offset="0"/>
-                                        <GradientStop Color="#42A5F5" Offset="0.55"/>
-                                        <GradientStop Color="#90CAF9" Offset="1"/>
-                                    </LinearGradientBrush>
-                                </Border.Background>
-                            </Border>
-
-                            <Border Grid.Row="1" Style="{StaticResource DashboardChartHeader}">
-                                <DockPanel LastChildFill="True">
-                                    <Border Width="44" Height="44" CornerRadius="14"
-                                            Background="{DynamicResource DashboardKpiBlueLightBrush}"
-                                            DockPanel.Dock="Right" Margin="12,0,0,0">
-                                        <materialDesign:PackIcon Kind="ChartBar" Width="22" Height="22"
-                                                                 Foreground="{DynamicResource PrimaryHueMidBrush}"
-                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="الفواتير الشهرية" Style="{StaticResource SectionHeader}"/>
-                                        <TextBlock Text="عدد الفواتير خلال آخر 12 شهرًا"
-                                                   FontSize="11.5"
-                                                   Foreground="{DynamicResource HintForegroundBrush}"
-                                                   Margin="0,3,0,0"/>
-                                    </StackPanel>
-                                </DockPanel>
-                            </Border>
-
-                            <Border Grid.Row="2" Style="{StaticResource DashboardChartHost}">
-                                <lvc:CartesianChart Series="{Binding MonthlyInvoiceSeries}"
-                                                    XAxes="{Binding MonthlyXAxes}"
-                                                    YAxes="{Binding MonthlyYAxes}"
-                                                    TooltipPosition="Top"
-                                                    LegendPosition="Hidden"
-                                                    MinHeight="260"
-                                                    AnimationsSpeed="00:00:00.550"/>
-                            </Border>
-                        </Grid>
-                    </materialDesign:Card>
-
-                    <materialDesign:Card Grid.Column="2" Style="{StaticResource DashboardChartCard}">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="3"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="300"/>
-                            </Grid.RowDefinitions>
-
-                            <Border Grid.Row="0">
-                                <Border.Background>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                        <GradientStop Color="#00838F" Offset="0"/>
-                                        <GradientStop Color="#26A69A" Offset="0.55"/>
-                                        <GradientStop Color="#80CBC4" Offset="1"/>
-                                    </LinearGradientBrush>
-                                </Border.Background>
-                            </Border>
-
-                            <Border Grid.Row="1" Style="{StaticResource DashboardChartHeader}">
-                                <DockPanel LastChildFill="True">
-                                    <Border Width="44" Height="44" CornerRadius="14"
-                                            Background="{DynamicResource DashboardKpiTealLightBrush}"
-                                            DockPanel.Dock="Right" Margin="12,0,0,0">
-                                        <materialDesign:PackIcon Kind="ChartDonut" Width="22" Height="22"
-                                                                 Foreground="{DynamicResource DashboardKpiTealBrush}"
-                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <StackPanel VerticalAlignment="Center">
-                                        <TextBlock Text="حالة السيارات" Style="{StaticResource SectionHeader}"/>
-                                        <TextBlock Text="قيد الإجراء / خارجة / واصلة"
-                                                   FontSize="11.5"
-                                                   Foreground="{DynamicResource HintForegroundBrush}"
-                                                   Margin="0,3,0,0"/>
-                                    </StackPanel>
-                                </DockPanel>
-                            </Border>
-
-                            <Border Grid.Row="2" Style="{StaticResource DashboardChartHost}">
-                                <lvc:PieChart Series="{Binding VehicleStatusSeries}"
-                                              LegendPosition="Bottom"
-                                              MinHeight="260"
-                                              InitialRotation="-90"
-                                              AnimationsSpeed="00:00:00.550"/>
-                            </Border>
-                        </Grid>
-                    </materialDesign:Card>
+                    <controls:ChartCard Grid.Column="2"
+                                        Title="حالة السيارات"
+                                        Subtitle="قيد الإجراء / خارجة / واصلة"
+                                        Margin="0">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:PieChart Series="{Binding VehicleStatusSeries}"
+                                          LegendPosition="Bottom"
+                                          Height="260"
+                                          FlowDirection="LeftToRight"
+                                          InitialRotation="-90"
+                                          AnimationsSpeed="00:00:00.550"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
                 </Grid>
             </Grid>
         </ScrollViewer>

@@ -451,7 +451,7 @@ public partial class HotelRoomsViewModel : HotelListPreviewViewModelBase
     {
         var headers = new[] { "الغرفة", "النوع", "الطابق", "الحالة" };
         var data = Rooms.Select(r => new object?[] { r.RoomNumber, r.RoomTypeName, r.FloorName, r.StatusLabel }).ToList();
-        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "HotelRooms", "الغرف", headers, data);
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "HotelRooms", "الغرف", headers, ListTableExportHelper.ToRows(data));
     }
 
     [RelayCommand]
@@ -459,7 +459,7 @@ public partial class HotelRoomsViewModel : HotelListPreviewViewModelBase
     {
         var headers = new[] { "الغرفة", "النوع", "الطابق", "الحالة" };
         var data = Rooms.Select(r => new object?[] { r.RoomNumber, r.RoomTypeName, r.FloorName, r.StatusLabel }).ToList();
-        ListTableExportHelper.Print(_exportService, CanPrint, "قائمة الغرف", headers, data);
+        ListTableExportHelper.Print(_exportService, CanPrint, "قائمة الغرف", headers, ListTableExportHelper.ToRows(data));
     }
 }
 

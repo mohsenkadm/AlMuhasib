@@ -114,30 +114,25 @@ public abstract partial class CustomsReportViewModelBase : ViewModelBase
     protected static string FormatCurrency(decimal value, AccountingCurrency currency = AccountingCurrency.IQD)
         => AccountingCurrencyHelper.Format(value, currency);
 
-    protected void ExportExcel(string fileName, string sheetTitle, string[] columns, IList<object[]> rows)
-    {
-        if (!CanExport)
-        {
-            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية التصدير");
-            return;
-        }
+    protected void ExportExcel(string fileName, string sheetTitle, string[] columns, IList<object[]> rows) =>
+        ListTableExportHelper.ExportExcel(
+            ExportService,
+            toast: null,
+            CanExport,
+            fileName,
+            sheetTitle,
+            columns,
+            rows);
 
-        var dlg = new SaveFileDialog { Filter = "Excel|*.xlsx", FileName = fileName };
-        if (dlg.ShowDialog() != true) return;
-        ExportService.ExportToExcel(dlg.FileName, sheetTitle, columns, rows);
-        BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
-    }
-
-    protected void PrintTable(string title, string[] columns, IList<object[]> rows, IList<string>? summaryLines = null)
-    {
-        if (!CanPrint)
-        {
-            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
-            return;
-        }
-
-        ExportService.PrintTable(title, columns, rows, summaryLines);
-    }
+    protected void PrintTable(string title, string[] columns, IList<object[]> rows, IList<string>? summaryLines = null) =>
+        ListTableExportHelper.Print(
+            ExportService,
+            CanPrint,
+            title,
+            columns,
+            rows,
+            summaryLines,
+            warnOnDenied: true);
 
     /// <summary>Staff operational report print via document-kind key (full internal data allowed).</summary>
     protected void PrintStaffReport(

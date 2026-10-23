@@ -344,40 +344,25 @@ public partial class CustomsCustomersViewModel : ViewModelBase
     [RelayCommand]
     private async Task ExportToExcel()
     {
-        if (!CanExport)
-        {
-            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية التصدير");
-            return;
-        }
-
         try
         {
             var (allItems, _) = await _customerService.GetPagedAsync(1, int.MaxValue, null, activeOnly: null);
-            var exportData = allItems.Select(c => new
+            var columns = new[] { "الاسم", "النوع", "الشركة", "الهاتف", "العنوان", "رصيد د.ع", "رصيد $", "فواتير مفتوحة", "الحالة" };
+            IList<object[]> rows = allItems.Select(c => new object[]
             {
-                الاسم = c.Name,
-                النوع = c.CustomerTypeLabel,
-                الشركة = c.CompanyName,
-                الهاتف = c.Phone,
-                العنوان = c.Address,
-                رصيد_د_ع = c.BalanceIqd,
-                رصيد_دولار = c.BalanceUsd,
-                فواتير_مفتوحة = c.OpenInvoiceCount,
-                الحالة = c.StatusLabel
-            });
-
-            var dialog = new SaveFileDialog
-            {
-                Filter = "Excel Files (*.xlsx)|*.xlsx",
-                FileName = $"عملاء_التخليص_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
-                DefaultExt = ".xlsx"
-            };
-
-            if (dialog.ShowDialog() == true)
-            {
-                await _exportService.ExportToExcelFileAsync(exportData, dialog.FileName, "العملاء");
-                BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
-            }
+                c.Name,
+                c.CustomerTypeLabel,
+                c.CompanyName,
+                c.Phone,
+                c.Address,
+                c.BalanceIqd,
+                c.BalanceUsd,
+                c.OpenInvoiceCount,
+                c.StatusLabel
+            }).ToList();
+            ListTableExportHelper.ExportExcel(
+                _exportService, toast: null, CanExport,
+                "عملاء_التخليص", "العملاء", columns, rows);
         }
         catch (Exception ex)
         {
@@ -388,12 +373,6 @@ public partial class CustomsCustomersViewModel : ViewModelBase
     [RelayCommand]
     private async Task PrintTable()
     {
-        if (!CanPrint)
-        {
-            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
-            return;
-        }
-
         try
         {
             var (allItems, _) = await _customerService.GetPagedAsync(1, int.MaxValue, null, activeOnly: null);
@@ -409,7 +388,10 @@ public partial class CustomsCustomersViewModel : ViewModelBase
                 c.OpenInvoiceCount,
                 c.StatusLabel
             }).ToList();
-            _exportService.PrintTable("قائمة عملاء التخليص الكمركي", columns, rows);
+            ListTableExportHelper.Print(
+                _exportService, CanPrint,
+                "قائمة عملاء التخليص الكمركي", columns, rows,
+                warnOnDenied: true);
         }
         catch (Exception ex)
         {

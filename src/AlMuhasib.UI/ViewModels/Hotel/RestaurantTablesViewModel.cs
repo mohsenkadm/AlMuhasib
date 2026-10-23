@@ -170,7 +170,7 @@ public partial class RestaurantTablesViewModel : ViewModelBase
     {
         var headers = new[] { "رقم الطاولة", "السعة", "الحالة" };
         var data = Tables.Select(t => new object?[] { t.TableNumber, t.Capacity, t.Status }).ToList();
-        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "RestaurantTables", "الطاولات", headers, data);
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "RestaurantTables", "الطاولات", headers, ListTableExportHelper.ToRows(data));
     }
 
     [RelayCommand]
@@ -178,6 +178,6 @@ public partial class RestaurantTablesViewModel : ViewModelBase
     {
         var headers = new[] { "رقم الطاولة", "السعة", "الحالة" };
         var data = Tables.Select(t => new object?[] { t.TableNumber, t.Capacity, t.Status }).ToList();
-        ListTableExportHelper.Print(_exportService, CanPrint, "طاولات الصالة", headers, data);
+        ListTableExportHelper.Print(_exportService, CanPrint, "طاولات الصالة", headers, ListTableExportHelper.ToRows(data));
     }
 }

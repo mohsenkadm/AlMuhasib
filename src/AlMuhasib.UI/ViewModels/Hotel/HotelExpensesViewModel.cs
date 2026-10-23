@@ -294,7 +294,7 @@ public partial class HotelExpensesViewModel : PagedViewModelBase
         {
             e.ExpenseDate.ToString("yyyy/MM/dd"), e.ExpenseType?.Name, e.Amount, e.Description
         }).ToList();
-        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "HotelExpenses", "المصاريف", headers, data);
+        ListTableExportHelper.ExportExcel(_exportService, _toast, CanExport, "HotelExpenses", "المصاريف", headers, ListTableExportHelper.ToRows(data));
     }
 
     [RelayCommand]
@@ -305,6 +305,6 @@ public partial class HotelExpensesViewModel : PagedViewModelBase
         {
             e.ExpenseDate.ToString("yyyy/MM/dd"), e.ExpenseType?.Name, e.Amount, e.Description
         }).ToList();
-        ListTableExportHelper.Print(_exportService, CanPrint, "سجل مصاريف الفندق", headers, data);
+        ListTableExportHelper.Print(_exportService, CanPrint, "سجل مصاريف الفندق", headers, ListTableExportHelper.ToRows(data));
     }
 }
