@@ -26,6 +26,7 @@ public static class ListViewModeKeys
     public const string GoldCategories = "GoldCategories";
     public const string GoldWarehouses = "GoldWarehouses";
     public const string GoldCashBoxes = "GoldCashBoxes";
+    public const string CustomsCustomers = "CustomsCustomers";
 }
 
 public static class ListViewModeHelper

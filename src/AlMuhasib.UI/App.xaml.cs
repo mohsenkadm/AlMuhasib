@@ -478,6 +478,8 @@ public partial class App : Application
         services.AddTransient<GoldSaleReturnsReportViewModel>();
 
         services.AddTransient<CustomsDashboardViewModel>();
+        services.AddTransient<CustomsCustomersViewModel>();
+        services.AddTransient<CustomsCustomerFileViewModel>();
 
         services.AddSingleton<MainWindowViewModel>();
 

@@ -1531,6 +1531,12 @@
                         <DataTemplate DataType="{x:Type customsVm:CustomsDashboardViewModel}">
                             <customsViews:CustomsDashboardView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type customsVm:CustomsCustomersViewModel}">
+                            <customsViews:CustomsCustomersView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type customsVm:CustomsCustomerFileViewModel}">
+                            <customsViews:CustomsCustomerFileView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:ProductsViewModel}">
                             <views:ProductsView />
                         </DataTemplate>
