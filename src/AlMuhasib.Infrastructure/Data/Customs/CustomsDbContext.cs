@@ -109,7 +109,8 @@ public class CustomsDbContext : DbContext
         var auditEntries = new List<AuditEntry>();
         var addEntityLinks = new List<(AuditLog Log, BaseEntity Entity)>();
 
-        foreach (var entry in ChangeTracker.Entries<BaseEntity>())
+        // Materialize before mutating the tracker (adding AuditLogs would otherwise break enumeration).
+        foreach (var entry in ChangeTracker.Entries<BaseEntity>().ToList())
         {
             // Auto-audit skips AuditLog (no wipe path) and Permission (written via CustomsAuditWriter).
             if (entry.Entity is AuditLog or Permission)
@@ -166,6 +167,13 @@ public class CustomsDbContext : DbContext
                     }
                     break;
             }
+        }
+
+        // InMemory (and any provider that does not auto-generate rowversion) needs a value on insert.
+        foreach (var entry in ChangeTracker.Entries<BaseEntity>().Where(e => e.State == EntityState.Added))
+        {
+            if (entry.Entity.RowVersion is null || entry.Entity.RowVersion.Length == 0)
+                entry.Entity.RowVersion = [1];
         }
 
         var result = await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
