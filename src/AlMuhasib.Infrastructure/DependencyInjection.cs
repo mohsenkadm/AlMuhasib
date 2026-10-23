@@ -378,6 +378,7 @@ public static class DependencyInjection
         services.AddScoped<ICustomsCustomerService, CustomsCustomerService>();
         services.AddScoped<ICustomsAttachmentService, CustomsAttachmentService>();
         services.AddScoped<ICustomsInvoiceService, CustomsInvoiceService>();
+        services.AddScoped<ICustomsReceiptService, CustomsReceiptService>();
         services.AddScoped<ICustomsExpenseTypeService, CustomsExpenseTypeService>();
         services.AddScoped<IUserLoginLogService, NoOpUserLoginLogService>();
         services.AddScoped<ISmartAlertService, NoOpSmartAlertService>();

@@ -1,0 +1,176 @@
+<UserControl x:Class="AlMuhasib.UI.Views.Customs.CustomsReceiptListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+
+    <UserControl.Resources>
+        <ContextMenu x:Key="PageActionsMenu">
+            <MenuItem Header="تحديث" Command="{Binding RefreshCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="وصل جديد" Command="{Binding OpenNewReceiptCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="CashPlus" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تصدير Excel" Command="{Binding ExportToExcelCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="طباعة الجدول" Command="{Binding PrintTableCommand}">
+                <MenuItem.Icon><md:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+    </UserControl.Resources>
+
+    <Grid Margin="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
+            <StackPanel>
+                <TextBlock Text="وصولات القبض — التخليص الكمركي" FontSize="16" FontWeight="Bold"
+                           Foreground="#0277BD" Margin="0,0,0,12"/>
+                <WrapPanel>
+                    <Button Command="{Binding OpenNewReceiptCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Background="#0277BD"
+                            md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,8"
+                            IsEnabled="{Binding CanAdd}">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="CashPlus" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="وصل جديد"/>
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding RefreshCommand}" Style="{StaticResource FlatButton}"
+                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal">
+                            <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="تحديث"/>
+                        </StackPanel>
+                    </Button>
+                    <TextBox md:HintAssist.Hint="بحث برقم الوصل أو العميل..."
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}" MinWidth="220" Margin="0,0,8,8"/>
+                    <ComboBox ItemsSource="{Binding CurrencyOptions}"
+                              SelectedValue="{Binding CurrencyFilter}"
+                              SelectedValuePath="Value"
+                              DisplayMemberPath="Label"
+                              md:HintAssist.Hint="العملة"
+                              Style="{StaticResource FilledComboBox}"
+                              Width="140" Margin="0,0,8,8"/>
+                    <DatePicker SelectedDate="{Binding DateFrom}"
+                                md:HintAssist.Hint="من تاريخ"
+                                Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                Width="140" Margin="0,0,8,8"/>
+                    <DatePicker SelectedDate="{Binding DateTo}"
+                                md:HintAssist.Hint="إلى تاريخ"
+                                Style="{StaticResource MaterialDesignOutlinedDatePicker}"
+                                Width="140" Margin="0,0,0,8"/>
+                </WrapPanel>
+            </StackPanel>
+        </md:Card>
+
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="0" md:ElevationAssist.Elevation="Dp2">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="قائمة الوصولات"
+                                             TargetDataGrid="{Binding ElementName=ReceiptsGrid}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintTableCommand}"
+                                             ShowCardToggle="False"/>
+
+                <DataGrid x:Name="ReceiptsGrid" Grid.Row="1"
+                          ItemsSource="{Binding Receipts}"
+                          SelectedItem="{Binding SelectedReceipt}"
+                          AutoGenerateColumns="False" IsReadOnly="True"
+                          CanUserAddRows="False" SelectionMode="Single"
+                          Style="{StaticResource ModernDataGrid}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="الرقم" Binding="{Binding ReceiptNumber}" Width="110"/>
+                        <DataGridTextColumn Header="التاريخ" Binding="{Binding ReceiptDate, StringFormat=yyyy/MM/dd}" Width="100"/>
+                        <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"/>
+                        <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="110"/>
+                        <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70"/>
+                        <DataGridTextColumn Header="الطريقة" Binding="{Binding PaymentMethodLabel}" Width="90"/>
+                        <DataGridTextColumn Header="المستلم" Binding="{Binding ReceiverName}" Width="120"/>
+                        <DataGridTextColumn Header="فواتير" Binding="{Binding AllocationCount}" Width="70"/>
+                        <DataGridTemplateColumn Header="الإجراءات" Width="180" MinWidth="180">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                            </DataGridTemplateColumn.CellStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <Button Command="{Binding DataContext.EditReceiptCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableEditIconButton}"
+                                                ToolTip="فتح / تعديل">
+                                            <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.PrintReceiptCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableViewIconButton}"
+                                                ToolTip="طباعة / PDF"
+                                                IsEnabled="{Binding DataContext.CanPrint, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <md:PackIcon Kind="Printer" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.ExportReceiptPdfCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableViewIconButton}"
+                                                ToolTip="حفظ PDF"
+                                                IsEnabled="{Binding DataContext.CanPrint, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <md:PackIcon Kind="FilePdfBox" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.ConfirmCancelCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableDeleteIconButton}"
+                                                ToolTip="إلغاء الوصل"
+                                                IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}">
+                                            <md:PackIcon Kind="Cancel" Width="18" Height="18"/>
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <controls:PaginationBar Grid.Row="2"/>
+            </Grid>
+        </md:Card>
+
+        <md:DialogHost IsOpen="{Binding IsCancelDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
+            <md:DialogHost.DialogContent>
+                <md:Card Padding="24" MinWidth="400">
+                    <StackPanel>
+                        <TextBlock Text="تأكيد إلغاء الوصل" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
+                        <TextBlock Margin="0,0,0,16" TextWrapping="Wrap">
+                            <Run Text="إلغاء الوصل "/>
+                            <Run Text="{Binding ReceiptToCancel.ReceiptNumber, Mode=OneWay}" FontWeight="Bold"/>
+                            <Run Text=" وعكس التوزيعات على الفواتير والرصيد؟"/>
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="إلغاء الوصل" Command="{Binding ExecuteCancelCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Background="#D32F2F" Foreground="White"
+                                    md:ButtonAssist.CornerRadius="8" Padding="20,8" Margin="0,0,8,0"/>
+                            <Button Content="رجوع" Command="{Binding CloseCancelDialogCommand}" Style="{StaticResource FlatButton}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+    </Grid>
+</UserControl>

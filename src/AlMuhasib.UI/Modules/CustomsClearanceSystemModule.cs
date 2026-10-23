@@ -42,6 +42,13 @@ public sealed class CustomsClearanceSystemModule : ISystemModule
         },
         new NavigationMenuItem
         {
+            Title = "وصولات القبض",
+            Icon = PackIconKind.CashPlus,
+            ViewModelType = typeof(CustomsReceiptListViewModel),
+            ScreenName = CustomsPermissionRegistry.Receipts
+        },
+        new NavigationMenuItem
+        {
             Title = "المستخدمون",
             Icon = PackIconKind.AccountMultiple,
             ViewModelType = typeof(UsersViewModel),
