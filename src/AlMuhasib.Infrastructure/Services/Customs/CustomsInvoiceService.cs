@@ -204,13 +204,10 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         invoice.UpdatedAt = DateTime.UtcNow;
 
         var user = request.UserName ?? "System";
-        foreach (var old in invoice.Vehicles.ToList())
-            old.MarkSoftDeleted(user);
+        UpsertVehicles(invoice, request.Vehicles, request.Currency, user);
+
         foreach (var old in invoice.Expenses.ToList())
             old.MarkSoftDeleted(user);
-
-        foreach (var v in request.Vehicles)
-            invoice.Vehicles.Add(CreateVehicle(v, request.Currency));
 
         foreach (var e in request.Expenses)
             invoice.Expenses.Add(await CreateExpenseAsync(db, e, cancellationToken));
@@ -358,24 +355,63 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         return rate.Value;
     }
 
-    private static CustomsVehicle CreateVehicle(CustomsInvoiceVehicleDraft draft, AccountingCurrency currency) =>
-        new()
+    private static void UpsertVehicles(
+        CustomsInvoice invoice,
+        IReadOnlyList<CustomsInvoiceVehicleDraft> drafts,
+        AccountingCurrency currency,
+        string user)
+    {
+        var existingById = invoice.Vehicles
+            .Where(v => !v.IsDeleted)
+            .ToDictionary(v => v.Id);
+
+        var keptIds = new HashSet<int>();
+        foreach (var draft in drafts)
         {
-            SerialNumber = draft.SerialNumber?.Trim() ?? string.Empty,
-            IraqiPlate = draft.IraqiPlate?.Trim() ?? string.Empty,
-            IraqiDriver = draft.IraqiDriver?.Trim() ?? string.Empty,
-            SyrianPlate = draft.SyrianPlate?.Trim() ?? string.Empty,
-            SyrianDriver = draft.SyrianDriver?.Trim() ?? string.Empty,
-            CargoType = draft.CargoType?.Trim() ?? string.Empty,
-            LoadingDate = draft.LoadingDate,
-            ExitDate = draft.ExitDate,
-            WarehouseArrivalDate = draft.WarehouseArrivalDate,
-            UnloadingDate = draft.UnloadingDate,
-            VehiclePrice = draft.VehiclePrice,
-            Currency = currency,
-            Status = draft.Status,
-            Notes = draft.Notes?.Trim() ?? string.Empty
-        };
+            if (draft.Id is int id && existingById.TryGetValue(id, out var existing))
+            {
+                ApplyVehicleFields(existing, draft, currency);
+                existing.UpdatedBy = user;
+                existing.UpdatedAt = DateTime.UtcNow;
+                keptIds.Add(id);
+            }
+            else
+            {
+                invoice.Vehicles.Add(CreateVehicle(draft, currency));
+            }
+        }
+
+        foreach (var old in invoice.Vehicles.Where(v => !v.IsDeleted && v.Id > 0 && !keptIds.Contains(v.Id)).ToList())
+            old.MarkSoftDeleted(user);
+    }
+
+    private static CustomsVehicle CreateVehicle(CustomsInvoiceVehicleDraft draft, AccountingCurrency currency)
+    {
+        var vehicle = new CustomsVehicle { Currency = currency };
+        ApplyVehicleFields(vehicle, draft, currency);
+        return vehicle;
+    }
+
+    private static void ApplyVehicleFields(
+        CustomsVehicle vehicle,
+        CustomsInvoiceVehicleDraft draft,
+        AccountingCurrency currency)
+    {
+        vehicle.SerialNumber = draft.SerialNumber?.Trim() ?? string.Empty;
+        vehicle.IraqiPlate = draft.IraqiPlate?.Trim() ?? string.Empty;
+        vehicle.IraqiDriver = draft.IraqiDriver?.Trim() ?? string.Empty;
+        vehicle.SyrianPlate = draft.SyrianPlate?.Trim() ?? string.Empty;
+        vehicle.SyrianDriver = draft.SyrianDriver?.Trim() ?? string.Empty;
+        vehicle.CargoType = draft.CargoType?.Trim() ?? string.Empty;
+        vehicle.LoadingDate = draft.LoadingDate;
+        vehicle.ExitDate = draft.ExitDate;
+        vehicle.WarehouseArrivalDate = draft.WarehouseArrivalDate;
+        vehicle.UnloadingDate = draft.UnloadingDate;
+        vehicle.VehiclePrice = draft.VehiclePrice;
+        vehicle.Currency = currency;
+        vehicle.Status = draft.Status;
+        vehicle.Notes = draft.Notes?.Trim() ?? string.Empty;
+    }
 
     private static async Task<CustomsExpense> CreateExpenseAsync(
         CustomsDbContext db,

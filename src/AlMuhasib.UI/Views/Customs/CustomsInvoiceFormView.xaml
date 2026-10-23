@@ -22,7 +22,8 @@
         </Grid.RowDefinitions>
 
         <!-- Toolbar -->
-        <md:Card Grid.Row="0" Style="{StaticResource ElevatedCard}" Padding="16" Margin="0,0,0,12">
+        <md:Card Grid.Row="0" Style="{StaticResource ElevatedCard}" Padding="16" Margin="0,0,0,12"
+                 Panel.ZIndex="1">
             <DockPanel>
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
                     <TextBlock Text="فاتورة التخليص" FontSize="18" FontWeight="Bold"
@@ -100,53 +101,143 @@
                     </StackPanel>
                 </md:Card>
 
-                <!-- Vehicles -->
-                <md:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12">
-                    <StackPanel>
-                        <DockPanel Margin="0,0,0,10">
-                            <TextBlock Text="السيارات والشحنات" FontWeight="Bold" FontSize="15"
-                                       VerticalAlignment="Center"/>
-                            <Button DockPanel.Dock="Right" HorizontalAlignment="Right"
-                                    Command="{Binding AddVehicleRowCommand}"
-                                    Style="{StaticResource FlatButton}" Content="+ إضافة سيارة"/>
-                        </DockPanel>
-                        <DataGrid ItemsSource="{Binding Vehicles}" AutoGenerateColumns="False"
-                                  CanUserAddRows="False" Style="{StaticResource ModernDataGrid}"
-                                  MaxHeight="280"
+                <!-- Vehicles DataTable -->
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="0" Margin="0,0,0,12"
+                         md:ElevationAssist.Elevation="Dp2">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <controls:ListTableHeaderBar Grid.Row="0"
+                                                     Title="السيارات والشحنات — إدخال سريع داخل الجدول"
+                                                     TargetDataGrid="{Binding ElementName=VehiclesGrid}"
+                                                     IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                                     ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                                     ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                                     ShowCardToggle="False"
+                                                     ShowExport="False"
+                                                     ShowPrint="False"
+                                                     ShowFilter="True">
+                            <controls:ListTableHeaderBar.ExtraContent>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBox Width="180" Height="32" Margin="0,0,10,0"
+                                             Padding="10,0"
+                                             VerticalContentAlignment="Center"
+                                             Background="White"
+                                             Foreground="#212121"
+                                             CaretBrush="#212121"
+                                             BorderThickness="0"
+                                             Text="{Binding VehicleSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="بحث لوحة / تسلسل / حمولة"
+                                             md:HintAssist.Foreground="#78909C"
+                                             md:TextFieldAssist.HasClearButton="True"/>
+                                    <Button Command="{Binding AddVehicleRowCommand}"
+                                            Style="{StaticResource FlatButton}"
+                                            Foreground="White" Height="32" Padding="14,0"
+                                            IsEnabled="{Binding CanAddVehicle}"
+                                            ToolTip="إضافة سيارة (Enter في آخر صف)">
+                                        <StackPanel Orientation="Horizontal">
+                                            <md:PackIcon Kind="Plus" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                            <TextBlock Text="إضافة سيارة" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </controls:ListTableHeaderBar.ExtraContent>
+                        </controls:ListTableHeaderBar>
+
+                        <DataGrid x:Name="VehiclesGrid" Grid.Row="1"
+                                  ItemsSource="{Binding FilteredVehicles}"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  CanUserSortColumns="True"
+                                  IsReadOnly="{Binding IsVehiclesReadOnly}"
+                                  SelectionMode="Single"
+                                  SelectionUnit="Cell"
+                                  MaxHeight="320"
+                                  MinHeight="160"
+                                  Style="{StaticResource InvoiceItemsDataGrid}"
+                                  behaviors:InvoiceDataGridBehavior.Enable="True"
+                                  behaviors:InvoiceDataGridBehavior.AddRowCommand="{Binding AddVehicleRowCommand}"
+                                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                  behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                  behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}"
                                   CellEditEnding="VehiclesGrid_OnCellEditEnding">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="تسلسل" Binding="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}" Width="80"/>
-                                <DataGridTextColumn Header="لوحة عراقية" Binding="{Binding IraqiPlate, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
-                                <DataGridTextColumn Header="سائق عراقي" Binding="{Binding IraqiDriver, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
-                                <DataGridTextColumn Header="لوحة سورية" Binding="{Binding SyrianPlate, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
-                                <DataGridTextColumn Header="سائق سوري" Binding="{Binding SyrianDriver, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
-                                <DataGridTextColumn Header="الحمولة" Binding="{Binding CargoType, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
-                                <DataGridTextColumn Header="السعر" Binding="{Binding VehiclePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}" Width="100"/>
-                                <DataGridTemplateColumn Header="الحالة" Width="120">
+                                <DataGridTextColumn Header="تسلسل"
+                                                    Binding="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="80"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SerialNumber"/>
+                                <DataGridTextColumn Header="لوحة عراقية"
+                                                    Binding="{Binding IraqiPlate, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="100"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="IraqiPlate"/>
+                                <DataGridTextColumn Header="سائق عراقي"
+                                                    Binding="{Binding IraqiDriver, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="100"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="IraqiDriver"/>
+                                <DataGridTextColumn Header="لوحة سورية"
+                                                    Binding="{Binding SyrianPlate, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="100"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SyrianPlate"/>
+                                <DataGridTextColumn Header="سائق سوري"
+                                                    Binding="{Binding SyrianDriver, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="100"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SyrianDriver"/>
+                                <DataGridTextColumn Header="الحمولة"
+                                                    Binding="{Binding CargoType, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="*"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CargoType"/>
+                                <DataGridTextColumn Header="السعر"
+                                                    Binding="{Binding VehiclePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                                    Width="100"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="VehiclePrice"/>
+                                <DataGridTemplateColumn Header="الحالة" Width="120"
+                                                       behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StatusLabel">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <ComboBox ItemsSource="{Binding DataContext.VehicleStatusOptions, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       SelectedValue="{Binding Status, UpdateSourceTrigger=PropertyChanged}"
                                                       SelectedValuePath="Value"
                                                       DisplayMemberPath="Label"
+                                                      IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                       Style="{StaticResource FilledComboBox}"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTemplateColumn Header="" Width="50">
+                                <DataGridTemplateColumn Header="إجراءات" Width="120"
+                                                        behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <Button Command="{Binding DataContext.RemoveVehicleRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                    CommandParameter="{Binding}"
-                                                    Style="{StaticResource TableDeleteIconButton}">
-                                                <md:PackIcon Kind="DeleteOutline" Width="16" Height="16"/>
-                                            </Button>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <Button Command="{Binding DataContext.OpenVehicleDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource TableViewIconButton}"
+                                                        ToolTip="تفاصيل السيارة">
+                                                    <md:PackIcon Kind="Eye" Width="16" Height="16"/>
+                                                </Button>
+                                                <Button Command="{Binding DataContext.OpenVehicleAttachmentsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource TableAttachIconButton}"
+                                                        ToolTip="مرفقات السيارة">
+                                                    <md:PackIcon Kind="Attachment" Width="16" Height="16"/>
+                                                </Button>
+                                                <Button Command="{Binding DataContext.RemoveVehicleRowCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource TableDeleteIconButton}"
+                                                        IsEnabled="{Binding DataContext.CanDeleteVehicle, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                        ToolTip="حذف">
+                                                    <md:PackIcon Kind="DeleteOutline" Width="16" Height="16"/>
+                                                </Button>
+                                            </StackPanel>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                         </DataGrid>
-                    </StackPanel>
+                    </Grid>
                 </md:Card>
 
                 <!-- Pricing -->
@@ -314,5 +405,185 @@
                 <Run Text="{Binding RemainingAmount, Mode=OneWay, StringFormat=N0}" FontWeight="Bold"/>
             </TextBlock>
         </Border>
+
+        <!-- Vehicle detail dialog -->
+        <md:DialogHost IsOpen="{Binding IsVehicleDetailDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="3"
+                       Style="{StaticResource ModernDialogHost}">
+            <md:DialogHost.DialogContent>
+                <md:Card MinWidth="720" MaxWidth="820" MaxHeight="680" UniformCornerRadius="16"
+                         md:ElevationAssist.Elevation="Dp8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Background="#0277BD" Padding="16,12,16,14" CornerRadius="16,16,0,0">
+                            <StackPanel>
+                                <Button Command="{Binding CloseVehicleDetailCommand}" HorizontalAlignment="Left"
+                                        Style="{StaticResource FlatButton}" Foreground="White" Padding="2" Margin="0,0,0,8">
+                                    <md:PackIcon Kind="Close" Width="22" Height="22"/>
+                                </Button>
+                                <TextBlock Text="تفاصيل السيارة" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                                <TextBlock Text="عدّل البيانات والتواريخ ثم طبّق — المرفقات بعد حفظ الفاتورة"
+                                           FontSize="12" Foreground="#B3E5FC" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </Border>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="24,16"
+                                      DataContext="{Binding DetailVehicle}">
+                            <StackPanel>
+                                <UniformGrid Columns="3">
+                                    <TextBox Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="التسلسل" Style="{StaticResource FilledTextBox}" Margin="0,0,8,10"/>
+                                    <TextBox Text="{Binding IraqiPlate, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="لوحة عراقية" Style="{StaticResource FilledTextBox}" Margin="0,0,8,10"/>
+                                    <TextBox Text="{Binding IraqiDriver, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="سائق عراقي" Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
+                                    <TextBox Text="{Binding SyrianPlate, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="لوحة سورية" Style="{StaticResource FilledTextBox}" Margin="0,0,8,10"/>
+                                    <TextBox Text="{Binding SyrianDriver, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="سائق سوري" Style="{StaticResource FilledTextBox}" Margin="0,0,8,10"/>
+                                    <TextBox Text="{Binding CargoType, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="نوع الحمولة" Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
+                                    <TextBox Text="{Binding VehiclePrice, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="السعر" Style="{StaticResource FilledTextBox}" Margin="0,0,8,10"/>
+                                    <ComboBox ItemsSource="{Binding DataContext.VehicleStatusOptions, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                              SelectedValue="{Binding Status, UpdateSourceTrigger=PropertyChanged}"
+                                              SelectedValuePath="Value" DisplayMemberPath="Label"
+                                              md:HintAssist.Hint="الحالة" Style="{StaticResource FilledComboBox}" Margin="0,0,8,10"/>
+                                    <DatePicker SelectedDate="{Binding LoadingDate}"
+                                                md:HintAssist.Hint="تاريخ التحميل"
+                                                Style="{StaticResource MaterialDesignOutlinedDatePicker}" Margin="0,0,0,10"/>
+                                    <DatePicker SelectedDate="{Binding ExitDate}"
+                                                md:HintAssist.Hint="تاريخ الخروج"
+                                                Style="{StaticResource MaterialDesignOutlinedDatePicker}" Margin="0,0,8,10"/>
+                                    <DatePicker SelectedDate="{Binding WarehouseArrivalDate}"
+                                                md:HintAssist.Hint="وصول المخزن"
+                                                Style="{StaticResource MaterialDesignOutlinedDatePicker}" Margin="0,0,8,10"/>
+                                    <DatePicker SelectedDate="{Binding UnloadingDate}"
+                                                md:HintAssist.Hint="تاريخ التفريغ"
+                                                Style="{StaticResource MaterialDesignOutlinedDatePicker}" Margin="0,0,0,10"/>
+                                </UniformGrid>
+                                <TextBox Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                         md:HintAssist.Hint="ملاحظات السيارة"
+                                         Style="{StaticResource FilledTextBox}"
+                                         TextWrapping="Wrap" AcceptsReturn="True" MinHeight="64" Margin="0,0,0,12"/>
+
+                                <DockPanel Margin="0,0,0,8">
+                                    <TextBlock Text="مرفقات السيارة" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <Button DockPanel.Dock="Right" HorizontalAlignment="Right"
+                                            Command="{Binding DataContext.AddVehicleAttachmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            Style="{StaticResource FlatButton}" Content="+ مرفق"
+                                            IsEnabled="{Binding DataContext.HasSavedDetailVehicle, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                </DockPanel>
+                                <TextBlock Text="احفظ الفاتورة أولاً لتفعيل مرفقات هذه السيارة" FontSize="12"
+                                           Foreground="{DynamicResource HintForegroundBrush}" Margin="0,0,0,8"
+                                           Visibility="{Binding DataContext.HasSavedDetailVehicle, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InvBoolToVis}}"/>
+                                <DataGrid ItemsSource="{Binding DataContext.VehicleAttachments, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                          AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                                          Style="{StaticResource ModernDataGrid}" MaxHeight="140">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="اسم الملف" Binding="{Binding FileName}" Width="*"/>
+                                        <DataGridTextColumn Header="التاريخ" Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd HH:mm}" Width="140"/>
+                                        <DataGridTemplateColumn Header="" Width="90">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <Button Command="{Binding DataContext.OpenAttachmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}" Style="{StaticResource TableViewIconButton}">
+                                                            <md:PackIcon Kind="Eye" Width="16" Height="16"/>
+                                                        </Button>
+                                                        <Button Command="{Binding DataContext.DeleteVehicleAttachmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}">
+                                                            <md:PackIcon Kind="DeleteOutline" Width="16" Height="16"/>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </ScrollViewer>
+                        <Border Grid.Row="2" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0" Padding="20,14">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="تطبيق" Command="{Binding ApplyVehicleDetailCommand}"
+                                        Style="{StaticResource MaterialDesignRaisedButton}" Background="#0277BD"
+                                        md:ButtonAssist.CornerRadius="8" Padding="28,10" Margin="0,0,8,0"/>
+                                <Button Content="إغلاق" Command="{Binding CloseVehicleDetailCommand}"
+                                        Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8" Padding="24,10"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
+        <!-- Vehicle attachments dialog -->
+        <md:DialogHost IsOpen="{Binding IsVehicleAttachmentsDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="3"
+                       Style="{StaticResource ModernDialogHost}">
+            <md:DialogHost.DialogContent>
+                <md:Card MinWidth="520" MaxWidth="600" MaxHeight="560" UniformCornerRadius="16"
+                         md:ElevationAssist.Elevation="Dp8">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Border Grid.Row="0" Background="#0277BD" Padding="16,12,16,14" CornerRadius="16,16,0,0">
+                            <StackPanel>
+                                <Button Command="{Binding CloseVehicleAttachmentsCommand}" HorizontalAlignment="Left"
+                                        Style="{StaticResource FlatButton}" Foreground="White" Padding="2" Margin="0,0,0,8">
+                                    <md:PackIcon Kind="Close" Width="22" Height="22"/>
+                                </Button>
+                                <TextBlock Text="مرفقات السيارة" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                                <TextBlock FontSize="12" Foreground="#B3E5FC" Margin="0,6,0,0">
+                                    <Run Text="لوحة:"/>
+                                    <Run Text="{Binding AttachmentsVehicle.IraqiPlate, Mode=OneWay}"/>
+                                    <Run Text=" / "/>
+                                    <Run Text="{Binding AttachmentsVehicle.SyrianPlate, Mode=OneWay}"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                        <StackPanel Grid.Row="1" Margin="24,16">
+                            <Button Content="+ إضافة مرفق" Command="{Binding AddVehicleAttachmentCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}" Background="#0277BD"
+                                    md:ButtonAssist.CornerRadius="8" Padding="16,8" HorizontalAlignment="Right"
+                                    Margin="0,0,0,12"
+                                    IsEnabled="{Binding HasSavedAttachmentsVehicle}"/>
+                            <DataGrid ItemsSource="{Binding VehicleAttachments}"
+                                      AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                                      Style="{StaticResource ModernDataGrid}" MaxHeight="320" MinHeight="160">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="اسم الملف" Binding="{Binding FileName}" Width="*"/>
+                                    <DataGridTextColumn Header="التاريخ" Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd HH:mm}" Width="140"/>
+                                    <DataGridTemplateColumn Header="إجراءات" Width="100">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <Button Command="{Binding DataContext.OpenAttachmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                            CommandParameter="{Binding}" Style="{StaticResource TableViewIconButton}">
+                                                        <md:PackIcon Kind="Eye" Width="16" Height="16"/>
+                                                    </Button>
+                                                    <Button Command="{Binding DataContext.DeleteVehicleAttachmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                            CommandParameter="{Binding}" Style="{StaticResource TableDeleteIconButton}">
+                                                        <md:PackIcon Kind="DeleteOutline" Width="16" Height="16"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                        <Border Grid.Row="2" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0" Padding="20,14">
+                            <Button Content="إغلاق" Command="{Binding CloseVehicleAttachmentsCommand}"
+                                    Style="{StaticResource FlatButton}" md:ButtonAssist.CornerRadius="8" Padding="24,10"/>
+                        </Border>
+                    </Grid>
+                </md:Card>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
     </Grid>
 </UserControl>
