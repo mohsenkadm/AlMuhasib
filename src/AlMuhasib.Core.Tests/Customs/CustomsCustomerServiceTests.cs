@@ -65,8 +65,8 @@ public class CustomsCustomerServiceTests
         Assert.Equal(100_000m, file.DebitIqd);
         Assert.Equal(30_000m, file.CreditIqd);
         Assert.Equal(2, file.InvoiceCount);
-        // Unpaid = non-cancelled with Remaining > 0 (includes Draft) — same rule as before H-03.
-        Assert.Equal(2, file.UnpaidInvoiceCount);
+        // M-03: Unpaid = Approved && Remaining > 0 (Draft excluded).
+        Assert.Equal(1, file.UnpaidInvoiceCount);
         Assert.Equal(1, file.ReceiptCount);
         Assert.True(file.Invoices.Count <= 50);
         Assert.Equal(2, file.InvoicesTotalCount);
@@ -105,5 +105,35 @@ public class CustomsCustomerServiceTests
         // Summary stable across pages.
         Assert.Equal(page1.DebitIqd, page2.DebitIqd);
         Assert.Equal(page1.BalanceIqd, page2.BalanceIqd);
+    }
+
+    [Fact]
+    public async Task M03_unpaid_invoice_count_approved_remaining_only()
+    {
+        var h = CustomsTestHarness.CreateAdmin();
+        var customer = await h.SeedCustomerAsync("عداد غير مسدد");
+
+        var approvedUnpaid = await h.Invoices.CreateAsync(
+            CustomsTestHarness.InvoiceRequest(customer.Id, AccountingCurrency.IQD, 100_000m, vehiclePlate: "غيرمسدد"));
+        await h.Invoices.ApproveAsync(approvedUnpaid.Id, "admin");
+
+        var approvedPaid = await h.Invoices.CreateAsync(
+            CustomsTestHarness.InvoiceRequest(customer.Id, AccountingCurrency.IQD, 50_000m, vehiclePlate: "مسددة"));
+        await h.Invoices.ApproveAsync(approvedPaid.Id, "admin");
+        await h.Receipts.CreateAsync(
+            CustomsTestHarness.ReceiptRequest(customer.Id, approvedPaid.Id, 50_000m, AccountingCurrency.IQD));
+
+        await h.Invoices.CreateAsync(
+            CustomsTestHarness.InvoiceRequest(customer.Id, AccountingCurrency.IQD, 80_000m, vehiclePlate: "مسودة"));
+
+        var cancelled = await h.Invoices.CreateAsync(
+            CustomsTestHarness.InvoiceRequest(customer.Id, AccountingCurrency.IQD, 70_000m, vehiclePlate: "ملغاة"));
+        await h.Invoices.ApproveAsync(cancelled.Id, "admin");
+        await h.Invoices.CancelAsync(cancelled.Id, "admin", "اختبار");
+
+        var file = await h.Customers.GetCustomerFileAsync(customer.Id);
+        Assert.NotNull(file);
+        Assert.Equal(1, file!.UnpaidInvoiceCount);
+        Assert.Equal(100_000m, file.BalanceIqd);
     }
 }

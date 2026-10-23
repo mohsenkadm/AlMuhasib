@@ -203,10 +203,11 @@ public sealed class CustomsCustomerService : ICustomsCustomerService
                 i => i.CustomerId == customerId && i.Status != CustomsInvoiceStatus.Cancelled,
                 cancellationToken);
 
+        // M-03: operational unpaid KPI — Approved with remaining only (exclude Draft/Cancelled).
         var unpaidInvoiceCount = await db.CustomsInvoices.AsNoTracking()
             .CountAsync(
                 i => i.CustomerId == customerId
-                     && i.Status != CustomsInvoiceStatus.Cancelled
+                     && i.Status == CustomsInvoiceStatus.Approved
                      && i.RemainingAmount > 0,
                 cancellationToken);
 

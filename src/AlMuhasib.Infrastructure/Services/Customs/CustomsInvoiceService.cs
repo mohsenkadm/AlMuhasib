@@ -433,6 +433,23 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         if (hasActiveAllocations)
             throw new InvalidOperationException("لا يمكن حذف فاتورة عليها توزيعات قبض نشطة — ألغِ الوصولات أولاً");
 
+        // M-01: cascade soft-delete of Invoice/Vehicle/Expense attachments (same lifecycle as CustomsAttachmentService).
+        var vehicleIds = invoice.Vehicles.Select(v => v.Id).ToList();
+        var expenseIds = invoice.Expenses.Select(e => e.Id).ToList();
+        var attachments = await db.CustomsAttachments
+            .Where(a =>
+                (a.OwnerType == CustomsAttachmentOwnerType.Invoice && a.OwnerId == invoice.Id)
+                || (a.OwnerType == CustomsAttachmentOwnerType.Vehicle && vehicleIds.Contains(a.OwnerId))
+                || (a.OwnerType == CustomsAttachmentOwnerType.Expense && expenseIds.Contains(a.OwnerId)))
+            .ToListAsync(cancellationToken);
+
+        var attachmentPaths = new List<string>(attachments.Count);
+        foreach (var attachment in attachments)
+        {
+            attachmentPaths.Add(attachment.FilePath);
+            attachment.MarkSoftDeleted(deletedBy);
+        }
+
         foreach (var v in invoice.Vehicles)
             v.MarkSoftDeleted(deletedBy);
         foreach (var e in invoice.Expenses)
@@ -440,6 +457,20 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
 
         invoice.MarkSoftDeleted(deletedBy);
         await db.SaveChangesAsync(cancellationToken);
+
+        // Best-effort disk cleanup after metadata soft-delete (ownership paths are unique per owner).
+        foreach (var path in attachmentPaths)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+                // Metadata already soft-deleted; ignore disk failures.
+            }
+        }
     }
 
     private static void ValidateRequest(CustomsInvoiceSaveRequest request)
@@ -449,6 +480,10 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
 
         if (request.DiscountAmount < 0)
             throw new InvalidOperationException("الخصم لا يمكن أن يكون سالباً");
+
+        var vehiclesSum = request.Vehicles.Sum(v => v.VehiclePrice);
+        if (request.DiscountAmount > vehiclesSum)
+            throw new InvalidOperationException("الخصم لا يمكن أن يتجاوز مجموع أسعار السيارات");
 
         foreach (var v in request.Vehicles)
         {
