@@ -25,7 +25,7 @@
         </Grid.RowDefinitions>
         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="24,24,24,8">
-                <TextBlock Text="تقرير الديون" FontSize="24" FontWeight="Bold" Margin="0,0,0,20" Foreground="#0277BD"/>
+                <TextBlock Text="تقرير الديون" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
                 <UniformGrid Columns="3" Margin="0,0,0,16">
                     <controls:AnimatedStatCard Title="ديون د.ع" TextValue="{Binding DebtsIqd}" Icon="CashClock" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
                     <controls:AnimatedStatCard Title="ديون $" TextValue="{Binding DebtsUsd}" Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="{DynamicResource DashboardKpiTealBrush}" ValueForeground="{DynamicResource DashboardKpiTealBrush}"/>
@@ -39,7 +39,7 @@
                 <Border Style="{StaticResource FilterBar}">
                     <StackPanel Orientation="Horizontal">
                         <DatePicker SelectedDate="{Binding AsOfDate}" Style="{StaticResource FilledDatePicker}" md:HintAssist.Hint="حتى تاريخ" Width="150" Margin="0,0,12,0"/>
-                        <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding SelectedCustomer}" DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}" md:HintAssist.Hint="العميل" Width="200" Margin="0,0,12,0"/>
+                        <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding SelectedCustomer}" Style="{StaticResource CustomerSearchableComboBox}" md:HintAssist.Hint="العميل" Width="200" Margin="0,0,12,0"/>
                         <ComboBox ItemsSource="{Binding CurrencyOptions}" SelectedItem="{Binding SelectedCurrency}" DisplayMemberPath="Label" Style="{StaticResource FilledComboBox}" md:HintAssist.Hint="العملة" Width="120" Margin="0,0,12,0"/>
                         <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}"/>
                     </StackPanel>

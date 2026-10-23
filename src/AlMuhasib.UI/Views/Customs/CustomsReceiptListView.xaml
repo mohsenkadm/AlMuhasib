@@ -35,11 +35,10 @@
         <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
             <StackPanel>
                 <TextBlock Text="وصولات القبض — التخليص الكمركي" FontSize="16" FontWeight="Bold"
-                           Foreground="#0277BD" Margin="0,0,0,12"/>
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
                 <WrapPanel>
                     <Button Command="{Binding OpenNewReceiptCommand}"
                             Style="{StaticResource MaterialDesignRaisedButton}"
-                            Background="#0277BD"
                             md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,8"
                             IsEnabled="{Binding CanAdd}">
                         <StackPanel Orientation="Horizontal">

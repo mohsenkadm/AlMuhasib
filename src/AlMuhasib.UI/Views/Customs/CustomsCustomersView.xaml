@@ -41,12 +41,11 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Text="إدارة العملاء — التخليص الكمركي" FontSize="16" FontWeight="Bold"
-                           Foreground="#0277BD" Margin="0,0,0,12"/>
+                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
 
                 <StackPanel Grid.Row="1" Orientation="Horizontal">
                     <Button Command="{Binding OpenAddDialogCommand}"
                             Style="{StaticResource MaterialDesignRaisedButton}"
-                            Background="#0277BD"
                             md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"
                             IsEnabled="{Binding CanAdd}">
                         <StackPanel Orientation="Horizontal">
@@ -194,7 +193,6 @@
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">
                             <Button Content="حفظ" Command="{Binding SaveCustomerCommand}"
                                     Style="{StaticResource MaterialDesignRaisedButton}"
-                                    Background="#0277BD"
                                     md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
                             <Button Content="إلغاء" Command="{Binding CancelDialogCommand}" Style="{StaticResource FlatButton}"/>
                         </StackPanel>

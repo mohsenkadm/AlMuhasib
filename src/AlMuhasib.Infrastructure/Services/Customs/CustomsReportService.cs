@@ -35,7 +35,7 @@ public sealed class CustomsReportService : ICustomsReportService
         return await db.CustomsCustomers.AsNoTracking()
             .Where(c => c.IsActive)
             .OrderBy(c => c.Name)
-            .Select(c => new CustomsReportCustomerOption { Id = c.Id, Name = c.Name })
+            .Select(c => new CustomsReportCustomerOption { Id = c.Id, Name = c.Name, Phone = c.Phone })
             .ToListAsync(cancellationToken);
     }
 

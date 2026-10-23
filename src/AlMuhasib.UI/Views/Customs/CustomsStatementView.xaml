@@ -35,12 +35,12 @@
         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="24,24,24,8">
                 <TextBlock Text="كشف حساب عميل — التخليص الكمركي" FontSize="24" FontWeight="Bold"
-                           Foreground="#0277BD" Margin="0,0,0,20"/>
+                           Margin="0,0,0,20"/>
 
                 <UniformGrid Columns="4" Margin="0,0,0,12">
                     <controls:AnimatedStatCard Title="اسم العميل" TextValue="{Binding CustomerName}"
                                                Icon="Account" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
-                                               IconForeground="#1565C0" ValueForeground="#1565C0" Margin="0,0,8,0"/>
+                                               IconForeground="{DynamicResource DashboardKpiBlueBrush}" ValueForeground="{DynamicResource DashboardKpiBlueBrush}" Margin="0,0,8,0"/>
                     <controls:AnimatedStatCard Title="مدين د.ع" TextValue="{Binding TotalDebitIqd}"
                                                Icon="CashPlus" IconBackground="{DynamicResource DashboardKpiRedLightBrush}"
                                                IconForeground="#C62828" ValueForeground="#C62828" Margin="0,0,8,0"/>
@@ -54,8 +54,8 @@
                 </UniformGrid>
                 <UniformGrid Columns="4" Margin="0,0,0,20">
                     <controls:AnimatedStatCard Title="عدد الحركات" TextValue="{Binding TransactionCount}"
-                                               Icon="FormatListNumbered" IconBackground="#E1F5FE"
-                                               IconForeground="#0277BD" ValueForeground="#0277BD" Margin="0,0,8,0"/>
+                                               Icon="FormatListNumbered" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
+                                               IconForeground="{DynamicResource PrimaryHueMidBrush}" ValueForeground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,8,0"/>
                     <controls:AnimatedStatCard Title="مدين $" TextValue="{Binding TotalDebitUsd}"
                                                Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiRedLightBrush}"
                                                IconForeground="#C62828" ValueForeground="#C62828" Margin="0,0,8,0"/>
@@ -64,19 +64,17 @@
                                                IconForeground="#2E7D32" ValueForeground="#2E7D32" Margin="0,0,8,0"/>
                     <controls:AnimatedStatCard Title="الرصيد $" TextValue="{Binding BalanceUsd}"
                                                Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
-                                               IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                                               IconForeground="{DynamicResource DashboardKpiBlueBrush}" ValueForeground="{DynamicResource DashboardKpiBlueBrush}"/>
                 </UniformGrid>
 
                 <Border Style="{StaticResource FilterBar}">
                     <WrapPanel>
-                        <ComboBox Width="240" Margin="0,0,12,8"
+                        <ComboBox Width="260" Margin="0,0,12,8"
                                   ItemsSource="{Binding FilteredCustomers}"
                                   SelectedItem="{Binding SelectedCustomer, UpdateSourceTrigger=PropertyChanged}"
                                   Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                  IsEditable="True" IsTextSearchEnabled="True"
-                                  DisplayMemberPath="Name"
-                                  Style="{StaticResource FilledComboBox}"
-                                  md:HintAssist.Hint="العميل *"/>
+                                  Style="{StaticResource CustomerSearchableComboBox}"
+                                  md:HintAssist.Hint="العميل (ابحث بالاسم أو الهاتف أو المعرف)"/>
                         <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}"
                                     md:HintAssist.Hint="من تاريخ" Width="140" Margin="0,0,12,8"/>
                         <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}"
