@@ -46,6 +46,9 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     [ObservableProperty] private decimal _vehiclesSum;
     [ObservableProperty] private decimal _totalAmount;
     [ObservableProperty] private decimal _remainingAmount;
+    [ObservableProperty] private decimal _expensesSameCurrencySum;
+    [ObservableProperty] private decimal _expensesOtherCurrencySum;
+    [ObservableProperty] private decimal _internalProfit;
 
     [ObservableProperty] private string _vehicleSearchText = string.Empty;
     [ObservableProperty] private bool _isVehicleDetailDialogOpen;
@@ -53,13 +56,20 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     [ObservableProperty] private bool _isVehicleAttachmentsDialogOpen;
     [ObservableProperty] private CustomsInvoiceVehicleRow? _attachmentsVehicle;
 
+    [ObservableProperty] private bool _isExpenseDialogOpen;
+    [ObservableProperty] private bool _isExpenseEditMode;
+    [ObservableProperty] private string _expenseDialogTitle = "إضافة مصروف";
     [ObservableProperty] private string _newExpenseTypeName = string.Empty;
     [ObservableProperty] private CustomsExpenseTypeItem? _selectedExpenseType;
     [ObservableProperty] private string _expenseDescription = string.Empty;
     [ObservableProperty] private decimal _expenseAmount;
     [ObservableProperty] private AccountingCurrency _expenseCurrency = AccountingCurrency.IQD;
+    [ObservableProperty] private decimal _expenseFxRate = 1m;
+    [ObservableProperty] private bool _showExpenseFxRate;
     [ObservableProperty] private DateTime _expenseDate = DateTime.Today;
     [ObservableProperty] private string _expenseRecipient = string.Empty;
+
+    private CustomsInvoiceExpenseRow? _editingExpenseRow;
 
     public ObservableCollection<CustomsCustomerListItem> Customers { get; } = [];
     public ObservableCollection<CustomsInvoiceVehicleRow> Vehicles { get; } = [];
@@ -97,6 +107,10 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     public bool CanDeleteVehicle => CanDelete && Status != CustomsInvoiceStatus.Cancelled;
     public bool HasSavedDetailVehicle => DetailVehicle?.Id is > 0;
     public bool HasSavedAttachmentsVehicle => AttachmentsVehicle?.Id is > 0;
+    public bool CanAddExpense => CanAdd && Status != CustomsInvoiceStatus.Cancelled;
+    public bool CanEditExpense => CanEdit && Status != CustomsInvoiceStatus.Cancelled;
+    public bool CanDeleteExpense => CanDelete && Status != CustomsInvoiceStatus.Cancelled;
+    public string InvoiceCurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
 
     public CustomsInvoiceFormViewModel(
         ICustomsInvoiceService invoiceService,
@@ -255,6 +269,10 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsVehiclesReadOnly));
         OnPropertyChanged(nameof(CanAddVehicle));
         OnPropertyChanged(nameof(CanDeleteVehicle));
+        OnPropertyChanged(nameof(CanAddExpense));
+        OnPropertyChanged(nameof(CanEditExpense));
+        OnPropertyChanged(nameof(CanDeleteExpense));
+        OnPropertyChanged(nameof(InvoiceCurrencyLabel));
     }
 
     private CustomsInvoiceVehicleRow CreateVehicleRow(CustomsInvoiceVehicleDraft? draft = null)
@@ -269,8 +287,22 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     private void RecalculateTotals()
     {
         VehiclesSum = Vehicles.Sum(v => v.VehiclePrice);
+        // Revenue = vehicles − discount (customer paid/remaining balance is NOT profit)
         TotalAmount = Math.Max(0, VehiclesSum - DiscountAmount);
         RemainingAmount = Math.Max(0, TotalAmount - PaidAmount);
+        RecalculateInternalProfit();
+    }
+
+    private void RecalculateInternalProfit()
+    {
+        ExpensesSameCurrencySum = Expenses
+            .Where(e => e.Currency == Currency)
+            .Sum(e => e.Amount);
+        ExpensesOtherCurrencySum = Expenses
+            .Where(e => e.Currency != Currency)
+            .Sum(e => e.Amount);
+        // InternalProfit = Revenue − same-currency expenses only (never PaidAmount / customer balance)
+        InternalProfit = TotalAmount - ExpensesSameCurrencySum;
     }
 
     private void RefreshFilteredVehicles()
@@ -465,6 +497,13 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         }
     }
 
+    partial void OnExpenseCurrencyChanged(AccountingCurrency value)
+    {
+        ShowExpenseFxRate = value == AccountingCurrency.USD;
+        if (value == AccountingCurrency.IQD)
+            ExpenseFxRate = 1m;
+    }
+
     [RelayCommand]
     private async Task AddExpenseTypeAsync()
     {
@@ -485,35 +524,129 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void AddExpenseRow()
+    private void OpenAddExpenseDialog()
     {
+        if (!CanAddExpense) return;
+        _editingExpenseRow = null;
+        IsExpenseEditMode = false;
+        ExpenseDialogTitle = "إضافة مصروف";
+        ResetExpenseDialogFields();
+        ExpenseCurrency = Currency;
+        IsExpenseDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private void OpenEditExpenseDialog(CustomsInvoiceExpenseRow? row)
+    {
+        if (row is null || !CanEditExpense) return;
+        _editingExpenseRow = row;
+        IsExpenseEditMode = true;
+        ExpenseDialogTitle = "تعديل مصروف";
+        SelectedExpenseType = ExpenseTypes.FirstOrDefault(t => t.Id == row.ExpenseTypeId)
+            ?? new CustomsExpenseTypeItem { Id = row.ExpenseTypeId, Name = row.ExpenseTypeName, IsActive = true };
+        if (SelectedExpenseType is not null && ExpenseTypes.All(t => t.Id != SelectedExpenseType.Id))
+            ExpenseTypes.Insert(0, SelectedExpenseType);
+
+        ExpenseDescription = row.Description;
+        ExpenseAmount = row.Amount;
+        ExpenseCurrency = row.Currency;
+        ExpenseFxRate = row.FxRate > 0 ? row.FxRate : 1m;
+        ShowExpenseFxRate = row.Currency == AccountingCurrency.USD;
+        ExpenseDate = row.ExpenseDate;
+        ExpenseRecipient = row.Recipient;
+        NewExpenseTypeName = string.Empty;
+        IsExpenseDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseExpenseDialog()
+    {
+        IsExpenseDialogOpen = false;
+        _editingExpenseRow = null;
+        IsExpenseEditMode = false;
+        ResetExpenseDialogFields();
+    }
+
+    private void ResetExpenseDialogFields()
+    {
+        SelectedExpenseType = null;
+        NewExpenseTypeName = string.Empty;
+        ExpenseDescription = string.Empty;
+        ExpenseAmount = 0;
+        ExpenseCurrency = Currency;
+        ExpenseFxRate = 1m;
+        ShowExpenseFxRate = ExpenseCurrency == AccountingCurrency.USD;
+        ExpenseDate = DateTime.Today;
+        ExpenseRecipient = string.Empty;
+    }
+
+    [RelayCommand]
+    private void SaveExpenseDialog()
+    {
+        if (_editingExpenseRow is null)
+        {
+            if (!CanAddExpense) return;
+        }
+        else if (!CanEditExpense)
+        {
+            return;
+        }
+
         if (SelectedExpenseType is null)
         {
             BeautifulMessageDialog.ShowWarning("اختر نوع المصروف");
             return;
         }
 
-        Expenses.Add(new CustomsInvoiceExpenseRow
+        if (ExpenseAmount < 0)
         {
-            ExpenseTypeId = SelectedExpenseType.Id,
-            ExpenseTypeName = SelectedExpenseType.Name,
-            Description = ExpenseDescription?.Trim() ?? string.Empty,
-            Amount = ExpenseAmount,
-            Currency = ExpenseCurrency,
-            ExpenseDate = ExpenseDate,
-            Recipient = ExpenseRecipient?.Trim() ?? string.Empty
-        });
+            BeautifulMessageDialog.ShowWarning("مبلغ المصروف لا يمكن أن يكون سالباً");
+            return;
+        }
 
-        ExpenseDescription = string.Empty;
-        ExpenseAmount = 0;
-        ExpenseRecipient = string.Empty;
+        var fx = ExpenseCurrency == AccountingCurrency.IQD
+            ? 1m
+            : (ExpenseFxRate > 0 ? ExpenseFxRate : 1m);
+
+        if (_editingExpenseRow is null)
+        {
+            Expenses.Add(new CustomsInvoiceExpenseRow
+            {
+                ExpenseTypeId = SelectedExpenseType.Id,
+                ExpenseTypeName = SelectedExpenseType.Name,
+                Description = ExpenseDescription?.Trim() ?? string.Empty,
+                Amount = ExpenseAmount,
+                Currency = ExpenseCurrency,
+                FxRate = fx,
+                ExpenseDate = ExpenseDate,
+                Recipient = ExpenseRecipient?.Trim() ?? string.Empty
+            });
+        }
+        else
+        {
+            _editingExpenseRow.ExpenseTypeId = SelectedExpenseType.Id;
+            _editingExpenseRow.ExpenseTypeName = SelectedExpenseType.Name;
+            _editingExpenseRow.Description = ExpenseDescription?.Trim() ?? string.Empty;
+            _editingExpenseRow.Amount = ExpenseAmount;
+            _editingExpenseRow.Currency = ExpenseCurrency;
+            _editingExpenseRow.FxRate = fx;
+            _editingExpenseRow.ExpenseDate = ExpenseDate;
+            _editingExpenseRow.Recipient = ExpenseRecipient?.Trim() ?? string.Empty;
+        }
+
+        RecalculateInternalProfit();
+        CloseExpenseDialog();
     }
 
     [RelayCommand]
     private void RemoveExpenseRow(CustomsInvoiceExpenseRow? row)
     {
-        if (row is null) return;
+        if (row is null || !CanDeleteExpense) return;
+        if (!BeautifulMessageDialog.ShowConfirm("حذف هذا المصروف من الفاتورة؟"))
+            return;
+
         Expenses.Remove(row);
+        RecalculateInternalProfit();
     }
 
     [RelayCommand]
@@ -790,10 +923,14 @@ public partial class CustomsInvoiceExpenseRow : ObservableObject
     [ObservableProperty] private string _description = string.Empty;
     [ObservableProperty] private decimal _amount;
     [ObservableProperty] private AccountingCurrency _currency = AccountingCurrency.IQD;
+    [ObservableProperty] private decimal _fxRate = 1m;
     [ObservableProperty] private DateTime _expenseDate = DateTime.Today;
     [ObservableProperty] private string _recipient = string.Empty;
 
     public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
+
+    partial void OnCurrencyChanged(AccountingCurrency value) =>
+        OnPropertyChanged(nameof(CurrencyLabel));
 
     public static CustomsInvoiceExpenseRow FromDraft(CustomsInvoiceExpenseDraft d) => new()
     {
@@ -803,6 +940,7 @@ public partial class CustomsInvoiceExpenseRow : ObservableObject
         Description = d.Description,
         Amount = d.Amount,
         Currency = d.Currency,
+        FxRate = d.FxRate > 0 ? d.FxRate : 1m,
         ExpenseDate = d.ExpenseDate,
         Recipient = d.Recipient
     };
@@ -815,6 +953,7 @@ public partial class CustomsInvoiceExpenseRow : ObservableObject
         Description = Description,
         Amount = Amount,
         Currency = Currency,
+        FxRate = FxRate,
         ExpenseDate = ExpenseDate,
         Recipient = Recipient
     };

@@ -205,12 +205,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
 
         var user = request.UserName ?? "System";
         UpsertVehicles(invoice, request.Vehicles, request.Currency, user);
-
-        foreach (var old in invoice.Expenses.ToList())
-            old.MarkSoftDeleted(user);
-
-        foreach (var e in request.Expenses)
-            invoice.Expenses.Add(await CreateExpenseAsync(db, e, cancellationToken));
+        await UpsertExpensesAsync(db, invoice, request.Expenses, user, cancellationToken);
 
         await db.SaveChangesAsync(cancellationToken);
         return (await GetByIdAsync(invoice.Id, cancellationToken))!;
@@ -413,28 +408,77 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         vehicle.Notes = draft.Notes?.Trim() ?? string.Empty;
     }
 
+    private static async Task UpsertExpensesAsync(
+        CustomsDbContext db,
+        CustomsInvoice invoice,
+        IReadOnlyList<CustomsInvoiceExpenseDraft> drafts,
+        string user,
+        CancellationToken cancellationToken)
+    {
+        var existingById = invoice.Expenses
+            .Where(e => !e.IsDeleted)
+            .ToDictionary(e => e.Id);
+
+        var keptIds = new HashSet<int>();
+        foreach (var draft in drafts)
+        {
+            await EnsureExpenseTypeExistsAsync(db, draft.ExpenseTypeId, cancellationToken);
+
+            if (draft.Id is int id && existingById.TryGetValue(id, out var existing))
+            {
+                ApplyExpenseFields(existing, draft);
+                existing.UpdatedBy = user;
+                existing.UpdatedAt = DateTime.UtcNow;
+                keptIds.Add(id);
+            }
+            else
+            {
+                invoice.Expenses.Add(CreateExpense(draft));
+            }
+        }
+
+        foreach (var old in invoice.Expenses.Where(e => !e.IsDeleted && e.Id > 0 && !keptIds.Contains(e.Id)).ToList())
+            old.MarkSoftDeleted(user);
+    }
+
     private static async Task<CustomsExpense> CreateExpenseAsync(
         CustomsDbContext db,
         CustomsInvoiceExpenseDraft draft,
         CancellationToken cancellationToken)
     {
-        var typeExists = await db.CustomsExpenseTypes.AnyAsync(t => t.Id == draft.ExpenseTypeId, cancellationToken);
+        await EnsureExpenseTypeExistsAsync(db, draft.ExpenseTypeId, cancellationToken);
+        return CreateExpense(draft);
+    }
+
+    private static async Task EnsureExpenseTypeExistsAsync(
+        CustomsDbContext db,
+        int expenseTypeId,
+        CancellationToken cancellationToken)
+    {
+        var typeExists = await db.CustomsExpenseTypes.AnyAsync(t => t.Id == expenseTypeId, cancellationToken);
         if (!typeExists)
             throw new InvalidOperationException("نوع المصروف غير موجود");
+    }
 
+    private static CustomsExpense CreateExpense(CustomsInvoiceExpenseDraft draft)
+    {
+        var expense = new CustomsExpense();
+        ApplyExpenseFields(expense, draft);
+        return expense;
+    }
+
+    private static void ApplyExpenseFields(CustomsExpense expense, CustomsInvoiceExpenseDraft draft)
+    {
         var currency = draft.Currency;
         var fx = currency == AccountingCurrency.IQD ? 1m : (draft.FxRate > 0 ? draft.FxRate : 1m);
 
-        return new CustomsExpense
-        {
-            ExpenseTypeId = draft.ExpenseTypeId,
-            Description = draft.Description?.Trim() ?? string.Empty,
-            Amount = draft.Amount,
-            Currency = currency,
-            FxRate = fx,
-            ExpenseDate = draft.ExpenseDate.Date,
-            Recipient = draft.Recipient?.Trim() ?? string.Empty
-        };
+        expense.ExpenseTypeId = draft.ExpenseTypeId;
+        expense.Description = draft.Description?.Trim() ?? string.Empty;
+        expense.Amount = draft.Amount;
+        expense.Currency = currency;
+        expense.FxRate = fx;
+        expense.ExpenseDate = draft.ExpenseDate.Date;
+        expense.Recipient = draft.Recipient?.Trim() ?? string.Empty;
     }
 
     private static CustomsInvoiceDetail ToDetail(CustomsInvoice i, List<CustomsAttachment> attachments)
