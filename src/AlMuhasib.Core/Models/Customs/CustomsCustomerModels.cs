@@ -97,6 +97,18 @@ public sealed class CustomsCustomerFile
     public int VehicleCount { get; set; }
     public int ReceiptCount { get; set; }
 
+    /// <summary>Full list totals for pagination (may include cancelled invoices).</summary>
+    public int InvoicesTotalCount { get; set; }
+    public int VehiclesTotalCount { get; set; }
+    public int ReceiptsTotalCount { get; set; }
+    public int AttachmentsTotalCount { get; set; }
+
+    public int InvoicePage { get; set; } = 1;
+    public int VehiclePage { get; set; } = 1;
+    public int ReceiptPage { get; set; } = 1;
+    public int AttachmentPage { get; set; } = 1;
+    public int PageSize { get; set; } = 50;
+
     public List<CustomsCustomerInvoiceRow> Invoices { get; set; } = [];
     public List<CustomsCustomerVehicleRow> Vehicles { get; set; } = [];
     public List<CustomsCustomerReceiptRow> Receipts { get; set; } = [];

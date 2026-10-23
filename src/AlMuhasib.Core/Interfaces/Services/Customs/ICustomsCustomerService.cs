@@ -20,5 +20,12 @@ public interface ICustomsCustomerService
 
     Task SoftDeleteAsync(int id, string deletedBy, CancellationToken cancellationToken = default);
 
-    Task<CustomsCustomerFile?> GetCustomerFileAsync(int customerId, CancellationToken cancellationToken = default);
+    Task<CustomsCustomerFile?> GetCustomerFileAsync(
+        int customerId,
+        int invoicePage = 1,
+        int vehiclePage = 1,
+        int receiptPage = 1,
+        int attachmentPage = 1,
+        int pageSize = 50,
+        CancellationToken cancellationToken = default);
 }

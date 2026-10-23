@@ -16,6 +16,8 @@ namespace AlMuhasib.UI.ViewModels.Customs;
 
 public partial class CustomsCustomerFileViewModel : ViewModelBase
 {
+    private const int DefaultPageSize = 50;
+
     private readonly ICustomsCustomerService _customerService;
     private readonly ICustomsAttachmentService _attachmentService;
     private readonly ICurrentUserService _currentUserService;
@@ -46,6 +48,17 @@ public partial class CustomsCustomerFileViewModel : ViewModelBase
 
     [ObservableProperty] private string _notes = string.Empty;
     [ObservableProperty] private string _notesError = string.Empty;
+
+    [ObservableProperty] private int _invoicePage = 1;
+    [ObservableProperty] private int _vehiclePage = 1;
+    [ObservableProperty] private int _receiptPage = 1;
+    [ObservableProperty] private int _attachmentPage = 1;
+    [ObservableProperty] private int _invoicesTotalCount;
+    [ObservableProperty] private int _vehiclesTotalCount;
+    [ObservableProperty] private int _receiptsTotalCount;
+    [ObservableProperty] private int _attachmentsTotalCount;
+    [ObservableProperty] private string _listPaginationText = string.Empty;
+    [ObservableProperty] private bool _showListPagination;
 
     public ObservableCollection<CustomsCustomerInvoiceRow> Invoices { get; } = [];
     public ObservableCollection<CustomsCustomerVehicleRow> Vehicles { get; } = [];
@@ -79,6 +92,8 @@ public partial class CustomsCustomerFileViewModel : ViewModelBase
         await LoadFileAsync();
     }
 
+    partial void OnSelectedTabChanged(int value) => UpdateListPaginationText();
+
     [RelayCommand]
     private async Task LoadFileAsync()
     {
@@ -86,7 +101,13 @@ public partial class CustomsCustomerFileViewModel : ViewModelBase
         IsBusy = true;
         try
         {
-            var file = await _customerService.GetCustomerFileAsync(_customerId);
+            var file = await _customerService.GetCustomerFileAsync(
+                _customerId,
+                InvoicePage,
+                VehiclePage,
+                ReceiptPage,
+                AttachmentPage,
+                DefaultPageSize);
             if (file is null)
             {
                 HasSelection = false;
@@ -132,6 +153,15 @@ public partial class CustomsCustomerFileViewModel : ViewModelBase
         CreditIqdDisplay = file.CreditIqd.ToString("N0");
         CreditUsdDisplay = file.CreditUsd.ToString("N2");
 
+        InvoicePage = file.InvoicePage;
+        VehiclePage = file.VehiclePage;
+        ReceiptPage = file.ReceiptPage;
+        AttachmentPage = file.AttachmentPage;
+        InvoicesTotalCount = file.InvoicesTotalCount;
+        VehiclesTotalCount = file.VehiclesTotalCount;
+        ReceiptsTotalCount = file.ReceiptsTotalCount;
+        AttachmentsTotalCount = file.AttachmentsTotalCount;
+
         Invoices.Clear();
         foreach (var row in file.Invoices)
             Invoices.Add(row);
@@ -147,6 +177,104 @@ public partial class CustomsCustomerFileViewModel : ViewModelBase
         Attachments.Clear();
         foreach (var row in file.Attachments)
             Attachments.Add(row);
+
+        UpdateListPaginationText();
+    }
+
+    private void UpdateListPaginationText()
+    {
+        ShowListPagination = SelectedTab is >= 0 and <= 3;
+        if (!ShowListPagination)
+        {
+            ListPaginationText = string.Empty;
+            return;
+        }
+
+        var (page, total, label) = SelectedTab switch
+        {
+            0 => (InvoicePage, InvoicesTotalCount, "فاتورة"),
+            1 => (VehiclePage, VehiclesTotalCount, "سيارة"),
+            2 => (ReceiptPage, ReceiptsTotalCount, "وصل"),
+            3 => (AttachmentPage, AttachmentsTotalCount, "مرفق"),
+            _ => (1, 0, "")
+        };
+
+        if (total == 0)
+        {
+            ListPaginationText = "لا توجد سجلات";
+            return;
+        }
+
+        var pages = Math.Max(1, (int)Math.Ceiling(total / (double)DefaultPageSize));
+        var from = (page - 1) * DefaultPageSize + 1;
+        var to = Math.Min(page * DefaultPageSize, total);
+        ListPaginationText = $"عرض {from}–{to} من {total} {label} — صفحة {page} من {pages}";
+    }
+
+    private int CurrentListPage
+    {
+        get => SelectedTab switch
+        {
+            0 => InvoicePage,
+            1 => VehiclePage,
+            2 => ReceiptPage,
+            3 => AttachmentPage,
+            _ => 1
+        };
+        set
+        {
+            switch (SelectedTab)
+            {
+                case 0: InvoicePage = value; break;
+                case 1: VehiclePage = value; break;
+                case 2: ReceiptPage = value; break;
+                case 3: AttachmentPage = value; break;
+            }
+        }
+    }
+
+    private int CurrentListTotal => SelectedTab switch
+    {
+        0 => InvoicesTotalCount,
+        1 => VehiclesTotalCount,
+        2 => ReceiptsTotalCount,
+        3 => AttachmentsTotalCount,
+        _ => 0
+    };
+
+    private int CurrentListTotalPages =>
+        Math.Max(1, (int)Math.Ceiling(CurrentListTotal / (double)DefaultPageSize));
+
+    [RelayCommand]
+    private async Task FirstListPageAsync()
+    {
+        if (SelectedTab is < 0 or > 3) return;
+        CurrentListPage = 1;
+        await LoadFileAsync();
+    }
+
+    [RelayCommand]
+    private async Task PreviousListPageAsync()
+    {
+        if (SelectedTab is < 0 or > 3 || CurrentListPage <= 1) return;
+        CurrentListPage--;
+        await LoadFileAsync();
+    }
+
+    [RelayCommand]
+    private async Task NextListPageAsync()
+    {
+        if (SelectedTab is < 0 or > 3 || CurrentListPage >= CurrentListTotalPages) return;
+        CurrentListPage++;
+        await LoadFileAsync();
+    }
+
+    [RelayCommand]
+    private async Task LastListPageAsync()
+    {
+        if (SelectedTab is < 0 or > 3) return;
+        CurrentListPage = CurrentListTotalPages;
+        await LoadFileAsync();
     }
 
     [RelayCommand]
@@ -226,7 +354,8 @@ public partial class CustomsCustomerFileViewModel : ViewModelBase
                     _currentUserService.Username);
             }
 
-            await ReloadAttachmentsAsync();
+            AttachmentPage = 1;
+            await LoadFileAsync();
             BeautifulMessageDialog.ShowSuccess($"تم إرفاق {dialog.FileNames.Length} ملف");
         }
         catch (Exception ex)
@@ -263,21 +392,12 @@ public partial class CustomsCustomerFileViewModel : ViewModelBase
         try
         {
             await _attachmentService.SoftDeleteAsync(item.Id, _currentUserService.Username);
-            await ReloadAttachmentsAsync();
+            await LoadFileAsync();
             BeautifulMessageDialog.ShowSuccess("تم حذف المرفق");
         }
         catch (Exception ex)
         {
             BeautifulMessageDialog.ShowError(ex.Message);
         }
-    }
-
-    private async Task ReloadAttachmentsAsync()
-    {
-        var items = await _attachmentService.GetByOwnerAsync(
-            CustomsAttachmentOwnerType.Customer, _customerId);
-        Attachments.Clear();
-        foreach (var item in items)
-            Attachments.Add(item);
     }
 }
