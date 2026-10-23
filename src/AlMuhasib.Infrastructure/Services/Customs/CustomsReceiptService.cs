@@ -179,68 +179,78 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
     {
         _permissions.EnsureAdd(CustomsScreenNames.Receipts);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
-        await ValidateRequestAsync(db, request, excludeReceiptId: null, cancellationToken);
-
-        var fxRate = CustomsFinancialRules.NormalizeFxRate(
-            request.Currency,
-            await ResolveFxRateAsync(db, request.Currency, request.ReceiptDate, request.FxRate, cancellationToken),
-            "الوصل");
-        var user = request.UserName ?? "System";
-
-        var receipt = new CustomsReceipt
+        await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            CustomerId = request.CustomerId,
-            ReceiptNumber = await CustomsReceiptNumberHelper.GetNextAsync(db, cancellationToken),
-            ReceiptDate = request.ReceiptDate.Date,
-            Amount = request.Amount,
-            Currency = request.Currency,
-            FxRate = fxRate,
-            PaymentMethod = request.PaymentMethod,
-            ReceiverName = request.ReceiverName?.Trim() ?? string.Empty,
-            Notes = request.Notes?.Trim() ?? string.Empty,
-            CreatedBy = user
-        };
+            await ValidateRequestAsync(db, request, excludeReceiptId: null, cancellationToken);
 
-        foreach (var line in request.Allocations.Where(a => a.Amount > 0))
-        {
-            receipt.Allocations.Add(new CustomsReceiptAllocation
+            var fxRate = CustomsFinancialRules.NormalizeFxRate(
+                request.Currency,
+                await ResolveFxRateAsync(db, request.Currency, request.ReceiptDate, request.FxRate, cancellationToken),
+                "الوصل");
+            var user = request.UserName ?? "System";
+
+            var receipt = new CustomsReceipt
             {
-                InvoiceId = line.InvoiceId,
-                Amount = line.Amount,
+                CustomerId = request.CustomerId,
+                ReceiptNumber = await CustomsReceiptNumberHelper.GetNextAsync(db, cancellationToken),
+                ReceiptDate = request.ReceiptDate.Date,
+                Amount = request.Amount,
+                Currency = request.Currency,
+                FxRate = fxRate,
+                PaymentMethod = request.PaymentMethod,
+                ReceiverName = request.ReceiverName?.Trim() ?? string.Empty,
+                Notes = request.Notes?.Trim() ?? string.Empty,
                 CreatedBy = user
-            });
-        }
+            };
 
-        await db.CustomsReceipts.AddAsync(receipt, cancellationToken);
-        await db.SaveChangesAsync(cancellationToken);
-
-        // Rule 5: Paid/Remaining from allocation sum (independent receipt record), not a bare invoice field.
-        var invoiceIds = receipt.Allocations.Select(a => a.InvoiceId).Distinct().ToList();
-        await CustomsSettlementHelper.RecomputeInvoiceSettlementAsync(db, invoiceIds, cancellationToken);
-        await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, request.CustomerId, cancellationToken);
-
-        await CustomsAuditWriter.WriteAsync(
-            db,
-            AuditAction.Add,
-            "CustomsReceipt",
-            receipt.Id,
-            oldValues: null,
-            newValues: new
+            foreach (var line in request.Allocations.Where(a => a.Amount > 0))
             {
-                receipt.ReceiptNumber,
-                receipt.CustomerId,
-                receipt.Amount,
-                Currency = receipt.Currency.ToString(),
-                Allocations = receipt.Allocations
-                    .Where(a => !a.IsDeleted)
-                    .Select(a => new { a.InvoiceId, a.Amount })
-                    .ToList()
-            },
-            cancellationToken);
+                receipt.Allocations.Add(new CustomsReceiptAllocation
+                {
+                    InvoiceId = line.InvoiceId,
+                    Amount = line.Amount,
+                    CreatedBy = user
+                });
+            }
 
-        await db.SaveChangesAsync(cancellationToken);
+            await db.CustomsReceipts.AddAsync(receipt, cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
 
-        return (await GetByIdAsync(receipt.Id, cancellationToken))!;
+            // Rule 5: Paid/Remaining from allocation sum (independent receipt record), not a bare invoice field.
+            var invoiceIds = receipt.Allocations.Select(a => a.InvoiceId).Distinct().ToList();
+            await CustomsSettlementHelper.RecomputeInvoiceSettlementAsync(db, invoiceIds, cancellationToken);
+            await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, request.CustomerId, cancellationToken);
+
+            await CustomsAuditWriter.WriteAsync(
+                db,
+                AuditAction.Add,
+                "CustomsReceipt",
+                receipt.Id,
+                oldValues: null,
+                newValues: new
+                {
+                    receipt.ReceiptNumber,
+                    receipt.CustomerId,
+                    receipt.Amount,
+                    Currency = receipt.Currency.ToString(),
+                    Allocations = receipt.Allocations
+                        .Where(a => !a.IsDeleted)
+                        .Select(a => new { a.InvoiceId, a.Amount })
+                        .ToList()
+                },
+                cancellationToken);
+
+            await db.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+
+            return (await GetByIdAsync(receipt.Id, cancellationToken))!;
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     public async Task<CustomsReceiptDetail> UpdateAsync(
@@ -250,77 +260,87 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
     {
         _permissions.EnsureEdit(CustomsScreenNames.Receipts);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
-        var receipt = await db.CustomsReceipts
-            .Include(r => r.Allocations)
-            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
-            ?? throw new InvalidOperationException("الوصل غير موجود");
-
-        await ValidateRequestAsync(db, request, excludeReceiptId: id, cancellationToken);
-
-        var user = request.UserName ?? "System";
-        var fxRate = CustomsFinancialRules.NormalizeFxRate(
-            request.Currency,
-            await ResolveFxRateAsync(db, request.Currency, request.ReceiptDate, request.FxRate, cancellationToken),
-            "الوصل");
-
-        var oldSnapshot = new
+        await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            receipt.CustomerId,
-            receipt.Amount,
-            Currency = receipt.Currency.ToString(),
-            Allocations = receipt.Allocations
-                .Where(a => !a.IsDeleted)
-                .Select(a => new { a.InvoiceId, a.Amount })
-                .ToList()
-        };
+            var receipt = await db.CustomsReceipts
+                .Include(r => r.Allocations)
+                .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
+                ?? throw new InvalidOperationException("الوصل غير موجود");
 
-        var previousCustomerId = receipt.CustomerId;
-        var affectedInvoiceIds = receipt.Allocations
-            .Where(a => !a.IsDeleted)
-            .Select(a => a.InvoiceId)
-            .Concat(request.Allocations.Where(a => a.Amount > 0).Select(a => a.InvoiceId))
-            .Distinct()
-            .ToList();
+            await ValidateRequestAsync(db, request, excludeReceiptId: id, cancellationToken);
 
-        receipt.CustomerId = request.CustomerId;
-        receipt.ReceiptDate = request.ReceiptDate.Date;
-        receipt.Amount = request.Amount;
-        receipt.Currency = request.Currency;
-        receipt.FxRate = fxRate;
-        receipt.PaymentMethod = request.PaymentMethod;
-        receipt.ReceiverName = request.ReceiverName?.Trim() ?? string.Empty;
-        receipt.Notes = request.Notes?.Trim() ?? string.Empty;
-        receipt.UpdatedBy = user;
-        receipt.UpdatedAt = DateTime.UtcNow;
+            var user = request.UserName ?? "System";
+            var fxRate = CustomsFinancialRules.NormalizeFxRate(
+                request.Currency,
+                await ResolveFxRateAsync(db, request.Currency, request.ReceiptDate, request.FxRate, cancellationToken),
+                "الوصل");
 
-        UpsertAllocations(receipt, request.Allocations, user);
-
-        await db.SaveChangesAsync(cancellationToken);
-
-        var active = receipt.Allocations.Where(a => !a.IsDeleted).ToList();
-        await CustomsSettlementHelper.RecomputeInvoiceSettlementAsync(db, affectedInvoiceIds, cancellationToken);
-        await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, request.CustomerId, cancellationToken);
-        if (previousCustomerId != request.CustomerId)
-            await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, previousCustomerId, cancellationToken);
-
-        await CustomsAuditWriter.WriteAsync(
-            db,
-            AuditAction.Edit,
-            "CustomsReceipt",
-            receipt.Id,
-            oldValues: oldSnapshot,
-            newValues: new
+            var oldSnapshot = new
             {
                 receipt.CustomerId,
                 receipt.Amount,
                 Currency = receipt.Currency.ToString(),
-                Allocations = active.Select(a => new { a.InvoiceId, a.Amount }).ToList()
-            },
-            cancellationToken);
+                Allocations = receipt.Allocations
+                    .Where(a => !a.IsDeleted)
+                    .Select(a => new { a.InvoiceId, a.Amount })
+                    .ToList()
+            };
 
-        await db.SaveChangesAsync(cancellationToken);
+            var previousCustomerId = receipt.CustomerId;
+            var affectedInvoiceIds = receipt.Allocations
+                .Where(a => !a.IsDeleted)
+                .Select(a => a.InvoiceId)
+                .Concat(request.Allocations.Where(a => a.Amount > 0).Select(a => a.InvoiceId))
+                .Distinct()
+                .ToList();
 
-        return (await GetByIdAsync(receipt.Id, cancellationToken))!;
+            receipt.CustomerId = request.CustomerId;
+            receipt.ReceiptDate = request.ReceiptDate.Date;
+            receipt.Amount = request.Amount;
+            receipt.Currency = request.Currency;
+            receipt.FxRate = fxRate;
+            receipt.PaymentMethod = request.PaymentMethod;
+            receipt.ReceiverName = request.ReceiverName?.Trim() ?? string.Empty;
+            receipt.Notes = request.Notes?.Trim() ?? string.Empty;
+            receipt.UpdatedBy = user;
+            receipt.UpdatedAt = DateTime.UtcNow;
+
+            UpsertAllocations(receipt, request.Allocations, user);
+
+            await db.SaveChangesAsync(cancellationToken);
+
+            var active = receipt.Allocations.Where(a => !a.IsDeleted).ToList();
+            await CustomsSettlementHelper.RecomputeInvoiceSettlementAsync(db, affectedInvoiceIds, cancellationToken);
+            await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, request.CustomerId, cancellationToken);
+            if (previousCustomerId != request.CustomerId)
+                await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, previousCustomerId, cancellationToken);
+
+            await CustomsAuditWriter.WriteAsync(
+                db,
+                AuditAction.Edit,
+                "CustomsReceipt",
+                receipt.Id,
+                oldValues: oldSnapshot,
+                newValues: new
+                {
+                    receipt.CustomerId,
+                    receipt.Amount,
+                    Currency = receipt.Currency.ToString(),
+                    Allocations = active.Select(a => new { a.InvoiceId, a.Amount }).ToList()
+                },
+                cancellationToken);
+
+            await db.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+
+            return (await GetByIdAsync(receipt.Id, cancellationToken))!;
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     /// <summary>
@@ -331,41 +351,51 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
     {
         _permissions.EnsureDelete(CustomsScreenNames.Receipts);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
-        var receipt = await db.CustomsReceipts
-            .Include(r => r.Allocations)
-            .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
-            ?? throw new InvalidOperationException("الوصل غير موجود");
-
-        var active = receipt.Allocations.Where(a => !a.IsDeleted).ToList();
-        var oldSnapshot = new
+        await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            receipt.CustomerId,
-            receipt.Amount,
-            Currency = receipt.Currency.ToString(),
-            Allocations = active.Select(a => new { a.InvoiceId, a.Amount }).ToList()
-        };
+            var receipt = await db.CustomsReceipts
+                .Include(r => r.Allocations)
+                .FirstOrDefaultAsync(r => r.Id == id, cancellationToken)
+                ?? throw new InvalidOperationException("الوصل غير موجود");
 
-        var invoiceIds = active.Select(a => a.InvoiceId).Distinct().ToList();
-        foreach (var a in active)
-            a.MarkSoftDeleted(userName);
+            var active = receipt.Allocations.Where(a => !a.IsDeleted).ToList();
+            var oldSnapshot = new
+            {
+                receipt.CustomerId,
+                receipt.Amount,
+                Currency = receipt.Currency.ToString(),
+                Allocations = active.Select(a => new { a.InvoiceId, a.Amount }).ToList()
+            };
 
-        var customerId = receipt.CustomerId;
-        receipt.MarkSoftDeleted(userName);
-        await db.SaveChangesAsync(cancellationToken);
+            var invoiceIds = active.Select(a => a.InvoiceId).Distinct().ToList();
+            foreach (var a in active)
+                a.MarkSoftDeleted(userName);
 
-        await CustomsSettlementHelper.RecomputeInvoiceSettlementAsync(db, invoiceIds, cancellationToken);
-        await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, customerId, cancellationToken);
+            var customerId = receipt.CustomerId;
+            receipt.MarkSoftDeleted(userName);
+            await db.SaveChangesAsync(cancellationToken);
 
-        await CustomsAuditWriter.WriteAsync(
-            db,
-            AuditAction.Delete,
-            "CustomsReceipt.Cancel",
-            receipt.Id,
-            oldValues: oldSnapshot,
-            newValues: new { Reversed = true, AllocationsCleared = active.Count },
-            cancellationToken);
+            await CustomsSettlementHelper.RecomputeInvoiceSettlementAsync(db, invoiceIds, cancellationToken);
+            await CustomsSettlementHelper.RecomputeCustomerBalanceAsync(db, customerId, cancellationToken);
 
-        await db.SaveChangesAsync(cancellationToken);
+            await CustomsAuditWriter.WriteAsync(
+                db,
+                AuditAction.Delete,
+                "CustomsReceipt.Cancel",
+                receipt.Id,
+                oldValues: oldSnapshot,
+                newValues: new { Reversed = true, AllocationsCleared = active.Count },
+                cancellationToken);
+
+            await db.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     private static void UpsertAllocations(
@@ -431,7 +461,9 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         if (!customerExists)
             throw new InvalidOperationException("العميل غير موجود أو غير نشط");
 
-        var invoiceIds = allocations.Select(a => a.InvoiceId).Distinct().ToList();
+        // C-02: remaining must be checked against the sum per InvoiceId, not each line alone.
+        var byInvoice = allocations.GroupBy(a => a.InvoiceId).ToList();
+        var invoiceIds = byInvoice.Select(g => g.Key).ToList();
         var invoices = await db.CustomsInvoices
             .Where(i => invoiceIds.Contains(i.Id))
             .ToListAsync(cancellationToken);
@@ -442,15 +474,19 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         Dictionary<int, decimal>? priorByInvoice = null;
         if (excludeReceiptId is int rid)
         {
-            priorByInvoice = await db.CustomsReceiptAllocations
+            // Load then group in-memory — InMemory provider cannot translate GroupBy+ToDictionary.
+            var priorRows = await db.CustomsReceiptAllocations
                 .Where(a => a.ReceiptId == rid && !a.IsDeleted)
+                .Select(a => new { a.InvoiceId, a.Amount })
+                .ToListAsync(cancellationToken);
+            priorByInvoice = priorRows
                 .GroupBy(a => a.InvoiceId)
-                .ToDictionaryAsync(g => g.Key, g => g.Sum(x => x.Amount), cancellationToken);
+                .ToDictionary(g => g.Key, g => g.Sum(x => x.Amount));
         }
 
-        foreach (var line in allocations)
+        foreach (var group in byInvoice)
         {
-            var inv = invoices.First(i => i.Id == line.InvoiceId);
+            var inv = invoices.First(i => i.Id == group.Key);
             if (inv.CustomerId != request.CustomerId)
                 throw new InvalidOperationException($"الفاتورة {inv.InvoiceNumber} لا تخص هذا العميل");
 
@@ -459,11 +495,12 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
 
             CustomsFinancialRules.EnsureReceiptMatchesInvoiceCurrency(request.Currency, inv.Currency);
 
+            var sum = group.Sum(x => x.Amount);
             var prior = priorByInvoice is not null && priorByInvoice.TryGetValue(inv.Id, out var p) ? p : 0m;
             var available = inv.RemainingAmount + prior;
-            if (line.Amount > available)
+            if (sum > available)
                 throw new InvalidOperationException(
-                    $"التوزيع على {inv.InvoiceNumber} ({line.Amount:N0}) يتجاوز المتبقي ({available:N0})");
+                    $"التوزيع على {inv.InvoiceNumber} ({sum:N0}) يتجاوز المتبقي ({available:N0})");
         }
     }
 
