@@ -1,7 +1,9 @@
+using AlMuhasib.Core.Entities.Customs;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Models.Customs;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace AlMuhasib.Core.Tests.Customs;
@@ -178,5 +180,98 @@ public class CustomsInvoiceServiceTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             h.Invoices.CancelAsync(inv.Id, "admin"));
+    }
+
+    [Fact]
+    public async Task H02_cancel_without_allocations_succeeds_and_writes_audit()
+    {
+        var h = CustomsTestHarness.CreateAdmin();
+        var customer = await h.SeedCustomerAsync();
+        var inv = await h.Invoices.CreateAsync(
+            CustomsTestHarness.InvoiceRequest(customer.Id, AccountingCurrency.IQD, 100m));
+        await h.Invoices.ApproveAsync(inv.Id, "admin");
+
+        await h.Invoices.CancelAsync(inv.Id, "admin", "سبب اختبار");
+
+        var cancelled = await h.Invoices.GetByIdAsync(inv.Id);
+        Assert.Equal(CustomsInvoiceStatus.Cancelled, cancelled!.Status);
+
+        await using var db = h.Factory.CreateDbContext();
+        Assert.Contains(
+            await db.AuditLogs.AsNoTracking().ToListAsync(),
+            a => a.EntityName == "CustomsInvoice.Cancel" && a.EntityId == inv.Id);
+    }
+
+    [Fact]
+    public async Task H02_cancel_rejected_when_active_allocation_exists_even_if_paid_is_zero()
+    {
+        var h = CustomsTestHarness.CreateAdmin();
+        var customer = await h.SeedCustomerAsync();
+        var inv = await h.Invoices.CreateAsync(
+            CustomsTestHarness.InvoiceRequest(customer.Id, AccountingCurrency.IQD, 100m));
+        await h.Invoices.ApproveAsync(inv.Id, "admin");
+
+        // Corrupt path: active allocation while PaidAmount left at 0.
+        await using (var db = h.Factory.CreateDbContext())
+        {
+            var ghost = new CustomsReceipt
+            {
+                CustomerId = customer.Id,
+                ReceiptNumber = "GHOST-INV",
+                ReceiptDate = DateTime.Today,
+                Amount = 10m,
+                Currency = AccountingCurrency.IQD,
+                FxRate = 1m,
+                PaymentMethod = CustomsPaymentMethod.Cash,
+                ReceiverName = "ghost",
+                CreatedBy = "corrupt",
+                RowVersion = [1]
+            };
+            ghost.Allocations.Add(new CustomsReceiptAllocation
+            {
+                InvoiceId = inv.Id,
+                Amount = 10m,
+                CreatedBy = "corrupt",
+                RowVersion = [1]
+            });
+            db.CustomsReceipts.Add(ghost);
+            await db.SaveChangesAsync();
+        }
+
+        var before = await h.Invoices.GetByIdAsync(inv.Id);
+        Assert.Equal(0m, before!.PaidAmount);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            h.Invoices.CancelAsync(inv.Id, "admin"));
+
+        var still = await h.Invoices.GetByIdAsync(inv.Id);
+        Assert.Equal(CustomsInvoiceStatus.Approved, still!.Status);
+
+        await using var auditDb = h.Factory.CreateDbContext();
+        Assert.DoesNotContain(
+            await auditDb.AuditLogs.AsNoTracking().ToListAsync(),
+            a => a.EntityName == "CustomsInvoice.Cancel" && a.EntityId == inv.Id);
+    }
+
+    [Fact]
+    public async Task H02_cancel_allowed_after_receipt_soft_deleted()
+    {
+        var h = CustomsTestHarness.CreateAdmin();
+        var customer = await h.SeedCustomerAsync();
+        var inv = await h.Invoices.CreateAsync(
+            CustomsTestHarness.InvoiceRequest(customer.Id, AccountingCurrency.IQD, 100m));
+        await h.Invoices.ApproveAsync(inv.Id, "admin");
+
+        var receipt = await h.Receipts.CreateAsync(
+            CustomsTestHarness.ReceiptRequest(customer.Id, inv.Id, 40m, AccountingCurrency.IQD));
+        await h.Receipts.CancelAsync(receipt.Id, "admin");
+
+        var afterReceiptCancel = await h.Invoices.GetByIdAsync(inv.Id);
+        Assert.Equal(0m, afterReceiptCancel!.PaidAmount);
+        Assert.Equal(100m, afterReceiptCancel.RemainingAmount);
+
+        await h.Invoices.CancelAsync(inv.Id, "admin");
+        var cancelled = await h.Invoices.GetByIdAsync(inv.Id);
+        Assert.Equal(CustomsInvoiceStatus.Cancelled, cancelled!.Status);
     }
 }

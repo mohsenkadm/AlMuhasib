@@ -1,6 +1,7 @@
 using AlMuhasib.Core.Constants;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Enums.Customs;
+using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Customs;
 using Xunit;
 
@@ -78,5 +79,69 @@ public class CustomsPrintServiceTests
 
         Assert.Throws<UnauthorizedAccessException>(() => h.Print.PrintCustomerInvoice(detail));
         Assert.Throws<UnauthorizedAccessException>(() => h.Print.ExportCustomerInvoicePdf(detail));
+    }
+
+    [Fact]
+    public void H04_report_print_export_denied_without_permission()
+    {
+        var h = CustomsTestHarness.CreateUser(u =>
+            u.Grant(CustomsScreenNames.Reports, view: true));
+
+        var model = new StatementPrintModel
+        {
+            Title = "تقرير",
+            PartyName = "x",
+            Columns = ["أ"],
+            Rows = [new object[] { "1" }]
+        };
+
+        Assert.Throws<UnauthorizedAccessException>(() =>
+            h.Print.PrintReportTable(CustomsScreenNames.Reports, "تقرير", model.Columns, model.Rows));
+        Assert.Throws<UnauthorizedAccessException>(() =>
+            h.Print.ExportReportPdf(CustomsScreenNames.Reports, model));
+        Assert.Throws<UnauthorizedAccessException>(() =>
+            h.Print.ExportReportExcel(
+                CustomsScreenNames.Reports,
+                Path.Combine(Path.GetTempPath(), $"customs-deny-{Guid.NewGuid():N}.xlsx"),
+                "Sheet",
+                model.Columns,
+                model.Rows));
+
+        Assert.Throws<UnauthorizedAccessException>(() =>
+            h.Print.PrintReportTable(CustomsScreenNames.ProfitReport, "ربح", model.Columns, model.Rows));
+    }
+
+    [Fact]
+    public void H04_report_print_export_allowed_with_permission()
+    {
+        var h = CustomsTestHarness.CreateUser(u =>
+        {
+            u.Grant(CustomsScreenNames.Reports, view: true, print: true, export: true);
+            u.Grant(CustomsScreenNames.ProfitReport, view: true, print: true, export: true);
+        });
+
+        var cols = new[] { "أ" };
+        IList<object[]> rows = [new object[] { "1" }];
+        var model = new StatementPrintModel
+        {
+            Title = "تقرير",
+            PartyName = "x",
+            Columns = cols,
+            Rows = rows
+        };
+
+        h.Print.PrintReportTable(CustomsScreenNames.Reports, "تقرير", cols, rows);
+        Assert.Equal(1, h.Export.PrintTableCalls);
+
+        var pdf = h.Print.ExportReportPdf(CustomsScreenNames.Reports, model);
+        Assert.False(string.IsNullOrWhiteSpace(pdf));
+        Assert.Equal(1, h.Export.ExportStatementPdfCalls);
+
+        var excelPath = Path.Combine(Path.GetTempPath(), $"customs-ok-{Guid.NewGuid():N}.xlsx");
+        h.Print.ExportReportExcel(CustomsScreenNames.Reports, excelPath, "Sheet", cols, rows);
+        Assert.Equal(1, h.Export.ExportExcelCalls);
+
+        h.Print.PrintReportTable(CustomsScreenNames.ProfitReport, "ربح", cols, rows);
+        Assert.Equal(2, h.Export.PrintTableCalls);
     }
 }

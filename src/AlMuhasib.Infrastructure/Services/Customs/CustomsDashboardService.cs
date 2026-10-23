@@ -92,13 +92,16 @@ public sealed class CustomsDashboardService : ICustomsDashboardService
         var expensesIqd = expenses.Where(e => e.Currency == AccountingCurrency.IQD).Sum(e => e.Amount);
         var expensesUsd = expenses.Where(e => e.Currency == AccountingCurrency.USD).Sum(e => e.Amount);
 
-        // Rule 6: InternalProfit per invoice = revenue − same-currency expenses only (never mix IQD/USD).
-        var periodInvoiceIds = periodInvoices.Select(i => i.Id).ToList();
+        // H-01 / Rule 6: InternalProfit from Approved period invoices only (never Draft).
+        var approvedPeriodInvoices = periodInvoices
+            .Where(i => i.Status == CustomsInvoiceStatus.Approved)
+            .ToList();
+        var periodInvoiceIds = approvedPeriodInvoices.Select(i => i.Id).ToList();
         var periodInvoiceExpenses = periodInvoiceIds.Count == 0
             ? []
             : await db.CustomsExpenses.AsNoTracking()
                 .Where(e => periodInvoiceIds.Contains(e.InvoiceId)
-                            && e.Invoice.Status != CustomsInvoiceStatus.Cancelled)
+                            && e.Invoice.Status == CustomsInvoiceStatus.Approved)
                 .Select(e => new { e.InvoiceId, e.Currency, e.Amount })
                 .ToListAsync(cancellationToken);
 
@@ -108,7 +111,7 @@ public sealed class CustomsDashboardService : ICustomsDashboardService
 
         decimal profitIqd = 0;
         decimal profitUsd = 0;
-        foreach (var inv in periodInvoices)
+        foreach (var inv in approvedPeriodInvoices)
         {
             expensesByInvoice.TryGetValue(inv.Id, out var invExpenses);
             var profit = CustomsFinancialRules.ComputeInternalProfit(

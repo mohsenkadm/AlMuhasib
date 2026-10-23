@@ -134,6 +134,7 @@ internal sealed class FakeExportService : IExportService
     public int ExportVoucherPdfCalls { get; private set; }
     public int PrintTableCalls { get; private set; }
     public int ExportStatementPdfCalls { get; private set; }
+    public int ExportExcelCalls { get; private set; }
     public InvoicePrintModel? LastInvoice { get; private set; }
     public VoucherPrintModel? LastVoucher { get; private set; }
 
@@ -169,7 +170,8 @@ internal sealed class FakeExportService : IExportService
     public byte[] ExportToExcel<T>(IEnumerable<T> data, string sheetName = "Sheet1") => [];
     public Task ExportToExcelFileAsync<T>(IEnumerable<T> data, string filePath, string sheetName = "Sheet1") =>
         Task.CompletedTask;
-    public void ExportToExcel(string filePath, string sheetName, string[] columns, IList<object[]> rows) { }
+    public void ExportToExcel(string filePath, string sheetName, string[] columns, IList<object[]> rows) =>
+        ExportExcelCalls++;
     public void ExportToExcel(
         string filePath,
         IReadOnlyList<(string SheetName, string[] Columns, IList<object[]> Rows)> sheets) { }
@@ -198,6 +200,7 @@ internal sealed class CustomsTestHarness : IAsyncDisposable
     public CustomsReceiptService Receipts { get; }
     public CustomsAttachmentService Attachments { get; }
     public CustomsReportService Reports { get; }
+    public CustomsDashboardService Dashboard { get; }
     public CustomsPrintService Print { get; }
     public FakeExportService Export { get; }
 
@@ -250,6 +253,7 @@ internal sealed class CustomsTestHarness : IAsyncDisposable
         Receipts = new CustomsReceiptService(Factory, Permissions);
         Attachments = new CustomsAttachmentService(Factory, Permissions);
         Reports = new CustomsReportService(Factory, Permissions);
+        Dashboard = new CustomsDashboardService(Factory, Permissions);
         Print = new CustomsPrintService(Export, Permissions);
     }
 

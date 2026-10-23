@@ -7,6 +7,7 @@ namespace AlMuhasib.Core.Interfaces.Services.Customs;
 /// <summary>
 /// Thin mapper onto <see cref="IExportService"/> — no parallel print stack.
 /// Invoice/receipt/statement builds are customer-facing (no internal costs/profit).
+/// Report print/export paths enforce <c>CustomsPermissionGuard</c> by screen name.
 /// </summary>
 public interface ICustomsPrintService
 {
@@ -41,14 +42,26 @@ public interface ICustomsPrintService
 
     string ExportCustomerStatementPdf(StatementPrintModel model);
 
+    /// <summary>Print a staff/report table after <c>EnsurePrint(screenName)</c>.</summary>
     void PrintReportTable(
-        CustomsPrintDocumentKind kind,
+        string screenName,
         string title,
         string[] columns,
         IList<object[]> rows,
-        IList<string>? summaryLines = null);
+        IList<string>? summaryLines = null,
+        CustomsPrintDocumentKind? kind = null);
 
+    /// <summary>Export report PDF after <c>EnsureExport(screenName)</c>.</summary>
     string ExportReportPdf(
-        CustomsPrintDocumentKind kind,
-        StatementPrintModel model);
+        string screenName,
+        StatementPrintModel model,
+        CustomsPrintDocumentKind? kind = null);
+
+    /// <summary>Export report Excel after <c>EnsureExport(screenName)</c>.</summary>
+    void ExportReportExcel(
+        string screenName,
+        string filePath,
+        string sheetName,
+        string[] columns,
+        IList<object[]> rows);
 }

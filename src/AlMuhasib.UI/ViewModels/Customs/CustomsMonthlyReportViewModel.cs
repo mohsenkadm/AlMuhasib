@@ -47,6 +47,7 @@ public partial class CustomsMonthlyReportViewModel : CustomsReportViewModelBase
     public override async Task InitializeAsync()
     {
         LoadPermissions(CurrentUserService, CustomsPermissionRegistry.Reports);
+        PermissionScreen = CustomsPermissionRegistry.Reports;
         CanViewExpenses = CurrentUserService.IsAdmin
             || CurrentUserService.CanView(CustomsPermissionRegistry.Expenses);
         CanViewProfit = CurrentUserService.IsAdmin

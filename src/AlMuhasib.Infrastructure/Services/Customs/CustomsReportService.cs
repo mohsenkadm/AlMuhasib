@@ -49,8 +49,9 @@ public sealed class CustomsReportService : ICustomsReportService
         var toEx = from.AddDays(1);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
+        // H-01: daily invoice revenue aggregates (and invoice rows) use Approved only.
         var invoices = await db.CustomsInvoices.AsNoTracking()
-            .Where(i => i.Status != CustomsInvoiceStatus.Cancelled
+            .Where(i => i.Status == CustomsInvoiceStatus.Approved
                         && i.InvoiceDate >= from && i.InvoiceDate < toEx
                         && (!customerId.HasValue || i.CustomerId == customerId.Value))
             .Select(i => new
@@ -167,8 +168,9 @@ public sealed class CustomsReportService : ICustomsReportService
         var toEx = toDate.Date.AddDays(1);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
+        // H-01: monthly invoice revenue + internal profit from Approved only.
         var invoices = await db.CustomsInvoices.AsNoTracking()
-            .Where(i => i.Status != CustomsInvoiceStatus.Cancelled
+            .Where(i => i.Status == CustomsInvoiceStatus.Approved
                         && i.InvoiceDate >= from && i.InvoiceDate < toEx)
             .Select(i => new { i.Id, i.InvoiceDate, i.Currency, i.TotalAmount })
             .ToListAsync(cancellationToken);
@@ -294,8 +296,9 @@ public sealed class CustomsReportService : ICustomsReportService
             .Select(c => new { c.Id, c.Name, c.Phone, c.BalanceIqd, c.BalanceUsd })
             .ToListAsync(cancellationToken);
 
+        // H-01: customer revenue / paid / remaining period aggregates from Approved only.
         var invoices = await db.CustomsInvoices.AsNoTracking()
-            .Where(i => i.Status != CustomsInvoiceStatus.Cancelled
+            .Where(i => i.Status == CustomsInvoiceStatus.Approved
                         && i.InvoiceDate >= from && i.InvoiceDate < toEx
                         && (!customerId.HasValue || i.CustomerId == customerId.Value))
             .Select(i => new
@@ -412,15 +415,21 @@ public sealed class CustomsReportService : ICustomsReportService
             RemainingAmount = i.RemainingAmount
         }).ToList();
 
+        // H-01: when no explicit status filter, revenue-like totals use Approved only;
+        // with an explicit status filter, totals match the displayed rows.
+        var totalsSource = status.HasValue
+            ? data
+            : data.Where(i => i.Status == CustomsInvoiceStatus.Approved).ToList();
+
         return new CustomsInvoiceReportResult
         {
             Count = rows.Count,
-            TotalIqd = data.Where(i => i.Currency == AccountingCurrency.IQD).Sum(i => i.TotalAmount),
-            TotalUsd = data.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.TotalAmount),
-            PaidIqd = data.Where(i => i.Currency == AccountingCurrency.IQD).Sum(i => i.PaidAmount),
-            PaidUsd = data.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.PaidAmount),
-            RemainingIqd = data.Where(i => i.Currency == AccountingCurrency.IQD).Sum(i => i.RemainingAmount),
-            RemainingUsd = data.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.RemainingAmount),
+            TotalIqd = totalsSource.Where(i => i.Currency == AccountingCurrency.IQD).Sum(i => i.TotalAmount),
+            TotalUsd = totalsSource.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.TotalAmount),
+            PaidIqd = totalsSource.Where(i => i.Currency == AccountingCurrency.IQD).Sum(i => i.PaidAmount),
+            PaidUsd = totalsSource.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.PaidAmount),
+            RemainingIqd = totalsSource.Where(i => i.Currency == AccountingCurrency.IQD).Sum(i => i.RemainingAmount),
+            RemainingUsd = totalsSource.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.RemainingAmount),
             StatusChart = data
                 .GroupBy(i => CustomsInvoiceStatusDisplay.ToArabic(i.Status))
                 .Select(g => new CustomsReportNameAmountPoint { Name = g.Key, Amount = g.Count() })
@@ -592,8 +601,9 @@ public sealed class CustomsReportService : ICustomsReportService
         var toEx = toDate.Date.AddDays(1);
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
+        // H-01: profit / revenue report uses Approved invoices only (excludes Draft and Cancelled).
         var query = db.CustomsInvoices.AsNoTracking()
-            .Where(i => i.Status != CustomsInvoiceStatus.Cancelled
+            .Where(i => i.Status == CustomsInvoiceStatus.Approved
                         && i.InvoiceDate >= from && i.InvoiceDate < toEx);
 
         if (customerId.HasValue)
