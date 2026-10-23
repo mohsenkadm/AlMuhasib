@@ -169,11 +169,15 @@ public class CustomsDbContext : DbContext
             }
         }
 
-        // InMemory (and any provider that does not auto-generate rowversion) needs a value on insert.
+        // InMemory / SQLite (providers that do not auto-generate rowversion) need a concrete value on insert.
+        // IsRowVersion() marks the property store-generated; force the client byte[] into the INSERT.
         foreach (var entry in ChangeTracker.Entries<BaseEntity>().Where(e => e.State == EntityState.Added))
         {
             if (entry.Entity.RowVersion is null || entry.Entity.RowVersion.Length == 0)
                 entry.Entity.RowVersion = [1];
+            var rowVersion = entry.Property(nameof(BaseEntity.RowVersion));
+            rowVersion.CurrentValue = entry.Entity.RowVersion;
+            rowVersion.IsTemporary = false;
         }
 
         var result = await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

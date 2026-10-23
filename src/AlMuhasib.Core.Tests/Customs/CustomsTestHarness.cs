@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Constants;
+using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Entities.Customs;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Enums.Customs;
@@ -7,7 +8,9 @@ using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models.Customs;
 using AlMuhasib.Infrastructure.Data.Customs;
 using AlMuhasib.Infrastructure.Services.Customs;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace AlMuhasib.Core.Tests.Customs;
 
@@ -81,14 +84,47 @@ internal sealed class CustomsDbFactory : IDbContextFactory<CustomsDbContext>
 {
     private readonly DbContextOptions<CustomsDbContext> _options;
     private readonly ICurrentUserService _user;
+    private readonly bool _sqliteRowVersion;
 
-    public CustomsDbFactory(DbContextOptions<CustomsDbContext> options, ICurrentUserService user)
+    public CustomsDbFactory(
+        DbContextOptions<CustomsDbContext> options,
+        ICurrentUserService user,
+        bool sqliteRowVersion = false)
     {
         _options = options;
         _user = user;
+        _sqliteRowVersion = sqliteRowVersion;
     }
 
-    public CustomsDbContext CreateDbContext() => new(_options, _user);
+    public CustomsDbContext CreateDbContext() =>
+        _sqliteRowVersion
+            ? new CustomsSqliteTestDbContext(_options, _user)
+            : new CustomsDbContext(_options, _user);
+}
+
+/// <summary>
+/// SQLite test context: IsRowVersion() is SQL Server-oriented; force client-supplied RowVersion bytes.
+/// </summary>
+internal sealed class CustomsSqliteTestDbContext : CustomsDbContext
+{
+    public CustomsSqliteTestDbContext(DbContextOptions<CustomsDbContext> options, ICurrentUserService? user)
+        : base(options, user)
+    {
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (!typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
+                continue;
+
+            modelBuilder.Entity(entityType.ClrType)
+                .Property(nameof(BaseEntity.RowVersion))
+                .ValueGeneratedNever();
+        }
+    }
 }
 
 internal sealed class FakeExportService : IExportService
@@ -152,7 +188,7 @@ internal sealed class FakeExportService : IExportService
         throw new NotSupportedException();
 }
 
-internal sealed class CustomsTestHarness
+internal sealed class CustomsTestHarness : IAsyncDisposable
 {
     public CustomsFakeUser User { get; }
     public CustomsDbFactory Factory { get; }
@@ -165,13 +201,48 @@ internal sealed class CustomsTestHarness
     public CustomsPrintService Print { get; }
     public FakeExportService Export { get; }
 
-    private CustomsTestHarness(CustomsFakeUser user)
+    private readonly SqliteConnection? _sqliteConnection;
+
+    private CustomsTestHarness(CustomsFakeUser user, bool useSqliteTransactions)
     {
         User = user;
-        var options = new DbContextOptionsBuilder<CustomsDbContext>()
-            .UseInMemoryDatabase($"customs-tests-{Guid.NewGuid():N}")
-            .Options;
-        Factory = new CustomsDbFactory(options, user);
+        DbContextOptions<CustomsDbContext> options;
+        if (useSqliteTransactions)
+        {
+            // Shared in-memory SQLite supports real transactions (InMemory does not roll back).
+            _sqliteConnection = new SqliteConnection($"Data Source=customs-tx-{Guid.NewGuid():N};Mode=Memory;Cache=Shared");
+            _sqliteConnection.Open();
+            options = new DbContextOptionsBuilder<CustomsDbContext>()
+                .UseSqlite(_sqliteConnection)
+                .Options;
+            using var bootstrap = new CustomsSqliteTestDbContext(options, user);
+            bootstrap.Database.EnsureCreated();
+            // AuditLog.UserId FK is enforced on SQLite (InMemory is lax) — seed the current test user.
+            if (user.UserId is int uid && !bootstrap.Users.Any(u => u.Id == uid))
+            {
+                bootstrap.Users.Add(new User
+                {
+                    Id = uid,
+                    Username = user.Username,
+                    PasswordHash = "test",
+                    FullName = user.Username,
+                    Role = user.Role,
+                    IsActive = true,
+                    RowVersion = [1]
+                });
+                bootstrap.SaveChanges();
+            }
+        }
+        else
+        {
+            // Receipt services use real transactions; InMemory ignores them — suppress the warning as error.
+            options = new DbContextOptionsBuilder<CustomsDbContext>()
+                .UseInMemoryDatabase($"customs-tests-{Guid.NewGuid():N}")
+                .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+                .Options;
+        }
+
+        Factory = new CustomsDbFactory(options, user, sqliteRowVersion: useSqliteTransactions);
         Permissions = new CustomsPermissionGuard(user);
         Export = new FakeExportService();
         Customers = new CustomsCustomerService(Factory, Permissions);
@@ -190,7 +261,20 @@ internal sealed class CustomsTestHarness
             Role = UserRole.Admin,
             Username = "admin"
         };
-        return new CustomsTestHarness(user);
+        return new CustomsTestHarness(user, useSqliteTransactions: false);
+    }
+
+    /// <summary>SQLite shared-memory harness for transaction/rollback coverage (C-01).</summary>
+    public static CustomsTestHarness CreateAdminTransactional()
+    {
+        var user = new CustomsFakeUser
+        {
+            IsAdmin = true,
+            Role = UserRole.Admin,
+            Username = "admin",
+            UserId = 1
+        };
+        return new CustomsTestHarness(user, useSqliteTransactions: true);
     }
 
     public static CustomsTestHarness CreateUser(Action<CustomsFakeUser>? configure = null)
@@ -202,7 +286,13 @@ internal sealed class CustomsTestHarness
             Username = "clerk"
         };
         configure?.Invoke(user);
-        return new CustomsTestHarness(user);
+        return new CustomsTestHarness(user, useSqliteTransactions: false);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_sqliteConnection is not null)
+            await _sqliteConnection.DisposeAsync();
     }
 
     public async Task<CustomsCustomer> SeedCustomerAsync(string name = "عميل اختبار", string phone = "07700000000")
@@ -288,6 +378,19 @@ internal sealed class CustomsTestHarness
         decimal amount,
         AccountingCurrency currency,
         decimal? fxRate = null) =>
+        ReceiptRequest(
+            customerId,
+            amount,
+            currency,
+            [(invoiceId, amount)],
+            fxRate);
+
+    public static CustomsReceiptSaveRequest ReceiptRequest(
+        int customerId,
+        decimal amount,
+        AccountingCurrency currency,
+        IReadOnlyList<(int InvoiceId, decimal Amount)> allocations,
+        decimal? fxRate = null) =>
         new()
         {
             CustomerId = customerId,
@@ -298,13 +401,12 @@ internal sealed class CustomsTestHarness
             PaymentMethod = CustomsPaymentMethod.Cash,
             ReceiverName = "صندوق",
             UserName = "tester",
-            Allocations =
-            [
-                new CustomsReceiptAllocationDraft
+            Allocations = allocations
+                .Select(a => new CustomsReceiptAllocationDraft
                 {
-                    InvoiceId = invoiceId,
-                    Amount = amount
-                }
-            ]
+                    InvoiceId = a.InvoiceId,
+                    Amount = a.Amount
+                })
+                .ToList()
         };
 }
