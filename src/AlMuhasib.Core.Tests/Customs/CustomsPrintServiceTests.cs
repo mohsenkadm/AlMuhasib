@@ -32,6 +32,41 @@ public class CustomsPrintServiceTests
         Assert.Equal("ملاحظات للعميل", model.Notes);
         Assert.DoesNotContain(model.Items, i => i.ItemName.Contains("مصروف", StringComparison.Ordinal));
         Assert.DoesNotContain(model.Items, i => (i.ItemName ?? "").Contains("ربح", StringComparison.Ordinal));
+        Assert.True(model.IsCustomsDailyInvoice);
+        Assert.NotNull(model.CustomsDaily);
+        Assert.Equal(customer.Name, model.CustomsDaily!.CustomerName);
+        Assert.Equal(200_000m, model.CustomsDaily.TotalClearanceFees);
+        // Default seed type «رسوم حدود» maps to Duty on the daily form.
+        Assert.Equal(25_000m, model.CustomsDaily.TotalDuties);
+        Assert.Equal("A4Landscape", model.PaperSize);
+    }
+
+    [Fact]
+    public async Task BuildDailyInvoice_maps_vehicle_identity_columns()
+    {
+        var h = CustomsTestHarness.CreateAdmin();
+        var customer = await h.SeedCustomerAsync();
+        var inv = await h.Invoices.CreateAsync(
+            CustomsTestHarness.InvoiceRequest(customer.Id, AccountingCurrency.IQD, 150_000m));
+
+        // Reload detail shape used by print (vehicles with plates/drivers from seed helper)
+        var detail = await h.Invoices.GetByIdAsync(inv.Id);
+        Assert.NotNull(detail);
+        if (detail!.Vehicles.Count > 0)
+        {
+            detail.Vehicles[0].IraqiDriver = "سائق اختبار";
+            detail.Vehicles[0].IraqiPlate = "12أ3456";
+            detail.Vehicles[0].UnloadingDate = new DateTime(2026, 10, 12);
+            detail.Vehicles[0].SerialNumber = "11";
+        }
+
+        var model = h.Print.BuildDailyInvoice(detail, customer.Phone);
+        var row = Assert.Single(model.CustomsDaily!.Rows);
+        Assert.Equal("سائق اختبار", row.DriverName);
+        Assert.Equal("12أ3456", row.WheelNumber);
+        Assert.Equal("2026/10/12", row.UnloadingDate);
+        Assert.Contains("11", row.Consignment);
+        Assert.Equal(150_000m, row.ClearanceFees);
     }
 
     [Fact]
