@@ -100,9 +100,29 @@
                     <ItemsControl ItemsSource="{Binding Steps}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
+                                <StackPanel Margin="0,0,0,10">
+                                    <TextBlock Text="{Binding SectionHeader}"
+                                               FontSize="11.5" FontWeight="Bold"
+                                               Margin="4,4,4,8" Opacity="0.72"
+                                               Foreground="{DynamicResource TextSecondaryBrush}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <MultiDataTrigger>
+                                                        <MultiDataTrigger.Conditions>
+                                                            <Condition Binding="{Binding HasSectionHeader}" Value="True"/>
+                                                            <Condition Binding="{Binding DataContext.IsStepsPanelCollapsed, ElementName=Root}" Value="False"/>
+                                                        </MultiDataTrigger.Conditions>
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </MultiDataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
                                 <Button Command="{Binding DataContext.GoToStepCommand, ElementName=Root}"
                                         CommandParameter="{Binding}"
-                                        Margin="0,0,0,10" Cursor="Hand"
+                                        Cursor="Hand"
                                         MinHeight="44" HorizontalAlignment="Stretch"
                                         HorizontalContentAlignment="Stretch"
                                         ToolTip="{Binding ShortTitle}">
@@ -227,6 +247,7 @@
                                         </md:PackIcon>
                                     </Grid>
                                 </Button>
+                                </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
@@ -259,6 +280,8 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel>
+                        <TextBlock Text="{Binding CurrentStepBadgeText}" FontSize="12" Foreground="#BBDEFB"
+                                   Margin="0,0,0,4" Opacity="0.95"/>
                         <TextBlock Text="{Binding StepTitle}" FontSize="20" FontWeight="Bold" Foreground="White"/>
                         <TextBlock Text="{Binding StepDescription}" FontSize="13" Foreground="#E3F2FD"
                                    TextWrapping="Wrap" Margin="0,6,0,0" MaxWidth="640"/>
@@ -595,7 +618,7 @@
                                             Padding="12,7" Margin="0,0,6,0" md:ButtonAssist.CornerRadius="8">
                                         <StackPanel Orientation="Horizontal">
                                             <md:PackIcon Kind="TableRowPlusAfter" VerticalAlignment="Center"/>
-                                            <TextBlock Text="صفوف إضافية" Margin="6,0,0,0"/>
+                                            <TextBlock Text="إضافة 3 صفوف" Margin="6,0,0,0"/>
                                         </StackPanel>
                                     </Button>
                                     <Button Command="{Binding ClearRowsCommand}" Style="{StaticResource OutlinedButton}"
@@ -668,6 +691,9 @@
                                       MaxHeight="460"
                                       ColumnHeaderHeight="72"
                                       RowHeight="42"
+                                      FrozenColumnCount="1"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Auto"
                                       Style="{StaticResource ModernDataGrid}"
                                       IsReadOnly="False"
                                       behaviors:DataGridCopyableCellsBehavior.IsEnabled="False"
@@ -694,7 +720,9 @@
                                   SelectionMode="Single"
                                   EnableRowVirtualization="True"
                                   EnableColumnVirtualization="True"
-                                  FrozenColumnCount="0"
+                                  FrozenColumnCount="1"
+                                  HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto"
                                   behaviors:DataGridCopyableCellsBehavior.IsEnabled="False"
                                   RowStyle="{StaticResource ModernDataGridRow}"
                                   FontSize="13.5">
@@ -703,15 +731,16 @@
                                                     Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
                                                     Width="180" MinWidth="140">
                                     <DataGridTextColumn.Header>
-                                        <TextBlock x:Name="ColNameHeaderText" Text="الاسم" FontWeight="SemiBold" FontSize="12.5"
-                                                   TextWrapping="Wrap" TextAlignment="Center"/>
+                                        <TextBlock x:Name="ColNameHeaderText" Text="الاسم *" FontWeight="SemiBold" FontSize="12.5"
+                                                   TextWrapping="Wrap" TextAlignment="Center"
+                                                   ToolTip="حقل إلزامي"/>
                                     </DataGridTextColumn.Header>
                                 </DataGridTextColumn>
                                 <DataGridTemplateColumn x:Name="ColBranch" Width="160" MinWidth="130">
                                     <DataGridTemplateColumn.Header>
-                                        <TextBlock Text="الفرع" FontWeight="SemiBold" FontSize="12.5"
+                                        <TextBlock Text="الفرع *" FontWeight="SemiBold" FontSize="12.5"
                                                    TextAlignment="Center"
-                                                   ToolTip="اختر الفرع الذي يتبعه هذا المخزن"/>
+                                                   ToolTip="حقل إلزامي — اختر الفرع الذي يتبعه هذا المخزن"/>
                                     </DataGridTemplateColumn.Header>
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
@@ -860,21 +889,31 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <Button Grid.Column="0" Command="{Binding PreviousStepCommand}"
-                            Visibility="{Binding CanGoBack, Converter={StaticResource BoolVis}}"
-                            Style="{StaticResource OutlinedButton}" md:ButtonAssist.CornerRadius="8" MinWidth="100"
-                            IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="ArrowRight" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="السابق"/>
-                        </StackPanel>
-                    </Button>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Command="{Binding PreviousStepCommand}"
+                                Visibility="{Binding CanGoBack, Converter={StaticResource BoolVis}}"
+                                Style="{StaticResource OutlinedButton}" md:ButtonAssist.CornerRadius="8" MinWidth="100"
+                                IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
+                            <StackPanel Orientation="Horizontal">
+                                <md:PackIcon Kind="ArrowRight" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="السابق"/>
+                            </StackPanel>
+                        </Button>
+                        <TextBlock Text="{Binding FooterProgressText}" Margin="14,0,0,0"
+                                   VerticalAlignment="Center" FontSize="12.5"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        <TextBlock Text="جاري الحفظ…" Margin="12,0,0,0" VerticalAlignment="Center"
+                                   FontSize="12.5" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource PrimaryHueMidBrush}"
+                                   Visibility="{Binding IsBusy, Converter={StaticResource BoolVis}}"/>
+                    </StackPanel>
 
                     <StackPanel Grid.Column="2" Orientation="Horizontal">
                         <Button Command="{Binding SkipStepCommand}"
                                 Visibility="{Binding CanSkip, Converter={StaticResource BoolVis}}"
                                 Style="{StaticResource OutlinedButton}" md:ButtonAssist.CornerRadius="8"
                                 MinWidth="100" Margin="0,0,8,0"
+                                ToolTip="تخطي هذه الخطوة الاختيارية دون حفظ صفوف"
                                 IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
                             <StackPanel Orientation="Horizontal">
                                 <md:PackIcon Kind="SkipNext" VerticalAlignment="Center" Margin="0,0,6,0"/>
@@ -884,6 +923,7 @@
 
                         <Button Command="{Binding SaveCurrentStepCommand}" Style="{StaticResource OutlinedButton}"
                                 md:ButtonAssist.CornerRadius="8" MinWidth="120" Margin="0,0,8,0"
+                                ToolTip="حفظ بيانات هذه الخطوة فقط دون الانتقال"
                                 IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}">
                             <StackPanel Orientation="Horizontal">
                                 <md:PackIcon Kind="ContentSaveOutline" VerticalAlignment="Center" Margin="0,0,6,0"/>
@@ -893,6 +933,7 @@
 
                         <Button Command="{Binding NextStepCommand}" Style="{StaticResource PrimaryButton}"
                                 md:ButtonAssist.CornerRadius="8" MinWidth="150"
+                                ToolTip="حفظ التغييرات إن وُجدت ثم الانتقال للخطوة التالية"
                                 IsEnabled="{Binding CanGoNext}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock>
@@ -903,6 +944,16 @@
                                                 <DataTrigger Binding="{Binding IsLastStep}" Value="True">
                                                     <Setter Property="Text" Value="حفظ وإنهاء"/>
                                                 </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsStepAlreadySavedClean}" Value="True">
+                                                    <Setter Property="Text" Value="التالي"/>
+                                                </DataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding IsLastStep}" Value="True"/>
+                                                        <Condition Binding="{Binding IsStepAlreadySavedClean}" Value="True"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Text" Value="إنهاء"/>
+                                                </MultiDataTrigger>
                                             </Style.Triggers>
                                         </Style>
                                     </TextBlock.Style>

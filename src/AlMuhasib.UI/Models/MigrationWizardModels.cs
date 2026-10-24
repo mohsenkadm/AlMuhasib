@@ -34,6 +34,11 @@ public partial class MigrationStepInfo : ObservableObject
     public bool IsOptional { get; set; } = true;
     public int StepNumber { get; set; }
 
+    /// <summary>عنوان قسم بصري يظهر فوق هذه الخطوة في شريط التنقل (لا يغيّر الترتيب).</summary>
+    public string? SectionHeader { get; set; }
+
+    public bool HasSectionHeader => !string.IsNullOrWhiteSpace(SectionHeader);
+
     [ObservableProperty] private bool _isActive;
     [ObservableProperty] private bool _isCompleted;
     [ObservableProperty] private bool _isSaved;
