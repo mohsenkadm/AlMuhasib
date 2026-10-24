@@ -273,7 +273,7 @@ public partial class CustomsStatementViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void Print()
+    private async Task Print()
     {
         if (!CanPrint)
         {
@@ -281,38 +281,26 @@ public partial class CustomsStatementViewModel : ViewModelBase
             return;
         }
 
-        if (_allRows.Count == 0)
+        if (SelectedCustomer is null)
         {
-            BeautifulMessageDialog.ShowWarning("لا توجد بيانات للطباعة");
+            BeautifulMessageDialog.ShowWarning("اختر العميل أولاً");
             return;
         }
 
-        var cols = new[] { "التاريخ", "البيان", "النوع", "العملة", "مدين", "دائن", "الرصيد" };
-        IList<object[]> rows = _allRows.Select(r => new object[]
+        try
         {
-            r.Date.ToString("yyyy/MM/dd"),
-            r.Description,
-            r.TransactionTypeLabel,
-            r.CurrencyLabel,
-            r.Debit.ToString("N0"),
-            r.Credit.ToString("N0"),
-            r.RunningBalance.ToString("N0")
-        }).ToList();
-
-        var model = _printService.BuildCustomerStatement(
-            CustomerName,
-            SelectedCustomer?.Phone,
-            DateFrom,
-            DateTo,
-            cols,
-            rows,
-            BuildSummaryLines());
-        model.Title = $"{model.Title} — {PeriodLabel}";
-        _printService.PrintCustomerStatement(model);
+            var model = await BuildOutstandingPrintModelAsync();
+            if (model is null) return;
+            _printService.PrintCustomerStatement(model);
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
     }
 
     [RelayCommand]
-    private void ExportPdf()
+    private async Task ExportPdf()
     {
         if (!CanExport)
         {
@@ -320,40 +308,22 @@ public partial class CustomsStatementViewModel : ViewModelBase
             return;
         }
 
-        if (_allRows.Count == 0 || SelectedCustomer is null)
+        if (SelectedCustomer is null)
         {
-            BeautifulMessageDialog.ShowWarning("يرجى تحميل كشف الحساب أولاً");
+            BeautifulMessageDialog.ShowWarning("يرجى اختيار العميل وتحميل كشف الحساب أولاً");
             return;
         }
 
         try
         {
-            var cols = new[] { "التاريخ", "البيان", "النوع", "العملة", "مدين", "دائن", "الرصيد" };
-            IList<object[]> rows = _allRows.Select(r => new object[]
-            {
-                r.Date.ToString("yyyy/MM/dd"),
-                r.Description,
-                r.TransactionTypeLabel,
-                r.CurrencyLabel,
-                r.Debit,
-                r.Credit,
-                r.RunningBalance
-            }).ToList();
-
-            var model = _printService.BuildCustomerStatement(
-                CustomerName,
-                SelectedCustomer.Phone,
-                DateFrom,
-                DateTo,
-                cols,
-                rows,
-                BuildSummaryLines());
+            var model = await BuildOutstandingPrintModelAsync();
+            if (model is null) return;
 
             var temp = _printService.ExportCustomerStatementPdf(model);
             var dlg = new SaveFileDialog
             {
                 Filter = "PDF (*.pdf)|*.pdf",
-                FileName = $"كشف_حساب_{CustomerName}_{DateTime.Now:yyyyMMdd}.pdf",
+                FileName = $"مطالبة_دين_{CustomerName}_{DateTime.Now:yyyyMMdd}.pdf",
                 DefaultExt = ".pdf"
             };
             if (dlg.ShowDialog() == true)
@@ -372,13 +342,22 @@ public partial class CustomsStatementViewModel : ViewModelBase
         }
     }
 
-    private List<string> BuildSummaryLines() =>
-    [
-        $"الفترة: {PeriodLabel}",
-        $"عدد الحركات: {TransactionCount}",
-        $"مدين د.ع: {TotalDebitIqd} — دائن د.ع: {TotalCreditIqd} — الرصيد د.ع: {BalanceIqd}",
-        $"مدين $: {TotalDebitUsd} — دائن $: {TotalCreditUsd} — الرصيد $: {BalanceUsd}"
-    ];
+    private async Task<StatementPrintModel?> BuildOutstandingPrintModelAsync()
+    {
+        var claim = await _statementService.GetOutstandingClaimAsync(
+            SelectedCustomer!.Id,
+            DateFrom,
+            DateTo,
+            SelectedInvoiceOption?.Id);
+
+        if (claim.Invoices.Count == 0)
+        {
+            BeautifulMessageDialog.ShowWarning("لا يوجد دين متبقي للطباعة ضمن الفلاتر الحالية");
+            return null;
+        }
+
+        return _printService.BuildOutstandingBalanceStatement(claim);
+    }
 
     private string BuildPeriodLabel()
     {
