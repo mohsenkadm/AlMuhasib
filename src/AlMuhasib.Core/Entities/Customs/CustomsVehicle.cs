@@ -19,6 +19,8 @@ public class CustomsVehicle : BaseEntity
     public DateTime? WarehouseArrivalDate { get; set; }
     public DateTime? UnloadingDate { get; set; }
     public decimal VehiclePrice { get; set; }
+    /// <summary>Delay penalty (غرامات تأخيرية) — used on internal transport invoices.</summary>
+    public decimal DelayPenaltyAmount { get; set; }
     public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public CustomsVehicleStatus Status { get; set; } = CustomsVehicleStatus.InProgress;
     public string Notes { get; set; } = string.Empty;

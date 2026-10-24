@@ -11,6 +11,10 @@ public class CustomsInvoice : BaseEntity
     public string InvoiceNumber { get; set; } = string.Empty;
     public DateTime InvoiceDate { get; set; } = DateTime.Today;
     public CustomsServiceType ServiceType { get; set; } = CustomsServiceType.Clearance;
+    /// <summary>Internal/External when <see cref="ServiceType"/> is Transport; ignored otherwise.</summary>
+    public CustomsTransportKind? TransportKind { get; set; }
+    /// <summary>Internal transport route, e.g. من منفذ ربيعة ← إلى بغداد.</summary>
+    public string TransportRoute { get; set; } = string.Empty;
     public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public decimal FxRate { get; set; } = 1m;
     public string Description { get; set; } = string.Empty;

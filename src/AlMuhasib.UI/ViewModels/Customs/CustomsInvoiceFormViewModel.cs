@@ -29,6 +29,11 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     [ObservableProperty] private DateTime _invoiceDate = DateTime.Today;
     [ObservableProperty] private CustomsCustomerListItem? _selectedCustomer;
     [ObservableProperty] private CustomsServiceType _serviceType = CustomsServiceType.Clearance;
+    [ObservableProperty] private CustomsTransportKind _transportKind = CustomsTransportKind.Internal;
+    [ObservableProperty] private bool _showTransportKind;
+    [ObservableProperty] private bool _showTransportRoute;
+    [ObservableProperty] private bool _showDelayPenaltyColumn;
+    [ObservableProperty] private string _transportRoute = string.Empty;
     [ObservableProperty] private AccountingCurrency _currency = AccountingCurrency.IQD;
     [ObservableProperty] private decimal _fxRate = 1m;
     [ObservableProperty] private bool _showFxRate;
@@ -84,6 +89,12 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         new(CustomsServiceType.Clearance, CustomsServiceTypeDisplay.ToArabic(CustomsServiceType.Clearance)),
         new(CustomsServiceType.Transport, CustomsServiceTypeDisplay.ToArabic(CustomsServiceType.Transport)),
         new(CustomsServiceType.ClearanceAndTransport, CustomsServiceTypeDisplay.ToArabic(CustomsServiceType.ClearanceAndTransport))
+    ];
+
+    public IReadOnlyList<CustomsTransportKindOption> TransportKindOptions { get; } =
+    [
+        new(CustomsTransportKind.Internal, CustomsTransportKindDisplay.ToArabic(CustomsTransportKind.Internal)),
+        new(CustomsTransportKind.External, CustomsTransportKindDisplay.ToArabic(CustomsTransportKind.External))
     ];
 
     public IReadOnlyList<CustomsCurrencyOption> CurrencyOptions { get; } =
@@ -163,6 +174,7 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
 
     private void ApplyPendingServiceType()
     {
+        UpdateTransportUiFlags();
         var pendingType = CustomsInvoiceNavigationBridge.TakePendingServiceType();
         if (pendingType is null || _editId.HasValue)
             return;
@@ -208,6 +220,9 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         InvoiceDate = DateTime.Today;
         SelectedCustomer = null;
         ServiceType = CustomsServiceType.Clearance;
+        TransportKind = CustomsTransportKind.Internal;
+        TransportRoute = string.Empty;
+        UpdateTransportUiFlags();
         Currency = AccountingCurrency.IQD;
         FxRate = 1m;
         ShowFxRate = false;
@@ -256,6 +271,9 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
                 Customers.Insert(0, SelectedCustomer);
 
             ServiceType = detail.ServiceType;
+            TransportKind = detail.TransportKind ?? CustomsTransportKind.Internal;
+            TransportRoute = detail.TransportRoute ?? string.Empty;
+            UpdateTransportUiFlags();
             Currency = detail.Currency;
             FxRate = detail.FxRate;
             ShowFxRate = detail.Currency == AccountingCurrency.USD;
@@ -302,6 +320,27 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         RecalculateTotals();
     }
 
+    partial void OnServiceTypeChanged(CustomsServiceType value)
+    {
+        if (value == CustomsServiceType.Transport && TransportKind == default)
+            TransportKind = CustomsTransportKind.Internal;
+        UpdateTransportUiFlags();
+        RecalculateTotals();
+    }
+
+    partial void OnTransportKindChanged(CustomsTransportKind value)
+    {
+        UpdateTransportUiFlags();
+        RecalculateTotals();
+    }
+
+    private void UpdateTransportUiFlags()
+    {
+        ShowTransportKind = ServiceType == CustomsServiceType.Transport;
+        ShowTransportRoute = ShowTransportKind && TransportKind == CustomsTransportKind.Internal;
+        ShowDelayPenaltyColumn = ShowTransportRoute;
+    }
+
     partial void OnDiscountAmountChanged(decimal value) => RecalculateTotals();
 
     partial void OnVehicleSearchTextChanged(string value) => RefreshFilteredVehicles();
@@ -337,8 +376,11 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     private void RecalculateTotals()
     {
         VehiclesSum = Vehicles.Sum(v => v.VehiclePrice);
-        // Revenue = vehicles − discount (customer paid/remaining balance is NOT profit)
-        TotalAmount = Math.Max(0, VehiclesSum - DiscountAmount);
+        var delaySum = ShowDelayPenaltyColumn
+            ? Vehicles.Sum(v => v.DelayPenaltyAmount)
+            : 0m;
+        // Revenue = vehicles (+ internal delay penalties) − discount
+        TotalAmount = Math.Max(0, VehiclesSum + delaySum - DiscountAmount);
         RemainingAmount = Math.Max(0, TotalAmount - PaidAmount);
         RecalculateInternalProfit();
     }
@@ -810,6 +852,8 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
             CustomerId = SelectedCustomer.Id,
             InvoiceDate = InvoiceDate,
             ServiceType = ServiceType,
+            TransportKind = ServiceType == CustomsServiceType.Transport ? TransportKind : null,
+            TransportRoute = ShowTransportRoute ? TransportRoute : string.Empty,
             Currency = Currency,
             FxRate = Currency == AccountingCurrency.USD ? FxRate : 1m,
             Description = Description,
@@ -1058,6 +1102,7 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
 }
 
 public sealed record CustomsServiceTypeOption(CustomsServiceType Value, string Label);
+public sealed record CustomsTransportKindOption(CustomsTransportKind Value, string Label);
 public sealed record CustomsCurrencyOption(AccountingCurrency Value, string Label);
 public sealed record CustomsVehicleStatusOption(CustomsVehicleStatus Value, string Label);
 
@@ -1077,12 +1122,15 @@ public partial class CustomsInvoiceVehicleRow : ObservableObject
     [ObservableProperty] private DateTime? _warehouseArrivalDate;
     [ObservableProperty] private DateTime? _unloadingDate;
     [ObservableProperty] private decimal _vehiclePrice;
+    [ObservableProperty] private decimal _delayPenaltyAmount;
     [ObservableProperty] private CustomsVehicleStatus _status = CustomsVehicleStatus.InProgress;
     [ObservableProperty] private string _notes = string.Empty;
 
     public string StatusLabel => CustomsVehicleStatusDisplay.ToArabic(Status);
 
     partial void OnVehiclePriceChanged(decimal value) => PriceChanged?.Invoke();
+
+    partial void OnDelayPenaltyAmountChanged(decimal value) => PriceChanged?.Invoke();
 
     partial void OnStatusChanged(CustomsVehicleStatus value) =>
         OnPropertyChanged(nameof(StatusLabel));
@@ -1101,6 +1149,7 @@ public partial class CustomsInvoiceVehicleRow : ObservableObject
         WarehouseArrivalDate = d.WarehouseArrivalDate,
         UnloadingDate = d.UnloadingDate,
         VehiclePrice = d.VehiclePrice,
+        DelayPenaltyAmount = d.DelayPenaltyAmount,
         Status = d.Status,
         Notes = d.Notes
     };
@@ -1119,6 +1168,7 @@ public partial class CustomsInvoiceVehicleRow : ObservableObject
         WarehouseArrivalDate = WarehouseArrivalDate,
         UnloadingDate = UnloadingDate,
         VehiclePrice = VehiclePrice,
+        DelayPenaltyAmount = DelayPenaltyAmount,
         Status = Status,
         Notes = Notes
     };

@@ -1,9 +1,12 @@
+using System.Globalization;
 using AlMuhasib.Core.Constants;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Customs;
 using AlMuhasib.Core.Models.Customs;
+using AlMuhasib.Core.Utilities;
 
 namespace AlMuhasib.Infrastructure.Services.Customs;
 
@@ -48,11 +51,49 @@ public sealed class CustomsPrintService : ICustomsPrintService
         return BuildDailyForm(detail, title, customerPhone);
     }
 
-    /// <summary>Transport — same daily landscape form with land-transport column emphasis.</summary>
+    /// <summary>
+    /// Transport — portrait internal/external forms matching company paper invoices.
+    /// Branding header from print settings is applied by the document/PDF builders.
+    /// </summary>
     public InvoicePrintModel BuildTransportInvoice(
         CustomsInvoiceDetail detail,
-        string? customerPhone = null) =>
-        BuildDailyForm(detail, "فاتورة نقل", customerPhone);
+        string? customerPhone = null)
+    {
+        var kind = detail.TransportKind ?? CustomsTransportKind.Internal;
+        var currency = string.IsNullOrWhiteSpace(detail.CurrencyLabel)
+            ? AccountingCurrencyHelper.GetLabel(detail.Currency)
+            : detail.CurrencyLabel;
+        var transport = BuildTransportData(detail, kind, currency);
+        var items = BuildLegacyItems(detail);
+        var subtotal = detail.VehiclesSum > 0
+            ? detail.VehiclesSum + detail.DelayPenaltiesSum
+            : detail.TotalAmount + detail.DiscountAmount;
+
+        return new InvoicePrintModel
+        {
+            Title = transport.Title,
+            InvoiceNumber = detail.InvoiceNumber,
+            Date = detail.InvoiceDate,
+            PartyLabel = kind == CustomsTransportKind.External ? "المستورد / الشركة" : "المطلوب من السادة",
+            PartyName = detail.CustomerName,
+            PartyPhone = customerPhone,
+            PaymentMethod = CustomsServiceTypeDisplay.ToArabic(detail.ServiceType, kind),
+            Notes = string.IsNullOrWhiteSpace(detail.CustomerNotes) ? null : detail.CustomerNotes,
+            Items = items,
+            Subtotal = subtotal,
+            DiscountAmount = detail.DiscountAmount,
+            GrandTotal = detail.TotalAmount,
+            PaidAmount = detail.PaidAmount,
+            RemainingAmount = detail.RemainingAmount,
+            CurrencyLabel = currency,
+            FxRate = detail.FxRate,
+            ShowCarShowroomFields = detail.Vehicles.Count > 0,
+            HideAmounts = false,
+            IsCustomsTransportInvoice = true,
+            CustomsTransport = transport,
+            PaperSize = "A4"
+        };
+    }
 
     public void PrintCustomerInvoice(
         CustomsInvoiceDetail detail,
@@ -209,6 +250,103 @@ public sealed class CustomsPrintService : ICustomsPrintService
             PaperSize = "A4Landscape"
             // InternalNotes / InternalProfit intentionally omitted
         };
+    }
+
+    private static CustomsTransportInvoicePrintData BuildTransportData(
+        CustomsInvoiceDetail detail,
+        CustomsTransportKind kind,
+        string currencyLabel)
+    {
+        var isUsd = detail.Currency == AccountingCurrency.USD
+                    || currencyLabel.Contains('$')
+                    || currencyLabel.Contains("دولار", StringComparison.Ordinal);
+        var rows = new List<CustomsTransportInvoicePrintRow>();
+        var n = 1;
+        foreach (var v in detail.Vehicles)
+        {
+            rows.Add(new CustomsTransportInvoicePrintRow
+            {
+                Number = n++,
+                ReferenceNumber = v.SerialNumber?.Trim() ?? string.Empty,
+                SyrianDriver = v.SyrianDriver?.Trim() ?? string.Empty,
+                SyrianPlate = v.SyrianPlate?.Trim() ?? string.Empty,
+                IraqiDriver = v.IraqiDriver?.Trim() ?? string.Empty,
+                IraqiPlate = v.IraqiPlate?.Trim() ?? string.Empty,
+                CargoType = v.CargoType?.Trim() ?? string.Empty,
+                LoadingDate = v.LoadingDate?.ToString("yyyy/M/d", CultureInfo.InvariantCulture) ?? string.Empty,
+                UnloadingDate = v.UnloadingDate?.ToString("yyyy/M/d", CultureInfo.InvariantCulture) ?? string.Empty,
+                DelayPenaltyAmount = v.DelayPenaltyAmount,
+                VehiclePrice = v.VehiclePrice,
+                Notes = v.Notes?.Trim() ?? string.Empty
+            });
+        }
+
+        var vehiclesSubtotal = rows.Sum(r => r.VehiclePrice);
+        var delayTotal = kind == CustomsTransportKind.Internal
+            ? rows.Sum(r => r.DelayPenaltyAmount)
+            : 0m;
+        var grand = detail.TotalAmount;
+
+        var priceGroups = rows
+            .GroupBy(r => r.VehiclePrice)
+            .OrderByDescending(g => g.Key)
+            .Select(g => new CustomsTransportPriceGroup
+            {
+                VehicleCount = g.Count(),
+                UnitPrice = g.Key,
+                LineTotal = g.Sum(x => x.VehiclePrice)
+            })
+            .ToList();
+
+        var wordsCurrency = isUsd ? "دولار أمريكي" : "دينار عراقي";
+        var fraction = isUsd ? "سنت" : "فلس";
+        var rawWords = ArabicAmountToWords.Convert(grand, wordsCurrency, fraction);
+        var coreWords = rawWords
+            .Replace(" فقط لا غير", string.Empty, StringComparison.Ordinal)
+            .Trim();
+        var amountInWords = kind == CustomsTransportKind.Internal
+            ? $"المبلغ فقط وقدره: {coreWords} لا غير."
+            : $"فقط {coreWords} لا غير";
+
+        return new CustomsTransportInvoicePrintData
+        {
+            TransportKind = kind,
+            Title = CustomsTransportKindDisplay.InvoiceTitle(kind),
+            InvoiceNumber = detail.InvoiceNumber,
+            InvoiceDate = detail.InvoiceDate,
+            CustomerName = AppendHonourific(detail.CustomerName),
+            TransportRoute = detail.TransportRoute?.Trim() ?? string.Empty,
+            ServiceDescription = string.IsNullOrWhiteSpace(detail.Description)
+                ? (kind == CustomsTransportKind.Internal
+                    ? $"شحن ونقل داخلي ({rows.Count} شاحنات)"
+                    : string.Empty)
+                : detail.Description.Trim(),
+            CurrencyLabel = isUsd ? "$" : "د.ع",
+            IsUsd = isUsd,
+            Rows = rows,
+            PriceGroups = priceGroups,
+            VehiclesSubtotal = vehiclesSubtotal,
+            DelayPenaltiesTotal = delayTotal,
+            GrandTotal = grand,
+            AmountInWords = amountInWords,
+            OrganizerLabel = kind == CustomsTransportKind.External
+                ? "توقيع وختم المنظم"
+                : "منظم الفاتورة",
+            RecipientLabel = kind == CustomsTransportKind.External
+                ? "توقيع المستلم"
+                : "المصادقة والإستلام"
+        };
+    }
+
+    private static string AppendHonourific(string name)
+    {
+        var trimmed = name?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(trimmed))
+            return string.Empty;
+        if (trimmed.Contains("المحترمين", StringComparison.Ordinal)
+            || trimmed.Contains("المحترم", StringComparison.Ordinal))
+            return trimmed;
+        return trimmed + " المحترمين";
     }
 
     private static CustomsDailyInvoicePrintData BuildDailyData(

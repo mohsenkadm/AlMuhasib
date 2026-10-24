@@ -130,6 +130,12 @@
                                       SelectedValuePath="Value" DisplayMemberPath="Label"
                                       md:HintAssist.Hint="نوع الخدمة"
                                       Style="{StaticResource FilledComboBox}" Margin="0,0,8,10"/>
+                            <ComboBox ItemsSource="{Binding TransportKindOptions}"
+                                      SelectedValue="{Binding TransportKind}"
+                                      SelectedValuePath="Value" DisplayMemberPath="Label"
+                                      md:HintAssist.Hint="نوع النقل *"
+                                      Style="{StaticResource FilledComboBox}" Margin="0,0,8,10"
+                                      Visibility="{Binding ShowTransportKind, Converter={StaticResource BoolToVis}}"/>
                             <ComboBox ItemsSource="{Binding CurrencyOptions}"
                                       SelectedValue="{Binding Currency}"
                                       SelectedValuePath="Value" DisplayMemberPath="Label"
@@ -140,8 +146,12 @@
                                      Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"
                                      Visibility="{Binding ShowFxRate, Converter={StaticResource BoolToVis}}"/>
                         </UniformGrid>
+                        <TextBox Text="{Binding TransportRoute, UpdateSourceTrigger=PropertyChanged}"
+                                 md:HintAssist.Hint="مسار النقل الداخلي (مثال: من منفذ ربيعة ← إلى بغداد)"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"
+                                 Visibility="{Binding ShowTransportRoute, Converter={StaticResource BoolToVis}}"/>
                         <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
-                                 md:HintAssist.Hint="الوصف"
+                                 md:HintAssist.Hint="الوصف / نوع الخدمة"
                                  Style="{StaticResource FilledTextBox}"
                                  TextWrapping="Wrap" AcceptsReturn="True" MinHeight="48"/>
                     </StackPanel>
@@ -215,18 +225,10 @@
                                   behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}"
                                   CellEditEnding="VehiclesGrid_OnCellEditEnding">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="تسلسل"
+                                <DataGridTextColumn Header="رقم الفاتورة / تسلسل"
                                                     Binding="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="90" MinWidth="80"
+                                                    Width="120" MinWidth="100"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SerialNumber"/>
-                                <DataGridTextColumn Header="لوحة عراقية"
-                                                    Binding="{Binding IraqiPlate, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="120" MinWidth="100"
-                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="IraqiPlate"/>
-                                <DataGridTextColumn Header="سائق عراقي"
-                                                    Binding="{Binding IraqiDriver, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="120" MinWidth="100"
-                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="IraqiDriver"/>
                                 <DataGridTextColumn Header="لوحة سورية"
                                                     Binding="{Binding SyrianPlate, UpdateSourceTrigger=PropertyChanged}"
                                                     Width="120" MinWidth="100"
@@ -235,6 +237,14 @@
                                                     Binding="{Binding SyrianDriver, UpdateSourceTrigger=PropertyChanged}"
                                                     Width="120" MinWidth="100"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SyrianDriver"/>
+                                <DataGridTextColumn Header="لوحة عراقية"
+                                                    Binding="{Binding IraqiPlate, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="120" MinWidth="100"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="IraqiPlate"/>
+                                <DataGridTextColumn Header="سائق عراقي"
+                                                    Binding="{Binding IraqiDriver, UpdateSourceTrigger=PropertyChanged}"
+                                                    Width="120" MinWidth="100"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="IraqiDriver"/>
                                 <DataGridTextColumn Header="الحمولة"
                                                     Binding="{Binding CargoType, UpdateSourceTrigger=PropertyChanged}"
                                                     Width="*" MinWidth="140"
@@ -243,6 +253,10 @@
                                                     Binding="{Binding VehiclePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                                                     Width="110" MinWidth="90"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="VehiclePrice"/>
+                                <DataGridTextColumn Header="غرامات تأخيرية"
+                                                    Binding="{Binding DelayPenaltyAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                                    Width="120" MinWidth="100"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DelayPenaltyAmount"/>
                                 <DataGridTemplateColumn Header="الحالة" Width="130" MinWidth="120"
                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StatusLabel">
                                     <DataGridTemplateColumn.CellTemplate>
@@ -543,7 +557,7 @@
                             <StackPanel>
                                 <UniformGrid Columns="3">
                                     <TextBox Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
-                                             md:HintAssist.Hint="التسلسل" Style="{StaticResource FilledTextBox}" Margin="0,0,8,10"/>
+                                             md:HintAssist.Hint="رقم الفاتورة / تسلسل" Style="{StaticResource FilledTextBox}" Margin="0,0,8,10"/>
                                     <TextBox Text="{Binding IraqiPlate, UpdateSourceTrigger=PropertyChanged}"
                                              md:HintAssist.Hint="لوحة عراقية" Style="{StaticResource FilledTextBox}" Margin="0,0,8,10"/>
                                     <TextBox Text="{Binding IraqiDriver, UpdateSourceTrigger=PropertyChanged}"
@@ -556,13 +570,16 @@
                                              md:HintAssist.Hint="نوع الحمولة" Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
                                     <TextBox Text="{Binding VehiclePrice, UpdateSourceTrigger=PropertyChanged}"
                                              md:HintAssist.Hint="السعر" Style="{StaticResource FilledTextBox}" Margin="0,0,8,10"/>
+                                    <TextBox Text="{Binding DelayPenaltyAmount, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="غرامات تأخيرية"
+                                             Style="{StaticResource FilledTextBox}" Margin="0,0,8,10"/>
                                     <ComboBox ItemsSource="{Binding DataContext.VehicleStatusOptions, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                               SelectedValue="{Binding Status, UpdateSourceTrigger=PropertyChanged}"
                                               SelectedValuePath="Value" DisplayMemberPath="Label"
-                                              md:HintAssist.Hint="الحالة" Style="{StaticResource FilledComboBox}" Margin="0,0,8,10"/>
+                                              md:HintAssist.Hint="الحالة" Style="{StaticResource FilledComboBox}" Margin="0,0,0,10"/>
                                     <DatePicker SelectedDate="{Binding LoadingDate}"
                                                 md:HintAssist.Hint="تاريخ التحميل"
-                                                Style="{StaticResource MaterialDesignOutlinedDatePicker}" Margin="0,0,0,10"/>
+                                                Style="{StaticResource MaterialDesignOutlinedDatePicker}" Margin="0,0,8,10"/>
                                     <DatePicker SelectedDate="{Binding ExitDate}"
                                                 md:HintAssist.Hint="تاريخ الخروج"
                                                 Style="{StaticResource MaterialDesignOutlinedDatePicker}" Margin="0,0,8,10"/>

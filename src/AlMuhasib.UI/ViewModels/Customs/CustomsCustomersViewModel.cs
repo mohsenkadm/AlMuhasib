@@ -46,7 +46,6 @@ public partial class CustomsCustomersViewModel : ViewModelBase
     [ObservableProperty] private string _editNotes = string.Empty;
     [ObservableProperty] private bool _editIsActive = true;
     [ObservableProperty] private string _dialogError = string.Empty;
-    [ObservableProperty] private bool _showCompanyName;
 
     [ObservableProperty] private bool _isDeleteDialogOpen;
     [ObservableProperty] private CustomsCustomerListItem? _customerToDelete;
@@ -160,9 +159,6 @@ public partial class CustomsCustomersViewModel : ViewModelBase
         _debounceTimer.Start();
     }
 
-    partial void OnEditCustomerTypeChanged(CustomsCustomerType value) =>
-        ShowCompanyName = value == CustomsCustomerType.Company;
-
     [RelayCommand]
     private async Task FirstPage() { CurrentPage = 1; await LoadCustomersAsync(); }
 
@@ -202,7 +198,6 @@ public partial class CustomsCustomersViewModel : ViewModelBase
         EditNotes = string.Empty;
         EditIsActive = true;
         DialogError = string.Empty;
-        ShowCompanyName = false;
         IsDialogOpen = true;
     }
 
@@ -235,7 +230,6 @@ public partial class CustomsCustomersViewModel : ViewModelBase
             EditAddress = entity.Address;
             EditNotes = entity.Notes;
             EditIsActive = entity.IsActive;
-            ShowCompanyName = entity.CustomerType == CustomsCustomerType.Company;
             DialogError = string.Empty;
             IsDialogOpen = true;
         }
