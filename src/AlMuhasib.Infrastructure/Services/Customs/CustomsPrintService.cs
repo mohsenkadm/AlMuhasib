@@ -461,11 +461,21 @@ public sealed class CustomsPrintService : ICustomsPrintService
         string[] columns,
         IList<object[]> rows,
         IList<string>? summaryLines = null,
-        CustomsPrintDocumentKind? kind = null)
+        CustomsPrintDocumentKind? kind = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        string? partyName = null)
     {
-        _ = kind;
         _permissions.EnsurePrint(screenName);
-        _exportService.PrintTable(title, columns, rows, summaryLines);
+        _exportService.PrintStatement(BuildCustomsReportStatement(
+            title,
+            partyName: string.IsNullOrWhiteSpace(partyName) ? "نظام التخليص الكمركي" : partyName,
+            fromDate,
+            toDate,
+            columns,
+            rows,
+            summaryLines,
+            kind));
     }
 
     public string ExportReportPdf(
@@ -473,9 +483,69 @@ public sealed class CustomsPrintService : ICustomsPrintService
         StatementPrintModel model,
         CustomsPrintDocumentKind? kind = null)
     {
-        _ = kind;
         _permissions.EnsureExport(screenName);
+        ApplyCustomsReportForm(model, kind);
         return _exportService.ExportStatementToPdf(model);
+    }
+
+    private static StatementPrintModel BuildCustomsReportStatement(
+        string title,
+        string partyName,
+        DateTime? fromDate,
+        DateTime? toDate,
+        string[] columns,
+        IList<object[]> rows,
+        IList<string>? summaryLines,
+        CustomsPrintDocumentKind? kind)
+    {
+        var model = new StatementPrintModel
+        {
+            Title = title,
+            PartyName = partyName,
+            FromDate = fromDate,
+            ToDate = toDate,
+            Columns = columns,
+            Rows = rows,
+            SummaryLines = summaryLines
+        };
+        ApplyCustomsReportForm(model, kind);
+        return model;
+    }
+
+    private static void ApplyCustomsReportForm(
+        StatementPrintModel model,
+        CustomsPrintDocumentKind? kind)
+    {
+        var resolvedKind = kind ?? model.CustomsReport?.Kind;
+        var period = BuildReportPeriod(model.FromDate, model.ToDate);
+        var subtitle = resolvedKind.HasValue
+            ? CustomsPrintDocumentKindDisplay.ToArabic(resolvedKind)
+            : (string.IsNullOrWhiteSpace(model.PartyName) ? "نظام التخليص الكمركي" : model.PartyName);
+
+        model.IsCustomsReport = true;
+        model.CustomsReport = new CustomsReportPrintData
+        {
+            Title = string.IsNullOrWhiteSpace(model.Title) ? "تقرير التخليص الكمركي" : model.Title,
+            Subtitle = subtitle,
+            DocumentNumber = $"CR-{DateTime.Now:yyyyMMdd-HHmm}",
+            PrintedAt = DateTime.Now,
+            PartyName = model.PartyName ?? string.Empty,
+            PeriodLabel = period,
+            Columns = model.Columns ?? [],
+            Rows = model.Rows ?? [],
+            SummaryLines = model.SummaryLines?.ToList() ?? [],
+            Kind = resolvedKind,
+            UseLandscape = (model.Columns?.Length ?? 0) >= 5
+        };
+    }
+
+    private static string BuildReportPeriod(DateTime? from, DateTime? to)
+    {
+        if (from is null && to is null) return "جميع الفترات";
+        if (from is not null && to is not null)
+            return $"{from:yyyy/MM/dd} — {to:yyyy/MM/dd}";
+        if (from is not null) return $"من {from:yyyy/MM/dd}";
+        return $"حتى {to:yyyy/MM/dd}";
     }
 
     public void ExportReportExcel(

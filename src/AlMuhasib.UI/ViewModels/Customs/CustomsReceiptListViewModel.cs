@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Customs;
@@ -311,6 +312,12 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
     [RelayCommand]
     private async Task PrintTable()
     {
+        if (!CanPrint)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
+            return;
+        }
+
         try
         {
             var (allItems, _) = await _receiptService.GetPagedAsync(
@@ -326,10 +333,14 @@ public partial class CustomsReceiptListViewModel : ViewModelBase
                 r.PaymentMethodLabel,
                 r.ReceiverName
             }).ToList();
-            ListTableExportHelper.Print(
-                _exportService, CanPrint,
-                "وصولات القبض — التخليص الكمركي", columns, rows,
-                warnOnDenied: true);
+            _printService.PrintReportTable(
+                CustomsPermissionRegistry.Receipts,
+                "وصولات القبض — التخليص الكمركي",
+                columns,
+                rows,
+                kind: CustomsPrintDocumentKind.ReceiptsList,
+                fromDate: DateFrom,
+                toDate: DateTo);
         }
         catch (Exception ex)
         {

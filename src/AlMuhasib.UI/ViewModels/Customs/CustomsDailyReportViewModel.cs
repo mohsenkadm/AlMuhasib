@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Customs;
@@ -112,14 +113,19 @@ public partial class CustomsDailyReportViewModel : CustomsReportViewModelBase
     private void Print()
     {
         var (cols, rows, summary) = BuildExport();
-        PrintTable("التقرير اليومي — التخليص", cols, rows, summary);
+        PrintStaffReport(
+            CustomsPrintDocumentKind.DailyReport,
+            "التقرير اليومي — التخليص",
+            cols, rows, summary,
+            SelectedCustomer?.Name ?? "الكل");
     }
 
     [RelayCommand]
     private void ExportToPdf()
     {
         var (cols, rows, summary) = BuildExport();
-        ExportPdfDocument(
+        ExportStaffReportPdf(
+            CustomsPrintDocumentKind.DailyReport,
             "التقرير اليومي — التخليص",
             SelectedCustomer?.Name ?? "الكل",
             cols, rows, summary,

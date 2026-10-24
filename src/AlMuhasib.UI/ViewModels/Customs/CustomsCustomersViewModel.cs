@@ -18,6 +18,7 @@ namespace AlMuhasib.UI.ViewModels.Customs;
 public partial class CustomsCustomersViewModel : ViewModelBase
 {
     private readonly ICustomsCustomerService _customerService;
+    private readonly ICustomsPrintService _printService;
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserPreferencesService _userPreferences;
@@ -61,12 +62,14 @@ public partial class CustomsCustomersViewModel : ViewModelBase
 
     public CustomsCustomersViewModel(
         ICustomsCustomerService customerService,
+        ICustomsPrintService printService,
         IExportService exportService,
         ICurrentUserService currentUserService,
         IUserPreferencesService userPreferences,
         MainWindowViewModel mainWindow)
     {
         _customerService = customerService;
+        _printService = printService;
         _exportService = exportService;
         _currentUserService = currentUserService;
         _userPreferences = userPreferences;
@@ -381,6 +384,12 @@ public partial class CustomsCustomersViewModel : ViewModelBase
     [RelayCommand]
     private async Task PrintTable()
     {
+        if (!CanPrint)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
+            return;
+        }
+
         try
         {
             var (allItems, _) = await _customerService.GetPagedAsync(1, int.MaxValue, null, activeOnly: null);
@@ -396,10 +405,12 @@ public partial class CustomsCustomersViewModel : ViewModelBase
                 c.OpenInvoiceCount,
                 c.StatusLabel
             }).ToList();
-            ListTableExportHelper.Print(
-                _exportService, CanPrint,
-                "قائمة عملاء التخليص الكمركي", columns, rows,
-                warnOnDenied: true);
+            _printService.PrintReportTable(
+                CustomsPermissionRegistry.Customers,
+                "قائمة عملاء التخليص الكمركي",
+                columns,
+                rows,
+                kind: CustomsPrintDocumentKind.CustomersList);
         }
         catch (Exception ex)
         {

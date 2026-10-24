@@ -150,30 +150,16 @@ public abstract partial class CustomsReportViewModelBase : ViewModelBase
     }
 
     protected void PrintTable(string title, string[] columns, IList<object[]> rows, IList<string>? summaryLines = null)
-    {
-        if (!CanPrint)
-        {
-            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
-            return;
-        }
-
-        try
-        {
-            PrintService.PrintReportTable(PermissionScreen, title, columns, rows, summaryLines);
-        }
-        catch (Exception ex)
-        {
-            BeautifulMessageDialog.ShowError(ex.Message);
-        }
-    }
+        => PrintStaffReport(null, title, columns, rows, summaryLines);
 
     /// <summary>Staff operational report print via document-kind key (full internal data allowed).</summary>
     protected void PrintStaffReport(
-        CustomsPrintDocumentKind kind,
+        CustomsPrintDocumentKind? kind,
         string title,
         string[] columns,
         IList<object[]> rows,
-        IList<string>? summaryLines = null)
+        IList<string>? summaryLines = null,
+        string? partyName = null)
     {
         if (!CanPrint)
         {
@@ -183,7 +169,16 @@ public abstract partial class CustomsReportViewModelBase : ViewModelBase
 
         try
         {
-            PrintService.PrintReportTable(PermissionScreen, title, columns, rows, summaryLines, kind);
+            PrintService.PrintReportTable(
+                PermissionScreen,
+                title,
+                columns,
+                rows,
+                summaryLines,
+                kind,
+                DateFrom,
+                DateTo,
+                partyName);
         }
         catch (Exception ex)
         {
@@ -234,7 +229,8 @@ public abstract partial class CustomsReportViewModelBase : ViewModelBase
                 ToDate = DateTo,
                 Columns = columns,
                 Rows = rows,
-                SummaryLines = summaryLines
+                SummaryLines = summaryLines,
+                IsCustomsReport = true
             };
 
             // H-04: always go through PrintService so EnsureExport(screen) cannot be bypassed.

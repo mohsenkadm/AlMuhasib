@@ -134,13 +134,18 @@ public partial class CustomsInvoiceReportViewModel : CustomsReportViewModelBase
     [RelayCommand] private void Print()
     {
         var (c, r, s) = BuildExport();
-        PrintTable("تقرير الفواتير — التخليص", c, r, s);
+        PrintStaffReport(
+            CustomsPrintDocumentKind.InvoiceReport,
+            "تقرير الفواتير — التخليص", c, r, s,
+            "الفترة المحددة");
     }
 
     [RelayCommand] private void ExportToPdf()
     {
         var (c, r, s) = BuildExport();
-        ExportPdfDocument("تقرير الفواتير — التخليص", "الفترة المحددة", c, r, s,
+        ExportStaffReportPdf(
+            CustomsPrintDocumentKind.InvoiceReport,
+            "تقرير الفواتير — التخليص", "الفترة المحددة", c, r, s,
             $"تقرير_فواتير_تخليص_{DateTime.Now:yyyyMMdd}.pdf");
     }
 }
