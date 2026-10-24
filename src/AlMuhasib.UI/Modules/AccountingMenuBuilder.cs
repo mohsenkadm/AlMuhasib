@@ -16,6 +16,7 @@ public static class AccountingMenuBuilder
             Item("لوحة التحكم", PackIconKind.ViewDashboard, typeof(DashboardViewModel), ScreenPermissionRegistry.Dashboard),
             Item("فاتورة مبيعات", PackIconKind.CashRegister, typeof(SalesInvoiceViewModel), "SaleInvoice"),
             Item("بيع سريع (POS)", PackIconKind.PointOfSale, typeof(PosQuickSaleViewModel), "SaleInvoice"),
+            Item("صيانة الأجهزة", PackIconKind.CellphoneCog, typeof(MaintenanceViewModel), ScreenPermissionRegistry.Maintenance),
 
             // كروبات تفتح نافذة جانبية مثل التقارير
             FlyoutGroup(

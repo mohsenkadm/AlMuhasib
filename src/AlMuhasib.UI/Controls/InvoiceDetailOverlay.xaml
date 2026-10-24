@@ -153,6 +153,10 @@
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="UnitPriceText"/>
                                 <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalPriceText}" Width="100"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalPriceText"/>
+                                <DataGridTextColumn Header="انتهاء الضمان" Binding="{Binding WarrantyEndDateText}" Width="110"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WarrantyEndDateText"/>
+                                <DataGridTextColumn Header="حالة الضمان" Binding="{Binding WarrantyStatusText}" Width="140"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WarrantyStatusText"/>
                             </DataGrid.Columns>
                         </DataGrid>
 

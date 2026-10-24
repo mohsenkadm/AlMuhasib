@@ -613,7 +613,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                 PricingTypeId = item.PricingTypeId,
                 ItemName = item.ItemName,
                 Quantity = item.Quantity,
-                UnitPrice = item.UnitPrice
+                UnitPrice = item.UnitPrice,
+                WarrantyEndDate = item.WarrantyEndDate
             };
             ApplyActiveLabelsToRow(row);
             InvoiceCustomFieldsHelper.ApplyFromJson(row, item.CustomFieldsJson, ActiveCustomFieldLabels);
@@ -1562,12 +1563,13 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
                     WarehouseId = lineWarehouseId,
                     IsOfferGift = row.IsOfferGift,
                     OfferId = row.OfferId,
-                    CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row, ActiveCustomFieldLabels)
+                    CustomFieldsJson = InvoiceCustomFieldsHelper.ToJson(row, ActiveCustomFieldLabels),
+                    WarrantyEndDate = ShowWarrantyFields ? row.WarrantyEndDate?.Date : null
                 });
             }
 
             // اقرأ العلم الحي — لا تعتمد على حالة قديمة إن تغيّرت الميزات أثناء فتح الشاشة
-            if (!IsQuoteMode && _featureFlags?.SerialNumbers == true)
+            if (!IsQuoteMode && ShowSerialNumbers)
             {
                 foreach (var row in validItems.Where(r => r.ProductId.HasValue && Math.Abs(r.Quantity) >= 1))
                 {

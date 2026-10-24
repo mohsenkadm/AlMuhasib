@@ -22,6 +22,8 @@ public static class ScreenPermissionRegistry
     public const string PurchaseReturn = "PurchaseReturn";
     public const string DamageInvoice = "DamageInvoice";
     public const string DamageInvoicesReport = "DamageInvoicesReport";
+    public const string Maintenance = "Maintenance";
+    public const string MaintenanceReport = "MaintenanceReport";
     public const string PriceQuote = "PriceQuote";
     public const string PriceQuotesReport = "PriceQuotesReport";
     public const string PackagingStockReport = "PackagingStockReport";
@@ -174,6 +176,8 @@ public static class ScreenPermissionRegistry
         ("SaleInvoice", "فاتورة مبيعات"),
         (SalesReturn, "مرتجع مبيعات"),
         (DamageInvoice, "فاتورة تلف"),
+        (Maintenance, "صيانة الأجهزة"),
+        (MaintenanceReport, "تقرير الصيانة"),
         (PriceQuote, "فاتورة عرض سعر"),
         (PriceQuotesReport, "فواتير عرض السعر"),
         ("InstallmentInvoice", "فاتورة أقساط"),
@@ -324,6 +328,8 @@ public static class ScreenPermissionRegistry
         [typeof(StockAdjustmentViewModel)] = "StockAdjustment",
         [typeof(MinimumQuantityReportViewModel)] = MinimumQuantityReport,
         [typeof(DamageInvoicesReportViewModel)] = DamageInvoicesReport,
+        [typeof(MaintenanceViewModel)] = Maintenance,
+        [typeof(MaintenanceReportViewModel)] = MaintenanceReport,
         [typeof(PriceQuotesReportViewModel)] = PriceQuotesReport,
         [typeof(PackagingStockReportViewModel)] = PackagingStockReport,
         [typeof(SalesReportViewModel)] = "Reports",
@@ -443,6 +449,8 @@ public static class ScreenPermissionRegistry
         ["SaleInvoice"] = typeof(SalesInvoiceViewModel),
         [SalesReturn] = typeof(SalesInvoiceViewModel),
         [DamageInvoice] = typeof(SalesInvoiceViewModel),
+        [Maintenance] = typeof(MaintenanceViewModel),
+        [MaintenanceReport] = typeof(MaintenanceReportViewModel),
         [PriceQuote] = typeof(SalesInvoiceViewModel),
         [PriceQuotesReport] = typeof(PriceQuotesReportViewModel),
         [BarcodePriceCheck] = typeof(BarcodePriceCheckViewModel),

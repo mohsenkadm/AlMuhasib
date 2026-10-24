@@ -332,7 +332,7 @@
                     </StackPanel>
                     <UniformGrid Columns="2">
                         <controls:FeatureToggleCard Title="قالب موبايلات"
-                                                    Description="حقول IMEI وضمان"
+                                                    Description="IMEI وضمان وسيريال + واجهة وتقرير الصيانة"
                                                     Icon="Cellphone" IconBackground="{DynamicResource DashboardKpiIndigoLightBrush}" IconForeground="#3949AB"
                                                     IsChecked="{Binding TemplateMobileShop}"/>
                         <controls:FeatureToggleCard Title="قالب ألبسة"

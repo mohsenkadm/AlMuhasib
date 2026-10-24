@@ -201,9 +201,32 @@ public class CloudInvoiceItem : CloudBaseEntity
     public decimal TotalPrice { get; set; }
     public bool IsOfferGift { get; set; }
     public int? OfferId { get; set; }
+    /// <summary>تاريخ انتهاء الضمان — لقالب محلات الموبايلات.</summary>
+    public DateTime? WarrantyEndDate { get; set; }
     public CloudInvoice Invoice { get; set; } = null!;
     public CloudProduct? Product { get; set; }
     public CloudPricingType? PricingType { get; set; }
+}
+
+/// <summary>سجل صيانة جهاز — قالب محلات الموبايلات.</summary>
+public class CloudMaintenanceRecord : CloudBaseEntity, ITenantEntity, ICloudBranchEntity
+{
+    public string RecordNumber { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public int CustomerId { get; set; }
+    public int? ProductId { get; set; }
+    public string ProductName { get; set; } = string.Empty;
+    public string SerialNumber { get; set; } = string.Empty;
+    public decimal CostAmount { get; set; }
+    public string? Notes { get; set; }
+    public MaintenanceStatus Status { get; set; }
+    public DateTime? WarrantyEndDate { get; set; }
+    public int? CashBoxId { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
+    public decimal FxRate { get; set; } = 1m;
+    public int? VoucherId { get; set; }
+    public CloudCustomer? Customer { get; set; }
+    public CloudProduct? Product { get; set; }
 }
 
 public class CloudProductOffer : CloudBaseEntity

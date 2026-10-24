@@ -26,7 +26,8 @@ public partial class SalesInvoiceView : UserControl
             expiry: null,
             ColSerial,
             ColPricingType,
-            ColUsageInstructions);
+            ColUsageInstructions,
+            ColWarranty);
     }
 
     private void Root_PreviewKeyDown(object sender, KeyEventArgs e)

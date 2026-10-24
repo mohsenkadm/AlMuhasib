@@ -169,7 +169,7 @@ public partial class ProductsViewModel
         ShowWeightSection = _featureFlags.MenuWeight;
         ShowDiscountSection = _featureFlags.ProductDiscountEnabled;
         ShowBatchesSection = _featureFlags.ExpiryTracking;
-        ShowSerialsSection = _featureFlags.SerialNumbers;
+        ShowSerialsSection = _featureFlags.SerialNumbers || _featureFlags.TemplateMobileShop;
         ShowSizesSection = _featureFlags.TemplateClothing;
         ShowColorsSection = _featureFlags.TemplateClothing;
         ShowScientificName = _featureFlags.TemplatePharmacy;

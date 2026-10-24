@@ -56,6 +56,9 @@ public partial class PosCartLine : ObservableObject
     [ObservableProperty] private string _serialNumber = string.Empty;
     public ObservableCollection<string> AvailableSerials { get; } = [];
 
+    // Warranty (mobile shop template)
+    [ObservableProperty] private DateTime? _warrantyEndDate;
+
     // Pricing options
     public ObservableCollection<ProductPricingOption> AvailablePricingOptions { get; } = [];
     [ObservableProperty] private ProductPricingOption? _selectedPricingOption;

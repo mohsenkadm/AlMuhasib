@@ -594,4 +594,18 @@ public sealed class ReportsController : TenantApiControllerBase
         return Ok(await _reports.GetDamageInvoicesReportAsync(f.From, f.To, f.WarehouseId));
     }
 
+    [HttpGet("maintenance")]
+    public async Task<IActionResult> Maintenance(
+        [FromQuery] ReportFilterRequest filter,
+        [FromQuery] MaintenanceStatus? status,
+        [FromQuery] string? productName,
+        [FromQuery] string? serialNumber,
+        CancellationToken ct)
+    {
+        EnsureTenant();
+        var f = await ResolveFilterAsync(filter, ct);
+        return Ok(await _reports.GetMaintenanceReportAsync(
+            f.From, f.To, f.CustomerId, status, productName, serialNumber));
+    }
+
 }

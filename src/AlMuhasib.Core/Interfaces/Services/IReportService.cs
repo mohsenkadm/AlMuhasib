@@ -34,6 +34,13 @@ public interface IReportService
     // Warehouse
     Task<List<WarehouseStockRow>> GetWarehouseReportAsync(int? warehouseId, bool includeZero = false);
     Task<DamageInvoicesReportResult> GetDamageInvoicesReportAsync(DateTime? from, DateTime? to, int? warehouseId);
+    Task<MaintenanceReportResult> GetMaintenanceReportAsync(
+        DateTime? from,
+        DateTime? to,
+        int? customerId = null,
+        MaintenanceStatus? status = null,
+        string? productName = null,
+        string? serialNumber = null);
     Task<PriceQuotesReportResult> GetPriceQuotesReportAsync(DateTime? from, DateTime? to, int? customerId);
     Task<PackagingStockReportResult> GetPackagingStockReportAsync(int? warehouseId, int? productId);
 
@@ -232,6 +239,11 @@ public class SalesReportRow
     public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
     public bool IsCredit => PaymentMethod == "آجل" && !IsReturn;
+
+    /// <summary>أقرب تاريخ انتهاء ضمان بين بنود الفاتورة (قالب الموبايلات).</summary>
+    public DateTime? WarrantyEndDate { get; set; }
+    public string WarrantyStatusLabel { get; set; } = string.Empty;
+    public string WarrantyRemainingLabel { get; set; } = string.Empty;
 }
 
 public class DailyAmountPoint
@@ -1952,6 +1964,38 @@ public class DamageInvoiceReportRow
     public decimal UnitCost { get; set; }
     public decimal TotalCost { get; set; }
     public string? Notes { get; set; }
+}
+
+public class MaintenanceReportResult
+{
+    public int TotalCount { get; set; }
+    public int WorkingCount { get; set; }
+    public int NotWorkingCount { get; set; }
+    public int UnderRepairCount { get; set; }
+    public int DeliveredCount { get; set; }
+    public decimal TotalCostAmount { get; set; }
+    public decimal TotalProfit { get; set; }
+    public List<MaintenanceReportRow> Rows { get; set; } = [];
+    public List<DailyAmountPoint> DailyChart { get; set; } = [];
+    public List<NameAmountPoint> StatusChart { get; set; } = [];
+}
+
+public class MaintenanceReportRow
+{
+    public int Id { get; set; }
+    public string RecordNumber { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string ProductName { get; set; } = string.Empty;
+    public string SerialNumber { get; set; } = string.Empty;
+    public decimal CostAmount { get; set; }
+    public MaintenanceStatus Status { get; set; }
+    public string StatusLabel { get; set; } = string.Empty;
+    public DateTime? WarrantyEndDate { get; set; }
+    public string WarrantyStatusLabel { get; set; } = string.Empty;
+    public string WarrantyRemainingLabel { get; set; } = string.Empty;
+    public string? Notes { get; set; }
+    public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
 }
 
 public class PriceQuotesReportResult

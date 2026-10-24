@@ -276,6 +276,8 @@ public partial class App : Application
         services.AddTransient<LoyaltyTopCustomersReportViewModel>();
         services.AddTransient<PurchaseInvoiceViewModel>();
         services.AddTransient<SalesInvoiceViewModel>();
+        services.AddTransient<MaintenanceViewModel>();
+        services.AddTransient<MaintenanceReportViewModel>();
         services.AddTransient<PosQuickSaleViewModel>();
         services.AddTransient<BarcodePriceCheckViewModel>();
         services.AddTransient<InstallmentInvoiceViewModel>();

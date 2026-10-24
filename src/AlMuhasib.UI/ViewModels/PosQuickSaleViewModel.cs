@@ -776,7 +776,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 TotalPrice = line.IsOfferGift ? 0m : line.LineTotal,
                 IsOfferGift = line.IsOfferGift,
                 OfferId = line.OfferId,
-                CustomFieldsJson = line.ToCustomFieldsJson()
+                CustomFieldsJson = line.ToCustomFieldsJson(),
+                WarrantyEndDate = ShowWarrantyFields ? line.WarrantyEndDate?.Date : null
             }).ToList();
 
             var applyLoyalty = ShowLoyaltyPanel && customerId is not null;

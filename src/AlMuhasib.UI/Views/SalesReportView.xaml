@@ -165,6 +165,18 @@
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount"/>
                                 <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="90"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
+                                <DataGridTextColumn x:Name="ColWarrantyEnd" Header="انتهاء الضمان"
+                                                    Binding="{Binding WarrantyEndDate, StringFormat=\{0:yyyy/MM/dd\}}" Width="110"
+                                                    Visibility="Collapsed"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WarrantyEndDate"/>
+                                <DataGridTextColumn x:Name="ColWarrantyStatus" Header="حالة الضمان"
+                                                    Binding="{Binding WarrantyStatusLabel}" Width="90"
+                                                    Visibility="Collapsed"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WarrantyStatusLabel"/>
+                                <DataGridTextColumn x:Name="ColWarrantyRemaining" Header="المتبقي للضمان"
+                                                    Binding="{Binding WarrantyRemainingLabel}" Width="120"
+                                                    Visibility="Collapsed"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WarrantyRemainingLabel"/>
                                 <DataGridTemplateColumn Header="الإجراءات" Width="390" MinWidth="390"
                                                         behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                     <DataGridTemplateColumn.CellStyle>

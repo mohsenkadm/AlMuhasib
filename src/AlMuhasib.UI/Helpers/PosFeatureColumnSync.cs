@@ -19,7 +19,8 @@ public static class PosFeatureColumnSync
         DataGridColumn? batch,
         DataGridColumn? serial,
         DataGridColumn? pricing,
-        DataGridColumn? discount)
+        DataGridColumn? discount,
+        DataGridColumn? warranty = null)
     {
         void SyncFromContext()
         {
@@ -34,6 +35,7 @@ public static class PosFeatureColumnSync
             Set(serial, pos.ShowSerialNumbers);
             Set(pricing, pos.ShowProductPricing);
             Set(discount, pos.ShowProductDiscount);
+            Set(warranty, pos.ShowWarrantyFields);
         }
 
         void OnVmChanged(object? sender, PropertyChangedEventArgs e)
@@ -45,6 +47,7 @@ public static class PosFeatureColumnSync
                 case nameof(PosQuickSaleViewModel.ShowCustomField2):
                 case nameof(PosQuickSaleViewModel.ShowExpiryTracking):
                 case nameof(PosQuickSaleViewModel.ShowSerialNumbers):
+                case nameof(PosQuickSaleViewModel.ShowWarrantyFields):
                 case nameof(PosQuickSaleViewModel.ShowProductPricing):
                 case nameof(PosQuickSaleViewModel.ShowProductDiscount):
                 case nameof(PosQuickSaleViewModel.CustomField1Header):

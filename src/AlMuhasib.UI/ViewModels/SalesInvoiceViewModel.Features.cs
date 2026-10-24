@@ -45,6 +45,7 @@ public partial class SalesInvoiceViewModel
     [ObservableProperty] private bool _showProductDiscount;
     [ObservableProperty] private bool _showExpiryTracking;
     [ObservableProperty] private bool _showSerialNumbers;
+    [ObservableProperty] private bool _showWarrantyFields;
     [ObservableProperty] private bool _showProductPricing;
     [ObservableProperty] private bool _showClothingSizes;
     [ObservableProperty] private bool _showTransportFee;
@@ -129,7 +130,8 @@ public partial class SalesInvoiceViewModel
         ShowMenuWeight = !quote && _featureFlags.MenuWeight;
         ShowProductDiscount = !quote && _featureFlags.ProductDiscountEnabled;
         ShowExpiryTracking = !quote && _featureFlags.ExpiryTracking;
-        ShowSerialNumbers = !quote && _featureFlags.SerialNumbers;
+        ShowSerialNumbers = !quote && (_featureFlags.SerialNumbers || _featureFlags.TemplateMobileShop);
+        ShowWarrantyFields = !quote && _featureFlags.TemplateMobileShop;
         ShowProductPricing = _featureFlags.ProductPricingEnabled;
         ShowClothingSizes = !quote && _featureFlags.TemplateClothing;
         ShowTransportFee = !quote && _featureFlags.TransportFees;
@@ -187,6 +189,8 @@ public partial class SalesInvoiceViewModel
             ClearRowBatches();
         if (!ShowSerialNumbers)
             ClearRowSerials();
+        if (!ShowWarrantyFields)
+            ClearRowWarranties();
         if (!ShowProductPricing)
         {
             ClearRowPricing();
@@ -302,6 +306,12 @@ public partial class SalesInvoiceViewModel
     {
         foreach (var row in Items)
             row.SerialNumber = string.Empty;
+    }
+
+    private void ClearRowWarranties()
+    {
+        foreach (var row in Items)
+            row.WarrantyEndDate = null;
     }
 
     private void ApplyCustomFieldLabels(IEnumerable<string>? labels, string? industryTag = null)
@@ -607,7 +617,7 @@ public partial class SalesInvoiceViewModel
                 }
             }
 
-            if (_featureFlags.SerialNumbers && _productSerialService is not null
+            if (ShowSerialNumbers && _productSerialService is not null
                 && !string.IsNullOrWhiteSpace(row.SerialNumber) && !IsReturnMode)
             {
                 await _productSerialService.MarkSoldAsync(row.SerialNumber, productId, item.Id);
