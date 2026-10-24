@@ -114,6 +114,15 @@ public class InvoicePrintModel
 
     /// <summary>Payload for the Customs daily invoice/statement form.</summary>
     public AlMuhasib.Core.Models.Customs.CustomsDailyInvoicePrintData? CustomsDaily { get; set; }
+
+    /// <summary>
+    /// When true, print/PDF use the Customs transport portrait form
+    /// (internal/external — see <see cref="CustomsTransport"/>). Branding header from print settings stays on top.
+    /// </summary>
+    public bool IsCustomsTransportInvoice { get; set; }
+
+    /// <summary>Payload for the Customs internal/external transport invoice form.</summary>
+    public AlMuhasib.Core.Models.Customs.CustomsTransportInvoicePrintData? CustomsTransport { get; set; }
     public decimal FxRate { get; set; }
     public string? PricingCurrencyLabel { get; set; }
     public string? PaymentCurrencyLabel { get; set; }

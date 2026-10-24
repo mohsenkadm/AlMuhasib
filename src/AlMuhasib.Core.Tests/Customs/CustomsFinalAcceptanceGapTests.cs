@@ -23,6 +23,8 @@ public class CustomsFinalAcceptanceGapTests
         var request = CustomsTestHarness.InvoiceRequest(
             customer.Id, AccountingCurrency.IQD, 250_000m, vehiclePlate: $"خدمة-{serviceType}");
         request.ServiceType = serviceType;
+        if (serviceType == CustomsServiceType.Transport)
+            request.TransportKind = CustomsTransportKind.External;
 
         var created = await h.Invoices.CreateAsync(request);
         Assert.Equal(serviceType, created.ServiceType);

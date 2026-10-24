@@ -267,6 +267,14 @@ public class ExcelExportService : IExportService
             return;
         }
 
+        if (m.IsCustomsTransportInvoice)
+        {
+            var transportDoc = CustomsTransportInvoiceDocumentBuilder.Build(m);
+            var transportSize = CustomsTransportInvoiceDocumentBuilder.ResolvePageSize(m);
+            DocumentPrintHelper.PrintDocument(transportDoc, m.Title, transportSize, preferredPrinter, showPreview);
+            return;
+        }
+
         if (m.IsCustomsDailyInvoice)
         {
             var customsDoc = CustomsDailyInvoiceDocumentBuilder.Build(m);
@@ -1145,9 +1153,11 @@ public class ExcelExportService : IExportService
 
     public string ExportInvoiceToPdf(InvoicePrintModel model)
     {
-        var bytes = model.IsCustomsDailyInvoice
-            ? CustomsDailyInvoicePdfGenerator.Generate(model)
-            : InvoicePdfGenerator.GenerateInvoice(model);
+        var bytes = model.IsCustomsTransportInvoice
+            ? CustomsTransportInvoicePdfGenerator.Generate(model)
+            : model.IsCustomsDailyInvoice
+                ? CustomsDailyInvoicePdfGenerator.Generate(model)
+                : InvoicePdfGenerator.GenerateInvoice(model);
         return SavePdfToWhatsAppFolder(bytes, SanitizeFileName($"فاتورة_{model.InvoiceNumber}"));
     }
 

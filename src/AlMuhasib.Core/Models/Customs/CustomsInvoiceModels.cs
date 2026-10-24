@@ -11,6 +11,7 @@ public sealed class CustomsInvoiceListItem
     public int CustomerId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
     public CustomsServiceType ServiceType { get; set; }
+    public CustomsTransportKind? TransportKind { get; set; }
     public string ServiceTypeLabel { get; set; } = string.Empty;
     public AccountingCurrency Currency { get; set; }
     public string CurrencyLabel { get; set; } = string.Empty;
@@ -39,6 +40,7 @@ public sealed class CustomsInvoiceVehicleDraft
     public DateTime? WarehouseArrivalDate { get; set; }
     public DateTime? UnloadingDate { get; set; }
     public decimal VehiclePrice { get; set; }
+    public decimal DelayPenaltyAmount { get; set; }
     public CustomsVehicleStatus Status { get; set; } = CustomsVehicleStatus.InProgress;
     public string Notes { get; set; } = string.Empty;
 }
@@ -61,6 +63,8 @@ public sealed class CustomsInvoiceSaveRequest
     public int CustomerId { get; set; }
     public DateTime InvoiceDate { get; set; } = DateTime.Today;
     public CustomsServiceType ServiceType { get; set; } = CustomsServiceType.Clearance;
+    public CustomsTransportKind? TransportKind { get; set; }
+    public string TransportRoute { get; set; } = string.Empty;
     public AccountingCurrency Currency { get; set; } = AccountingCurrency.IQD;
     public decimal? FxRate { get; set; }
     public string Description { get; set; } = string.Empty;
@@ -80,6 +84,8 @@ public sealed class CustomsInvoiceDetail
     public int CustomerId { get; set; }
     public string CustomerName { get; set; } = string.Empty;
     public CustomsServiceType ServiceType { get; set; }
+    public CustomsTransportKind? TransportKind { get; set; }
+    public string TransportRoute { get; set; } = string.Empty;
     public string ServiceTypeLabel { get; set; } = string.Empty;
     public AccountingCurrency Currency { get; set; }
     public string CurrencyLabel { get; set; } = string.Empty;
@@ -87,6 +93,7 @@ public sealed class CustomsInvoiceDetail
     public string Description { get; set; } = string.Empty;
     public decimal DiscountAmount { get; set; }
     public decimal VehiclesSum { get; set; }
+    public decimal DelayPenaltiesSum { get; set; }
     public decimal TotalAmount { get; set; }
     public decimal PaidAmount { get; set; }
     public decimal RemainingAmount { get; set; }

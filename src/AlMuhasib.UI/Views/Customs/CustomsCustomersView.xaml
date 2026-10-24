@@ -177,8 +177,7 @@
 
                         <TextBox Text="{Binding EditCompanyName, UpdateSourceTrigger=PropertyChanged}"
                                  md:HintAssist.Hint="اسم الشركة"
-                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"
-                                 Visibility="{Binding ShowCompanyName, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
 
                         <TextBox Text="{Binding EditPhone, UpdateSourceTrigger=PropertyChanged}"
                                  md:HintAssist.Hint="الهاتف" Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>

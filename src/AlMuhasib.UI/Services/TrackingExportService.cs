@@ -62,7 +62,9 @@ public sealed class TrackingExportService : IExportService
 
         if (string.IsNullOrWhiteSpace(model.A4TemplateId))
             model.A4TemplateId = A4InvoiceTemplates.Normalize(PrintPreferences.A4InvoiceTemplate);
-        if (model.IsCustomsDailyInvoice)
+        if (model.IsCustomsTransportInvoice)
+            model.PaperSize = InvoicePaperSizes.A4;
+        else if (model.IsCustomsDailyInvoice)
             model.PaperSize = InvoicePaperSizes.A4Landscape;
         else if (string.IsNullOrWhiteSpace(model.PaperSize))
             model.PaperSize = InvoicePaperSizes.Normalize(PrintPreferences.PaperSize);
@@ -75,7 +77,9 @@ public sealed class TrackingExportService : IExportService
         PrintPreferences.Load();
         if (string.IsNullOrWhiteSpace(model.A4TemplateId))
             model.A4TemplateId = A4InvoiceTemplates.Normalize(PrintPreferences.A4InvoiceTemplate);
-        if (model.IsCustomsDailyInvoice)
+        if (model.IsCustomsTransportInvoice)
+            model.PaperSize = InvoicePaperSizes.A4;
+        else if (model.IsCustomsDailyInvoice)
             model.PaperSize = InvoicePaperSizes.A4Landscape;
         else if (string.IsNullOrWhiteSpace(model.PaperSize))
             model.PaperSize = InvoicePaperSizes.Normalize(PrintPreferences.PaperSize);

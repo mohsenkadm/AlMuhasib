@@ -30,6 +30,33 @@ public static class CustomsServiceTypeDisplay
         CustomsServiceType.ClearanceAndTransport => "تخليص ونقل",
         _ => type.ToString()
     };
+
+    /// <summary>
+    /// Label for lists/print: Transport becomes «نقل داخلي» / «نقل خارجي».
+    /// </summary>
+    public static string ToArabic(CustomsServiceType type, CustomsTransportKind? transportKind)
+    {
+        if (type == CustomsServiceType.Transport && transportKind is { } kind)
+            return CustomsTransportKindDisplay.ToArabic(kind);
+        return ToArabic(type);
+    }
+}
+
+public static class CustomsTransportKindDisplay
+{
+    public static string ToArabic(CustomsTransportKind kind) => kind switch
+    {
+        CustomsTransportKind.Internal => "نقل داخلي",
+        CustomsTransportKind.External => "نقل خارجي",
+        _ => kind.ToString()
+    };
+
+    public static string InvoiceTitle(CustomsTransportKind kind) => kind switch
+    {
+        CustomsTransportKind.Internal => "فاتورة نقل داخلي (Internal Transport Invoice)",
+        CustomsTransportKind.External => "فاتورة حساب أجور نقل",
+        _ => "فاتورة نقل"
+    };
 }
 
 public static class CustomsVehicleStatusDisplay

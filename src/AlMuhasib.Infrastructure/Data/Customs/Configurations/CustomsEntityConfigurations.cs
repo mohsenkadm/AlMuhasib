@@ -33,6 +33,8 @@ public class CustomsInvoiceConfiguration : IEntityTypeConfiguration<CustomsInvoi
 
         builder.Property(i => i.InvoiceNumber).IsRequired().HasMaxLength(50);
         builder.Property(i => i.ServiceType).HasConversion<string>().HasMaxLength(20);
+        builder.Property(i => i.TransportKind).HasConversion<string>().HasMaxLength(20);
+        builder.Property(i => i.TransportRoute).HasMaxLength(500);
         builder.Property(i => i.Currency).HasConversion<string>().HasMaxLength(10);
         builder.Property(i => i.FxRate).HasPrecision(18, 4);
         builder.Property(i => i.Description).HasMaxLength(2000);
@@ -72,6 +74,7 @@ public class CustomsVehicleConfiguration : IEntityTypeConfiguration<CustomsVehic
         builder.Property(v => v.SyrianDriver).HasMaxLength(200);
         builder.Property(v => v.CargoType).HasMaxLength(200);
         builder.Property(v => v.VehiclePrice).HasPrecision(18, 2);
+        builder.Property(v => v.DelayPenaltyAmount).HasPrecision(18, 2);
         builder.Property(v => v.Currency).HasConversion<string>().HasMaxLength(10);
         builder.Property(v => v.Status).HasConversion<string>().HasMaxLength(20);
         builder.Property(v => v.Notes).HasMaxLength(2000);

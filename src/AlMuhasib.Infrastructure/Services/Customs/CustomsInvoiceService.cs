@@ -83,6 +83,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
                 CustomerId = i.CustomerId,
                 CustomerName = i.Customer.Name,
                 ServiceType = i.ServiceType,
+                TransportKind = i.TransportKind,
                 Currency = i.Currency,
                 TotalAmount = i.TotalAmount,
                 PaidAmount = i.PaidAmount,
@@ -94,7 +95,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
 
         foreach (var item in rows)
         {
-            item.ServiceTypeLabel = CustomsServiceTypeDisplay.ToArabic(item.ServiceType);
+            item.ServiceTypeLabel = CustomsServiceTypeDisplay.ToArabic(item.ServiceType, item.TransportKind);
             item.CurrencyLabel = item.Currency == AccountingCurrency.USD ? "$" : "د.ع";
             item.StatusLabel = CustomsInvoiceStatusDisplay.ToArabic(item.Status);
         }
@@ -149,8 +150,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
             request.Currency,
             await ResolveFxRateAsync(db, request.Currency, request.InvoiceDate, request.FxRate, cancellationToken),
             "الفاتورة");
-        var vehiclesSum = request.Vehicles.Sum(v => v.VehiclePrice);
-        var total = Math.Max(0, vehiclesSum - request.DiscountAmount);
+        var (_, _, total) = ComputeInvoiceTotals(request);
 
         var invoice = new CustomsInvoice
         {
@@ -158,6 +158,8 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
             InvoiceNumber = await CustomsInvoiceNumberHelper.GetNextAsync(db, cancellationToken),
             InvoiceDate = request.InvoiceDate.Date,
             ServiceType = request.ServiceType,
+            TransportKind = NormalizeTransportKind(request),
+            TransportRoute = NormalizeTransportRoute(request),
             Currency = request.Currency,
             FxRate = fxRate,
             Description = request.Description?.Trim() ?? string.Empty,
@@ -234,8 +236,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
 
         var fxRate = await ResolveFxRateAsync(db, request.Currency, request.InvoiceDate, request.FxRate, cancellationToken);
         fxRate = CustomsFinancialRules.NormalizeFxRate(request.Currency, fxRate, "الفاتورة");
-        var vehiclesSum = request.Vehicles.Sum(v => v.VehiclePrice);
-        var total = Math.Max(0, vehiclesSum - request.DiscountAmount);
+        var (_, _, total) = ComputeInvoiceTotals(request);
 
         if (invoice.Status == CustomsInvoiceStatus.Approved && total < invoice.PaidAmount)
             throw new InvalidOperationException("الإجمالي الجديد أقل من المدفوع — لا يمكن الحفظ");
@@ -256,6 +257,8 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         invoice.CustomerId = request.CustomerId;
         invoice.InvoiceDate = request.InvoiceDate.Date;
         invoice.ServiceType = request.ServiceType;
+        invoice.TransportKind = NormalizeTransportKind(request);
+        invoice.TransportRoute = NormalizeTransportRoute(request);
         invoice.Currency = request.Currency;
         invoice.FxRate = fxRate;
         invoice.Description = request.Description?.Trim() ?? string.Empty;
@@ -506,14 +509,19 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         if (request.DiscountAmount < 0)
             throw new InvalidOperationException("الخصم لا يمكن أن يكون سالباً");
 
-        var vehiclesSum = request.Vehicles.Sum(v => v.VehiclePrice);
-        if (request.DiscountAmount > vehiclesSum)
-            throw new InvalidOperationException("الخصم لا يمكن أن يتجاوز مجموع أسعار السيارات");
+        if (request.ServiceType == CustomsServiceType.Transport && request.TransportKind is null)
+            throw new InvalidOperationException("اختر نوع النقل (داخلي أو خارجي)");
+
+        var (vehiclesSum, delaySum, _) = ComputeInvoiceTotals(request);
+        if (request.DiscountAmount > vehiclesSum + delaySum)
+            throw new InvalidOperationException("الخصم لا يمكن أن يتجاوز مجموع أسعار السيارات والغرامات");
 
         foreach (var v in request.Vehicles)
         {
             if (v.VehiclePrice < 0)
                 throw new InvalidOperationException("سعر السيارة لا يمكن أن يكون سالباً");
+            if (v.DelayPenaltyAmount < 0)
+                throw new InvalidOperationException("الغرامة التأخيرية لا يمكن أن تكون سالبة");
         }
 
         foreach (var e in request.Expenses)
@@ -523,6 +531,29 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
             if (e.Amount < 0)
                 throw new InvalidOperationException("مبلغ المصروف لا يمكن أن يكون سالباً");
         }
+    }
+
+    private static CustomsTransportKind? NormalizeTransportKind(CustomsInvoiceSaveRequest request) =>
+        request.ServiceType == CustomsServiceType.Transport
+            ? request.TransportKind ?? CustomsTransportKind.Internal
+            : null;
+
+    private static string NormalizeTransportRoute(CustomsInvoiceSaveRequest request) =>
+        request.ServiceType == CustomsServiceType.Transport
+        && request.TransportKind == CustomsTransportKind.Internal
+            ? request.TransportRoute?.Trim() ?? string.Empty
+            : string.Empty;
+
+    private static (decimal VehiclesSum, decimal DelaySum, decimal Total) ComputeInvoiceTotals(
+        CustomsInvoiceSaveRequest request)
+    {
+        var vehiclesSum = request.Vehicles.Sum(v => v.VehiclePrice);
+        var delaySum = request.ServiceType == CustomsServiceType.Transport
+            && request.TransportKind == CustomsTransportKind.Internal
+            ? request.Vehicles.Sum(v => v.DelayPenaltyAmount)
+            : 0m;
+        var total = Math.Max(0, vehiclesSum + delaySum - request.DiscountAmount);
+        return (vehiclesSum, delaySum, total);
     }
 
     private static async Task EnsureCustomerExistsAsync(
@@ -615,6 +646,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         vehicle.WarehouseArrivalDate = draft.WarehouseArrivalDate;
         vehicle.UnloadingDate = draft.UnloadingDate;
         vehicle.VehiclePrice = draft.VehiclePrice;
+        vehicle.DelayPenaltyAmount = draft.DelayPenaltyAmount;
         vehicle.Currency = currency;
         vehicle.Status = draft.Status;
         vehicle.Notes = draft.Notes?.Trim() ?? string.Empty;
@@ -697,6 +729,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
     private static CustomsInvoiceDetail ToDetail(CustomsInvoice i, List<CustomsAttachment> attachments)
     {
         var vehiclesSum = i.Vehicles.Sum(v => v.VehiclePrice);
+        var delaySum = i.Vehicles.Sum(v => v.DelayPenaltyAmount);
         return new CustomsInvoiceDetail
         {
             Id = i.Id,
@@ -705,13 +738,16 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
             CustomerId = i.CustomerId,
             CustomerName = i.Customer?.Name ?? string.Empty,
             ServiceType = i.ServiceType,
-            ServiceTypeLabel = CustomsServiceTypeDisplay.ToArabic(i.ServiceType),
+            TransportKind = i.TransportKind,
+            TransportRoute = i.TransportRoute,
+            ServiceTypeLabel = CustomsServiceTypeDisplay.ToArabic(i.ServiceType, i.TransportKind),
             Currency = i.Currency,
             CurrencyLabel = i.Currency == AccountingCurrency.USD ? "$" : "د.ع",
             FxRate = i.FxRate,
             Description = i.Description,
             DiscountAmount = i.DiscountAmount,
             VehiclesSum = vehiclesSum,
+            DelayPenaltiesSum = delaySum,
             TotalAmount = i.TotalAmount,
             PaidAmount = i.PaidAmount,
             RemainingAmount = i.RemainingAmount,
@@ -733,6 +769,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
                 WarehouseArrivalDate = v.WarehouseArrivalDate,
                 UnloadingDate = v.UnloadingDate,
                 VehiclePrice = v.VehiclePrice,
+                DelayPenaltyAmount = v.DelayPenaltyAmount,
                 Status = v.Status,
                 Notes = v.Notes
             }).ToList(),
