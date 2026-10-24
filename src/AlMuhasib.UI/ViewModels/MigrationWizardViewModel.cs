@@ -47,6 +47,10 @@ public partial class MigrationWizardViewModel : ViewModelBase
     private bool _needsCapital = true;
     private bool _needsPricingTypes = true;
     private bool _stepDirty;
+    /// <summary>ملخص آخر عملية حفظ ناجحة من PersistStep (يُعرض في رسالة النجاح بدل النص العام).</summary>
+    private string? _lastPersistSummary;
+    private int _lastAddedCount;
+    private int _lastUpdatedCount;
 
     [ObservableProperty] private int _currentStepIndex;
     [ObservableProperty] private string _statusMessage = string.Empty;
@@ -155,6 +159,33 @@ public partial class MigrationWizardViewModel : ViewModelBase
             return CurrentStepInfo.IsOptional;
         }
     }
+
+    /// <summary>نص تقدم دائم في الفوتر (يظهر حتى عند طي لوحة الخطوات).</summary>
+    public string FooterProgressText
+    {
+        get
+        {
+            if (TotalSteps <= 0 || IsCompleted) return string.Empty;
+            var current = CurrentStepIndex + 1;
+            var remaining = Math.Max(0, TotalSteps - current);
+            var saved = _savedSteps.Count;
+            return remaining == 0
+                ? $"الخطوة {current} من {TotalSteps} — الأخيرة · محفوظ {saved}"
+                : $"الخطوة {current} من {TotalSteps} — متبقي {remaining} · محفوظ {saved}";
+        }
+    }
+
+    /// <summary>اسم المرحلة الحالية مع رقمها — يظهر في المحتوى عند طي اللوحة.</summary>
+    public string CurrentStepBadgeText =>
+        CurrentStepInfo is null
+            ? string.Empty
+            : $"المرحلة {CurrentStepInfo.StepNumber}: {CurrentStepInfo.ShortTitle}";
+
+    public bool IsStepAlreadySavedClean =>
+        CurrentKind is { } kind
+        && _savedSteps.Contains(kind)
+        && !_stepDirty;
+
     public bool HasLastResult => LastImportedCount > 0 || LastSkippedCount > 0;
     public bool HasRows => CurrentRows.Count > 0;
     public int CurrentRowCount => CurrentRows.Count;
@@ -223,18 +254,18 @@ public partial class MigrationWizardViewModel : ViewModelBase
 
     public string ColNameHeader => CurrentKind switch
     {
-        MigrationStepKind.Branches => "اسم الفرع",
-        MigrationStepKind.Categories => "اسم الصنف",
-        MigrationStepKind.Products => "اسم المنتج",
-        MigrationStepKind.Warehouses => "اسم المخزن",
-        MigrationStepKind.PricingTypes => "نوع التسعير",
-        MigrationStepKind.ExpenseTypes => "نوع المصروف",
-        MigrationStepKind.CashAndBank => "اسم القاصة / المصرف",
-        MigrationStepKind.Investors => "اسم المستثمر",
-        MigrationStepKind.Customers => "اسم العميل",
-        MigrationStepKind.Suppliers => "اسم المورد",
-        MigrationStepKind.Installments => "اسم الزبون",
-        _ => "الاسم"
+        MigrationStepKind.Branches => "اسم الفرع *",
+        MigrationStepKind.Categories => "اسم الصنف *",
+        MigrationStepKind.Products => "اسم المنتج *",
+        MigrationStepKind.Warehouses => "اسم المخزن *",
+        MigrationStepKind.PricingTypes => "نوع التسعير *",
+        MigrationStepKind.ExpenseTypes => "نوع المصروف *",
+        MigrationStepKind.CashAndBank => "اسم القاصة / المصرف *",
+        MigrationStepKind.Investors => "اسم المستثمر *",
+        MigrationStepKind.Customers => "اسم العميل *",
+        MigrationStepKind.Suppliers => "اسم المورد *",
+        MigrationStepKind.Installments => "اسم الزبون *",
+        _ => "الاسم *"
     };
 
     public string SimpleNameHint => CurrentKind switch
@@ -542,6 +573,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
     {
         if (_suppressStepDirty || CurrentKind is null || IsCompleted) return;
         _stepDirty = true;
+        OnPropertyChanged(nameof(IsStepAlreadySavedClean));
         if (!_savedSteps.Remove(CurrentKind.Value))
             return;
 
@@ -648,6 +680,18 @@ public partial class MigrationWizardViewModel : ViewModelBase
             Steps[i].Title = $"{ToArabicNumeral(i + 1)} — {Steps[i].ShortTitle}";
             Steps[i].IsActive = i == 0;
         }
+
+        // عناوين أقسام بصرية فقط — لا تغيّر الترتيب أو الإلزامية
+        SetSectionHeader(MigrationStepKind.Branches, "أساسيات");
+        SetSectionHeader(MigrationStepKind.Products, "المخزون");
+        SetSectionHeader(MigrationStepKind.CashAndBank, "المالية والأطراف");
+    }
+
+    private void SetSectionHeader(MigrationStepKind kind, string title)
+    {
+        var step = Steps.FirstOrDefault(s => s.Kind == kind);
+        if (step is not null)
+            step.SectionHeader = title;
     }
 
     private static string ToArabicNumeral(int n) => n switch
@@ -1086,7 +1130,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
         SyncAllProductRowStructures();
         if (CurrentRows.Count == 0)
         {
-            for (var i = 0; i < 8; i++)
+            for (var i = 0; i < 3; i++)
             {
                 var row = new MigrationNamedBalanceRow { IsValid = true, ShowInCashier = true };
                 SyncProductRowStructure(row);
@@ -1107,7 +1151,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
     }
 
     /// <summary>يملأ الجدول بصفوف فارغة جاهزة للإدخال السريع كما في Excel.</summary>
-    private void EnsureBlankRowsForCurrentStep(int extraBlank = 8)
+    private void EnsureBlankRowsForCurrentStep(int extraBlank = 3)
     {
         if (IsProductsStep || IsCustomFormStep || CurrentKind is null)
             return;
@@ -1250,12 +1294,17 @@ public partial class MigrationWizardViewModel : ViewModelBase
         {
             ProgressText = string.Empty;
             ProgressPercent = 0;
+            OnPropertyChanged(nameof(FooterProgressText));
+            OnPropertyChanged(nameof(CurrentStepBadgeText));
             return;
         }
 
         var done = _savedSteps.Count;
         ProgressPercent = Math.Min(100, done * 100.0 / TotalSteps);
         ProgressText = $"التقدم: {done} من {TotalSteps} · الخطوة {CurrentStepIndex + 1}";
+        OnPropertyChanged(nameof(FooterProgressText));
+        OnPropertyChanged(nameof(CurrentStepBadgeText));
+        OnPropertyChanged(nameof(IsStepAlreadySavedClean));
     }
 
     private void NotifyStepProps()
@@ -1269,6 +1318,9 @@ public partial class MigrationWizardViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsLastStep));
         OnPropertyChanged(nameof(CanGoNext));
         OnPropertyChanged(nameof(CanSkip));
+        OnPropertyChanged(nameof(FooterProgressText));
+        OnPropertyChanged(nameof(CurrentStepBadgeText));
+        OnPropertyChanged(nameof(IsStepAlreadySavedClean));
         OnPropertyChanged(nameof(HasLastResult));
         OnPropertyChanged(nameof(HasRows));
         OnPropertyChanged(nameof(CurrentRowCount));
@@ -1471,7 +1523,8 @@ public partial class MigrationWizardViewModel : ViewModelBase
             {
                 if (!_savedSteps.Contains(Steps[i].Kind))
                 {
-                    Warn("احفظ الخطوات السابقة بالترتيب قبل الانتقال لهذه الخطوة");
+                    var missing = Steps[i].ShortTitle;
+                    Warn($"احفظ خطوة «{missing}» أولاً قبل الانتقال إلى «{step.ShortTitle}»");
                     return;
                 }
             }
@@ -1677,7 +1730,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
 
         if (IsProductsStep)
         {
-            for (var i = 0; i < 5; i++)
+            for (var i = 0; i < 3; i++)
             {
                 var row = new MigrationNamedBalanceRow { IsValid = true, ShowInCashier = true };
                 SyncProductRowStructure(row);
@@ -1688,7 +1741,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
         }
         else
         {
-            for (var i = 0; i < 5; i++)
+            for (var i = 0; i < 3; i++)
                 CurrentRows.Add(CreateBlankRowForCurrentStep());
             PersistDisplayedRows();
         }
@@ -1719,11 +1772,10 @@ public partial class MigrationWizardViewModel : ViewModelBase
             CurrentRows.Clear();
             await LoadExcelIntoRowsAsync(CurrentKind.Value, SelectedFilePath);
             PersistDisplayedRows();
-            StatusMessage = CurrentRows.Count == 0
-                ? "الملف لا يحتوي على بيانات صالحة"
-                : $"تم استيراد {CurrentRows.Count} صف — راجع المعاينة ثم اضغط حفظ الخطوة";
+            StatusMessage = BuildImportPreviewSummary();
             OnPropertyChanged(nameof(HasRows));
             OnPropertyChanged(nameof(ShowDataGrid));
+            OnPropertyChanged(nameof(HasRowErrors));
         }
         catch (Exception ex)
         {
@@ -1734,6 +1786,37 @@ public partial class MigrationWizardViewModel : ViewModelBase
             IsBusy = false;
             NotifyStepProps();
         }
+    }
+
+    private string BuildImportPreviewSummary()
+    {
+        var named = CurrentRows.Where(r => !string.IsNullOrWhiteSpace(r.Name)).ToList();
+        if (named.Count == 0)
+            return "الملف لا يحتوي على بيانات صالحة — تأكد من عمود الاسم وصفوف البيانات";
+
+        var invalid = named.Count(r => !r.IsValid || !string.IsNullOrWhiteSpace(r.ErrorText));
+        var duplicateGroups = named
+            .GroupBy(r => r.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1)
+            .ToList();
+        var duplicateRows = duplicateGroups.Sum(g => g.Count() - 1);
+
+        var parts = new List<string>
+        {
+            $"معاينة: {named.Count} صف باسم"
+        };
+        if (invalid > 0)
+            parts.Add($"{invalid} غير صالح — صحّحه قبل الحفظ");
+        else
+            parts.Add("كلها صالحة للمراجعة");
+        if (duplicateRows > 0)
+        {
+            var sample = string.Join("، ", duplicateGroups.Take(3).Select(g => g.Key));
+            parts.Add($"{duplicateRows} مكرر (آخر صف يُعتمد عند الحفظ): {sample}");
+        }
+
+        parts.Add("راجع الجدول ثم اضغط «حفظ الخطوة»");
+        return string.Join(" · ", parts);
     }
 
     [RelayCommand]
@@ -2026,28 +2109,61 @@ public partial class MigrationWizardViewModel : ViewModelBase
     private async Task SaveCurrentStepAsync()
     {
         if (CurrentKind is null || IsCompleted || IsBusy) return;
+
+        // تجنب إعادة الحفظ الكاملة عندما لا توجد تغييرات
+        if (IsStepAlreadySavedClean)
+        {
+            StatusMessage = "الخطوة محفوظة — لا تغييرات جديدة";
+            BeautifulMessageDialog.ShowSuccess(StatusMessage);
+            return;
+        }
+
         try
         {
             IsBusy = true;
             NotifyStepProps();
+            _lastPersistSummary = null;
+            _lastAddedCount = 0;
+            _lastUpdatedCount = 0;
+            LastSkippedCount = 0;
             var ok = await PersistStepAsync(CurrentKind.Value);
             if (!ok) return;
 
             MarkSaved(CurrentKind.Value);
             _stepDirty = false;
-            StatusMessage = "تم حفظ الخطوة بنجاح — يمكنك الانتقال للتالي";
+            StatusMessage = BuildSaveSuccessMessage();
             BeautifulMessageDialog.ShowSuccess(StatusMessage);
             await RefreshLookupsAsync();
         }
         catch (Exception ex)
         {
-            BeautifulMessageDialog.ShowError($"تعذّر الحفظ:\n{ex.InnerException?.Message ?? ex.Message}");
+            BeautifulMessageDialog.ShowError(
+                $"تعذّر حفظ خطوة «{CurrentStepInfo?.ShortTitle ?? "الحالية"}»:\n{ex.InnerException?.Message ?? ex.Message}");
         }
         finally
         {
             IsBusy = false;
             NotifyStepProps();
         }
+    }
+
+    private string BuildSaveSuccessMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(_lastPersistSummary))
+            return _lastPersistSummary!;
+
+        var parts = new List<string> { "تم حفظ الخطوة بنجاح" };
+        if (_lastAddedCount > 0 || _lastUpdatedCount > 0 || LastSkippedCount > 0)
+        {
+            var detail = new List<string>();
+            if (_lastAddedCount > 0) detail.Add($"أُضيف {_lastAddedCount}");
+            if (_lastUpdatedCount > 0) detail.Add($"حُدّث {_lastUpdatedCount}");
+            if (LastSkippedCount > 0) detail.Add($"تُجوّز {LastSkippedCount}");
+            parts.Add(string.Join(" · ", detail));
+        }
+
+        parts.Add("يمكنك الانتقال للتالي");
+        return string.Join(" — ", parts);
     }
 
     [RelayCommand]
@@ -2091,11 +2207,8 @@ public partial class MigrationWizardViewModel : ViewModelBase
             IsBusy = true;
             NotifyStepProps();
 
+            // احفظ فقط عند عدم الحفظ مسبقاً أو وجود تعديلات (يتجنب الحفظ المزدوج بعد «حفظ الخطوة»)
             var needsPersist = !_savedSteps.Contains(CurrentKind.Value) || _stepDirty;
-            // العملاء/الموردون: دائماً أعد الحفظ إن وُجدت أسماء — لدعم الإضافة بعد زيارة سابقة
-            if (CurrentKind is MigrationStepKind.Customers or MigrationStepKind.Suppliers
-                && CurrentRows.Any(r => !string.IsNullOrWhiteSpace(r.Name)))
-                needsPersist = true;
 
             if (needsPersist)
             {
@@ -2127,6 +2240,9 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 }
                 else
                 {
+                    _lastPersistSummary = null;
+                    _lastAddedCount = 0;
+                    _lastUpdatedCount = 0;
                     var ok = await PersistStepAsync(CurrentKind.Value);
                     if (!ok) return;
                     MarkSaved(CurrentKind.Value);
@@ -2139,7 +2255,8 @@ public partial class MigrationWizardViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            BeautifulMessageDialog.ShowError($"تعذّر الانتقال:\n{ex.InnerException?.Message ?? ex.Message}");
+            BeautifulMessageDialog.ShowError(
+                $"تعذّر الانتقال من «{CurrentStepInfo?.ShortTitle ?? "الخطوة"}»:\n{ex.InnerException?.Message ?? ex.Message}");
         }
         finally
         {
@@ -2832,18 +2949,46 @@ public partial class MigrationWizardViewModel : ViewModelBase
         if (!EnsureProductBranchReady("حفظ المنتجات"))
             return false;
 
-        var rows = CurrentRows
+        var namedRows = CurrentRows
             .Where(r => !string.IsNullOrWhiteSpace(r.Name))
-            .GroupBy(r => r.Name.Trim(), StringComparer.OrdinalIgnoreCase)
-            .Select(g => g.Last())
             .ToList();
 
-        if (rows.Count == 0) { Warn("أضف منتجات أو اضغط تخطي"); return false; }
-        if (rows.Any(r => !r.IsValid))
+        if (namedRows.Count == 0) { Warn("أضف منتجات بأسماء في الجدول، أو اضغط تخطي"); return false; }
+
+        var invalidRows = namedRows
+            .Where(r => !r.IsValid || !string.IsNullOrWhiteSpace(r.ErrorText))
+            .ToList();
+        if (invalidRows.Count > 0)
         {
-            Warn("صحّح الصفوف غير الصالحة أولاً");
+            var details = invalidRows
+                .Take(8)
+                .Select(r => $"«{r.Name.Trim()}»: {r.ErrorText ?? "بيانات غير صالحة"}");
+            Warn(
+                $"صحّح {invalidRows.Count} صف غير صالح قبل الحفظ:\n" +
+                string.Join("\n", details));
             return false;
         }
+
+        var duplicateGroups = namedRows
+            .GroupBy(r => r.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+            .Where(g => g.Count() > 1)
+            .ToList();
+        var skippedDuplicates = duplicateGroups.Sum(g => g.Count() - 1);
+        if (skippedDuplicates > 0)
+        {
+            var sample = string.Join("، ", duplicateGroups.Take(5).Select(g => g.Key));
+            BeautifulMessageDialog.ShowWarning(
+                $"وُجد {skippedDuplicates} صف مكرر بالاسم — سيُعتمد آخر صف لكل اسم ويتجاوز الباقي.\nالأسماء: {sample}",
+                "أسماء مكررة");
+            LastSkippedCount = skippedDuplicates;
+        }
+
+        var rows = duplicateGroups.Count == 0
+            ? namedRows
+            : namedRows
+                .GroupBy(r => r.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.Last())
+                .ToList();
 
         var allowedBranchIds = GetAllowedBranchIds();
         var warehouses = (await _unitOfWork.Warehouses.GetAllAsync()).ToList();
@@ -2891,7 +3036,10 @@ public partial class MigrationWizardViewModel : ViewModelBase
         var defaultPricing = pricingTypes.FirstOrDefault(t => t.IsDefault) ?? pricingTypes.FirstOrDefault();
 
         var saved = 0;
+        var added = 0;
+        var updated = 0;
         var pricesUpdated = 0;
+        var rowErrors = new List<string>();
         await _unitOfWork.BeginTransactionAsync();
         try
         {
@@ -2935,6 +3083,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
                     await _unitOfWork.SaveChangesAsync();
                     products.Add(product);
                     QueueProductBranches(pendingBranches, product.Id, row, allowedBranchIds);
+                    added++;
                 }
                 else
                 {
@@ -2947,6 +3096,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
                     ApplyProductFeatureFields(product, row);
                     _unitOfWork.Products.Update(product);
                     QueueProductBranches(pendingBranches, product.Id, row, allowedBranchIds);
+                    updated++;
                 }
 
                 var warehouse = ResolveWarehouse(warehouses, row.WarehouseName)
@@ -2959,9 +3109,8 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 }
                 catch (Exception ex)
                 {
-                    Warn($"المنتج «{row.Name}»: {ex.Message}");
-                    await _unitOfWork.RollbackTransactionAsync();
-                    return false;
+                    rowErrors.Add($"«{row.Name}»: {ex.Message}");
+                    continue;
                 }
 
                 // كميات لكل مخزن مسموح فقط — لا إسقاط على مخزن خارج الصلاحية
@@ -2975,9 +3124,8 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 if (rejectedQty.Count > 0)
                 {
                     var names = string.Join("، ", rejectedQty.Select(r => r.WarehouseName).Distinct().Take(3));
-                    Warn($"المنتج «{row.Name}»: لا يمكن إدخال كميات لمخازن خارج فروعك ({names})");
-                    await _unitOfWork.RollbackTransactionAsync();
-                    return false;
+                    rowErrors.Add($"«{row.Name}»: لا يمكن إدخال كميات لمخازن خارج فروعك ({names})");
+                    continue;
                 }
 
                 var qtyEntries = rawQtyCells
@@ -2989,9 +3137,8 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 {
                     if (!allowedBranchIds.Contains(warehouse.BranchId))
                     {
-                        Warn($"المنتج «{row.Name}»: المخزن الافتراضي خارج صلاحياتك");
-                        await _unitOfWork.RollbackTransactionAsync();
-                        return false;
+                        rowErrors.Add($"«{row.Name}»: المخزن الافتراضي خارج صلاحياتك");
+                        continue;
                     }
                     qtyEntries.Add((warehouse, row.Quantity));
                 }
@@ -3097,12 +3244,23 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 saved++;
             }
 
+            if (rowErrors.Count > 0)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                Warn(
+                    $"تعذّر حفظ المنتجات بسبب {rowErrors.Count} خطأ — لم يُحفظ شيء:\n" +
+                    string.Join("\n", rowErrors.Take(10)));
+                return false;
+            }
+
             await _unitOfWork.SaveChangesAsync();
             await _unitOfWork.CommitTransactionAsync();
             LastImportedCount = saved;
+            _lastAddedCount = added;
+            _lastUpdatedCount = updated;
             if (saved == 0)
             {
-                Warn("لم يُحفظ أي منتج — تحقق من الأسماء");
+                Warn("لم يُحفظ أي منتج — تحقق من الأسماء في الجدول");
                 return false;
             }
 
@@ -3116,9 +3274,13 @@ public partial class MigrationWizardViewModel : ViewModelBase
                     await _productService.AddProductBranchesAsync(productId, branchIds);
             }
 
-            StatusMessage = EnableMultiCurrency
-                ? $"تم حفظ/تحديث {saved} منتجاً — حُدّثت {pricesUpdated} تسعيرة (دينار/دولار منفصلة)."
-                : $"تم حفظ/تحديث {saved} منتجاً — حُدّثت {pricesUpdated} تسعيرة بالدينار.";
+            var skipPart = LastSkippedCount > 0 ? $" · تُجوّز {LastSkippedCount} مكرر" : string.Empty;
+            var pricePart = EnableMultiCurrency
+                ? $"حُدّثت {pricesUpdated} تسعيرة (دينار/دولار)"
+                : $"حُدّثت {pricesUpdated} تسعيرة بالدينار";
+            StatusMessage =
+                $"تم حفظ المنتجات — أُضيف {added} · حُدّث {updated}{skipPart} — {pricePart}.";
+            _lastPersistSummary = StatusMessage;
             await RefreshLookupsAsync();
             return true;
         }

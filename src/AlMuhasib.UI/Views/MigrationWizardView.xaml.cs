@@ -237,7 +237,8 @@ public partial class MigrationWizardView
         _lastProductsGridVersion = _vm.ProductsGridVersion;
         ProductsGrid.Columns.Clear();
 
-        ProductsGrid.Columns.Add(CreateTextColumn("اسم المنتج", "Name", 200, minWidth: 160));
+        ProductsGrid.Columns.Add(CreateTextColumn("اسم المنتج *", "Name", 200, minWidth: 160,
+            toolTip: "حقل إلزامي — يُستخدم لمطابقة المنتج الموجود وتجنب التكرار"));
         ProductsGrid.Columns.Add(CreateTextColumn("الباركود", "Barcode", 140, minWidth: 110));
         ProductsGrid.Columns.Add(CreateCategoryComboColumn());
         ProductsGrid.Columns.Add(CreateTextColumn("الوصف", "Description", 160, minWidth: 120));
@@ -394,6 +395,16 @@ public partial class MigrationWizardView
                 }
             }
         }
+
+        ProductsGrid.Columns.Add(CreateTextColumn(
+            "خطأ",
+            "ErrorText",
+            160,
+            minWidth: 120,
+            toolTip: "رسالة التحقق للصف — تظهر عند وجود مشكلة قبل الحفظ"));
+        // عمود الخطأ للقراءة فقط
+        if (ProductsGrid.Columns[^1] is System.Windows.Controls.DataGridTextColumn errCol)
+            errCol.IsReadOnly = true;
     }
 
     private System.Windows.Controls.DataGridCheckBoxColumn CreateCheckBoxColumn(
