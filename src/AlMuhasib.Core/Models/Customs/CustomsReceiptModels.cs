@@ -27,6 +27,14 @@ public sealed class CustomsReceiptAllocationDraft
     public int InvoiceId { get; set; }
     public string InvoiceNumber { get; set; } = string.Empty;
     public decimal Amount { get; set; }
+    /// <summary>Invoice total at print/load time (for receipt form).</summary>
+    public decimal InvoiceTotalAmount { get; set; }
+    /// <summary>Invoice remaining after this receipt (for receipt form).</summary>
+    public decimal InvoiceRemainingAmount { get; set; }
+    public string InvoiceDescription { get; set; } = string.Empty;
+    public CustomsServiceType InvoiceServiceType { get; set; }
+    public CustomsTransportKind? InvoiceTransportKind { get; set; }
+    public int InvoiceVehicleCount { get; set; }
 }
 
 public sealed class CustomsReceiptSaveRequest
