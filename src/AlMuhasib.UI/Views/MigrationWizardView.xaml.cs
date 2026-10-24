@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using AlMuhasib.UI.Converters;
 using AlMuhasib.UI.Helpers;
 using AlMuhasib.UI.ViewModels;
@@ -12,9 +13,13 @@ namespace AlMuhasib.UI.Views;
 
 public partial class MigrationWizardView
 {
+    private const double StepsExpandedWidth = 360;
+    private const double StepsCollapsedWidth = 72;
+
     private MigrationWizardViewModel? _vm;
     private int _lastTransitionToken;
     private int _lastProductsGridVersion = -1;
+    private bool _stepsPanelLayoutApplied;
 
     public MigrationWizardView()
     {
@@ -35,6 +40,7 @@ public partial class MigrationWizardView
             RebuildProductsGridColumns();
         }
 
+        ApplyStepsPanelLayout(animate: false);
         PageEntranceAnimator.AnimateFadeSlide(HeroHeader, 0, axisY: true, from: 12);
         PageEntranceAnimator.AnimateFadeSlide(StepContentScroller, 120, axisY: false, from: -16);
         TryAnimateStepEntrance(force: true);
@@ -80,7 +86,10 @@ public partial class MigrationWizardView
     {
         if (e.PropertyName is nameof(MigrationWizardViewModel.StepTransitionToken))
             TryAnimateStepEntrance(force: false);
-        else if (e.PropertyName is nameof(MigrationWizardViewModel.ShowProductBranchColumns))
+        else if (e.PropertyName is nameof(MigrationWizardViewModel.IsStepsPanelCollapsed))
+            ApplyStepsPanelLayout(animate: true);
+        else if (e.PropertyName is nameof(MigrationWizardViewModel.ShowProductBranchColumns)
+                 or nameof(MigrationWizardViewModel.SelectedBranchForProducts))
         {
             _lastProductsGridVersion = -1;
             RebuildProductsGridColumns();
@@ -105,6 +114,48 @@ public partial class MigrationWizardView
                      or nameof(MigrationWizardViewModel.IsWarehousesStep)
                      or nameof(MigrationWizardViewModel.IsCashStep))
             ApplyColumnVisibility();
+    }
+
+    private void ApplyStepsPanelLayout(bool animate)
+    {
+        if (StepsColumn is null || StepsGapColumn is null || StepsPanelBorder is null)
+            return;
+
+        var collapsed = _vm?.IsStepsPanelCollapsed == true;
+        var target = collapsed ? StepsCollapsedWidth : StepsExpandedWidth;
+        StepsGapColumn.Width = new GridLength(collapsed ? 8 : 16);
+        StepsPanelBorder.Padding = collapsed
+            ? new Thickness(8, 12, 8, 12)
+            : new Thickness(14, 16, 14, 16);
+
+        if (!animate || !_stepsPanelLayoutApplied)
+        {
+            StepsPanelBorder.BeginAnimation(FrameworkElement.WidthProperty, null);
+            StepsPanelBorder.ClearValue(FrameworkElement.WidthProperty);
+            StepsColumn.Width = new GridLength(target);
+            _stepsPanelLayoutApplied = true;
+            return;
+        }
+
+        var from = StepsColumn.ActualWidth > 1
+            ? StepsColumn.ActualWidth
+            : (collapsed ? StepsExpandedWidth : StepsCollapsedWidth);
+
+        StepsColumn.Width = GridLength.Auto;
+        StepsPanelBorder.Width = from;
+        var animation = new DoubleAnimation(from, target, TimeSpan.FromMilliseconds(220))
+        {
+            EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut },
+            FillBehavior = FillBehavior.Stop
+        };
+        animation.Completed += (_, _) =>
+        {
+            StepsPanelBorder.BeginAnimation(FrameworkElement.WidthProperty, null);
+            StepsPanelBorder.ClearValue(FrameworkElement.WidthProperty);
+            StepsColumn.Width = new GridLength(target);
+        };
+        StepsPanelBorder.BeginAnimation(FrameworkElement.WidthProperty, animation);
+        _stepsPanelLayoutApplied = true;
     }
 
     private void TryAnimateStepEntrance(bool force)
@@ -190,6 +241,12 @@ public partial class MigrationWizardView
         ProductsGrid.Columns.Add(CreateTextColumn("الباركود", "Barcode", 140, minWidth: 110));
         ProductsGrid.Columns.Add(CreateCategoryComboColumn());
         ProductsGrid.Columns.Add(CreateTextColumn("الوصف", "Description", 160, minWidth: 120));
+        ProductsGrid.Columns.Add(CreateCheckBoxColumn(
+            "يظهر في\nشاشة الكاشير",
+            "ShowInCashier",
+            120,
+            minWidth: 100,
+            toolTip: "إن كان محدداً يظهر المنتج في شبكة الكاشير — قيمة واحدة على المنتج لكل الفروع"));
 
         var branches = _vm.GetProductBranchInfos();
         for (var i = 0; i < branches.Count; i++)

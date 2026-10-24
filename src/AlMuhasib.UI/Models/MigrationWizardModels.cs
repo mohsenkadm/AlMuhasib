@@ -128,6 +128,9 @@ public partial class MigrationNamedBalanceRow : ObservableObject
     [ObservableProperty] private decimal _discountValue;
     [ObservableProperty] private string? _discountExpiresText;
 
+    /// <summary>إظهار المنتج في شبكة شاشة الكاشير (مستوى المنتج — قيمة واحدة لكل الفروع).</summary>
+    [ObservableProperty] private bool _showInCashier = true;
+
     public ObservableCollection<MigrationProductPriceCell> ProductPrices { get; } = [];
     public ObservableCollection<MigrationWarehouseQtyCell> WarehouseQtys { get; } = [];
     public ObservableCollection<MigrationBranchVisibilityCell> BranchVisibility { get; } = [];

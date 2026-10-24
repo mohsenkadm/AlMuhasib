@@ -34,25 +34,65 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid Margin="12,8,12,8">
+    <Grid x:Name="WizardRootGrid" Margin="12,8,12,8">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="360" MinWidth="300"/>
-            <ColumnDefinition Width="16"/>
+            <ColumnDefinition x:Name="StepsColumn" Width="360" MinWidth="0"/>
+            <ColumnDefinition x:Name="StepsGapColumn" Width="16"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- ═══ Right: Step navigator (enlarged) ═══ -->
-        <Border Grid.Column="0" CornerRadius="16" Background="{DynamicResource CardBrush}"
-                BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1" Padding="14,16">
+        <!-- ═══ Right: Step navigator (قابل للتصغير) ═══ -->
+        <Border x:Name="StepsPanelBorder" Grid.Column="0" CornerRadius="16"
+                Background="{DynamicResource CardBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                Padding="14,16" ClipToBounds="True">
             <DockPanel LastChildFill="True">
-                <StackPanel DockPanel.Dock="Top" Margin="4,0,4,14">
-                    <TextBlock Text="معالج النقل" FontSize="18" FontWeight="Bold"
-                               Foreground="{DynamicResource TextPrimaryBrush}"/>
-                    <TextBlock Text="{Binding ProgressText}" FontSize="12.5" Margin="0,6,0,10"
-                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
-                    <ProgressBar Value="{Binding ProgressPercent}" Maximum="100" Height="8"
-                                 Foreground="{DynamicResource PrimaryHueMidBrush}"/>
-                </StackPanel>
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,10" LastChildFill="True">
+                    <Button DockPanel.Dock="Left"
+                            Command="{Binding ToggleStepsPanelCommand}"
+                            Width="34" Height="34" Padding="0" Cursor="Hand"
+                            md:ButtonAssist.CornerRadius="8"
+                            Style="{StaticResource OutlinedButton}"
+                            VerticalAlignment="Top">
+                        <Button.ToolTip>
+                            <ToolTip>
+                                <TextBlock>
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="تصغير لوحة الخطوات"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsStepsPanelCollapsed}" Value="True">
+                                                    <Setter Property="Text" Value="تكبير لوحة الخطوات"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </ToolTip>
+                        </Button.ToolTip>
+                        <md:PackIcon Width="18" Height="18">
+                            <md:PackIcon.Style>
+                                <Style TargetType="md:PackIcon">
+                                    <Setter Property="Kind" Value="ChevronRight"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsStepsPanelCollapsed}" Value="True">
+                                            <Setter Property="Kind" Value="ChevronLeft"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </md:PackIcon.Style>
+                        </md:PackIcon>
+                    </Button>
+                    <StackPanel Margin="10,0,0,0"
+                                Visibility="{Binding IsStepsPanelCollapsed, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                        <TextBlock Text="معالج النقل" FontSize="18" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="{Binding ProgressText}" FontSize="12.5" Margin="0,6,0,10"
+                                   Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
+                        <ProgressBar Value="{Binding ProgressPercent}" Maximum="100" Height="8"
+                                     Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                    </StackPanel>
+                </DockPanel>
 
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled"
@@ -62,9 +102,21 @@
                             <DataTemplate>
                                 <Button Command="{Binding DataContext.GoToStepCommand, ElementName=Root}"
                                         CommandParameter="{Binding}"
-                                        Margin="0,0,0,10" Padding="12,14" Cursor="Hand"
-                                        MinHeight="52" HorizontalAlignment="Stretch"
-                                        HorizontalContentAlignment="Stretch">
+                                        Margin="0,0,0,10" Cursor="Hand"
+                                        MinHeight="44" HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Stretch"
+                                        ToolTip="{Binding ShortTitle}">
+                                    <Button.Style>
+                                        <Style TargetType="Button">
+                                            <Setter Property="Padding" Value="12,14"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding DataContext.IsStepsPanelCollapsed, ElementName=Root}" Value="True">
+                                                    <Setter Property="Padding" Value="6,10"/>
+                                                    <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
                                     <Button.Template>
                                         <ControlTemplate TargetType="Button">
                                             <Border x:Name="Bd" CornerRadius="14" Padding="{TemplateBinding Padding}"
@@ -92,11 +144,21 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*" MinWidth="80"/>
+                                            <ColumnDefinition Width="*" MinWidth="0"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <Border Width="30" Height="30" CornerRadius="15" VerticalAlignment="Center"
-                                                Background="#22000000" Margin="0,0,10,0">
+                                                Background="#22000000" HorizontalAlignment="Center">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Margin" Value="0,0,10,0"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding DataContext.IsStepsPanelCollapsed, ElementName=Root}" Value="True">
+                                                            <Setter Property="Margin" Value="0"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
                                             <TextBlock Text="{Binding StepNumber}" FontSize="13" FontWeight="Bold"
                                                        HorizontalAlignment="Center" VerticalAlignment="Center">
                                                 <TextBlock.Style>
@@ -116,9 +178,13 @@
                                             <md:PackIcon.Style>
                                                 <Style TargetType="md:PackIcon">
                                                     <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+                                                    <Setter Property="Visibility" Value="Visible"/>
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding IsActive}" Value="True">
                                                             <Setter Property="Foreground" Value="White"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding DataContext.IsStepsPanelCollapsed, ElementName=Root}" Value="True">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
                                                         </DataTrigger>
                                                     </Style.Triggers>
                                                 </Style>
@@ -129,7 +195,8 @@
                                                    FontSize="14.5" FontWeight="SemiBold"
                                                    VerticalAlignment="Center"
                                                    TextWrapping="Wrap"
-                                                   TextTrimming="CharacterEllipsis">
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Visibility="{Binding DataContext.IsStepsPanelCollapsed, ElementName=Root, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
                                                     <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
@@ -142,8 +209,22 @@
                                             </TextBlock.Style>
                                         </TextBlock>
                                         <md:PackIcon Grid.Column="3" Kind="CheckCircle" Width="18" Height="18"
-                                                     Foreground="#66BB6A" VerticalAlignment="Center" Margin="8,0,0,0"
-                                                     Visibility="{Binding IsSaved, Converter={StaticResource BoolVis}}"/>
+                                                     Foreground="#66BB6A" VerticalAlignment="Center" Margin="8,0,0,0">
+                                            <md:PackIcon.Style>
+                                                <Style TargetType="md:PackIcon">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                    <Style.Triggers>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding IsSaved}" Value="True"/>
+                                                                <Condition Binding="{Binding DataContext.IsStepsPanelCollapsed, ElementName=Root}" Value="False"/>
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </md:PackIcon.Style>
+                                        </md:PackIcon>
                                     </Grid>
                                 </Button>
                             </DataTemplate>
@@ -417,6 +498,33 @@
                                            FontSize="12.5" Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap"/>
                             </DockPanel>
 
+                            <!-- اختيار الفرع قبل إدخال المنتجات (عند تعدد الفروع) -->
+                            <Border Visibility="{Binding ShowProductBranchPicker, Converter={StaticResource BoolVis}}"
+                                    Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="14,12"
+                                    Margin="0,0,0,12" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="فرع الإدخال:" VerticalAlignment="Center" Margin="0,0,8,0"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        <ComboBox Width="240" MinHeight="36"
+                                                  ItemsSource="{Binding AvailableBranches}"
+                                                  DisplayMemberPath="Name"
+                                                  SelectedItem="{Binding SelectedBranchForProducts, Mode=TwoWay}"
+                                                  md:HintAssist.Hint="اختر الفرع"
+                                                  Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                                  ToolTip="يجب اختيار الفرع قبل إدخال المنتجات أو استيراد Excel — الكميات تُسجَّل لمخازن هذا الفرع ويُربط المنتج به دون تكرار"/>
+                                    </StackPanel>
+                                    <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                        <TextBlock Text="اختر الفرع أولاً" FontWeight="Bold" FontSize="13.5"
+                                                   Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                        <TextBlock Text="بعد الاختيار يمكنك إدخال المنتجات يدوياً أو استيراد قالب Excel. المنتج الموجود مسبقاً يُربَط بالفرع الجديد دون إنشاء مكرر."
+                                                   FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+
                             <!-- Excel: 1 Download → 2 Import → 3 Preview → Save footer -->
                             <Border Visibility="{Binding ShowExcelPanel, Converter={StaticResource BoolVis}}"
                                     Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="16" Margin="0,0,0,12"
@@ -512,14 +620,27 @@
                             <Border DockPanel.Dock="Top" Margin="0,0,0,8" Padding="10,8" CornerRadius="8"
                                     Background="{DynamicResource BackgroundBrush}">
                                 <DockPanel>
-                                    <CheckBox DockPanel.Dock="Left"
-                                              Content="أعمدة الفروع"
-                                              IsChecked="{Binding ShowProductBranchColumns}"
-                                              VerticalAlignment="Center"
-                                              Margin="0,0,16,0"
-                                              FontSize="12.5"
-                                              ToolTip="إظهار عمود لكل فرع في الجدول وقالب Excel"
-                                              Visibility="{Binding ShowProductBranchColumnsToggle, Converter={StaticResource BoolVis}}"/>
+                                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center"
+                                                Margin="0,0,16,0">
+                                        <CheckBox Content="أعمدة الفروع"
+                                                  IsChecked="{Binding ShowProductBranchColumns}"
+                                                  VerticalAlignment="Center"
+                                                  Margin="0,0,16,0"
+                                                  FontSize="12.5"
+                                                  ToolTip="إظهار عمود لكل فرع في الجدول وقالب Excel"
+                                                  Visibility="{Binding ShowProductBranchColumnsToggle, Converter={StaticResource BoolVis}}"/>
+                                        <TextBlock Text="الفرع:" VerticalAlignment="Center" Margin="0,0,6,0"
+                                                   FontSize="12.5"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   Visibility="{Binding ShowProductBranchPicker, Converter={StaticResource BoolVis}}"/>
+                                        <ComboBox Width="170" MinHeight="32"
+                                                  ItemsSource="{Binding AvailableBranches}"
+                                                  DisplayMemberPath="Name"
+                                                  SelectedItem="{Binding SelectedBranchForProducts, Mode=TwoWay}"
+                                                  Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                                  Visibility="{Binding ShowProductBranchPicker, Converter={StaticResource BoolVis}}"
+                                                  ToolTip="تبديل فرع الإدخال — المنتج نفسه يُربَط بالفرع الجديد دون تكرار"/>
+                                    </StackPanel>
                                     <TextBlock FontSize="12.5" TextWrapping="Wrap"
                                                Foreground="{DynamicResource TextSecondaryBrush}"
                                                VerticalAlignment="Center">
