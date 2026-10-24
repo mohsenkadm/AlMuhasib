@@ -1190,10 +1190,26 @@ public class ExcelExportService : IExportService
 
     public string ExportStatementToPdf(StatementPrintModel model)
     {
-        var bytes = DocumentPdfGenerator.GenerateStatement(model);
+        var bytes = model.IsCustomsOutstandingStatement
+            ? CustomsOutstandingStatementPdfGenerator.Generate(model)
+            : DocumentPdfGenerator.GenerateStatement(model);
         var party = string.IsNullOrWhiteSpace(model.PartyName) ? "كشف" : model.PartyName;
-        var name = $"كشف_{party}_{DateTime.Now:yyyyMMdd_HHmm}";
+        var prefix = model.IsCustomsOutstandingStatement ? "مطالبة_دين" : "كشف";
+        var name = $"{prefix}_{party}_{DateTime.Now:yyyyMMdd_HHmm}";
         return SavePdfToWhatsAppFolder(bytes, SanitizeFileName(name));
+    }
+
+    public void PrintStatement(StatementPrintModel model)
+    {
+        if (model.IsCustomsOutstandingStatement)
+        {
+            var doc = CustomsOutstandingStatementDocumentBuilder.Build(model);
+            var size = CustomsOutstandingStatementDocumentBuilder.ResolvePageSize(model);
+            DocumentPrintHelper.PrintDocument(doc, model.Title, size, preferredPrinter: null, showPreview: true);
+            return;
+        }
+
+        PrintTable(model.Title, model.Columns, model.Rows, model.SummaryLines);
     }
 
     private static string SavePdfToWhatsAppFolder(byte[] pdfBytes, string baseFileName)

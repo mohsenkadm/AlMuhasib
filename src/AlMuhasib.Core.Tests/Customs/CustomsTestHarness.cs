@@ -161,10 +161,20 @@ internal sealed class FakeExportService : IExportService
     public void PrintTable(string title, string[] columns, IList<object[]> rows, IList<string>? summaryLines = null) =>
         PrintTableCalls++;
 
+    public int PrintStatementCalls { get; private set; }
+    public StatementPrintModel? LastStatement { get; private set; }
+
     public string ExportStatementToPdf(StatementPrintModel model)
     {
         ExportStatementPdfCalls++;
+        LastStatement = model;
         return Path.Combine(Path.GetTempPath(), $"customs-statement-{Guid.NewGuid():N}.pdf");
+    }
+
+    public void PrintStatement(StatementPrintModel model)
+    {
+        PrintStatementCalls++;
+        LastStatement = model;
     }
 
     public byte[] ExportToExcel<T>(IEnumerable<T> data, string sheetName = "Sheet1") => [];

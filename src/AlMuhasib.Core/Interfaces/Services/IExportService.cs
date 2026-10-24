@@ -39,6 +39,9 @@ public interface IExportService
     /// <summary>تصدير كشف حساب جدولي إلى PDF.</summary>
     string ExportStatementToPdf(StatementPrintModel model);
 
+    /// <summary>طباعة كشف حساب (يشمل نموذج مطالبة دين التخليص عند تفعيله).</summary>
+    void PrintStatement(StatementPrintModel model);
+
     /// <summary>طباعة إيصال كاشير حسب حجم الورق (A4 / 80mm / 58mm / 50mm).</summary>
     void PrintThermalReceipt(InvoicePrintModel model);
 
@@ -316,4 +319,13 @@ public class StatementPrintModel
     public string[] Columns { get; set; } = [];
     public IList<object[]> Rows { get; set; } = [];
     public IList<string>? SummaryLines { get; set; }
+
+    /// <summary>
+    /// When true, print/PDF use the Customs outstanding-balance claim form
+    /// (see <see cref="CustomsOutstandingStatement"/>). Branding header from print settings stays on top.
+    /// </summary>
+    public bool IsCustomsOutstandingStatement { get; set; }
+
+    /// <summary>Payload for Customs مطالبة بدين متبقي.</summary>
+    public AlMuhasib.Core.Models.Customs.CustomsOutstandingStatementPrintData? CustomsOutstandingStatement { get; set; }
 }

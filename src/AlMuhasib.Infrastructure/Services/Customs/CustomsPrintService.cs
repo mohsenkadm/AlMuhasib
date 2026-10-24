@@ -284,9 +284,39 @@ public sealed class CustomsPrintService : ICustomsPrintService
             SummaryLines = summaryLines
         };
 
+    public StatementPrintModel BuildOutstandingBalanceStatement(CustomsOutstandingClaimDetail claim)
+    {
+        var data = BuildOutstandingPrintData(claim);
+        return new StatementPrintModel
+        {
+            Title = data.Title,
+            PartyName = data.CustomerName,
+            PartyPhone = claim.CustomerPhone,
+            FromDate = null,
+            ToDate = null,
+            Columns = [],
+            Rows = [],
+            SummaryLines =
+            [
+                data.BaseInvoiceTotalLabel + ": " + data.BaseInvoiceTotalDisplay,
+                data.ReceiptsTotalLabel + ": " + data.ReceiptsTotalDisplay,
+                data.RemainingLabel + ": " + data.RemainingDisplay,
+                data.AmountInWords
+            ],
+            IsCustomsOutstandingStatement = true,
+            CustomsOutstandingStatement = data
+        };
+    }
+
     public void PrintCustomerStatement(StatementPrintModel model)
     {
         _permissions.EnsurePrint(CustomsScreenNames.Statement);
+        if (model.IsCustomsOutstandingStatement)
+        {
+            _exportService.PrintStatement(model);
+            return;
+        }
+
         _exportService.PrintTable(
             model.Title,
             model.Columns,
@@ -299,6 +329,131 @@ public sealed class CustomsPrintService : ICustomsPrintService
         _permissions.EnsureExport(CustomsScreenNames.Statement);
         return _exportService.ExportStatementToPdf(model);
     }
+
+    private static CustomsOutstandingStatementPrintData BuildOutstandingPrintData(
+        CustomsOutstandingClaimDetail claim)
+    {
+        var isUsd = claim.Currency == AccountingCurrency.USD;
+        var currencyLabel = isUsd ? "$" : "د.ع";
+        var invoices = claim.Invoices;
+        var total = invoices.Sum(i => i.TotalAmount);
+        var paid = invoices.Sum(i => i.PaidAmount);
+        var remaining = invoices.Sum(i => i.RemainingAmount);
+
+        var allReceipts = invoices
+            .SelectMany(i => i.ReceiptNumbers)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var paidHeader = allReceipts.Count == 1
+            ? $"المبلغ المسدد (وصل {allReceipts[0]})"
+            : allReceipts.Count > 1
+                ? $"المبلغ المسدد (وصولات {string.Join("، ", allReceipts)})"
+                : "المبلغ المسدد (الواصل)";
+
+        string invoiceRef;
+        if (invoices.Count == 0)
+            invoiceRef = "—";
+        else if (invoices.Count == 1)
+            invoiceRef = BuildInvoiceReference(invoices[0]);
+        else
+            invoiceRef = $"{invoices.Count} فواتير مفتوحة — " + string.Join("، ",
+                invoices.Select(i => i.InvoiceNumber));
+
+        var rows = invoices.Select((inv, idx) => new CustomsOutstandingStatementPrintRow
+        {
+            Number = idx + 1,
+            Description = BuildRowDescription(inv),
+            InvoiceTotalDisplay = FormatClaimMoney(inv.TotalAmount, isUsd, currencyLabel),
+            PaidAmountDisplay = FormatClaimMoney(inv.PaidAmount, isUsd, currencyLabel),
+            RemainingAmountDisplay = FormatClaimMoney(inv.RemainingAmount, isUsd, currencyLabel)
+        }).ToList();
+
+        var wordsCurrency = isUsd ? "دولار أمريكي" : "دينار عراقي";
+        var fraction = isUsd ? "سنت" : "فلس";
+        var rawWords = ArabicAmountToWords.Convert(remaining, wordsCurrency, fraction);
+        var coreWords = rawWords
+            .Replace(" فقط لا غير", string.Empty, StringComparison.Ordinal)
+            .Trim();
+
+        var baseLabel = invoices.Count == 1
+            ? $"إجمالي الفاتورة الأساسية ({invoices[0].InvoiceNumber})"
+            : "إجمالي الفواتير الأساسية";
+        var receiptsLabel = allReceipts.Count == 1
+            ? $"الواصل بموجب سند القبض ({allReceipts[0]})"
+            : allReceipts.Count > 1
+                ? $"الواصل بموجب سندات القبض ({string.Join("، ", allReceipts)})"
+                : "الواصل بموجب سندات القبض";
+
+        var customerBase = (claim.CustomerName ?? string.Empty).Trim();
+        return new CustomsOutstandingStatementPrintData
+        {
+            Title = "مطالبة بدين متبقي (Outstanding Balance Statement)",
+            DocumentNumber = string.IsNullOrWhiteSpace(claim.DocumentNumber)
+                ? $"DN-{claim.DocumentDate:yyyy}-{claim.CustomerId:D4}"
+                : claim.DocumentNumber,
+            DocumentDate = claim.DocumentDate == default ? DateTime.Today : claim.DocumentDate,
+            CustomerName = AppendHonourific(customerBase),
+            InvoiceReferenceText = invoiceRef,
+            AccountStatusText = remaining > 0 ? "دين متبقي مستحق الدفع" : "مسدد بالكامل",
+            PaidColumnHeader = paidHeader,
+            CurrencyLabel = currencyLabel,
+            IsUsd = isUsd,
+            Rows = rows,
+            BaseInvoiceTotalLabel = baseLabel,
+            BaseInvoiceTotalDisplay = FormatClaimMoney(total, isUsd, currencyLabel),
+            ReceiptsTotalLabel = receiptsLabel,
+            ReceiptsTotalDisplay = FormatClaimMoney(paid, isUsd, currencyLabel),
+            RemainingLabel = "الرصيد المتبقي (دين مستحق الدفع)",
+            RemainingDisplay = FormatClaimMoney(remaining, isUsd, currencyLabel),
+            AmountInWords = $"المبلغ فقط وقدره: {coreWords} لا غير",
+            BalanceDueDisplay = isUsd
+                ? $"{FormatClaimMoney(remaining, true, currencyLabel)} USD"
+                : FormatClaimMoney(remaining, false, currencyLabel),
+            RemainingTotal = remaining,
+            OrganizerSignatureLabel = "منظّم المطالبة",
+            PayerSignatureLabel = string.IsNullOrWhiteSpace(customerBase)
+                ? "إقرار وتعهد بالدفع"
+                : $"إقرار وتعهد بالدفع ({customerBase})"
+        };
+    }
+
+    private static string BuildInvoiceReference(CustomsOutstandingClaimInvoice inv)
+    {
+        var detail = BuildServiceDetail(inv);
+        return string.IsNullOrWhiteSpace(detail)
+            ? $"الفاتورة رقم {inv.InvoiceNumber}"
+            : $"الفاتورة رقم {inv.InvoiceNumber} ({detail})";
+    }
+
+    private static string BuildRowDescription(CustomsOutstandingClaimInvoice inv)
+    {
+        var detail = BuildServiceDetail(inv);
+        return string.IsNullOrWhiteSpace(detail)
+            ? $"متبقي حساب الفاتورة {inv.InvoiceNumber}"
+            : $"متبقي حساب الفاتورة {inv.InvoiceNumber} ({detail})";
+    }
+
+    private static string BuildServiceDetail(CustomsOutstandingClaimInvoice inv)
+    {
+        if (!string.IsNullOrWhiteSpace(inv.Description))
+        {
+            var d = inv.Description.Trim();
+            if (inv.VehicleCount > 0
+                && !d.Contains("سيارة", StringComparison.Ordinal)
+                && !d.Contains("شاحن", StringComparison.Ordinal))
+                return $"{d} {inv.VehicleCount} سيارات";
+            return d;
+        }
+
+        if (inv.VehicleCount > 0)
+            return $"{inv.ServiceLabel} {inv.VehicleCount} سيارات";
+        return inv.ServiceLabel;
+    }
+
+    private static string FormatClaimMoney(decimal amount, bool isUsd, string currencyLabel) =>
+        isUsd ? $"${amount:N2}" : $"{amount:N0} {currencyLabel}";
 
     public void PrintReportTable(
         string screenName,

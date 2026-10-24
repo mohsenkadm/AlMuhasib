@@ -21,6 +21,92 @@ public sealed class CustomsStatementService : ICustomsStatementService
         _permissions = permissions;
     }
 
+    public async Task<CustomsOutstandingClaimDetail> GetOutstandingClaimAsync(
+        int customerId,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        int? invoiceId = null,
+        CancellationToken cancellationToken = default)
+    {
+        _permissions.EnsureView(CustomsScreenNames.Statement);
+        await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var customer = await db.CustomsCustomers.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == customerId, cancellationToken)
+            ?? throw new InvalidOperationException("العميل غير موجود");
+
+        var invoicesQuery = db.CustomsInvoices.AsNoTracking()
+            .Include(i => i.Vehicles)
+            .Where(i => i.CustomerId == customerId
+                        && i.Status == CustomsInvoiceStatus.Approved
+                        && i.RemainingAmount > 0);
+
+        if (invoiceId.HasValue)
+            invoicesQuery = invoicesQuery.Where(i => i.Id == invoiceId.Value);
+        if (fromDate.HasValue)
+            invoicesQuery = invoicesQuery.Where(i => i.InvoiceDate >= fromDate.Value.Date);
+        if (toDate.HasValue)
+            invoicesQuery = invoicesQuery.Where(i => i.InvoiceDate <= toDate.Value.Date);
+
+        var invoices = await invoicesQuery
+            .OrderBy(i => i.InvoiceDate)
+            .ThenBy(i => i.Id)
+            .ToListAsync(cancellationToken);
+
+        var invoiceIds = invoices.Select(i => i.Id).ToList();
+        var receiptAllocs = invoiceIds.Count == 0
+            ? []
+            : await db.CustomsReceiptAllocations.AsNoTracking()
+                .Include(a => a.Receipt)
+                .Where(a => invoiceIds.Contains(a.InvoiceId) && a.Amount > 0)
+                .ToListAsync(cancellationToken);
+
+        var receiptsByInvoice = receiptAllocs
+            .GroupBy(a => a.InvoiceId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(a => a.Receipt?.ReceiptNumber ?? string.Empty)
+                    .Where(n => !string.IsNullOrWhiteSpace(n))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList());
+
+        // Prefer a single currency when possible (USD first if any open USD invoices).
+        var currency = invoices.Any(i => i.Currency == AccountingCurrency.USD)
+            ? AccountingCurrency.USD
+            : AccountingCurrency.IQD;
+        var scoped = invoices.Where(i => i.Currency == currency).ToList();
+
+        var claimInvoices = scoped.Select(inv =>
+        {
+            receiptsByInvoice.TryGetValue(inv.Id, out var receiptNos);
+            return new CustomsOutstandingClaimInvoice
+            {
+                InvoiceId = inv.Id,
+                InvoiceNumber = inv.InvoiceNumber,
+                InvoiceDate = inv.InvoiceDate,
+                Description = inv.Description?.Trim() ?? string.Empty,
+                ServiceLabel = CustomsServiceTypeDisplay.ToArabic(inv.ServiceType, inv.TransportKind),
+                VehicleCount = inv.Vehicles.Count,
+                TotalAmount = inv.TotalAmount,
+                PaidAmount = inv.PaidAmount,
+                RemainingAmount = inv.RemainingAmount,
+                Currency = inv.Currency,
+                ReceiptNumbers = receiptNos ?? []
+            };
+        }).ToList();
+
+        return new CustomsOutstandingClaimDetail
+        {
+            CustomerId = customer.Id,
+            CustomerName = customer.Name,
+            CustomerPhone = customer.Phone,
+            DocumentDate = DateTime.Today,
+            DocumentNumber = $"DN-{DateTime.Today:yyyy}-{customer.Id:D4}",
+            Currency = currency,
+            Invoices = claimInvoices
+        };
+    }
+
     public async Task<IReadOnlyList<CustomsStatementInvoiceOption>> GetInvoiceOptionsAsync(
         int customerId,
         CancellationToken cancellationToken = default)

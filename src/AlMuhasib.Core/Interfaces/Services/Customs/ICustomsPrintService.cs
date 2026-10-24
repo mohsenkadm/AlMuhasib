@@ -38,6 +38,9 @@ public interface ICustomsPrintService
         IList<object[]> rows,
         IList<string>? summaryLines);
 
+    /// <summary>Official outstanding-balance claim form (مطالبة بدين متبقي).</summary>
+    StatementPrintModel BuildOutstandingBalanceStatement(CustomsOutstandingClaimDetail claim);
+
     void PrintCustomerStatement(StatementPrintModel model);
 
     string ExportCustomerStatementPdf(StatementPrintModel model);
