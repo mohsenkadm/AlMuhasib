@@ -113,25 +113,150 @@ public sealed class CustomsPrintService : ICustomsPrintService
 
     public VoucherPrintModel BuildReceipt(CustomsReceiptDetail detail)
     {
-        var allocNotes = detail.Allocations.Count == 0
-            ? detail.Notes
-            : string.Join(" | ", detail.Allocations.Select(a => $"{a.InvoiceNumber}:{a.Amount:N0}"))
-              + (string.IsNullOrWhiteSpace(detail.Notes) ? string.Empty : $" — {detail.Notes}");
-
+        var receipt = BuildReceiptData(detail);
         return new VoucherPrintModel
         {
-            Title = "وصل قبض — التخليص الكمركي",
+            Title = receipt.Title,
             VoucherNumber = detail.ReceiptNumber,
-            VoucherTypeLabel = detail.PaymentMethodLabel,
+            VoucherTypeLabel = receipt.PaymentMethodLabel,
             Date = detail.ReceiptDate,
             Amount = detail.Amount,
-            CurrencyLabel = detail.CurrencyLabel,
-            PartyLabel = "العميل",
-            PartyName = detail.CustomerName,
+            CurrencyLabel = receipt.CurrencyLabel,
+            PartyLabel = "استلمنا من السادة",
+            PartyName = receipt.CustomerName,
             PartyPhone = detail.CustomerPhone,
-            Notes = allocNotes
+            Notes = receipt.NoteText,
+            IsCustomsReceipt = true,
+            CustomsReceipt = receipt
         };
     }
+
+    private static CustomsReceiptPrintData BuildReceiptData(CustomsReceiptDetail detail)
+    {
+        var isUsd = detail.Currency == AccountingCurrency.USD
+                    || (detail.CurrencyLabel?.Contains('$') ?? false)
+                    || (detail.CurrencyLabel?.Contains("دولار", StringComparison.Ordinal) ?? false);
+        var currencyLabel = isUsd ? "$" : "د.ع";
+        var wordsCurrency = isUsd ? "دولار أمريكي" : "دينار عراقي";
+        var fraction = isUsd ? "سنت" : "فلس";
+        var rawWords = ArabicAmountToWords.Convert(detail.Amount, wordsCurrency, fraction);
+        var coreWords = rawWords
+            .Replace(" فقط لا غير", string.Empty, StringComparison.Ordinal)
+            .Trim();
+
+        var amountDisplay = isUsd
+            ? $"${detail.Amount:N0}"
+            : $"{detail.Amount:N0} {currencyLabel}";
+        var amountInWords = $"{amountDisplay} ({coreWords} لا غير)";
+
+        var rows = detail.Allocations
+            .Where(a => a.Amount > 0 || a.InvoiceId > 0)
+            .Select(a => new CustomsReceiptPrintAllocationRow
+            {
+                AccountDetails = BuildAllocationAccountDetails(a),
+                InvoiceTotalDisplay = FormatReceiptMoney(a.InvoiceTotalAmount, isUsd, currencyLabel),
+                PaidAmountDisplay = FormatReceiptMoney(a.Amount, isUsd, currencyLabel),
+                RemainingAmountDisplay = FormatReceiptMoney(a.InvoiceRemainingAmount, isUsd, currencyLabel)
+            })
+            .ToList();
+
+        if (rows.Count == 0)
+        {
+            rows.Add(new CustomsReceiptPrintAllocationRow
+            {
+                AccountDetails = string.IsNullOrWhiteSpace(detail.Notes)
+                    ? "دفعة على حساب العميل"
+                    : detail.Notes.Trim(),
+                InvoiceTotalDisplay = FormatReceiptMoney(detail.Amount, isUsd, currencyLabel),
+                PaidAmountDisplay = FormatReceiptMoney(detail.Amount, isUsd, currencyLabel),
+                RemainingAmountDisplay = FormatReceiptMoney(0m, isUsd, currencyLabel)
+            });
+        }
+
+        var remainingSum = detail.Allocations.Sum(a => a.InvoiceRemainingAmount);
+        var customerBase = (detail.CustomerName ?? string.Empty).Trim();
+        var totalReceived = isUsd
+            ? $"{FormatReceiptMoney(detail.Amount, true, currencyLabel)} USD"
+            : FormatReceiptMoney(detail.Amount, false, currencyLabel);
+
+        return new CustomsReceiptPrintData
+        {
+            Title = "وصل قبض مالي (Receipt Voucher)",
+            ReceiptNumber = detail.ReceiptNumber,
+            ReceiptDate = detail.ReceiptDate,
+            CustomerName = AppendHonourific(customerBase),
+            AmountDisplay = amountDisplay,
+            AmountInWords = amountInWords,
+            PaymentMethodLabel = CustomsPaymentMethodDisplay.ToReceiptArabic(detail.PaymentMethod),
+            PurposeText = BuildReceiptPurpose(detail),
+            CurrencyLabel = currencyLabel,
+            IsUsd = isUsd,
+            Amount = detail.Amount,
+            Allocations = rows,
+            TotalReceivedDisplay = totalReceived,
+            NoteText = BuildAutoReceiptNote(detail.Amount, remainingSum, isUsd, currencyLabel),
+            ReceiverSignatureLabel = "توقيع واستلام",
+            PayerSignatureLabel = string.IsNullOrWhiteSpace(customerBase)
+                ? "توقيع المسلّم"
+                : $"توقيع المسلّم ({customerBase})"
+        };
+    }
+
+    private static string BuildAllocationAccountDetails(CustomsReceiptAllocationDraft a)
+    {
+        var invoiceNo = string.IsNullOrWhiteSpace(a.InvoiceNumber) ? $"#{a.InvoiceId}" : a.InvoiceNumber;
+        var service = CustomsServiceTypeDisplay.ToArabic(a.InvoiceServiceType, a.InvoiceTransportKind);
+        var baseText = string.IsNullOrWhiteSpace(a.InvoiceDescription)
+            ? service
+            : a.InvoiceDescription.Trim();
+
+        if (a.InvoiceVehicleCount > 0
+            && !baseText.Contains("سيارة", StringComparison.Ordinal)
+            && !baseText.Contains("شاحن", StringComparison.Ordinal))
+        {
+            return $"{baseText} {a.InvoiceVehicleCount} سيارات (فاتورة {invoiceNo})";
+        }
+
+        if (baseText.Contains("فاتورة", StringComparison.Ordinal))
+            return baseText;
+        return $"{baseText} (فاتورة {invoiceNo})";
+    }
+
+    private static string BuildReceiptPurpose(CustomsReceiptDetail detail)
+    {
+        if (!string.IsNullOrWhiteSpace(detail.Notes))
+            return detail.Notes.Trim();
+
+        if (detail.Allocations.Count == 0)
+            return "دفعة على حساب العميل";
+
+        var nums = string.Join("، ", detail.Allocations
+            .Select(a => a.InvoiceNumber)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Distinct());
+        if (string.IsNullOrWhiteSpace(nums))
+            return "دفعة لحساب الفاتورة";
+
+        var first = detail.Allocations[0];
+        var head = string.IsNullOrWhiteSpace(first.InvoiceDescription)
+            ? CustomsServiceTypeDisplay.ToArabic(first.InvoiceServiceType, first.InvoiceTransportKind)
+            : first.InvoiceDescription.Trim();
+        return $"دفعة من {head} (دفعة لحساب الفاتورة {nums})";
+    }
+
+    private static string BuildAutoReceiptNote(
+        decimal amount,
+        decimal remaining,
+        bool isUsd,
+        string currencyLabel)
+    {
+        var paid = FormatReceiptMoney(amount, isUsd, currencyLabel);
+        var remain = FormatReceiptMoney(remaining, isUsd, currencyLabel);
+        return $"تم استلام مبلغ {paid} كدفعة أولى وتثبيت المتبقي ({remain}) في الحساب لحين التسديد النهائي.";
+    }
+
+    private static string FormatReceiptMoney(decimal amount, bool isUsd, string currencyLabel) =>
+        isUsd ? $"${amount:N2}" : $"{amount:N0} {currencyLabel}";
 
     public string ExportReceiptPdf(CustomsReceiptDetail detail)
     {

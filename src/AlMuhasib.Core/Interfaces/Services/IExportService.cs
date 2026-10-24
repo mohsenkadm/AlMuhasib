@@ -280,6 +280,15 @@ public class VoucherPrintModel
     public string? CashBoxName { get; set; }
     public string? BankAccountName { get; set; }
     public string? Notes { get; set; }
+
+    /// <summary>
+    /// When true, print/PDF use the Customs receipt form
+    /// (see <see cref="CustomsReceipt"/>). Branding header from print settings stays on top.
+    /// </summary>
+    public bool IsCustomsReceipt { get; set; }
+
+    /// <summary>Payload for the Customs customer receipt (وصل قبض مالي).</summary>
+    public AlMuhasib.Core.Models.Customs.CustomsReceiptPrintData? CustomsReceipt { get; set; }
 }
 
 /// <summary>إيصال حركة مستثمر (إيداع / سحب / توزيع أرباح).</summary>

@@ -124,7 +124,7 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
         var receipt = await db.CustomsReceipts.AsNoTracking()
             .Include(r => r.Customer)
-            .Include(r => r.Allocations).ThenInclude(a => a.Invoice)
+            .Include(r => r.Allocations).ThenInclude(a => a.Invoice).ThenInclude(i => i!.Vehicles)
             .FirstOrDefaultAsync(r => r.Id == id, cancellationToken);
         if (receipt is null)
             return null;
@@ -573,7 +573,13 @@ public sealed class CustomsReceiptService : ICustomsReceiptService
                 Id = a.Id,
                 InvoiceId = a.InvoiceId,
                 InvoiceNumber = a.Invoice?.InvoiceNumber ?? string.Empty,
-                Amount = a.Amount
+                Amount = a.Amount,
+                InvoiceTotalAmount = a.Invoice?.TotalAmount ?? 0m,
+                InvoiceRemainingAmount = a.Invoice?.RemainingAmount ?? 0m,
+                InvoiceDescription = a.Invoice?.Description ?? string.Empty,
+                InvoiceServiceType = a.Invoice?.ServiceType ?? CustomsServiceType.Clearance,
+                InvoiceTransportKind = a.Invoice?.TransportKind,
+                InvoiceVehicleCount = a.Invoice?.Vehicles.Count ?? 0
             }).ToList(),
             Attachments = attachments.Select(a => new CustomsAttachmentItem
             {
