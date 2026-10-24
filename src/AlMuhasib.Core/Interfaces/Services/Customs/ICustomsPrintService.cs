@@ -52,7 +52,10 @@ public interface ICustomsPrintService
         string[] columns,
         IList<object[]> rows,
         IList<string>? summaryLines = null,
-        CustomsPrintDocumentKind? kind = null);
+        CustomsPrintDocumentKind? kind = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        string? partyName = null);
 
     /// <summary>Export report PDF after <c>EnsureExport(screenName)</c>.</summary>
     string ExportReportPdf(

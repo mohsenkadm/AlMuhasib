@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Enums.Customs;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Interfaces.Services.Customs;
@@ -106,13 +107,18 @@ public partial class CustomsDebtsReportViewModel : CustomsReportViewModelBase
     [RelayCommand] private void Print()
     {
         var (c, r, s) = BuildExport();
-        PrintTable("تقرير الديون — التخليص", c, r, s);
+        PrintStaffReport(
+            CustomsPrintDocumentKind.DebtsReport,
+            "تقرير الديون — التخليص", c, r, s,
+            SelectedCustomer?.Name ?? "الكل");
     }
 
     [RelayCommand] private void ExportToPdf()
     {
         var (c, r, s) = BuildExport();
-        ExportPdfDocument("تقرير الديون — التخليص", SelectedCustomer?.Name ?? "الكل", c, r, s,
+        ExportStaffReportPdf(
+            CustomsPrintDocumentKind.DebtsReport,
+            "تقرير الديون — التخليص", SelectedCustomer?.Name ?? "الكل", c, r, s,
             $"تقرير_ديون_تخليص_{DateTime.Now:yyyyMMdd}.pdf");
     }
 }

@@ -168,17 +168,26 @@ public class CustomsPrintServiceTests
         };
 
         h.Print.PrintReportTable(CustomsScreenNames.Reports, "تقرير", cols, rows);
-        Assert.Equal(1, h.Export.PrintTableCalls);
+        Assert.Equal(1, h.Export.PrintStatementCalls);
+        Assert.True(h.Export.LastStatement!.IsCustomsReport);
+        Assert.NotNull(h.Export.LastStatement.CustomsReport);
 
         var pdf = h.Print.ExportReportPdf(CustomsScreenNames.Reports, model);
         Assert.False(string.IsNullOrWhiteSpace(pdf));
         Assert.Equal(1, h.Export.ExportStatementPdfCalls);
+        Assert.True(h.Export.LastStatement!.IsCustomsReport);
 
         var excelPath = Path.Combine(Path.GetTempPath(), $"customs-ok-{Guid.NewGuid():N}.xlsx");
         h.Print.ExportReportExcel(CustomsScreenNames.Reports, excelPath, "Sheet", cols, rows);
         Assert.Equal(1, h.Export.ExportExcelCalls);
 
-        h.Print.PrintReportTable(CustomsScreenNames.ProfitReport, "ربح", cols, rows);
-        Assert.Equal(2, h.Export.PrintTableCalls);
+        h.Print.PrintReportTable(
+            CustomsScreenNames.ProfitReport,
+            "ربح",
+            cols,
+            rows,
+            kind: CustomsPrintDocumentKind.ProfitReport);
+        Assert.Equal(2, h.Export.PrintStatementCalls);
+        Assert.Equal(CustomsPrintDocumentKind.ProfitReport, h.Export.LastStatement!.CustomsReport!.Kind);
     }
 }

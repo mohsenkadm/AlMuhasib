@@ -1192,9 +1192,15 @@ public class ExcelExportService : IExportService
     {
         var bytes = model.IsCustomsOutstandingStatement
             ? CustomsOutstandingStatementPdfGenerator.Generate(model)
-            : DocumentPdfGenerator.GenerateStatement(model);
+            : model.IsCustomsReport
+                ? CustomsReportPdfGenerator.Generate(model)
+                : DocumentPdfGenerator.GenerateStatement(model);
         var party = string.IsNullOrWhiteSpace(model.PartyName) ? "كشف" : model.PartyName;
-        var prefix = model.IsCustomsOutstandingStatement ? "مطالبة_دين" : "كشف";
+        var prefix = model.IsCustomsOutstandingStatement
+            ? "مطالبة_دين"
+            : model.IsCustomsReport
+                ? "تقرير_تخليص"
+                : "كشف";
         var name = $"{prefix}_{party}_{DateTime.Now:yyyyMMdd_HHmm}";
         return SavePdfToWhatsAppFolder(bytes, SanitizeFileName(name));
     }
@@ -1205,6 +1211,14 @@ public class ExcelExportService : IExportService
         {
             var doc = CustomsOutstandingStatementDocumentBuilder.Build(model);
             var size = CustomsOutstandingStatementDocumentBuilder.ResolvePageSize(model);
+            DocumentPrintHelper.PrintDocument(doc, model.Title, size, preferredPrinter: null, showPreview: true);
+            return;
+        }
+
+        if (model.IsCustomsReport)
+        {
+            var doc = CustomsReportDocumentBuilder.Build(model);
+            var size = CustomsReportDocumentBuilder.ResolvePageSize(model);
             DocumentPrintHelper.PrintDocument(doc, model.Title, size, preferredPrinter: null, showPreview: true);
             return;
         }

@@ -328,4 +328,13 @@ public class StatementPrintModel
 
     /// <summary>Payload for Customs مطالبة بدين متبقي.</summary>
     public AlMuhasib.Core.Models.Customs.CustomsOutstandingStatementPrintData? CustomsOutstandingStatement { get; set; }
+
+    /// <summary>
+    /// When true, print/PDF use the shared Customs staff/list report form
+    /// (see <see cref="CustomsReport"/>). Branding header from print settings stays on top.
+    /// </summary>
+    public bool IsCustomsReport { get; set; }
+
+    /// <summary>Payload for Customs reports and list tables.</summary>
+    public AlMuhasib.Core.Models.Customs.CustomsReportPrintData? CustomsReport { get; set; }
 }

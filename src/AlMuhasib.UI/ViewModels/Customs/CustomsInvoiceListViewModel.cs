@@ -497,6 +497,12 @@ public partial class CustomsInvoiceListViewModel : ViewModelBase
     [RelayCommand]
     private async Task PrintTable()
     {
+        if (!CanPrint)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية الطباعة");
+            return;
+        }
+
         try
         {
             var (allItems, _) = await _invoiceService.GetPagedAsync(1, int.MaxValue, null, StatusFilter, DateFrom, DateTo);
@@ -512,10 +518,14 @@ public partial class CustomsInvoiceListViewModel : ViewModelBase
                 i.RemainingAmount.ToString("N0"),
                 i.StatusLabel
             }).ToList();
-            ListTableExportHelper.Print(
-                _exportService, CanPrint,
-                "فواتير التخليص الكمركي", columns, rows,
-                warnOnDenied: true);
+            _printService.PrintReportTable(
+                CustomsPermissionRegistry.Invoices,
+                "فواتير التخليص الكمركي",
+                columns,
+                rows,
+                kind: CustomsPrintDocumentKind.InvoicesList,
+                fromDate: DateFrom,
+                toDate: DateTo);
         }
         catch (Exception ex)
         {
