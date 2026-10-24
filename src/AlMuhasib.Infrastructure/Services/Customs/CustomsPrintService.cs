@@ -9,8 +9,7 @@ namespace AlMuhasib.Infrastructure.Services.Customs;
 
 /// <summary>
 /// Builds Customs print models and delegates to <see cref="IExportService"/>.
-/// Customer invoice/receipt/statement builders intentionally omit expenses,
-/// InternalProfit, InternalNotes, and other internal financial details.
+/// Daily invoice uses the official landscape form; customer notes only (no InternalNotes / profit).
 /// </summary>
 public sealed class CustomsPrintService : ICustomsPrintService
 {
@@ -38,7 +37,7 @@ public sealed class CustomsPrintService : ICustomsPrintService
             : BuildDailyInvoice(detail, customerPhone);
     }
 
-    /// <summary>Clearance / ClearanceAndTransport — فاتورة تخليص يومية (نسخة عميل).</summary>
+    /// <summary>Clearance / ClearanceAndTransport — فاتورة تخليص يومية (نسخة العميل بالشكل الرسمي).</summary>
     public InvoicePrintModel BuildDailyInvoice(
         CustomsInvoiceDetail detail,
         string? customerPhone = null)
@@ -46,14 +45,14 @@ public sealed class CustomsPrintService : ICustomsPrintService
         var title = detail.ServiceType == CustomsServiceType.ClearanceAndTransport
             ? "فاتورة تخليص يومية — تخليص ونقل"
             : "فاتورة تخليص يومية";
-        return BuildCustomerInvoiceCore(detail, title, customerPhone);
+        return BuildDailyForm(detail, title, customerPhone);
     }
 
-    /// <summary>Transport — فاتورة نقل (نسخة عميل).</summary>
+    /// <summary>Transport — same daily landscape form with land-transport column emphasis.</summary>
     public InvoicePrintModel BuildTransportInvoice(
         CustomsInvoiceDetail detail,
         string? customerPhone = null) =>
-        BuildCustomerInvoiceCore(detail, "فاتورة نقل", customerPhone);
+        BuildDailyForm(detail, "فاتورة نقل", customerPhone);
 
     public void PrintCustomerInvoice(
         CustomsInvoiceDetail detail,
@@ -95,7 +94,6 @@ public sealed class CustomsPrintService : ICustomsPrintService
 
     public string ExportReceiptPdf(CustomsReceiptDetail detail)
     {
-        // List/form print and PDF export both call this helper.
         _permissions.EnsurePrintOrExport(CustomsScreenNames.Receipts);
         return _exportService.ExportVoucherToPdf(BuildReceipt(detail));
     }
@@ -144,7 +142,7 @@ public sealed class CustomsPrintService : ICustomsPrintService
         IList<string>? summaryLines = null,
         CustomsPrintDocumentKind? kind = null)
     {
-        _ = kind; // reserved for future official report templates
+        _ = kind;
         _permissions.EnsurePrint(screenName);
         _exportService.PrintTable(title, columns, rows, summaryLines);
     }
@@ -170,12 +168,133 @@ public sealed class CustomsPrintService : ICustomsPrintService
         _exportService.ExportToExcel(filePath, sheetName, columns, rows);
     }
 
-    private static InvoicePrintModel BuildCustomerInvoiceCore(
+    private static InvoicePrintModel BuildDailyForm(
         CustomsInvoiceDetail detail,
         string title,
         string? customerPhone)
     {
-        // Customer copy: vehicles as billable lines only — never expenses / InternalNotes / profit.
+        var currency = string.IsNullOrWhiteSpace(detail.CurrencyLabel)
+            ? AccountingCurrencyHelper.GetLabel(detail.Currency)
+            : detail.CurrencyLabel;
+
+        var daily = BuildDailyData(detail, currency);
+        var items = BuildLegacyItems(detail);
+
+        var subtotal = detail.VehiclesSum > 0
+            ? detail.VehiclesSum
+            : detail.TotalAmount + detail.DiscountAmount;
+
+        return new InvoicePrintModel
+        {
+            Title = title,
+            InvoiceNumber = detail.InvoiceNumber,
+            Date = detail.InvoiceDate,
+            PartyLabel = "العميل",
+            PartyName = detail.CustomerName,
+            PartyPhone = customerPhone,
+            PaymentMethod = detail.ServiceTypeLabel,
+            Notes = string.IsNullOrWhiteSpace(detail.CustomerNotes) ? null : detail.CustomerNotes,
+            Items = items,
+            Subtotal = subtotal,
+            DiscountAmount = detail.DiscountAmount,
+            GrandTotal = detail.TotalAmount,
+            PaidAmount = detail.PaidAmount,
+            RemainingAmount = detail.RemainingAmount,
+            CurrencyLabel = currency,
+            FxRate = detail.FxRate,
+            ShowCarShowroomFields = detail.Vehicles.Count > 0,
+            HideAmounts = false,
+            IsCustomsDailyInvoice = true,
+            CustomsDaily = daily,
+            PaperSize = "A4Landscape"
+            // InternalNotes / InternalProfit intentionally omitted
+        };
+    }
+
+    private static CustomsDailyInvoicePrintData BuildDailyData(
+        CustomsInvoiceDetail detail,
+        string currency)
+    {
+        var classified = ClassifyExpenses(detail.Expenses);
+        var rows = new List<CustomsDailyInvoicePrintRow>();
+        var n = 1;
+
+        foreach (var v in detail.Vehicles)
+        {
+            var driver = FirstNonEmpty(v.IraqiDriver, v.SyrianDriver);
+            var plate = FirstNonEmpty(v.IraqiPlate, v.SyrianPlate);
+            var consignment = string.IsNullOrWhiteSpace(v.SerialNumber)
+                ? (v.CargoType ?? string.Empty)
+                : string.IsNullOrWhiteSpace(v.CargoType)
+                    ? v.SerialNumber
+                    : $"{v.SerialNumber} — {v.CargoType}";
+
+            decimal? clearance = null;
+            decimal? land = null;
+            if (v.VehiclePrice != 0)
+            {
+                if (detail.ServiceType == CustomsServiceType.Transport)
+                    land = v.VehiclePrice;
+                else
+                    clearance = v.VehiclePrice;
+            }
+
+            rows.Add(new CustomsDailyInvoicePrintRow
+            {
+                Number = n++,
+                DriverName = driver,
+                WheelNumber = plate,
+                UnloadingDate = v.UnloadingDate?.ToString("yyyy/MM/dd") ?? string.Empty,
+                Consignment = consignment,
+                ClearanceFees = clearance,
+                LandTransport = land,
+                Notes = v.Notes ?? string.Empty
+            });
+        }
+
+        // Invoice-level fee types are not stored per vehicle — place classified
+        // amounts on the first data row so the grid matches the reference form.
+        if (rows.Count == 0)
+        {
+            rows.Add(new CustomsDailyInvoicePrintRow { Number = 1 });
+        }
+
+        var first = rows[0];
+        first.Seal = AddNullable(first.Seal, classified.Seal);
+        first.Radiation = AddNullable(first.Radiation, classified.Radiation);
+        first.Duty = AddNullable(first.Duty, classified.Duty);
+        first.QualityControl = AddNullable(first.QualityControl, classified.QualityControl);
+        first.LandTransport = AddNullable(first.LandTransport, classified.LandTransport);
+        first.ClearanceFees = AddNullable(first.ClearanceFees, classified.ClearanceFees);
+        first.Expenses = AddNullable(first.Expenses, classified.OtherExpenses);
+
+        var totalClearance = rows.Sum(r => r.ClearanceFees ?? 0m);
+        var totalLand = rows.Sum(r => r.LandTransport ?? 0m);
+        var totalDuties = rows.Sum(r => r.Duty ?? 0m);
+        var totalInspections = rows.Sum(r => (r.QualityControl ?? 0m) + (r.Radiation ?? 0m) + (r.Seal ?? 0m));
+        var totalExpenses = rows.Sum(r => r.Expenses ?? 0m);
+
+        return new CustomsDailyInvoicePrintData
+        {
+            CustomerName = detail.CustomerName,
+            InvoiceNumber = detail.InvoiceNumber,
+            InvoiceDate = detail.InvoiceDate,
+            CurrencyLabel = currency,
+            Rows = rows,
+            TotalDuties = totalDuties,
+            TotalInspections = totalInspections,
+            TotalLandTransport = totalLand,
+            TotalClearanceFees = totalClearance,
+            TotalExpenses = totalExpenses,
+            InvoiceTotal = detail.TotalAmount,
+            PaidAmount = detail.PaidAmount,
+            RemainingAmount = detail.RemainingAmount,
+            MinRows = CustomsDailyInvoicePrintData.DefaultMinRows
+        };
+    }
+
+    private static List<InvoicePrintItem> BuildLegacyItems(CustomsInvoiceDetail detail)
+    {
         var items = new List<InvoicePrintItem>();
         var n = 1;
         foreach (var v in detail.Vehicles)
@@ -215,33 +334,51 @@ public sealed class CustomsPrintService : ICustomsPrintService
             });
         }
 
-        var subtotal = detail.VehiclesSum > 0
-            ? detail.VehiclesSum
-            : detail.TotalAmount + detail.DiscountAmount;
+        return items;
+    }
 
-        return new InvoicePrintModel
+    private static ClassifiedExpenses ClassifyExpenses(IEnumerable<CustomsInvoiceExpenseDraft> expenses)
+    {
+        var result = new ClassifiedExpenses();
+        foreach (var e in expenses)
         {
-            Title = title,
-            InvoiceNumber = detail.InvoiceNumber,
-            Date = detail.InvoiceDate,
-            PartyLabel = "العميل",
-            PartyName = detail.CustomerName,
-            PartyPhone = customerPhone,
-            PaymentMethod = detail.ServiceTypeLabel,
-            Notes = string.IsNullOrWhiteSpace(detail.CustomerNotes) ? null : detail.CustomerNotes,
-            Items = items,
-            Subtotal = subtotal,
-            DiscountAmount = detail.DiscountAmount,
-            GrandTotal = detail.TotalAmount,
-            PaidAmount = detail.PaidAmount,
-            RemainingAmount = detail.RemainingAmount,
-            CurrencyLabel = string.IsNullOrWhiteSpace(detail.CurrencyLabel)
-                ? AccountingCurrencyHelper.GetLabel(detail.Currency)
-                : detail.CurrencyLabel,
-            FxRate = detail.FxRate,
-            ShowCarShowroomFields = detail.Vehicles.Count > 0,
-            HideAmounts = false
-            // Intentionally omitted: expenses, InternalProfit, InternalNotes
-        };
+            var name = e.ExpenseTypeName ?? string.Empty;
+            if (ContainsAny(name, "سيل"))
+                result.Seal += e.Amount;
+            else if (ContainsAny(name, "إشعاع", "اشعاع"))
+                result.Radiation += e.Amount;
+            else if (ContainsAny(name, "فحص", "سيطرة", "نوعية"))
+                result.QualityControl += e.Amount;
+            else if (ContainsAny(name, "نقل", "مانيفست", "مانيفيست", "مانيڤست", "بري"))
+                result.LandTransport += e.Amount;
+            else if (ContainsAny(name, "تخليص", "أتعاب", "اتعاب"))
+                result.ClearanceFees += e.Amount;
+            else if (ContainsAny(name, "رسم", "رسوم"))
+                result.Duty += e.Amount;
+            else
+                result.OtherExpenses += e.Amount;
+        }
+
+        return result;
+    }
+
+    private static bool ContainsAny(string haystack, params string[] needles) =>
+        needles.Any(n => haystack.Contains(n, StringComparison.OrdinalIgnoreCase));
+
+    private static string FirstNonEmpty(params string?[] values) =>
+        values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))?.Trim() ?? string.Empty;
+
+    private static decimal? AddNullable(decimal? current, decimal add) =>
+        add == 0 ? current : (current ?? 0m) + add;
+
+    private sealed class ClassifiedExpenses
+    {
+        public decimal Seal;
+        public decimal Radiation;
+        public decimal Duty;
+        public decimal QualityControl;
+        public decimal LandTransport;
+        public decimal ClearanceFees;
+        public decimal OtherExpenses;
     }
 }

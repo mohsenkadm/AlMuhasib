@@ -7,6 +7,7 @@ namespace AlMuhasib.Shared.Services;
 public static class InvoicePaperSizes
 {
     public const string A4 = "A4";
+    public const string A4Landscape = "A4Landscape";
     public const string A5 = "A5";
     public const string Letter = "Letter";
 
@@ -15,10 +16,11 @@ public static class InvoicePaperSizes
     /// <summary>Reference A4 width used to scale fonts/paddings for other sizes.</summary>
     public const double ReferenceWidth = 793.7;
 
-    public static readonly string[] All = [A4, A5, Letter];
+    public static readonly string[] All = [A4, A4Landscape, A5, Letter];
 
     public static Size GetPageSize(string? paperSize) => Normalize(paperSize) switch
     {
+        A4Landscape => new Size(1122.5, 793.7),
         A5 => new Size(559.37, 793.7),
         Letter => new Size(816, 1056),
         _ => new Size(793.7, 1122.5)
@@ -48,6 +50,7 @@ public static class InvoicePaperSizes
 
     public static string GetDisplayLabel(string? paperSize) => Normalize(paperSize) switch
     {
+        A4Landscape => "A4 أفقي — كشف يومي تخليص",
         A5 => "A5 — فاتورة نصف صفحة",
         Letter => "Letter — ورق أمريكي",
         _ => "A4 — فاتورة كاملة"
@@ -55,6 +58,7 @@ public static class InvoicePaperSizes
 
     public static PageSize GetQuestPdfPageSize(string? paperSize) => Normalize(paperSize) switch
     {
+        A4Landscape => PageSizes.A4.Landscape(),
         A5 => PageSizes.A5,
         Letter => PageSizes.Letter,
         _ => PageSizes.A4

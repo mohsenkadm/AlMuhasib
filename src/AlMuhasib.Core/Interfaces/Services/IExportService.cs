@@ -105,6 +105,15 @@ public class InvoicePrintModel
 
     /// <summary>When true, A4/thermal printers render gold-specific columns and totals.</summary>
     public bool IsGoldInvoice { get; set; }
+
+    /// <summary>
+    /// When true, print/PDF use the Customs daily landscape form
+    /// (see <see cref="CustomsDaily"/>). Branding header from print settings stays on top.
+    /// </summary>
+    public bool IsCustomsDailyInvoice { get; set; }
+
+    /// <summary>Payload for the Customs daily invoice/statement form.</summary>
+    public AlMuhasib.Core.Models.Customs.CustomsDailyInvoicePrintData? CustomsDaily { get; set; }
     public decimal FxRate { get; set; }
     public string? PricingCurrencyLabel { get; set; }
     public string? PaymentCurrencyLabel { get; set; }
