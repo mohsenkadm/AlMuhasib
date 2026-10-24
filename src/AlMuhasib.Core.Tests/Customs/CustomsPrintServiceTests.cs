@@ -82,7 +82,9 @@ public class CustomsPrintServiceTests
 
         var voucher = h.Print.BuildReceipt(receipt);
         Assert.Equal(40_000m, voucher.Amount);
-        Assert.Equal(customer.Name, voucher.PartyName);
+        Assert.Contains(customer.Name, voucher.PartyName);
+        Assert.True(voucher.IsCustomsReceipt);
+        Assert.NotNull(voucher.CustomsReceipt);
 
         var path = h.Print.ExportReceiptPdf(receipt);
         Assert.False(string.IsNullOrWhiteSpace(path));

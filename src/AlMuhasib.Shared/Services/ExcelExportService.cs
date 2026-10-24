@@ -1172,10 +1172,12 @@ public class ExcelExportService : IExportService
 
     public string ExportVoucherToPdf(VoucherPrintModel model)
     {
-        var bytes = DocumentPdfGenerator.GenerateVoucher(model);
+        var bytes = model.IsCustomsReceipt
+            ? CustomsReceiptPdfGenerator.Generate(model)
+            : DocumentPdfGenerator.GenerateVoucher(model);
         var name = string.IsNullOrWhiteSpace(model.VoucherNumber)
-            ? $"سند_{model.Date:yyyyMMdd_HHmm}"
-            : $"سند_{model.VoucherNumber}";
+            ? (model.IsCustomsReceipt ? $"وصل_قبض_{model.Date:yyyyMMdd_HHmm}" : $"سند_{model.Date:yyyyMMdd_HHmm}")
+            : (model.IsCustomsReceipt ? $"وصل_قبض_{model.VoucherNumber}" : $"سند_{model.VoucherNumber}");
         return SavePdfToWhatsAppFolder(bytes, SanitizeFileName(name));
     }
 

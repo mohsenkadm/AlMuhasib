@@ -79,4 +79,13 @@ public static class CustomsPaymentMethodDisplay
         CustomsPaymentMethod.Other => "أخرى",
         _ => method.ToString()
     };
+
+    /// <summary>Label used on the official receipt voucher paper.</summary>
+    public static string ToReceiptArabic(CustomsPaymentMethod method) => method switch
+    {
+        CustomsPaymentMethod.Cash => "نقداً (كاش)",
+        CustomsPaymentMethod.Bank => "تحويل مصرفي",
+        CustomsPaymentMethod.Other => "أخرى",
+        _ => ToArabic(method)
+    };
 }
