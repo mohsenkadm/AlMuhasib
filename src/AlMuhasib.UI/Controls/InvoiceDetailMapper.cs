@@ -97,6 +97,7 @@ internal static class InvoiceDetailMapper
             InstallmentSummaryText = plan is null
                 ? null
                 : $"{plan.NumberOfInstallments} قسط × {AccountingCurrencyHelper.Format(plan.InstallmentAmount, currency)}",
+            HasWarrantyColumns = invoice.Items.Any(i => i.WarrantyEndDate.HasValue),
             Items = new(invoice.Items.OrderBy(i => i.Id).Select((item, index) => new InvoiceDetailItemRow
             {
                 Number = index + 1,
@@ -105,7 +106,10 @@ internal static class InvoiceDetailMapper
                     item.CustomFieldsJson),
                 QuantityText = item.Quantity.ToString("N0"),
                 UnitPriceText = FormatAmount(item.UnitPrice, currency),
-                TotalPriceText = FormatAmount(item.TotalPrice, currency)
+                TotalPriceText = FormatAmount(item.TotalPrice, currency),
+                HasWarranty = item.WarrantyEndDate.HasValue,
+                WarrantyEndDateText = WarrantyStatusHelper.FormatEndDate(item.WarrantyEndDate),
+                WarrantyStatusText = WarrantyStatusHelper.CombinedLabel(item.WarrantyEndDate)
             })),
             Installments = installmentRows
         };

@@ -65,6 +65,7 @@ public partial class SalesReportViewModel : ReportViewModelBase
 
     [ObservableProperty] private bool _canSettleCreditInvoices = true;
     [ObservableProperty] private bool _showCarShowroomContractPrint;
+    [ObservableProperty] private bool _showMobileShopColumns;
 
     public SalesReportViewModel(IReportService reportService, IUnitOfWork unitOfWork,
         IExportService exportService, ICurrentUserService currentUserService,
@@ -91,6 +92,7 @@ public partial class SalesReportViewModel : ReportViewModelBase
     {
         CanSettleCreditInvoices = _featureFlags.SettleCreditInvoicesInReports;
         ShowCarShowroomContractPrint = _featureFlags.CarShowroom;
+        ShowMobileShopColumns = _featureFlags.TemplateMobileShop;
     }
 
     public override async Task InitializeAsync()
@@ -462,13 +464,24 @@ public partial class SalesReportViewModel : ReportViewModelBase
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "تقرير_المبيعات.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "رقم الفاتورة", "النوع", "التاريخ", "العميل", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "نسبة الشركة", "المدفوع", "المتبقي" };
-        var rows = _allRows.Select(r => new object[]
-        {
-            r.InvoiceNumber, r.InvoiceTypeLabel, r.Date.ToString("yyyy/MM/dd"), r.CustomerName, r.WarehouseName, r.PaymentMethod,
-            r.TotalAmount, r.Discount, r.NetAmount, r.CompanyFeeAmount, r.PaidAmount, r.RemainingAmount
-        }).ToList();
-        rows.Add(new object[] { "الإجمالي", "", "", "", "", "", _allRows.Sum(r => r.TotalAmount), _allRows.Sum(r => r.Discount), _allRows.Sum(r => r.NetAmount), _allRows.Sum(r => r.CompanyFeeAmount), _allRows.Sum(r => r.PaidAmount), _allRows.Sum(r => r.RemainingAmount) });
+        var cols = ShowMobileShopColumns
+            ? new[] { "رقم الفاتورة", "النوع", "التاريخ", "العميل", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "نسبة الشركة", "المدفوع", "المتبقي", "انتهاء الضمان", "حالة الضمان", "المتبقي للضمان" }
+            : new[] { "رقم الفاتورة", "النوع", "التاريخ", "العميل", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "نسبة الشركة", "المدفوع", "المتبقي" };
+        var rows = _allRows.Select(r => ShowMobileShopColumns
+            ? new object[]
+            {
+                r.InvoiceNumber, r.InvoiceTypeLabel, r.Date.ToString("yyyy/MM/dd"), r.CustomerName, r.WarehouseName, r.PaymentMethod,
+                r.TotalAmount, r.Discount, r.NetAmount, r.CompanyFeeAmount, r.PaidAmount, r.RemainingAmount,
+                r.WarrantyEndDate?.ToString("yyyy/MM/dd") ?? "", r.WarrantyStatusLabel, r.WarrantyRemainingLabel
+            }
+            : new object[]
+            {
+                r.InvoiceNumber, r.InvoiceTypeLabel, r.Date.ToString("yyyy/MM/dd"), r.CustomerName, r.WarehouseName, r.PaymentMethod,
+                r.TotalAmount, r.Discount, r.NetAmount, r.CompanyFeeAmount, r.PaidAmount, r.RemainingAmount
+            }).ToList();
+        rows.Add(ShowMobileShopColumns
+            ? new object[] { "الإجمالي", "", "", "", "", "", _allRows.Sum(r => r.TotalAmount), _allRows.Sum(r => r.Discount), _allRows.Sum(r => r.NetAmount), _allRows.Sum(r => r.CompanyFeeAmount), _allRows.Sum(r => r.PaidAmount), _allRows.Sum(r => r.RemainingAmount), "", "", "" }
+            : new object[] { "الإجمالي", "", "", "", "", "", _allRows.Sum(r => r.TotalAmount), _allRows.Sum(r => r.Discount), _allRows.Sum(r => r.NetAmount), _allRows.Sum(r => r.CompanyFeeAmount), _allRows.Sum(r => r.PaidAmount), _allRows.Sum(r => r.RemainingAmount) });
         _exportService.ExportToExcel(dlg.FileName, "المبيعات", cols, rows);
         BeautifulMessageDialog.ShowSuccess("تم التصدير بنجاح");
     }
@@ -476,14 +489,26 @@ public partial class SalesReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "رقم الفاتورة", "النوع", "التاريخ", "العميل", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "نسبة الشركة", "المدفوع", "المتبقي" };
-        var rows = _allRows.Select(r => new object[]
-        {
-            r.InvoiceNumber, r.InvoiceTypeLabel, r.Date.ToString("yyyy/MM/dd"), r.CustomerName, r.WarehouseName, r.PaymentMethod,
-            r.TotalAmount.ToString("N0"), r.Discount.ToString("N0"), r.NetAmount.ToString("N0"),
-            r.CompanyFeeAmount.ToString("N0"), r.PaidAmount.ToString("N0"), r.RemainingAmount.ToString("N0")
-        }).ToList();
-        rows.Add(new object[] { "الإجمالي", "", "", "", "", "", _allRows.Sum(r => r.TotalAmount).ToString("N0"), _allRows.Sum(r => r.Discount).ToString("N0"), _allRows.Sum(r => r.NetAmount).ToString("N0"), _allRows.Sum(r => r.CompanyFeeAmount).ToString("N0"), _allRows.Sum(r => r.PaidAmount).ToString("N0"), _allRows.Sum(r => r.RemainingAmount).ToString("N0") });
+        var cols = ShowMobileShopColumns
+            ? new[] { "رقم الفاتورة", "النوع", "التاريخ", "العميل", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "نسبة الشركة", "المدفوع", "المتبقي", "انتهاء الضمان", "حالة الضمان", "المتبقي للضمان" }
+            : new[] { "رقم الفاتورة", "النوع", "التاريخ", "العميل", "المخزن", "طريقة الدفع", "المبلغ", "الخصم", "الصافي", "نسبة الشركة", "المدفوع", "المتبقي" };
+        var rows = _allRows.Select(r => ShowMobileShopColumns
+            ? new object[]
+            {
+                r.InvoiceNumber, r.InvoiceTypeLabel, r.Date.ToString("yyyy/MM/dd"), r.CustomerName, r.WarehouseName, r.PaymentMethod,
+                r.TotalAmount.ToString("N0"), r.Discount.ToString("N0"), r.NetAmount.ToString("N0"),
+                r.CompanyFeeAmount.ToString("N0"), r.PaidAmount.ToString("N0"), r.RemainingAmount.ToString("N0"),
+                r.WarrantyEndDate?.ToString("yyyy/MM/dd") ?? "", r.WarrantyStatusLabel, r.WarrantyRemainingLabel
+            }
+            : new object[]
+            {
+                r.InvoiceNumber, r.InvoiceTypeLabel, r.Date.ToString("yyyy/MM/dd"), r.CustomerName, r.WarehouseName, r.PaymentMethod,
+                r.TotalAmount.ToString("N0"), r.Discount.ToString("N0"), r.NetAmount.ToString("N0"),
+                r.CompanyFeeAmount.ToString("N0"), r.PaidAmount.ToString("N0"), r.RemainingAmount.ToString("N0")
+            }).ToList();
+        rows.Add(ShowMobileShopColumns
+            ? new object[] { "الإجمالي", "", "", "", "", "", _allRows.Sum(r => r.TotalAmount).ToString("N0"), _allRows.Sum(r => r.Discount).ToString("N0"), _allRows.Sum(r => r.NetAmount).ToString("N0"), _allRows.Sum(r => r.CompanyFeeAmount).ToString("N0"), _allRows.Sum(r => r.PaidAmount).ToString("N0"), _allRows.Sum(r => r.RemainingAmount).ToString("N0"), "", "", "" }
+            : new object[] { "الإجمالي", "", "", "", "", "", _allRows.Sum(r => r.TotalAmount).ToString("N0"), _allRows.Sum(r => r.Discount).ToString("N0"), _allRows.Sum(r => r.NetAmount).ToString("N0"), _allRows.Sum(r => r.CompanyFeeAmount).ToString("N0"), _allRows.Sum(r => r.PaidAmount).ToString("N0"), _allRows.Sum(r => r.RemainingAmount).ToString("N0") });
         _exportService.PrintTable("تقرير المبيعات", cols, rows);
     }
 }

@@ -17,6 +17,7 @@ public partial class PosQuickSaleViewModel
 
     [ObservableProperty] private bool _showExpiryTracking;
     [ObservableProperty] private bool _showSerialNumbers;
+    [ObservableProperty] private bool _showWarrantyFields;
     [ObservableProperty] private bool _showProductPricing;
     [ObservableProperty] private bool _showClothingSizes;
     [ObservableProperty] private bool _showPharmacy;
@@ -41,7 +42,8 @@ public partial class PosQuickSaleViewModel
     {
         ShowProductDiscount = _featureFlags.ProductDiscountEnabled;
         ShowExpiryTracking = _featureFlags.ExpiryTracking;
-        ShowSerialNumbers = _featureFlags.SerialNumbers;
+        ShowSerialNumbers = _featureFlags.SerialNumbers || _featureFlags.TemplateMobileShop;
+        ShowWarrantyFields = _featureFlags.TemplateMobileShop;
         ShowProductPricing = _featureFlags.ProductPricingEnabled;
         ShowClothingSizes = _featureFlags.TemplateClothing;
         ShowPharmacy = _featureFlags.TemplatePharmacy;

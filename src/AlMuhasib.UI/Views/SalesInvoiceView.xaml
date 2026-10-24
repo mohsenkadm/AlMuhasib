@@ -667,6 +667,16 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
+                                <DataGridTemplateColumn x:Name="ColWarranty" Header="انتهاء الضمان" Width="130"
+                                                        Visibility="Collapsed">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <DatePicker SelectedDate="{Binding WarrantyEndDate, UpdateSourceTrigger=PropertyChanged}"
+                                                        Style="{StaticResource FilledDatePicker}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
                                 <DataGridTemplateColumn x:Name="ColPricingType" Header="نوع التسعير" Width="150" MinWidth="120"
                                                         Visibility="Collapsed">
                                     <DataGridTemplateColumn.CellTemplate>

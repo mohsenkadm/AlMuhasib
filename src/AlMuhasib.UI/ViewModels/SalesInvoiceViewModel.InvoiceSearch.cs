@@ -251,7 +251,8 @@ public partial class SalesInvoiceViewModel
                 UnitPrice = item.UnitPrice,
                 DiscountAmount = item.DiscountAmount,
                 DiscountPercent = item.DiscountPercent,
-                PricingTypeId = item.PricingTypeId
+                PricingTypeId = item.PricingTypeId,
+                WarrantyEndDate = item.WarrantyEndDate
             };
             InvoiceLineWarehouseHelper.BindRowWarehouse(row, SelectedWarehouse, Warehouses.ToList(), item.WarehouseId);
             ApplyActiveLabelsToRow(row);

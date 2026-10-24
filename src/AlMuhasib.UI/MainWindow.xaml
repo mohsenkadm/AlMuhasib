@@ -1721,6 +1721,9 @@
                         <DataTemplate DataType="{x:Type vm:SalesInvoiceViewModel}">
                             <views:SalesInvoiceView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:MaintenanceViewModel}">
+                            <views:MaintenanceView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:PosQuickSaleViewModel}">
                             <views:PosQuickSaleView />
                         </DataTemplate>
@@ -1972,6 +1975,9 @@
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:DamageInvoicesReportViewModel}">
                             <views:DamageInvoicesReportView />
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:MaintenanceReportViewModel}">
+                            <views:MaintenanceReportView />
                         </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:PriceQuotesReportViewModel}">
                             <views:PriceQuotesReportView />

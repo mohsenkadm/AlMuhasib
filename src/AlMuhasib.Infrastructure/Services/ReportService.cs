@@ -34,7 +34,8 @@ public partial class ReportService : IReportService
                     context.Invoices
                         .Include(i => i.Customer)
                         .Include(i => i.Warehouse)
-                        .Include(i => i.InstallmentPlans),
+                        .Include(i => i.InstallmentPlans)
+                        .Include(i => i.Items),
                     context.InstallmentPlans,
                     currency);
 
@@ -90,6 +91,12 @@ public partial class ReportService : IReportService
             {
                 var isReturn = i.InvoiceType == InvoiceType.SaleReturn;
                 var signed = Signed(i);
+                var warrantyEnd = i.Items
+                    .Where(it => it.WarrantyEndDate.HasValue)
+                    .Select(it => it.WarrantyEndDate!.Value)
+                    .DefaultIfEmpty()
+                    .Min();
+                DateTime? warranty = warrantyEnd == default ? null : warrantyEnd;
                 return new SalesReportRow
                 {
                     InvoiceId = i.Id,
@@ -121,7 +128,10 @@ public partial class ReportService : IReportService
                     PaidAmount = isReturn ? -Math.Abs(i.PaidAmount) : i.PaidAmount,
                     RemainingAmount = isReturn ? 0 : i.RemainingAmount,
                     IsCreditPaid = i.IsCreditPaid,
-                    Currency = i.Currency
+                    Currency = i.Currency,
+                    WarrantyEndDate = warranty,
+                    WarrantyStatusLabel = WarrantyStatusHelper.StatusLabel(warranty),
+                    WarrantyRemainingLabel = WarrantyStatusHelper.RemainingLabel(warranty)
                 };
             }).ToList()
         };
@@ -313,7 +323,17 @@ public partial class ReportService : IReportService
         var totalBankFees = FinancialReportIqdFoldIn.SumAmountsInBaseIqd(
             bankRows.Select(r => (r.BankFees, r.Currency, r.FxRate)), foldInUsd);
         var distributed = await distQ.SumAsync(p => (decimal?)p.DistributedAmount) ?? 0;
-        var grossProfit = totalSales - cogs;
+        var maintenanceQ = foldInUsd
+            ? context.MaintenanceRecords.AsQueryable()
+            : context.MaintenanceRecords.Where(m => m.Currency == AccountingCurrency.IQD);
+        if (from.HasValue) maintenanceQ = maintenanceQ.Where(m => m.Date >= from.Value);
+        if (to.HasValue) maintenanceQ = maintenanceQ.Where(m => m.Date < EndOfDay(to));
+        var maintenanceRows = await maintenanceQ
+            .Select(m => new { m.CostAmount, m.Currency, m.FxRate })
+            .ToListAsync();
+        var maintenanceProfit = FinancialReportIqdFoldIn.SumAmountsInBaseIqd(
+            maintenanceRows.Select(r => (r.CostAmount, r.Currency, r.FxRate)), foldInUsd);
+        var grossProfit = totalSales - cogs + maintenanceProfit;
         var profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context, to);
         var netProfit = grossProfit - totalExpenses - totalBankFees - distributed + profitOpening;
 
@@ -1650,6 +1670,79 @@ public partial class ReportService : IReportService
             InvoiceCount = rows.Select(r => r.InvoiceNumber).Distinct().Count(),
             LineCount = rows.Count,
             Rows = rows
+        };
+    }
+
+    public async Task<MaintenanceReportResult> GetMaintenanceReportAsync(
+        DateTime? from,
+        DateTime? to,
+        int? customerId = null,
+        MaintenanceStatus? status = null,
+        string? productName = null,
+        string? serialNumber = null)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var query = context.MaintenanceRecords
+            .AsNoTracking()
+            .Include(m => m.Customer)
+            .AsQueryable();
+
+        if (from.HasValue) query = query.Where(m => m.Date >= from.Value);
+        if (to.HasValue) query = query.Where(m => m.Date < EndOfDay(to));
+        if (customerId.HasValue) query = query.Where(m => m.CustomerId == customerId.Value);
+        if (status.HasValue) query = query.Where(m => m.Status == status.Value);
+        if (!string.IsNullOrWhiteSpace(productName))
+        {
+            var term = productName.Trim();
+            query = query.Where(m => m.ProductName.Contains(term));
+        }
+        if (!string.IsNullOrWhiteSpace(serialNumber))
+        {
+            var serial = serialNumber.Trim();
+            query = query.Where(m => m.SerialNumber.Contains(serial));
+        }
+
+        var records = await query.OrderByDescending(m => m.Date).ThenByDescending(m => m.Id).ToListAsync();
+        var rows = records.Select(m => new MaintenanceReportRow
+        {
+            Id = m.Id,
+            RecordNumber = m.RecordNumber,
+            Date = m.Date,
+            CustomerName = m.Customer?.Name ?? "—",
+            ProductName = m.ProductName,
+            SerialNumber = m.SerialNumber,
+            CostAmount = m.CostAmount,
+            Status = m.Status,
+            StatusLabel = MaintenanceStatusHelper.ToArabic(m.Status),
+            WarrantyEndDate = m.WarrantyEndDate,
+            WarrantyStatusLabel = WarrantyStatusHelper.StatusLabel(m.WarrantyEndDate),
+            WarrantyRemainingLabel = WarrantyStatusHelper.RemainingLabel(m.WarrantyEndDate),
+            Notes = m.Notes,
+            Currency = m.Currency
+        }).ToList();
+
+        var totalCost = rows.Sum(r => r.CostAmount);
+        return new MaintenanceReportResult
+        {
+            TotalCount = rows.Count,
+            WorkingCount = rows.Count(r => r.Status == MaintenanceStatus.Working),
+            NotWorkingCount = rows.Count(r => r.Status == MaintenanceStatus.NotWorking),
+            UnderRepairCount = rows.Count(r => r.Status == MaintenanceStatus.UnderRepair),
+            DeliveredCount = rows.Count(r => r.Status == MaintenanceStatus.Delivered),
+            TotalCostAmount = totalCost,
+            TotalProfit = totalCost,
+            Rows = rows,
+            DailyChart = rows.GroupBy(r => r.Date.Date)
+                .Select(g => new DailyAmountPoint { Date = g.Key, Amount = g.Sum(x => x.CostAmount) })
+                .OrderBy(d => d.Date)
+                .ToList(),
+            StatusChart =
+            [
+                new NameAmountPoint { Name = "يعمل", Amount = rows.Count(r => r.Status == MaintenanceStatus.Working) },
+                new NameAmountPoint { Name = "لا يعمل", Amount = rows.Count(r => r.Status == MaintenanceStatus.NotWorking) },
+                new NameAmountPoint { Name = "تحت الصيانة", Amount = rows.Count(r => r.Status == MaintenanceStatus.UnderRepair) },
+                new NameAmountPoint { Name = "تم التسليم", Amount = rows.Count(r => r.Status == MaintenanceStatus.Delivered) }
+            ]
         };
     }
 

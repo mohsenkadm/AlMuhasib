@@ -92,6 +92,7 @@ public class CloudDbContext : DbContext
     public DbSet<CloudWarehouseTransferItem> WarehouseTransferItems => Set<CloudWarehouseTransferItem>();
     public DbSet<CloudInvoice> Invoices => Set<CloudInvoice>();
     public DbSet<CloudInvoiceItem> InvoiceItems => Set<CloudInvoiceItem>();
+    public DbSet<CloudMaintenanceRecord> MaintenanceRecords => Set<CloudMaintenanceRecord>();
     public DbSet<CloudProductOffer> ProductOffers => Set<CloudProductOffer>();
     public DbSet<CloudInstallmentPlan> InstallmentPlans => Set<CloudInstallmentPlan>();
     public DbSet<CloudInstallment> Installments => Set<CloudInstallment>();
@@ -346,6 +347,22 @@ public class CloudDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(x => x.PricingTypeId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<CloudMaintenanceRecord>(e =>
+        {
+            e.ToTable("MaintenanceRecords");
+            e.Property(x => x.RecordNumber).HasMaxLength(50).IsRequired();
+            e.Property(x => x.ProductName).HasMaxLength(300).IsRequired();
+            e.Property(x => x.SerialNumber).HasMaxLength(100);
+            e.Property(x => x.Notes).HasMaxLength(1000);
+            e.Property(x => x.CostAmount).HasPrecision(18, 2);
+            e.Property(x => x.FxRate).HasPrecision(18, 6);
+            e.HasIndex(x => new { x.TenantId, x.BranchId, x.RecordNumber }).IsUnique();
+            e.HasIndex(x => new { x.TenantId, x.Date });
+            e.HasIndex(x => new { x.TenantId, x.Status });
+            e.HasOne(x => x.Customer).WithMany().HasForeignKey(x => x.CustomerId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Product).WithMany().HasForeignKey(x => x.ProductId).OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<CloudWarehouseTransfer>(e =>

@@ -26,6 +26,7 @@ public sealed class InvoiceDetailDisplayModel
     public bool HasCreditInfo { get; init; }
     public bool HasInstallments { get; init; }
     public bool HasNotes { get; init; }
+    public bool HasWarrantyColumns { get; init; }
     public ObservableCollection<InvoiceDetailItemRow> Items { get; init; } = [];
     public ObservableCollection<InvoiceDetailInstallmentRow> Installments { get; init; } = [];
 }
@@ -37,6 +38,9 @@ public sealed class InvoiceDetailItemRow
     public string QuantityText { get; init; } = string.Empty;
     public string UnitPriceText { get; init; } = string.Empty;
     public string TotalPriceText { get; init; } = string.Empty;
+    public string? WarrantyEndDateText { get; init; }
+    public string? WarrantyStatusText { get; init; }
+    public bool HasWarranty { get; init; }
 }
 
 public sealed class InvoiceDetailInstallmentRow

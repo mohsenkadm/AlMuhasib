@@ -19,7 +19,8 @@ public static class InvoiceFeatureColumnSync
         DataGridColumn? expiry,
         DataGridColumn? serial,
         DataGridColumn? pricing = null,
-        DataGridColumn? usageInstructions = null)
+        DataGridColumn? usageInstructions = null,
+        DataGridColumn? warranty = null)
     {
         void SyncFromContext()
         {
@@ -34,6 +35,7 @@ public static class InvoiceFeatureColumnSync
                     Set(serial, sales.ShowSerialNumbers);
                     Set(pricing, sales.ShowProductPricing);
                     Set(usageInstructions, sales.ShowPharmacyUsage);
+                    Set(warranty, sales.ShowWarrantyFields);
                     break;
                 case PurchaseInvoiceViewModel purchase:
                     Set(custom1, purchase.ShowClothingSizes);
@@ -44,6 +46,7 @@ public static class InvoiceFeatureColumnSync
                     Set(serial, purchase.ShowSerialNumbers);
                     Set(pricing, purchase.ShowProductPricing);
                     Set(usageInstructions, false);
+                    Set(warranty, false);
                     break;
                 case InstallmentInvoiceViewModel installment:
                     Set(custom1, false);
@@ -54,6 +57,7 @@ public static class InvoiceFeatureColumnSync
                     Set(serial, false);
                     Set(pricing, installment.ShowProductPricing);
                     Set(usageInstructions, false);
+                    Set(warranty, false);
                     break;
                 default:
                     Set(custom1, false);
@@ -64,6 +68,7 @@ public static class InvoiceFeatureColumnSync
                     Set(serial, false);
                     Set(pricing, false);
                     Set(usageInstructions, false);
+                    Set(warranty, false);
                     break;
             }
         }
@@ -92,6 +97,7 @@ public static class InvoiceFeatureColumnSync
                 case "ShowUnitsOfMeasure":
                 case "ShowExpiryTracking":
                 case "ShowSerialNumbers":
+                case "ShowWarrantyFields":
                 case "ShowProductPricing":
                 case "ShowClothingSizes":
                 case "ShowPharmacyUsage":

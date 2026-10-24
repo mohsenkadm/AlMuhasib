@@ -28,6 +28,9 @@ public class InvoiceItem : BranchScopedEntity
     /// <summary>حقول مخصصة (IMEI، مقاس، لون...) JSON.</summary>
     public string? CustomFieldsJson { get; set; }
 
+    /// <summary>تاريخ انتهاء الضمان — لقالب محلات الموبايلات.</summary>
+    public DateTime? WarrantyEndDate { get; set; }
+
     // Navigation
     public Invoice Invoice { get; set; } = null!;
     public Product? Product { get; set; }

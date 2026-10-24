@@ -133,6 +133,7 @@ public class AppDbContext : DbContext
     public DbSet<CustomerLoyaltyAccount> CustomerLoyaltyAccounts => Set<CustomerLoyaltyAccount>();
     public DbSet<LoyaltyPointTransaction> LoyaltyPointTransactions => Set<LoyaltyPointTransaction>();
     public DbSet<ProductOffer> ProductOffers => Set<ProductOffer>();
+    public DbSet<MaintenanceRecord> MaintenanceRecords => Set<MaintenanceRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

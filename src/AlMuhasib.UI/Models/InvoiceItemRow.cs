@@ -218,6 +218,10 @@ public partial class InvoiceItemRow : ObservableObject
     [ObservableProperty]
     private string _serialNumber = string.Empty;
 
+    // ── ضمان (قالب الموبايلات) ─────────────────────────────
+    [ObservableProperty]
+    private DateTime? _warrantyEndDate;
+
     // ── قياسات الألبسة ────────────────────────────────────
     [ObservableProperty]
     private int? _productSizeId;
