@@ -50,4 +50,7 @@ public class UserAppPreferences
 
     /// <summary>وضع عرض القوائم (جدول / بطاقات) لكل شاشة بيانات رئيسية.</summary>
     public Dictionary<string, MasterDataListViewMode> ListViewModes { get; set; } = [];
+
+    /// <summary>تصغير لوحة خطوات معالج النقل لتوسيع مساحة الإدخال.</summary>
+    public bool MigrationWizardStepsPanelCollapsed { get; set; }
 }

@@ -9,10 +9,13 @@ namespace AlMuhasib.UI.Helpers;
 
 /// <summary>
 /// قالب واستيراد منتجات معالج النقل —
-/// أعمدة ثابتة + تكلفة د.ع/$ + كمية لكل مخزن + سعر لكل نوع تسعير (+ دولار عند تعدد العملات) + ظهور الفروع.
+/// أعمدة ثابتة + تكلفة د.ع/$ + كمية لكل مخزن + سعر لكل نوع تسعير (+ دولار عند تعدد العملات) + ظهور الكاشير/الفروع.
 /// </summary>
 public static class MigrationProductExcelHelper
 {
+    public const string ShowInCashierHeader = "يظهر_في_شاشة_الكاشير";
+    public const string ShowInCashierHeaderSpaced = "يظهر في شاشة الكاشير";
+
     public static byte[] BuildTemplate(
         IReadOnlyList<string> pricingTypeNames,
         IReadOnlyList<string> warehouseNames,
@@ -29,6 +32,7 @@ public static class MigrationProductExcelHelper
             "اسم_المنتج",
             "الباركود",
             "الصنف",
+            ShowInCashierHeader,
             "تكلفة_دينار"
         };
         if (enableMultiCurrency)
@@ -65,14 +69,16 @@ public static class MigrationProductExcelHelper
 
         sheet.Cell(2, 1).Value = "منتج تجريبي";
         sheet.Cell(2, 3).Value = "عام";
-        sheet.Cell(2, 4).Value = 1000;
-        var col = 5;
+        sheet.Cell(2, 4).Value = "نعم"; // يظهر_في_شاشة_الكاشير
+        sheet.Cell(2, 5).Value = 1000; // تكلفة_دينار
+        var col = 6;
         if (enableMultiCurrency)
         {
             sheet.Cell(2, col).Value = 0;
             col++;
         }
 
+        var firstQtyCol = col;
         if (warehouseNames.Count == 0)
         {
             sheet.Cell(2, col).Value = 10;
@@ -82,7 +88,7 @@ public static class MigrationProductExcelHelper
         {
             foreach (var _ in warehouseNames)
             {
-                sheet.Cell(2, col).Value = col == (enableMultiCurrency ? 6 : 5) ? 10 : 0;
+                sheet.Cell(2, col).Value = col == firstQtyCol ? 10 : 0;
                 col++;
             }
         }
@@ -114,14 +120,15 @@ public static class MigrationProductExcelHelper
             "1) املأ ورقة «البيانات» ثم احفظ الملف واستورده من المعالج.",
             "2) اسم_المنتج مطلوب. باقي الحقول اختيارية.",
             "3) الصنف: إن تُرك فارغاً يُستخدم «عام».",
-            "4) تكلفة_دينار (و تكلفة_دولار عند تعدد العملات) لتكلفة الوحدة الافتتاحية.",
-            "5) أعمدة كمية_* تمثل الكمية الافتتاحية لكل مخزن.",
-            "6) أعمدة سعر_بيع_*_دينار لأسعار البيع بالدينار لكل نوع تسعير."
+            "4) يظهر_في_شاشة_الكاشير: نعم/1 للإظهار، لا/0 للإخفاء (افتراضي: نعم). قيمة واحدة على المنتج لكل الفروع.",
+            "5) تكلفة_دينار (و تكلفة_دولار عند تعدد العملات) لتكلفة الوحدة الافتتاحية.",
+            "6) أعمدة كمية_* تمثل الكمية الافتتاحية لكل مخزن.",
+            "7) أعمدة سعر_بيع_*_دينار لأسعار البيع بالدينار لكل نوع تسعير."
         };
         if (enableMultiCurrency)
-            lines.Add("7) أعمدة سعر_بيع_*_دولار لأسعار البيع بالدولار — مستقلة عن الدينار.");
+            lines.Add("8) أعمدة سعر_بيع_*_دولار لأسعار البيع بالدولار — مستقلة عن الدينار.");
         if (includeBranchColumns && branches is { Count: > 1 })
-            lines.Add("8) أعمدة ظهور_فرع_* = نعم/1 لإظهار المنتج في الفرع، لا/0 أو فارغ لإخفائه. إن تُركت كلها فارغة يُربط بالفرع الرئيسي.");
+            lines.Add("9) أعمدة ظهور_فرع_* = نعم/1 لإظهار المنتج في الفرع، لا/0 أو فارغ لإخفائه. إن تُركت كلها فارغة يُربط بالفرع الرئيسي.");
         lines.Add("بعد الاستيراد راجع الجدول ثم اضغط «حفظ الخطوة» لتحديث المنتجات والأسعار.");
         for (var i = 0; i < lines.Count; i++)
             guide.Cell(i + 1, 1).Value = lines[i];
@@ -166,6 +173,10 @@ public static class MigrationProductExcelHelper
                     : GetCell(sheet, r, headerMap, "الصنف").Trim(),
                 IsValid = true
             };
+
+            var showInCashierCell = GetShowInCashierCell(sheet, r, headerMap);
+            row.ShowInCashier = string.IsNullOrWhiteSpace(showInCashierCell)
+                || ProductImportSchema.IsBranchVisibleCell(showInCashierCell);
 
             // تكلفة: النموذج الجديد أو القديم
             var costIqd = MigrationExcelHelper.ParseDecimal(GetCell(sheet, r, headerMap, "تكلفة_دينار"));
@@ -317,6 +328,24 @@ public static class MigrationProductExcelHelper
         => map.TryGetValue(header, out var col)
             ? sheet.Cell(row, col).GetFormattedString()?.Trim() ?? string.Empty
             : string.Empty;
+
+    private static string GetShowInCashierCell(
+        IXLWorksheet sheet, int row, Dictionary<string, int> map)
+    {
+        var direct = GetCell(sheet, row, map, ShowInCashierHeader);
+        if (!string.IsNullOrWhiteSpace(direct))
+            return direct;
+        direct = GetCell(sheet, row, map, ShowInCashierHeaderSpaced);
+        if (!string.IsNullOrWhiteSpace(direct))
+            return direct;
+
+        var match = map.FirstOrDefault(kv =>
+            kv.Key.Contains("كاشير", StringComparison.OrdinalIgnoreCase)
+            || kv.Key.Contains("cashier", StringComparison.OrdinalIgnoreCase));
+        return match.Key is null
+            ? string.Empty
+            : sheet.Cell(row, match.Value).GetFormattedString()?.Trim() ?? string.Empty;
+    }
 
     private static string? NullIfEmpty(string? s)
         => string.IsNullOrWhiteSpace(s) ? null : s.Trim();

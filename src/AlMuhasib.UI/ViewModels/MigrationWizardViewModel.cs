@@ -71,6 +71,8 @@ public partial class MigrationWizardViewModel : ViewModelBase
     [ObservableProperty] private decimal _newBranchCapitalIqd;
     [ObservableProperty] private decimal _newBranchCapitalUsd;
     [ObservableProperty] private Branch? _selectedBranchForWarehouse;
+    /// <summary>الفرع الحالي لخطوة المنتجات (إلزامي عند تعدد الفروع).</summary>
+    [ObservableProperty] private Branch? _selectedBranchForProducts;
     [ObservableProperty] private string _newRowName = string.Empty;
     [ObservableProperty] private string? _newRowPhone;
     [ObservableProperty] private string? _newRowExtra;
@@ -103,6 +105,12 @@ public partial class MigrationWizardViewModel : ViewModelBase
 
     /// <summary>إظهار أعمدة ظهور الفروع في شبكة/قالب المنتجات.</summary>
     [ObservableProperty] private bool _showProductBranchColumns = true;
+
+    /// <summary>تصغير لوحة الخطوات اليمنى لتوسيع مساحة الإدخال.</summary>
+    [ObservableProperty] private bool _isStepsPanelCollapsed;
+
+    /// <summary>مخازن مع فرعها — لتصفية كميات المنتجات حسب الفرع المحدد.</summary>
+    private readonly List<(string Display, int BranchId, string Name)> _warehouseLookup = [];
 
     public IReadOnlyList<string> PlateTypeOptions { get; } =
     [
@@ -175,10 +183,18 @@ public partial class MigrationWizardViewModel : ViewModelBase
     public bool CanEnterBranchCapital =>
         BranchRows.Any(b => !b.HasExistingCapital);
     public bool ShowManualEntryForm => false; // الإدخال اليدوي عبر الجدول الشبيه بـ Excel
-    public bool ShowExcelPanel => IsExcelMode && !IsCustomFormStep && !IsCompleted;
+    /// <summary>يجب اختيار فرع قبل إدخال/استيراد المنتجات عند تعدد الفروع.</summary>
+    public bool RequiresProductBranchSelection => IsProductsStep && AvailableBranches.Count > 1;
+    public bool HasProductBranchSelected =>
+        !RequiresProductBranchSelection || SelectedBranchForProducts is not null;
+    public bool ShowProductBranchPicker => RequiresProductBranchSelection && !IsCompleted;
+    public bool CanEnterProductData => IsProductsStep && !IsCompleted && HasProductBranchSelected;
+    public bool ShowExcelPanel =>
+        IsExcelMode && !IsCustomFormStep && !IsCompleted
+        && (!IsProductsStep || HasProductBranchSelected);
     /// <summary>جدول إدخال شبيه Excel لكل الخطوات عدا الفروع والمنتجات (لها جداولها).</summary>
     public bool ShowDataGrid => !IsCustomFormStep && !IsCompleted && !IsProductsStep;
-    public bool ShowProductsGrid => IsProductsStep && !IsCompleted;
+    public bool ShowProductsGrid => CanEnterProductData;
     public bool ShowExcelLikeToolbar => (ShowDataGrid || ShowProductsGrid) && IsManualEntryMode;
     /// <summary>لا يعتمد على HasRows — وإلا عمود الاسم يبقى مخفياً بعد الإضافة بسبب ربط Visibility على DataGridColumn.</summary>
     public bool ShowColName => !IsCustomFormStep && !IsCompleted;
@@ -236,7 +252,9 @@ public partial class MigrationWizardViewModel : ViewModelBase
         MigrationStepKind.Investors => "أدخل المستثمرين في الجدول — الاسم مطلوب، باقي الحقول اختياري",
         MigrationStepKind.Warehouses => "أدخل المخازن في الجدول — اختر الفرع لكل مخزن من عمود الفرع",
         MigrationStepKind.Categories => "أدخل التصنيفات مباشرة في الجدول — صف لكل صنف",
-        MigrationStepKind.Products => "أدخل المنتجات مباشرة في الجدول كما في Excel — Tab للتنقل بين الخلايا",
+        MigrationStepKind.Products => RequiresProductBranchSelection && SelectedBranchForProducts is null
+            ? "اختر الفرع أولاً ثم أدخل المنتجات أو استورد قالب Excel"
+            : "أدخل المنتجات مباشرة في الجدول كما في Excel — Tab للتنقل بين الخلايا",
         MigrationStepKind.PricingTypes => "أدخل أنواع التسعير في الجدول — صف لكل نوع",
         MigrationStepKind.Customers => "أدخل العملاء في الجدول — الاسم مطلوب، الرصيد والهاتف اختياري",
         MigrationStepKind.Suppliers => "أدخل الموردين في الجدول — الاسم مطلوب، الرصيد والهاتف اختياري",
@@ -286,12 +304,21 @@ public partial class MigrationWizardViewModel : ViewModelBase
         _dbFactory = dbFactory;
         EnableMultiCurrency = _featureFlags.MultiCurrency;
         ShowMultiCurrency = EnableMultiCurrency;
+        IsStepsPanelCollapsed = _preferences.Current.MigrationWizardStepsPanelCollapsed;
         NewRowCostCurrencyOption = CurrencyOptions.FirstOrDefault(c => c.Currency == AccountingCurrency.IQD);
         PageTitle = "معالج النقل من نظام قديم";
         LoadPermissions(currentUserService, "DataImport");
         CurrentRows.CollectionChanged += OnCurrentRowsCollectionChanged;
         RefreshCapitalTotalDisplay();
     }
+
+    partial void OnIsStepsPanelCollapsedChanged(bool value)
+    {
+        _preferences.Update(p => p.MigrationWizardStepsPanelCollapsed = value);
+    }
+
+    [RelayCommand]
+    private void ToggleStepsPanel() => IsStepsPanelCollapsed = !IsStepsPanelCollapsed;
 
     public override async Task InitializeAsync()
     {
@@ -1002,14 +1029,66 @@ public partial class MigrationWizardViewModel : ViewModelBase
             ProductPriceEditors.Add(new MigrationProductPriceEditor { PricingTypeName = name });
     }
 
+    private void EnsureSelectedProductBranch()
+    {
+        if (AvailableBranches.Count == 0)
+        {
+            SelectedBranchForProducts = null;
+            return;
+        }
+
+        if (AvailableBranches.Count == 1)
+        {
+            SelectedBranchForProducts = AvailableBranches[0];
+            return;
+        }
+
+        if (SelectedBranchForProducts is not null
+            && AvailableBranches.Any(b => b.Id == SelectedBranchForProducts.Id))
+        {
+            SelectedBranchForProducts = AvailableBranches.First(b => b.Id == SelectedBranchForProducts.Id);
+            return;
+        }
+
+        // لا نفرض فرعاً عند التعدد — المستخدم يختار قبل الإدخال
+        if (SelectedBranchForProducts is not null
+            && AvailableBranches.All(b => b.Id != SelectedBranchForProducts.Id))
+            SelectedBranchForProducts = null;
+    }
+
+    private void RebuildAvailableWarehousesForProducts()
+    {
+        AvailableWarehouses.Clear();
+        IEnumerable<(string Display, int BranchId, string Name)> source = _warehouseLookup;
+        if (SelectedBranchForProducts is not null)
+            source = source.Where(w => w.BranchId == SelectedBranchForProducts.Id);
+
+        foreach (var w in source)
+            AvailableWarehouses.Add(w.Display);
+
+        if (string.IsNullOrWhiteSpace(SelectedWarehouseName)
+            || !AvailableWarehouses.Contains(SelectedWarehouseName))
+        {
+            SelectedWarehouseName = AvailableWarehouses.Count > 0
+                ? AvailableWarehouses[0]
+                : null;
+        }
+    }
+
     private void EnsureProductRowsReady()
     {
+        if (!HasProductBranchSelected)
+        {
+            ProductsGridVersion++;
+            return;
+        }
+
         SyncAllProductRowStructures();
         if (CurrentRows.Count == 0)
         {
             for (var i = 0; i < 8; i++)
             {
-                var row = new MigrationNamedBalanceRow { IsValid = true };
+                var row = new MigrationNamedBalanceRow { IsValid = true, ShowInCashier = true };
                 SyncProductRowStructure(row);
                 CurrentRows.Add(row);
             }
@@ -1017,6 +1096,14 @@ public partial class MigrationWizardViewModel : ViewModelBase
         }
 
         ProductsGridVersion++;
+    }
+
+    private bool EnsureProductBranchReady(string actionLabel)
+    {
+        if (!RequiresProductBranchSelection || SelectedBranchForProducts is not null)
+            return true;
+        Warn($"اختر الفرع أولاً قبل {actionLabel}");
+        return false;
     }
 
     /// <summary>يملأ الجدول بصفوف فارغة جاهزة للإدخال السريع كما في Excel.</summary>
@@ -1072,6 +1159,27 @@ public partial class MigrationWizardViewModel : ViewModelBase
             row.BranchId = value.Id;
             row.BranchName = value.Name;
         }
+    }
+
+    partial void OnSelectedBranchForProductsChanged(Branch? value)
+    {
+        OnPropertyChanged(nameof(HasProductBranchSelected));
+        OnPropertyChanged(nameof(CanEnterProductData));
+        OnPropertyChanged(nameof(ShowProductsGrid));
+        OnPropertyChanged(nameof(ShowExcelPanel));
+        OnPropertyChanged(nameof(ShowExcelLikeToolbar));
+        OnPropertyChanged(nameof(EntryHint));
+        OnPropertyChanged(nameof(ShowProductBranchPicker));
+
+        if (!IsProductsStep)
+            return;
+
+        RebuildAvailableWarehousesForProducts();
+        if (HasProductBranchSelected)
+            EnsureProductRowsReady();
+        else
+            ProductsGridVersion++;
+        NotifyStepProps();
     }
 
     private void SyncAllProductRowStructures()
@@ -1187,6 +1295,10 @@ public partial class MigrationWizardViewModel : ViewModelBase
         OnPropertyChanged(nameof(IsInstallmentsStep));
         OnPropertyChanged(nameof(IsSimpleNameStep));
         OnPropertyChanged(nameof(ShowManualEntryForm));
+        OnPropertyChanged(nameof(RequiresProductBranchSelection));
+        OnPropertyChanged(nameof(HasProductBranchSelected));
+        OnPropertyChanged(nameof(ShowProductBranchPicker));
+        OnPropertyChanged(nameof(CanEnterProductData));
         OnPropertyChanged(nameof(ShowExcelPanel));
         OnPropertyChanged(nameof(ShowDataGrid));
         OnPropertyChanged(nameof(ShowProductsGrid));
@@ -1280,7 +1392,9 @@ public partial class MigrationWizardViewModel : ViewModelBase
                     b => _branchContext.CurrentBranchId is int cid && b.Id == cid)
                     ?? AvailableBranches.FirstOrDefault();
 
-            AvailableWarehouses.Clear();
+            EnsureSelectedProductBranch();
+
+            _warehouseLookup.Clear();
             await using (var db = await _dbFactory.CreateDbContextAsync())
             {
                 db.BypassBranchFilter = true;
@@ -1296,25 +1410,27 @@ public partial class MigrationWizardViewModel : ViewModelBase
                              .OrderBy(w => w.Name))
                 {
                     branchNames.TryGetValue(w.BranchId, out var branchName);
-                    AvailableWarehouses.Add(string.IsNullOrWhiteSpace(branchName)
+                    var display = string.IsNullOrWhiteSpace(branchName)
                         ? w.Name
-                        : $"{w.Name} ({branchName})");
+                        : $"{w.Name} ({branchName})";
+                    _warehouseLookup.Add((display, w.BranchId, w.Name));
                 }
             }
 
-            if (string.IsNullOrWhiteSpace(SelectedWarehouseName)
-                || !AvailableWarehouses.Contains(SelectedWarehouseName))
-            {
-                SelectedWarehouseName = AvailableWarehouses.Count > 0
-                    ? AvailableWarehouses[0]
-                    : null;
-            }
+            RebuildAvailableWarehousesForProducts();
 
             if (IsProductsStep)
             {
                 SyncProductPriceEditors();
                 SyncAllProductRowStructures();
                 ProductsGridVersion++;
+                OnPropertyChanged(nameof(RequiresProductBranchSelection));
+                OnPropertyChanged(nameof(HasProductBranchSelected));
+                OnPropertyChanged(nameof(CanEnterProductData));
+                OnPropertyChanged(nameof(ShowProductBranchPicker));
+                OnPropertyChanged(nameof(ShowProductsGrid));
+                OnPropertyChanged(nameof(ShowExcelPanel));
+                OnPropertyChanged(nameof(EntryHint));
             }
         }
         catch
@@ -1556,12 +1672,14 @@ public partial class MigrationWizardViewModel : ViewModelBase
     private void AddBlankRows()
     {
         if (IsCustomFormStep || CurrentKind is null) return;
+        if (IsProductsStep && !EnsureProductBranchReady("إضافة صفوف المنتجات"))
+            return;
 
         if (IsProductsStep)
         {
             for (var i = 0; i < 5; i++)
             {
-                var row = new MigrationNamedBalanceRow { IsValid = true };
+                var row = new MigrationNamedBalanceRow { IsValid = true, ShowInCashier = true };
                 SyncProductRowStructure(row);
                 CurrentRows.Add(row);
             }
@@ -1581,6 +1699,8 @@ public partial class MigrationWizardViewModel : ViewModelBase
     [RelayCommand]
     private void BrowseFile()
     {
+        if (IsProductsStep && !EnsureProductBranchReady("استيراد قالب Excel"))
+            return;
         var dlg = new OpenFileDialog { Filter = "Excel|*.xlsx;*.xls", Title = "اختر ملف Excel" };
         if (dlg.ShowDialog() != true) return;
         SelectedFilePath = dlg.FileName;
@@ -1591,6 +1711,8 @@ public partial class MigrationWizardViewModel : ViewModelBase
     private async Task LoadPreviewAsync()
     {
         if (string.IsNullOrEmpty(SelectedFilePath) || CurrentKind is null) return;
+        if (IsProductsStep && !EnsureProductBranchReady("استيراد قالب Excel"))
+            return;
         try
         {
             IsBusy = true;
@@ -1618,6 +1740,8 @@ public partial class MigrationWizardViewModel : ViewModelBase
     private async Task DownloadTemplateAsync()
     {
         if (CurrentKind is null) return;
+        if (IsProductsStep && !EnsureProductBranchReady("تنزيل قالب المنتجات"))
+            return;
         var dlg = new SaveFileDialog
         {
             Filter = "Excel|*.xlsx",
@@ -2705,6 +2829,9 @@ public partial class MigrationWizardViewModel : ViewModelBase
 
     private async Task<bool> SaveProductsAsync()
     {
+        if (!EnsureProductBranchReady("حفظ المنتجات"))
+            return false;
+
         var rows = CurrentRows
             .Where(r => !string.IsNullOrWhiteSpace(r.Name))
             .GroupBy(r => r.Name.Trim(), StringComparer.OrdinalIgnoreCase)
@@ -2781,16 +2908,27 @@ public partial class MigrationWizardViewModel : ViewModelBase
                     categories.Add(category);
                 }
 
+                var nameKey = row.Name.Trim();
+                var barcodeKey = string.IsNullOrWhiteSpace(row.Barcode) ? null : row.Barcode.Trim();
                 var product = products.FirstOrDefault(p =>
-                    string.Equals(p.Name, row.Name.Trim(), StringComparison.OrdinalIgnoreCase));
+                    string.Equals(p.Name, nameKey, StringComparison.OrdinalIgnoreCase));
+                // هوية المنتج: الاسم أولاً، ثم الباركود إن وُجد — يمنع مكرراً عند ربط فرع آخر
+                if (product is null && barcodeKey is not null)
+                {
+                    product = products.FirstOrDefault(p =>
+                        !string.IsNullOrWhiteSpace(p.Barcode)
+                        && string.Equals(p.Barcode, barcodeKey, StringComparison.OrdinalIgnoreCase));
+                }
+
                 if (product is null)
                 {
                     product = new Product
                     {
-                        Name = row.Name.Trim(),
-                        Barcode = string.IsNullOrWhiteSpace(row.Barcode) ? null : row.Barcode.Trim(),
+                        Name = nameKey,
+                        Barcode = barcodeKey,
                         Description = string.IsNullOrWhiteSpace(row.Description) ? null : row.Description.Trim(),
-                        CategoryId = category.Id
+                        CategoryId = category.Id,
+                        ShowInCashier = row.ShowInCashier
                     };
                     ApplyProductFeatureFields(product, row);
                     await _unitOfWork.Products.AddAsync(product);
@@ -2800,10 +2938,12 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 }
                 else
                 {
-                    if (!string.IsNullOrWhiteSpace(row.Barcode) && string.IsNullOrWhiteSpace(product.Barcode))
-                        product.Barcode = row.Barcode.Trim();
+                    // منتج موجود مسبقاً — حدّثه واربطه بالفرع المحدد دون إنشاء مكرر
+                    if (barcodeKey is not null && string.IsNullOrWhiteSpace(product.Barcode))
+                        product.Barcode = barcodeKey;
                     if (!string.IsNullOrWhiteSpace(row.Description))
                         product.Description = row.Description.Trim();
+                    product.ShowInCashier = row.ShowInCashier;
                     ApplyProductFeatureFields(product, row);
                     _unitOfWork.Products.Update(product);
                     QueueProductBranches(pendingBranches, product.Id, row, allowedBranchIds);
@@ -2997,6 +3137,11 @@ public partial class MigrationWizardViewModel : ViewModelBase
     {
         var toMerge = new List<int>();
 
+        // الفرع المحدد لخطوة المنتجات — أساس الربط دون إنشاء منتج مكرر
+        if (SelectedBranchForProducts is not null
+            && allowedBranchIds.Contains(SelectedBranchForProducts.Id))
+            toMerge.Add(SelectedBranchForProducts.Id);
+
         if (ShowProductBranchColumns && AvailableBranches.Count > 1)
         {
             var mainId = AvailableBranches.FirstOrDefault(b => b.IsMain)?.Id
@@ -3005,11 +3150,14 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 .Where(allowedBranchIds.Contains));
         }
 
-        // دائماً أضف فروع المستخدم الحالي حتى يظهر المنتج في فرعه عند إدخال كميات مخازنه
-        toMerge.AddRange(allowedBranchIds);
-
-        if (_branchContext.CurrentBranchId is int currentId && allowedBranchIds.Contains(currentId))
-            toMerge.Add(currentId);
+        // إن لم يُحدد أي فرع (فرع واحد أو أعمدة فارغة) — اربط بفرع الجلسة/الرئيسي المسموح
+        if (toMerge.Count == 0)
+        {
+            if (_branchContext.CurrentBranchId is int currentId && allowedBranchIds.Contains(currentId))
+                toMerge.Add(currentId);
+            else if (allowedBranchIds.Count > 0)
+                toMerge.Add(allowedBranchIds.First());
+        }
 
         var distinct = toMerge.Where(id => id > 0).Distinct().ToList();
         if (distinct.Count > 0)
