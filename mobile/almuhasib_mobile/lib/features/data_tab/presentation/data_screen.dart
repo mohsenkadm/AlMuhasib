@@ -61,6 +61,24 @@ class DataScreen extends GetView<DataHubController> {
           'data_transfers_desc',
           financeType: 'transfers',
         ),
+        if (controller.multiCurrencyEnabled) ...[
+          const _DataItem(
+            'currency-exchanges',
+            'currency_exchanges',
+            Icons.currency_exchange,
+            AppColors.moduleIndigo,
+            'data_currency_exchanges_desc',
+            financeType: 'currency-exchanges',
+          ),
+          const _DataItem(
+            'exchange-rates',
+            'exchange_rates',
+            Icons.trending_up_rounded,
+            AppColors.moduleCyan,
+            'data_exchange_rates_desc',
+            route: AppRoutes.exchangeRates,
+          ),
+        ],
         const _DataItem(
           'cash-boxes',
           'cash_boxes',
@@ -313,6 +331,15 @@ class DataScreen extends GetView<DataHubController> {
                   Get.toNamed(AppRoutes.transferNew);
                 },
               ),
+              if (controller.multiCurrencyEnabled)
+                ListTile(
+                  leading: const Icon(Icons.currency_exchange),
+                  title: Text('new_currency_exchange'.tr()),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    Get.toNamed(AppRoutes.currencyExchangeNew);
+                  },
+                ),
               ListTile(
                 leading: const Icon(Icons.move_up_rounded),
                 title: Text('new_warehouse_transfer'.tr()),

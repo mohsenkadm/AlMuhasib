@@ -208,7 +208,8 @@ class OfflineWriteService extends GetxService {
             currentBranchId == null ||
             write.branchId != currentBranchId) {
           write.status = PendingWriteStatus.failed;
-          write.lastError = 'branch_context_mismatch';
+          write.lastError =
+              'اختلاف الفرع: أعد اختيار الفرع الأصلي (رقم ${write.branchId ?? '—'}) ثم أعد المحاولة، أو احذف العملية';
           pending.refresh();
           await _persist();
           continue;
@@ -217,7 +218,8 @@ class OfflineWriteService extends GetxService {
             currentTenantId == null ||
             write.tenantId != currentTenantId) {
           write.status = PendingWriteStatus.failed;
-          write.lastError = 'tenant_context_mismatch';
+          write.lastError =
+              'اختلاف المستأجر: سجّل الخروج ثم الدخول مجدداً، أو احذف العملية';
           pending.refresh();
           await _persist();
           continue;

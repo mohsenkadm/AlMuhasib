@@ -13,6 +13,7 @@ abstract final class StorageKeys {
   static const branchId = 'branch_id';
   static const branchName = 'branch_name';
   static const branchCode = 'branch_code';
+  static const branchSyncId = 'branch_sync_id';
   static const allowedBranchesJson = 'allowed_branches_json';
   static const notificationInbox = 'notification_inbox';
   static const reportFavorites = 'report_favorites';

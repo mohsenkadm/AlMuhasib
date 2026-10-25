@@ -79,6 +79,28 @@ class FinanceRepository {
     );
   }
 
+  Future<PagedResult<CurrencyExchangeListItem>> getCurrencyExchanges({
+    DateTime? from,
+    DateTime? to,
+    int page = 1,
+    int pageSize = 50,
+  }) {
+    _apiClient.updateBaseUrl();
+    return _apiClient.get(
+      '/api/mobile/currency-exchanges',
+      queryParameters: {
+        if (from != null) 'from': from.toIso8601String(),
+        if (to != null) 'to': to.toIso8601String(),
+        'page': page,
+        'pageSize': pageSize,
+      },
+      parser: (data) => PagedResult.fromJson(
+        data as Map<String, dynamic>,
+        CurrencyExchangeListItem.fromJson,
+      ),
+    );
+  }
+
   Future<PagedResult<WarehouseStockListItem>> getWarehouseStocks({
     String? warehouseSyncId,
     String? productSyncId,

@@ -463,6 +463,12 @@ class VoucherFormController extends GetxController {
     try {
       final boxes = await AppServices.data.getCashBoxes();
       if (boxes.length == 1) cashBox.value = boxes.first;
+      if (fxRateController.text.trim().isEmpty) {
+        final latest = await AppServices.auth.getLatestExchangeRate();
+        if (latest != null && latest.usdToIqd > 0) {
+          fxRateController.text = latest.usdToIqd.toString();
+        }
+      }
     } catch (_) {}
   }
 

@@ -45,6 +45,9 @@ class FinanceListController extends GetxController {
         case 'transfers':
           final r = await AppServices.finance.getTransfers();
           items.assignAll(r.items);
+        case 'currency-exchanges':
+          final r = await AppServices.finance.getCurrencyExchanges();
+          items.assignAll(r.items);
         case 'warehouse-stocks':
           final r = await AppServices.finance.getWarehouseStocks(
             search: search.isEmpty ? null : search,
@@ -67,6 +70,7 @@ class FinanceListController extends GetxController {
         'vouchers' => 'vouchers'.tr(),
         'expenses' => 'expenses'.tr(),
         'transfers' => 'transfers'.tr(),
+        'currency-exchanges' => 'currency_exchanges'.tr(),
         'warehouse-stocks' => 'warehouse_stocks'.tr(),
         'warehouse-transfers' => 'warehouse_transfers'.tr(),
         _ => 'data_title'.tr(),
@@ -76,6 +80,7 @@ class FinanceListController extends GetxController {
         'vouchers' => AppRoutes.voucherNew,
         'expenses' => AppRoutes.expenseNew,
         'transfers' => AppRoutes.transferNew,
+        'currency-exchanges' => AppRoutes.currencyExchangeNew,
         'warehouse-stocks' => AppRoutes.stockAdjustment,
         'warehouse-transfers' => AppRoutes.warehouseTransferNew,
         _ => null,
@@ -208,6 +213,21 @@ class FinanceListScreen extends GetView<FinanceListController> {
         leading: const Icon(Icons.swap_horiz_rounded, color: AppColors.moduleCyan),
       );
     }
+    if (item is CurrencyExchangeListItem) {
+      return AppEntityCard(
+        title: '${item.fromCashBoxName} → ${item.toCashBoxName}',
+        subtitle:
+            '${formatDate(item.date)} • ${'fx_rate'.tr()} ${formatCurrency(item.fxRate)}',
+        trailing: Text(
+          '${formatCurrency(item.fromAmount)} → ${formatCurrency(item.toAmount)}',
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+        leading: const Icon(
+          Icons.currency_exchange,
+          color: AppColors.moduleIndigo,
+        ),
+      );
+    }
     if (item is WarehouseStockListItem) {
       return AppEntityCard(
         title: item.productName,
@@ -309,6 +329,20 @@ class _FinanceStatsHeader extends StatelessWidget {
               value: formatCurrency(total),
               icon: Icons.payments_outlined,
               color: AppColors.primary,
+            ),
+          ],
+        );
+      case 'currency-exchanges':
+        return PageStatsHeader(
+          heroTitle: 'currency_exchanges'.tr(),
+          heroValue: '$count',
+          heroSubtitle: 'records_count'.tr(),
+          stats: [
+            StatsChipData(
+              label: 'records_count'.tr(),
+              value: '$count',
+              icon: Icons.currency_exchange,
+              color: AppColors.moduleIndigo,
             ),
           ],
         );

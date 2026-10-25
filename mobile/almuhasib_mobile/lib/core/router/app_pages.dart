@@ -28,7 +28,9 @@ import '../../features/data_tab/presentation/pricing_type_form_screen.dart';
 import '../../features/data_tab/presentation/pricing_types_screen.dart';
 import '../../features/data_tab/presentation/product_price_form_screen.dart';
 import '../../features/data_tab/presentation/product_prices_screen.dart';
+import '../../features/finance/presentation/exchange_rates_screen.dart';
 import '../../features/finance/presentation/finance_list_screen.dart';
+import '../../features/settings/tenant_account_branches_screen.dart';
 import '../../features/gold_shop/gold_shop_shell.dart';
 import '../../features/gold_shop/notifications/gold_notifications_screen.dart';
 import '../../features/gold_shop/ops/gold_create_ops_screen.dart';
@@ -106,7 +108,11 @@ abstract final class AppPages {
     ),
     GetPage(
       name: AppRoutes.branchSelect,
-      page: () => const BranchSelectScreen(),
+      page: () {
+        final args = Get.arguments;
+        final switchMode = args is Map && args['switchMode'] == true;
+        return BranchSelectScreen(switchMode: switchMode);
+      },
       middlewares: [AuthMiddleware()],
       transition: fadeSlideTransition,
       transitionDuration: defaultTransitionDuration,
@@ -839,6 +845,30 @@ abstract final class AppPages {
       name: AppRoutes.transferNew,
       page: () => const TransferFormScreen(),
       binding: TransferFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.currencyExchangeNew,
+      page: () => const CurrencyExchangeFormScreen(),
+      binding: CurrencyExchangeFormBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.exchangeRates,
+      page: () => const ExchangeRatesScreen(),
+      binding: ExchangeRatesBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: slideTransition,
+      transitionDuration: slideTransitionDuration,
+    ),
+    GetPage(
+      name: AppRoutes.accountBranches,
+      page: () => const TenantAccountBranchesScreen(),
+      binding: TenantAccountBranchesBinding(),
       middlewares: [AuthMiddleware()],
       transition: slideTransition,
       transitionDuration: slideTransitionDuration,

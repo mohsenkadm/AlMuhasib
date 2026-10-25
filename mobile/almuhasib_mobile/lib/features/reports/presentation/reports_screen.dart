@@ -79,6 +79,8 @@ class _ReportsScreenState extends State<ReportsScreen> {
     _ReportItem('cash_box_movement', 'report_cash_box_movement', Icons.point_of_sale_outlined, AppColors.moduleGreen, ReportGroup.inventoryFinance),
     _ReportItem('cash_balances_summary', 'report_cash_balances_summary', Icons.account_balance_wallet_rounded, AppColors.moduleIndigo, ReportGroup.inventoryFinance),
     _ReportItem('transfers', 'report_transfers', Icons.swap_horiz_rounded, AppColors.modulePurple, ReportGroup.inventoryFinance),
+    _ReportItem('warehouse_transfers_report', 'report_warehouse_transfers', Icons.move_up_rounded, AppColors.moduleOrange, ReportGroup.inventoryFinance),
+    _ReportItem('damage_invoices', 'report_damage_invoices', Icons.delete_outline_rounded, AppColors.error, ReportGroup.inventoryFinance),
     _ReportItem('inventory_valuation', 'report_inventory_valuation', Icons.attach_money_rounded, AppColors.moduleGreen, ReportGroup.inventoryFinance),
     _ReportItem('stock_taking', 'report_stock_taking', Icons.checklist_rtl_rounded, AppColors.moduleOrange, ReportGroup.inventoryFinance),
     _ReportItem('cogs', 'report_cogs', Icons.shopping_cart_checkout_rounded, AppColors.error, ReportGroup.inventoryFinance),
@@ -89,6 +91,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
     _ReportItem('financial_position_summary', 'report_financial_position_summary', Icons.dashboard_customize_outlined, AppColors.moduleCyan, ReportGroup.financial),
     _ReportItem('profit_and_loss', 'report_profit_and_loss', Icons.assessment_outlined, AppColors.modulePurple, ReportGroup.financial),
     _ReportItem('statement_of_financial_position', 'report_statement_of_financial_position', Icons.account_balance_rounded, AppColors.primary, ReportGroup.financial),
+    _ReportItem('executive_summary', 'report_executive_summary', Icons.dashboard_customize_rounded, AppColors.moduleIndigo, ReportGroup.financial),
 
     // ── التقارير الرقابية ──
     _ReportItem('investor_profit_distributions', 'report_investor_profit_distributions', Icons.diversity_3_rounded, AppColors.modulePink, ReportGroup.supervisory),

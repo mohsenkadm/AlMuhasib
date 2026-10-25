@@ -578,4 +578,42 @@ class ReportsRepository {
         '/api/reports/statement-of-financial-position',
         query: _filterParams(to: asOf ?? DateTime.now()),
       );
+
+  Future<dynamic> getExecutiveSummary({DateTime? from, DateTime? to}) =>
+      getGenericReport(
+        '/api/reports/executive-summary',
+        query: _filterParams(from: from, to: to),
+      );
+
+  Future<dynamic> getWarehouseTransfersReport({
+    DateTime? from,
+    DateTime? to,
+    String? warehouseSyncId,
+    String? search,
+  }) =>
+      getGenericReport(
+        '/api/reports/warehouse-transfers',
+        query: {
+          ..._filterParams(
+            from: from,
+            to: to,
+            warehouseSyncId: warehouseSyncId,
+          ),
+          if (search != null && search.isNotEmpty) 'search': search,
+        },
+      );
+
+  Future<dynamic> getDamageInvoicesReport({
+    DateTime? from,
+    DateTime? to,
+    String? warehouseSyncId,
+  }) =>
+      getGenericReport(
+        '/api/reports/damage-invoices',
+        query: _filterParams(
+          from: from,
+          to: to,
+          warehouseSyncId: warehouseSyncId,
+        ),
+      );
 }

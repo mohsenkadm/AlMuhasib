@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../router/app_routes.dart';
 import '../../storage/preferences_service.dart';
 import '../../../features/auth/data/auth_repository.dart';
+import '../../../shared/models/auth_models.dart';
 
 class AuthController extends GetxController {
   AuthController({
@@ -85,12 +86,49 @@ class AuthController extends GetxController {
     Get.offAllNamed(_preferences.launchRoute);
   }
 
-  Future<void> login(String username, String password) async {
-    await _repository.login(username, password);
+  Future<TenantLoginResponse> login(String username, String password) async {
+    final response = await _repository.login(username, password);
     isAuthenticated.value = true;
     isLoading.value = false;
-    _navigateIfNeeded();
+    return response;
   }
+
+  Future<SelectBranchResponse> selectBranch(int branchId) =>
+      _repository.selectBranch(branchId);
+
+  Future<AllowedBranchesResponse> refreshBranches() =>
+      _repository.refreshBranches();
+
+  Future<LatestExchangeRateResponse?> getLatestExchangeRate() =>
+      _repository.getLatestExchangeRate();
+
+  Future<List<LatestExchangeRateResponse>> listExchangeRates({int take = 30}) =>
+      _repository.listExchangeRates(take: take);
+
+  Future<LatestExchangeRateResponse> createExchangeRate(
+    CreateExchangeRateRequest request,
+  ) =>
+      _repository.createExchangeRate(request);
+
+  Future<List<TenantAccountListItem>> listTenantAccounts() =>
+      _repository.listTenantAccounts();
+
+  Future<List<BranchInfo>> listAllTenantBranches() =>
+      _repository.listAllTenantBranches();
+
+  Future<TenantAccountBranchesResponse> getTenantAccountBranches(int accountId) =>
+      _repository.getTenantAccountBranches(accountId);
+
+  Future<TenantAccountBranchesResponse> setTenantAccountBranches({
+    required int accountId,
+    required List<int> branchIds,
+    int? defaultBranchId,
+  }) =>
+      _repository.setTenantAccountBranches(
+        accountId: accountId,
+        branchIds: branchIds,
+        defaultBranchId: defaultBranchId,
+      );
 
   Future<void> logout() async {
     await _repository.logout();

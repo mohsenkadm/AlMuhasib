@@ -73,6 +73,8 @@ class ReportDetailController extends GetxController {
     'inventory_valuation',
     'stock_taking',
     'cogs',
+    'warehouse_transfers_report',
+    'damage_invoices',
   };
 
   static const _cashBoxFilterTypes = {
@@ -330,6 +332,23 @@ class ReportDetailController extends GetxController {
           );
         case 'statement_of_financial_position':
           loaded = await repo.getStatementOfFinancialPosition(asOf: to.value);
+        case 'executive_summary':
+          loaded = await repo.getExecutiveSummary(
+            from: from.value,
+            to: to.value,
+          );
+        case 'warehouse_transfers_report':
+          loaded = await repo.getWarehouseTransfersReport(
+            from: from.value,
+            to: to.value,
+            warehouseSyncId: selectedWarehouse.value?.syncId,
+          );
+        case 'damage_invoices':
+          loaded = await repo.getDamageInvoicesReport(
+            from: from.value,
+            to: to.value,
+            warehouseSyncId: selectedWarehouse.value?.syncId,
+          );
         default:
           loaded = null;
       }

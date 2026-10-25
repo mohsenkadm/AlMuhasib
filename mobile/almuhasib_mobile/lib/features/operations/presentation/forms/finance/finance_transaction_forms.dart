@@ -33,6 +33,12 @@ class ExpenseFormController extends GetxController {
       if (boxes.length == 1) cashBox.value = boxes.first;
       final types = await AppServices.data.getExpenseTypes();
       if (types.length == 1) expenseType.value = types.first;
+      if (fxRateController.text.trim().isEmpty) {
+        final latest = await AppServices.auth.getLatestExchangeRate();
+        if (latest != null && latest.usdToIqd > 0) {
+          fxRateController.text = latest.usdToIqd.toString();
+        }
+      }
     } catch (_) {}
   }
 
@@ -240,6 +246,22 @@ class TransferFormController extends GetxController {
   final saving = false.obs;
 
   int get selectedCurrency => lookupCurrencyCode(fromAccount.value?.extra);
+
+  @override
+  void onInit() {
+    super.onInit();
+    _preloadFx();
+  }
+
+  Future<void> _preloadFx() async {
+    try {
+      if (fxRateController.text.trim().isNotEmpty) return;
+      final latest = await AppServices.auth.getLatestExchangeRate();
+      if (latest != null && latest.usdToIqd > 0) {
+        fxRateController.text = latest.usdToIqd.toString();
+      }
+    } catch (_) {}
+  }
 
   Future<void> pickFrom(BuildContext context) async {
     final selected = await showLookupPickerSheet<LookupItem>(
@@ -870,6 +892,254 @@ class StockAdjustmentFormScreen extends GetView<StockAdjustmentFormController> {
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class CurrencyExchangeFormController extends GetxController {
+  final formKey = GlobalKey<FormState>();
+  final amountController = TextEditingController();
+  final notesController = TextEditingController();
+  final fxRateController = TextEditingController();
+  final fromCashBox = Rxn<LookupItem>();
+  final toCashBox = Rxn<LookupItem>();
+  final date = DateTime.now().obs;
+  final saving = false.obs;
+  final estimatedToAmount = 0.0.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _preloadFx();
+    amountController.addListener(_recalc);
+    fxRateController.addListener(_recalc);
+  }
+
+  Future<void> _preloadFx() async {
+    try {
+      final latest = await AppServices.auth.getLatestExchangeRate();
+      if (latest != null && latest.usdToIqd > 0) {
+        fxRateController.text = latest.usdToIqd.toString();
+      }
+    } catch (_) {}
+  }
+
+  void _recalc() {
+    final from = fromCashBox.value;
+    final amount = double.tryParse(amountController.text) ?? 0;
+    final fx = double.tryParse(fxRateController.text) ?? 0;
+    if (from == null || amount <= 0 || fx <= 0) {
+      estimatedToAmount.value = 0;
+      return;
+    }
+    final fromCur = lookupCurrencyCode(from.extra);
+    estimatedToAmount.value =
+        fromCur == 1 ? amount * fx : (fx > 0 ? amount / fx : 0);
+  }
+
+  Future<void> pickFrom(BuildContext context) async {
+    final selected = await showLookupPickerSheet<LookupItem>(
+      context: context,
+      title: 'select_cashbox'.tr(),
+      loadItems: (s) => AppServices.data.getCashBoxes(search: s),
+    );
+    if (selected != null) {
+      fromCashBox.value = selected;
+      if (toCashBox.value != null &&
+          lookupCurrencyCode(toCashBox.value!.extra) ==
+              lookupCurrencyCode(selected.extra)) {
+        toCashBox.value = null;
+      }
+      _recalc();
+    }
+  }
+
+  Future<void> pickTo(BuildContext context) async {
+    final fromCur = lookupCurrencyCode(fromCashBox.value?.extra);
+    final selected = await showLookupPickerSheet<LookupItem>(
+      context: context,
+      title: 'select_cashbox'.tr(),
+      loadItems: (s) async {
+        final items = await AppServices.data.getCashBoxes(search: s);
+        return items
+            .where((b) => lookupCurrencyCode(b.extra) != fromCur)
+            .toList();
+      },
+    );
+    if (selected != null) {
+      toCashBox.value = selected;
+      _recalc();
+    }
+  }
+
+  Future<void> pickDate(BuildContext context) async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: date.value,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (picked != null) date.value = picked;
+  }
+
+  Future<void> save() async {
+    if (!formKey.currentState!.validate()) return;
+    if (fromCashBox.value == null || toCashBox.value == null) {
+      AppExceptionHandler.showError('select_accounts'.tr());
+      return;
+    }
+    final amount = double.tryParse(amountController.text);
+    if (amount == null || amount <= 0) {
+      AppExceptionHandler.showError('invalid_amount'.tr());
+      return;
+    }
+    final fromCur = lookupCurrencyCode(fromCashBox.value!.extra);
+    final toCur = lookupCurrencyCode(toCashBox.value!.extra);
+    if (fromCur == toCur) {
+      AppExceptionHandler.showError('currency_exchange_same_currency'.tr());
+      return;
+    }
+    final fxRate = double.tryParse(fxRateController.text) ?? 0;
+    if (fxRate <= 0) {
+      AppExceptionHandler.showError('fx_rate_required'.tr());
+      return;
+    }
+    saving.value = true;
+    try {
+      final response = await AppServices.operations.createCurrencyExchange(
+        CreateCurrencyExchangeRequest(
+          fromCashBoxSyncId: fromCashBox.value!.syncId,
+          toCashBoxSyncId: toCashBox.value!.syncId,
+          fromAmount: amount,
+          fxRate: fxRate,
+          date: date.value,
+          notes: notesController.text.trim().isEmpty
+              ? null
+              : notesController.text.trim(),
+        ),
+      );
+      if (response.conflicts.isNotEmpty) {
+        AppExceptionHandler.showConflicts(response.conflicts);
+        return;
+      }
+      AppExceptionHandler.showSuccess(response.message);
+      Get.back(result: true);
+    } catch (e) {
+      AppExceptionHandler.showError(e);
+    } finally {
+      saving.value = false;
+    }
+  }
+
+  @override
+  void onClose() {
+    amountController.dispose();
+    notesController.dispose();
+    fxRateController.dispose();
+    super.onClose();
+  }
+}
+
+class CurrencyExchangeFormScreen extends GetView<CurrencyExchangeFormController> {
+  const CurrencyExchangeFormScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return AppFormPage(
+      title: 'new_currency_exchange'.tr(),
+      formKey: controller.formKey,
+      saveLabel: 'save'.tr(),
+      onSave: controller.save,
+      isSaving: controller.saving,
+      sections: [
+        AppFormSection(
+          title: 'currency_exchange_info'.tr(),
+          children: [
+            Obx(
+              () => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.account_balance_wallet_outlined),
+                title: Text('from_cash_box'.tr()),
+                subtitle: Text(
+                  controller.fromCashBox.value == null
+                      ? 'select_cashbox'.tr()
+                      : '${controller.fromCashBox.value!.name} (${currencyCodeLabel(lookupCurrencyCode(controller.fromCashBox.value!.extra))})',
+                ),
+                onTap: () => controller.pickFrom(context),
+              ),
+            ),
+            Obx(
+              () => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.account_balance_wallet_rounded),
+                title: Text('to_cash_box'.tr()),
+                subtitle: Text(
+                  controller.toCashBox.value == null
+                      ? 'select_cashbox'.tr()
+                      : '${controller.toCashBox.value!.name} (${currencyCodeLabel(lookupCurrencyCode(controller.toCashBox.value!.extra))})',
+                ),
+                onTap: () => controller.pickTo(context),
+              ),
+            ),
+            AppTextField(
+              controller: controller.amountController,
+              label: 'amount'.tr(),
+              prefixIcon: Icons.payments_outlined,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              validator: (v) {
+                final n = double.tryParse(v?.trim() ?? '');
+                if (n == null || n <= 0) return 'invalid_amount'.tr();
+                return null;
+              },
+            ),
+            AppTextField(
+              controller: controller.fxRateController,
+              label: 'fx_rate'.tr(),
+              prefixIcon: Icons.currency_exchange,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              validator: (v) {
+                final n = double.tryParse(v?.trim() ?? '');
+                if (n == null || n <= 0) return 'fx_rate_required'.tr();
+                return null;
+              },
+            ),
+            Obx(() {
+              final est = controller.estimatedToAmount.value;
+              if (est <= 0) return const SizedBox.shrink();
+              final toCur =
+                  lookupCurrencyCode(controller.toCashBox.value?.extra);
+              return Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 8),
+                child: Text(
+                  '${'estimated_to_amount'.tr()}: ${formatCurrency(est)} ${currencyCodeLabel(toCur)}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              );
+            }),
+            Obx(
+              () => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.calendar_today_outlined),
+                title: Text(formatDate(controller.date.value)),
+                trailing: TextButton(
+                  onPressed: () => controller.pickDate(context),
+                  child: Text('date'.tr()),
+                ),
+              ),
+            ),
+            AppTextField(
+              controller: controller.notesController,
+              label: 'notes'.tr(),
+              prefixIcon: Icons.notes_outlined,
+              maxLines: 3,
             ),
           ],
         ),

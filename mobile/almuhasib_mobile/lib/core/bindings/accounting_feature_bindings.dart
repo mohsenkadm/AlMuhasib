@@ -6,6 +6,7 @@ import '../../features/data_tab/controllers/pricing_type_form_controller.dart';
 import '../../features/data_tab/controllers/pricing_types_controller.dart';
 import '../../features/data_tab/controllers/product_price_form_controller.dart';
 import '../../features/data_tab/controllers/product_prices_controller.dart';
+import '../../features/finance/presentation/exchange_rates_screen.dart';
 import '../../features/finance/presentation/finance_list_screen.dart';
 import '../../features/installments/presentation/installments_screens.dart';
 import '../../features/offline/presentation/pending_sync_screen.dart';
@@ -15,6 +16,7 @@ import '../../features/operations/controllers/invoice_wizard_controller.dart';
 import '../../features/operations/presentation/forms/finance/finance_entity_forms.dart';
 import '../../features/operations/presentation/forms/finance/finance_transaction_forms.dart';
 import '../../features/reports/controllers/report_detail_controller.dart';
+import '../../features/settings/tenant_account_branches_screen.dart';
 import '../../shared/models/mobile_models.dart';
 
 class DataListBinding extends Bindings {
@@ -168,6 +170,27 @@ class TransferFormBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut(() => TransferFormController(), fenix: true);
+  }
+}
+
+class CurrencyExchangeFormBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(() => CurrencyExchangeFormController(), fenix: true);
+  }
+}
+
+class ExchangeRatesBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(() => ExchangeRatesController(), fenix: true);
+  }
+}
+
+class TenantAccountBranchesBinding extends Bindings {
+  @override
+  void dependencies() {
+    Get.lazyPut(() => TenantAccountBranchesController(), fenix: true);
   }
 }
 

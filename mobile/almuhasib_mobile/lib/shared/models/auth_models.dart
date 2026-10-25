@@ -47,9 +47,10 @@ class BranchInfo {
   });
 
   factory BranchInfo.fromJson(Map<String, dynamic> json) {
+    final rawSync = json['syncId'];
     return BranchInfo(
       branchId: json['branchId'] as int? ?? 0,
-      syncId: json['syncId'] as String?,
+      syncId: rawSync?.toString(),
       name: json['name'] as String? ?? '',
       code: json['code'] as String? ?? '',
       isMain: json['isMain'] as bool? ?? false,
@@ -159,6 +160,129 @@ class SelectBranchResponse {
   final int? currentBranchId;
   final bool isAllBranchesMode;
   final BranchInfo? branch;
+}
+
+class AllowedBranchesResponse {
+  AllowedBranchesResponse({
+    required this.allowedBranches,
+    this.defaultBranchId,
+    this.currentBranchId,
+  });
+
+  factory AllowedBranchesResponse.fromJson(Map<String, dynamic> json) {
+    final branchesJson = json['allowedBranches'] as List<dynamic>? ?? const [];
+    return AllowedBranchesResponse(
+      allowedBranches: branchesJson
+          .whereType<Map<String, dynamic>>()
+          .map(BranchInfo.fromJson)
+          .toList(),
+      defaultBranchId: json['defaultBranchId'] as int?,
+      currentBranchId: json['currentBranchId'] as int?,
+    );
+  }
+
+  final List<BranchInfo> allowedBranches;
+  final int? defaultBranchId;
+  final int? currentBranchId;
+}
+
+class LatestExchangeRateResponse {
+  LatestExchangeRateResponse({
+    required this.rateDate,
+    required this.usdToIqd,
+    this.notes = '',
+    this.syncId,
+  });
+
+  factory LatestExchangeRateResponse.fromJson(Map<String, dynamic> json) {
+    return LatestExchangeRateResponse(
+      rateDate: DateTime.tryParse(json['rateDate'] as String? ?? '') ??
+          DateTime.now(),
+      usdToIqd: (json['usdToIqd'] as num?)?.toDouble() ?? 0,
+      notes: json['notes'] as String? ?? '',
+      syncId: json['syncId']?.toString(),
+    );
+  }
+
+  final DateTime rateDate;
+  final double usdToIqd;
+  final String notes;
+  final String? syncId;
+}
+
+class CreateExchangeRateRequest {
+  CreateExchangeRateRequest({
+    this.syncId,
+    required this.rateDate,
+    required this.usdToIqd,
+    this.notes,
+  });
+
+  Map<String, dynamic> toJson() => {
+        if (syncId != null) 'syncId': syncId,
+        'rateDate': rateDate.toIso8601String(),
+        'usdToIqd': usdToIqd,
+        if (notes != null) 'notes': notes,
+      };
+
+  final String? syncId;
+  final DateTime rateDate;
+  final double usdToIqd;
+  final String? notes;
+}
+
+class TenantAccountListItem {
+  TenantAccountListItem({
+    required this.id,
+    required this.username,
+    required this.isActive,
+    required this.createdAt,
+    this.isOwner = false,
+  });
+
+  factory TenantAccountListItem.fromJson(Map<String, dynamic> json) {
+    return TenantAccountListItem(
+      id: json['id'] as int? ?? 0,
+      username: json['username'] as String? ?? '',
+      isActive: json['isActive'] as bool? ?? false,
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      isOwner: json['isOwner'] as bool? ?? false,
+    );
+  }
+
+  final int id;
+  final String username;
+  final bool isActive;
+  final DateTime createdAt;
+  final bool isOwner;
+}
+
+class TenantAccountBranchesResponse {
+  TenantAccountBranchesResponse({
+    required this.accountId,
+    required this.username,
+    required this.branches,
+    this.defaultBranchId,
+  });
+
+  factory TenantAccountBranchesResponse.fromJson(Map<String, dynamic> json) {
+    final branchesJson = json['branches'] as List<dynamic>? ?? const [];
+    return TenantAccountBranchesResponse(
+      accountId: json['accountId'] as int? ?? 0,
+      username: json['username'] as String? ?? '',
+      branches: branchesJson
+          .whereType<Map<String, dynamic>>()
+          .map(BranchInfo.fromJson)
+          .toList(),
+      defaultBranchId: json['defaultBranchId'] as int?,
+    );
+  }
+
+  final int accountId;
+  final String username;
+  final List<BranchInfo> branches;
+  final int? defaultBranchId;
 }
 
 class LicenseStatusResponse {

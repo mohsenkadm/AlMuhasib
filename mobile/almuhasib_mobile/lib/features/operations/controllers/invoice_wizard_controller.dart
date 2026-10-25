@@ -83,6 +83,11 @@ class InvoiceWizardController extends GetxController {
       if (!multiCurrencyEnabled.value) {
         currency.value = 0;
         fxRate.value = 1;
+      } else if (fxRate.value <= 1) {
+        final latest = await AppServices.auth.getLatestExchangeRate();
+        if (latest != null && latest.usdToIqd > 0) {
+          fxRate.value = latest.usdToIqd;
+        }
       }
     } catch (_) {
       productPricingEnabled.value = false;

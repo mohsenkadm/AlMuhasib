@@ -251,6 +251,17 @@ class MobileOperationsRepository {
     );
   }
 
+  Future<MobileWriteResponse> createCurrencyExchange(
+    CreateCurrencyExchangeRequest request,
+  ) {
+    return _postOrQueue(
+      operationType: 'currency_exchange',
+      path: '/api/mobile/currency-exchanges',
+      body: request.toJson(),
+      syncId: request.syncId,
+    );
+  }
+
   Future<MobileWriteResponse> upsertWarehouse(UpsertWarehouseRequest request) {
     return _postOrQueue(
       operationType: 'warehouse',

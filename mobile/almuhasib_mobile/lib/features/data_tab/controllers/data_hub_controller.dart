@@ -16,6 +16,9 @@ class DataHubController extends GetxController {
   bool get productPricingEnabled =>
       settings.value?.productPricingEnabled ?? false;
 
+  bool get multiCurrencyEnabled =>
+      settings.value?.multiCurrencyEnabled ?? false;
+
   Future<void> load() async {
     isLoading.value = true;
     try {

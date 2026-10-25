@@ -104,6 +104,44 @@ class SettingsScreen extends GetView<SettingsController> {
               onTap: () => Get.toNamed(AppRoutes.pendingSync),
             );
           }).fadeSlideIn(delayMs: 170),
+          ListTile(
+            leading: const Icon(Icons.store_mall_directory_outlined),
+            title: const Text('الفرع الحالي'),
+            subtitle: Text(
+              [
+                prefs.branchName ?? '—',
+                if (prefs.branchCode != null && prefs.branchCode!.isNotEmpty)
+                  prefs.branchCode!,
+              ].join(' · '),
+            ),
+            trailing: const Icon(Icons.swap_horiz),
+            onTap: () async {
+              final changed = await Get.toNamed(
+                AppRoutes.branchSelect,
+                arguments: {'switchMode': true},
+              );
+              if (changed == true) {
+                Get.snackbar(
+                  'تم',
+                  'تم تبديل الفرع. أعد فتح القوائم لتحديث البيانات.',
+                  snackPosition: SnackPosition.BOTTOM,
+                );
+              }
+            },
+          ).fadeSlideIn(delayMs: 175),
+          FutureBuilder<bool>(
+            future: _canManageAccountBranches(),
+            builder: (context, snapshot) {
+              if (snapshot.data != true) return const SizedBox.shrink();
+              return ListTile(
+                leading: const Icon(Icons.account_tree_outlined),
+                title: Text('account_branches'.tr()),
+                subtitle: Text('account_branches_desc'.tr()),
+                trailing: const Icon(Icons.chevron_left),
+                onTap: () => Get.toNamed(AppRoutes.accountBranches),
+              ).fadeSlideIn(delayMs: 178);
+            },
+          ),
           const SizedBox(height: 28),
           Text(
             'account_section'.tr(),
@@ -149,6 +187,15 @@ class SettingsScreen extends GetView<SettingsController> {
         ],
       ),
     );
+  }
+
+  Future<bool> _canManageAccountBranches() async {
+    try {
+      await AppServices.auth.listTenantAccounts();
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<void> _confirmLogout(BuildContext context) async {

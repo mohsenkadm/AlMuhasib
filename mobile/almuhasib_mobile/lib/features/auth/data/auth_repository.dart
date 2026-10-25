@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../core/network/api_client.dart';
+import '../../../core/network/api_exception.dart';
 import '../../../core/offline/offline_write_queue.dart';
 import '../../../core/storage/preferences_service.dart';
 import '../../../core/storage/secure_storage_service.dart';
@@ -70,7 +71,11 @@ class AuthRepository {
     return response;
   }
 
-  Future<SelectBranchResponse> selectBranch(int branchId) async {
+  Future<SelectBranchResponse> selectBranch(
+    int branchId, {
+    bool clearOtherBranchQueue = true,
+  }) async {
+    final previousBranchId = _preferences.branchId;
     final response = await _apiClient.post(
       '/api/auth/select-branch',
       data: {'branchId': branchId, 'allBranches': false},
@@ -94,7 +99,133 @@ class AuthRepository {
       if (match != null) await _preferences.setCurrentBranch(match);
     }
 
+    // Drop pending writes stamped for another branch so they never flush under the new context.
+    if (clearOtherBranchQueue &&
+        previousBranchId != null &&
+        previousBranchId != branchId) {
+      try {
+        if (Get.isRegistered<OfflineWriteService>()) {
+          final queue = Get.find<OfflineWriteService>();
+          final foreignIds = queue.pending
+              .where((w) => w.branchId != null && w.branchId != branchId)
+              .map((w) => w.id)
+              .toList();
+          for (final id in foreignIds) {
+            await queue.remove(id);
+          }
+        }
+      } catch (_) {}
+    }
+
     return response;
+  }
+
+  /// Refresh allowed branches after Desktop creates a new branch + sync.
+  Future<AllowedBranchesResponse> refreshBranches() async {
+    final response = await _apiClient.get(
+      '/api/auth/branches',
+      parser: (data) =>
+          AllowedBranchesResponse.fromJson(data as Map<String, dynamic>),
+    );
+    await _preferences.setAllowedBranches(response.allowedBranches);
+
+    final currentId = _preferences.branchId;
+    if (currentId != null) {
+      final match = response.allowedBranches
+          .where((b) => b.branchId == currentId)
+          .firstOrNull;
+      if (match != null) {
+        await _preferences.setCurrentBranch(match);
+      }
+    }
+    return response;
+  }
+
+  Future<LatestExchangeRateResponse?> getLatestExchangeRate() async {
+    try {
+      return await _apiClient.get(
+        '/api/exchange-rates/latest',
+        parser: (data) =>
+            LatestExchangeRateResponse.fromJson(data as Map<String, dynamic>),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<List<LatestExchangeRateResponse>> listExchangeRates({int take = 30}) {
+    return _apiClient.get(
+      '/api/exchange-rates',
+      queryParameters: {'take': take},
+      parser: (data) {
+        final list = data as List<dynamic>? ?? const [];
+        return list
+            .whereType<Map<String, dynamic>>()
+            .map(LatestExchangeRateResponse.fromJson)
+            .toList();
+      },
+    );
+  }
+
+  Future<LatestExchangeRateResponse> createExchangeRate(
+    CreateExchangeRateRequest request,
+  ) {
+    return _apiClient.post(
+      '/api/exchange-rates',
+      data: request.toJson(),
+      parser: (data) =>
+          LatestExchangeRateResponse.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<List<TenantAccountListItem>> listTenantAccounts() {
+    return _apiClient.get(
+      '/api/tenant-accounts',
+      parser: (data) {
+        final list = data as List<dynamic>? ?? const [];
+        return list
+            .whereType<Map<String, dynamic>>()
+            .map(TenantAccountListItem.fromJson)
+            .toList();
+      },
+    );
+  }
+
+  Future<List<BranchInfo>> listAllTenantBranches() {
+    return _apiClient.get(
+      '/api/tenant-accounts/all-branches',
+      parser: (data) {
+        final list = data as List<dynamic>? ?? const [];
+        return list
+            .whereType<Map<String, dynamic>>()
+            .map(BranchInfo.fromJson)
+            .toList();
+      },
+    );
+  }
+
+  Future<TenantAccountBranchesResponse> getTenantAccountBranches(int accountId) {
+    return _apiClient.get(
+      '/api/tenant-accounts/$accountId/branches',
+      parser: (data) =>
+          TenantAccountBranchesResponse.fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  Future<TenantAccountBranchesResponse> setTenantAccountBranches({
+    required int accountId,
+    required List<int> branchIds,
+    int? defaultBranchId,
+  }) {
+    return _apiClient.put(
+      '/api/tenant-accounts/$accountId/branches',
+      data: {
+        'branchIds': branchIds,
+        if (defaultBranchId != null) 'defaultBranchId': defaultBranchId,
+      },
+      parser: (data) =>
+          TenantAccountBranchesResponse.fromJson(data as Map<String, dynamic>),
+    );
   }
 
   Future<LicenseStatusResponse> getLicenseStatus() {

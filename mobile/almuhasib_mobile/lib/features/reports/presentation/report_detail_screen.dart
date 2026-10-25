@@ -410,6 +410,9 @@ class _ReportDetailBody extends StatelessWidget {
           'financial_position_summary' ||
           'profit_and_loss' ||
           'statement_of_financial_position' ||
+          'executive_summary' ||
+          'warehouse_transfers_report' ||
+          'damage_invoices' ||
           'supplier_statement' =>
             _buildChartAwareReport(context, reportType, result),
           _ => _buildGeneric(context, result),

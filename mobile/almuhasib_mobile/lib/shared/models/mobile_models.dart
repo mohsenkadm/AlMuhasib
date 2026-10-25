@@ -459,6 +459,36 @@ class CreateTransferRequest {
   final String? notes;
 }
 
+class CreateCurrencyExchangeRequest {
+  CreateCurrencyExchangeRequest({
+    this.syncId,
+    required this.fromCashBoxSyncId,
+    required this.toCashBoxSyncId,
+    required this.fromAmount,
+    this.fxRate,
+    required this.date,
+    this.notes,
+  });
+
+  Map<String, dynamic> toJson() => {
+        if (syncId != null) 'syncId': syncId,
+        'fromCashBoxSyncId': fromCashBoxSyncId,
+        'toCashBoxSyncId': toCashBoxSyncId,
+        'fromAmount': fromAmount,
+        if (fxRate != null) 'fxRate': fxRate,
+        'date': date.toIso8601String(),
+        if (notes != null) 'notes': notes,
+      };
+
+  final String? syncId;
+  final String fromCashBoxSyncId;
+  final String toCashBoxSyncId;
+  final double fromAmount;
+  final double? fxRate;
+  final DateTime date;
+  final String? notes;
+}
+
 class UpsertWarehouseRequest {
   UpsertWarehouseRequest({
     this.syncId,
@@ -713,6 +743,53 @@ class TransferListItem {
   final String? toSyncId;
   final String toName;
   final double amount;
+  final DateTime date;
+  final String? notes;
+}
+
+class CurrencyExchangeListItem {
+  CurrencyExchangeListItem({
+    required this.syncId,
+    required this.fromCashBoxSyncId,
+    required this.fromCashBoxName,
+    required this.toCashBoxSyncId,
+    required this.toCashBoxName,
+    required this.fromCurrency,
+    required this.toCurrency,
+    required this.fromAmount,
+    required this.toAmount,
+    required this.fxRate,
+    required this.date,
+    this.notes,
+  });
+
+  factory CurrencyExchangeListItem.fromJson(Map<String, dynamic> json) {
+    return CurrencyExchangeListItem(
+      syncId: json['syncId']?.toString() ?? '',
+      fromCashBoxSyncId: json['fromCashBoxSyncId']?.toString() ?? '',
+      fromCashBoxName: json['fromCashBoxName'] as String? ?? '',
+      toCashBoxSyncId: json['toCashBoxSyncId']?.toString() ?? '',
+      toCashBoxName: json['toCashBoxName'] as String? ?? '',
+      fromCurrency: json['fromCurrency'] as int? ?? 0,
+      toCurrency: json['toCurrency'] as int? ?? 0,
+      fromAmount: _mNum(json['fromAmount']),
+      toAmount: _mNum(json['toAmount']),
+      fxRate: _mNum(json['fxRate']),
+      date: _mDate(json['date']) ?? DateTime.now(),
+      notes: json['notes'] as String?,
+    );
+  }
+
+  final String syncId;
+  final String fromCashBoxSyncId;
+  final String fromCashBoxName;
+  final String toCashBoxSyncId;
+  final String toCashBoxName;
+  final int fromCurrency;
+  final int toCurrency;
+  final double fromAmount;
+  final double toAmount;
+  final double fxRate;
   final DateTime date;
   final String? notes;
 }

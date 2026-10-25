@@ -39,6 +39,9 @@ abstract final class AppRoutes {
   static const voucherNew = '/data/voucher/new';
   static const expenseNew = '/data/expense/new';
   static const transferNew = '/data/transfer/new';
+  static const currencyExchangeNew = '/data/currency-exchange/new';
+  static const exchangeRates = '/data/exchange-rates';
+  static const accountBranches = '/settings/account-branches';
   static const cashBoxNew = '/data/cash-box/new';
   static const bankAccountNew = '/data/bank-account/new';
   static const expenseTypeNew = '/data/expense-type/new';

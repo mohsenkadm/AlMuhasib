@@ -113,6 +113,16 @@ class PreferencesService {
   Future<void> setBranchCode(String code) =>
       _prefs.setString(StorageKeys.branchCode, code);
 
+  String? get branchSyncId => _prefs.getString(StorageKeys.branchSyncId);
+
+  Future<void> setBranchSyncId(String? syncId) async {
+    if (syncId == null || syncId.isEmpty) {
+      await _prefs.remove(StorageKeys.branchSyncId);
+    } else {
+      await _prefs.setString(StorageKeys.branchSyncId, syncId);
+    }
+  }
+
   List<BranchInfo> get allowedBranches {
     final raw = _prefs.getString(StorageKeys.allowedBranchesJson);
     if (raw == null || raw.isEmpty) return const [];
@@ -141,12 +151,14 @@ class PreferencesService {
     await setBranchId(branch.branchId);
     await setBranchName(branch.name);
     await setBranchCode(branch.code);
+    await setBranchSyncId(branch.syncId);
   }
 
   Future<void> clearBranch() async {
     await _prefs.remove(StorageKeys.branchId);
     await _prefs.remove(StorageKeys.branchName);
     await _prefs.remove(StorageKeys.branchCode);
+    await _prefs.remove(StorageKeys.branchSyncId);
   }
 
   Future<void> clearSession() async {
