@@ -657,12 +657,15 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn x:Name="ColSerial" Header="سيريال" Width="120"
+                                <DataGridTemplateColumn x:Name="ColSerial" Header="سيريال" Width="150"
                                                         Visibility="Collapsed">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBox Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
-                                                     Style="{StaticResource NumericCellTextBox}"/>
+                                            <ComboBox ItemsSource="{Binding AvailableSerials}"
+                                                      Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
+                                                      IsEditable="True"
+                                                      StaysOpenOnEdit="True"
+                                                      ToolTip="اختر سيريال من المتاح أو اكتب/امسح IMEI"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>

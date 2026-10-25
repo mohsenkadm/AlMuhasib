@@ -305,7 +305,10 @@ public partial class SalesInvoiceViewModel
     private void ClearRowSerials()
     {
         foreach (var row in Items)
+        {
             row.SerialNumber = string.Empty;
+            row.AvailableSerials.Clear();
+        }
     }
 
     private void ClearRowWarranties()
@@ -416,11 +419,21 @@ public partial class SalesInvoiceViewModel
         {
             var lineWarehouseId = row.ResolveWarehouseId(SelectedWarehouse?.Id);
             var available = await _productSerialService.GetAvailableAsync(productId, lineWarehouseId);
+            row.AvailableSerials.Clear();
+            foreach (var s in available)
+                row.AvailableSerials.Add(s.SerialNumber);
+
             if (string.IsNullOrWhiteSpace(row.SerialNumber) && available.Count == 1)
                 row.SerialNumber = available[0].SerialNumber;
+            else if (!string.IsNullOrWhiteSpace(row.SerialNumber)
+                     && available.All(s => !string.Equals(s.SerialNumber, row.SerialNumber, StringComparison.OrdinalIgnoreCase)))
+            {
+                // أبقِ القيمة المكتوبة يدوياً إن لم تكن في القائمة
+            }
         }
         else
         {
+            row.AvailableSerials.Clear();
             row.SerialNumber = string.Empty;
         }
 

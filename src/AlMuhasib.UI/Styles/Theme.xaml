@@ -4203,20 +4203,21 @@
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="0"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
         <Setter Property="ScrollViewer.CanContentScroll" Value="False"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBox">
+                    <!-- Visible vertical scroll so many products wrap to new rows and remain reachable -->
                     <ScrollViewer Focusable="False"
                                   Padding="{TemplateBinding Padding}"
                                   HorizontalScrollBarVisibility="Disabled"
                                   VerticalScrollBarVisibility="Auto"
-                                  CanContentScroll="False">
-                        <ScrollViewer.Resources>
-                            <Style TargetType="ScrollBar" BasedOn="{StaticResource PosHiddenVerticalScrollBar}"/>
-                        </ScrollViewer.Resources>
+                                  CanContentScroll="False"
+                                  Style="{DynamicResource ThinScrollViewer}">
                         <ItemsPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"/>
                     </ScrollViewer>
                 </ControlTemplate>

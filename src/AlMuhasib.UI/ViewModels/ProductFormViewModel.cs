@@ -18,6 +18,7 @@ public partial class ProductFormViewModel : ViewModelBase
     private readonly IProductService _productService;
     private readonly IProductPriceService _productPriceService;
     private readonly IProductUnitService _productUnitService;
+    private readonly IProductSerialService _productSerialService;
     private readonly IProductSizeService _productSizeService;
     private readonly IProductColorService _productColorService;
     private readonly IPackagingTypeService _packagingTypeService;
@@ -39,6 +40,7 @@ public partial class ProductFormViewModel : ViewModelBase
     public ObservableCollection<ProductFormPriceRow> PriceRows { get; } = [];
     public ObservableCollection<ProductFormStockRow> StockRows { get; } = [];
     public ObservableCollection<ProductFormUnitRow> UnitRows { get; } = [];
+    public ObservableCollection<ProductFormSerialRow> SerialRows { get; } = [];
     public ObservableCollection<PackagingType> AvailablePackagingTypes { get; } = [];
     public ObservableCollection<ProductBranchOption> BranchOptions { get; } = [];
     public ObservableCollection<CustomFieldEditItem> CustomFields { get; } = [];
@@ -76,6 +78,7 @@ public partial class ProductFormViewModel : ViewModelBase
     [ObservableProperty] private bool _showPricingSection;
     [ObservableProperty] private bool _showMultiCurrency;
     [ObservableProperty] private bool _showUnitsSection;
+    [ObservableProperty] private bool _showSerialsSection;
     [ObservableProperty] private bool _showWeightSection;
     [ObservableProperty] private bool _showDiscountSection;
     [ObservableProperty] private bool _showSizesSection;
@@ -104,6 +107,7 @@ public partial class ProductFormViewModel : ViewModelBase
     [ObservableProperty] private string _quickPackagingError = string.Empty;
     [ObservableProperty] private PackagingType? _selectedPackagingToAdd;
     [ObservableProperty] private decimal _newUnitFactor = 1m;
+    [ObservableProperty] private string _newSerialText = string.Empty;
     [ObservableProperty] private string _newSizeName = string.Empty;
     [ObservableProperty] private string _newColorName = string.Empty;
 
@@ -128,6 +132,7 @@ public partial class ProductFormViewModel : ViewModelBase
         IProductService productService,
         IProductPriceService productPriceService,
         IProductUnitService productUnitService,
+        IProductSerialService productSerialService,
         IProductSizeService productSizeService,
         IProductColorService productColorService,
         IPackagingTypeService packagingTypeService,
@@ -145,6 +150,7 @@ public partial class ProductFormViewModel : ViewModelBase
         _productService = productService;
         _productPriceService = productPriceService;
         _productUnitService = productUnitService;
+        _productSerialService = productSerialService;
         _productSizeService = productSizeService;
         _productColorService = productColorService;
         _packagingTypeService = packagingTypeService;
@@ -202,6 +208,7 @@ public partial class ProductFormViewModel : ViewModelBase
         ShowPricingSection = _pricingEnabled;
         ShowMultiCurrency = _featureFlags.MultiCurrency && _pricingEnabled;
         ShowUnitsSection = _featureFlags.UnitsOfMeasure;
+        ShowSerialsSection = _featureFlags.SerialNumbers || _featureFlags.TemplateMobileShop;
         ShowWeightSection = _featureFlags.MenuWeight;
         ShowDiscountSection = _featureFlags.ProductDiscountEnabled;
         ShowSizesSection = _featureFlags.TemplateClothing;
@@ -256,6 +263,8 @@ public partial class ProductFormViewModel : ViewModelBase
         await LoadPriceRowsAsync(null);
         await ReloadStockRowsAsync();
         UnitRows.Clear();
+        SerialRows.Clear();
+        NewSerialText = string.Empty;
         PendingSizes.Clear();
         PendingColors.Clear();
         if (ShowUnitsSection)
@@ -314,6 +323,7 @@ public partial class ProductFormViewModel : ViewModelBase
         await LoadPriceRowsAsync(product.Id);
         await ReloadStockRowsAsync();
         await LoadUnitsAsync(product.Id);
+        await LoadSerialsAsync(product.Id);
         await LoadSizesColorsAsync(product.Id);
         await ResetCustomFieldsAsync(product.CustomFieldsJson);
     }
@@ -456,6 +466,22 @@ public partial class ProductFormViewModel : ViewModelBase
         {
             foreach (var c in (await _productColorService.GetByProductAsync(productId)).OrderBy(x => x.ColorName))
                 PendingColors.Add(c.ColorName);
+        }
+    }
+
+    private async Task LoadSerialsAsync(int productId)
+    {
+        SerialRows.Clear();
+        NewSerialText = string.Empty;
+        if (!ShowSerialsSection) return;
+        foreach (var s in await _productSerialService.GetByProductAsync(productId))
+        {
+            SerialRows.Add(new ProductFormSerialRow
+            {
+                ProductSerialId = s.Id,
+                SerialNumber = s.SerialNumber,
+                IsSold = s.IsSold
+            });
         }
     }
 
@@ -757,6 +783,34 @@ public partial class ProductFormViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void AddPendingSerials()
+    {
+        if (!ShowSerialsSection) return;
+        if (string.IsNullOrWhiteSpace(NewSerialText))
+        {
+            BeautifulMessageDialog.ShowWarning("أدخل سيريال نمبر واحداً أو أكثر مفصولة بفاصلة أو سطر جديد");
+            return;
+        }
+
+        var before = SerialRows.Count;
+        FlushPendingSerialText();
+        if (SerialRows.Count == before)
+            BeautifulMessageDialog.ShowWarning("كل السيريالات المدخلة موجودة مسبقاً في القائمة");
+    }
+
+    [RelayCommand]
+    private void RemovePendingSerial(ProductFormSerialRow? row)
+    {
+        if (row is null) return;
+        if (row.IsSold)
+        {
+            BeautifulMessageDialog.ShowWarning("لا يمكن حذف سيريال مباع");
+            return;
+        }
+        SerialRows.Remove(row);
+    }
+
+    [RelayCommand]
     private void AddPendingSize()
     {
         if (string.IsNullOrWhiteSpace(NewSizeName)) return;
@@ -906,6 +960,9 @@ public partial class ProductFormViewModel : ViewModelBase
             if (ShowUnitsSection)
                 await SaveUnitsAsync(productId);
 
+            if (ShowSerialsSection)
+                await SaveSerialsAsync(productId);
+
             if (ShowSizesSection || ShowColorsSection)
                 await SaveSizesColorsAsync(productId);
 
@@ -997,6 +1054,48 @@ public partial class ProductFormViewModel : ViewModelBase
         var defaultRow = UnitRows.FirstOrDefault(u => u.IsDefault) ?? UnitRows.FirstOrDefault();
         if (defaultRow?.ProductUnitId is int defId)
             await _productUnitService.SetDefaultAsync(productId, defId);
+    }
+
+    private async Task SaveSerialsAsync(int productId)
+    {
+        FlushPendingSerialText();
+
+        var existing = (await _productSerialService.GetByProductAsync(productId)).ToList();
+        var keepIds = new HashSet<int>();
+
+        foreach (var row in SerialRows.Where(r => r.ProductSerialId is int))
+            keepIds.Add(row.ProductSerialId!.Value);
+
+        foreach (var old in existing.Where(e => !keepIds.Contains(e.Id)))
+        {
+            if (old.IsSold) continue;
+            await _productSerialService.DeleteAsync(old.Id);
+        }
+
+        var toAdd = SerialRows
+            .Where(r => r.ProductSerialId is null && !string.IsNullOrWhiteSpace(r.SerialNumber))
+            .Select(r => r.SerialNumber.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        if (toAdd.Count > 0)
+            await _productSerialService.AddRangeAsync(productId, null, toAdd);
+    }
+
+    /// <summary>يدمج النص المعلّق (فواصل / أسطر) في SerialRows قبل الحفظ.</summary>
+    private void FlushPendingSerialText()
+    {
+        if (!ShowSerialsSection || string.IsNullOrWhiteSpace(NewSerialText))
+            return;
+
+        var parts = NewSerialText.Split(['\n', ',', ';', '،'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        foreach (var sn in parts)
+        {
+            if (SerialRows.Any(r => string.Equals(r.SerialNumber, sn, StringComparison.OrdinalIgnoreCase)))
+                continue;
+            SerialRows.Add(new ProductFormSerialRow { SerialNumber = sn, IsSold = false });
+        }
+
+        NewSerialText = string.Empty;
     }
 
     private async Task SaveSizesColorsAsync(int productId)

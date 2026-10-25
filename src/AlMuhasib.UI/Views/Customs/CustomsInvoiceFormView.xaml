@@ -190,13 +190,18 @@
                                              md:HintAssist.Foreground="#78909C"
                                              md:TextFieldAssist.HasClearButton="True"/>
                                     <Button Command="{Binding AddVehicleRowCommand}"
-                                            Style="{StaticResource FlatButton}"
-                                            Foreground="White" Height="32" Padding="14,0"
+                                            Background="White"
+                                            Foreground="{DynamicResource PrimaryHueMidBrush}"
+                                            BorderThickness="0"
+                                            Height="34" Padding="16,0"
+                                            FontWeight="SemiBold"
+                                            md:ButtonAssist.CornerRadius="8"
                                             IsEnabled="{Binding CanAddVehicle}"
-                                            ToolTip="إضافة سيارة (Enter في آخر صف)">
+                                            ToolTip="إضافة سيارة / شحنة (Enter في آخر صف)">
                                         <StackPanel Orientation="Horizontal">
-                                            <md:PackIcon Kind="Plus" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                            <TextBlock Text="إضافة سيارة" VerticalAlignment="Center"/>
+                                            <md:PackIcon Kind="Plus" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"
+                                                         Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                            <TextBlock Text="إضافة" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
@@ -214,48 +219,83 @@
                                   SelectionUnit="Cell"
                                   MaxHeight="420"
                                   MinHeight="200"
-                                  RowHeight="64"
+                                  RowHeight="48"
                                   FontSize="13"
                                   Style="{StaticResource InvoiceItemsDataGrid}"
                                   ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                                  md:DataGridAssist.CellPadding="4,2"
                                   behaviors:InvoiceDataGridBehavior.Enable="True"
                                   behaviors:InvoiceDataGridBehavior.AddRowCommand="{Binding AddVehicleRowCommand}"
                                   behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
                                   behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                                   behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}"
                                   CellEditEnding="VehiclesGrid_OnCellEditEnding">
+                            <DataGrid.Resources>
+                                <Style x:Key="VehicleCellText" TargetType="TextBlock">
+                                    <Setter Property="Margin" Value="0"/>
+                                    <Setter Property="Padding" Value="6,0"/>
+                                    <Setter Property="VerticalAlignment" Value="Center"/>
+                                    <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                </Style>
+                                <Style x:Key="VehicleCellEdit" TargetType="TextBox">
+                                    <Setter Property="Margin" Value="0"/>
+                                    <Setter Property="Padding" Value="6,2"/>
+                                    <Setter Property="MinHeight" Value="28"/>
+                                    <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="md:TextFieldAssist.DecorationVisibility" Value="Collapsed"/>
+                                    <Setter Property="md:HintAssist.IsFloating" Value="False"/>
+                                </Style>
+                            </DataGrid.Resources>
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="رقم الفاتورة / تسلسل"
                                                     Binding="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
-                                                    Width="120" MinWidth="100"
+                                                    Width="160" MinWidth="140"
+                                                    ElementStyle="{StaticResource VehicleCellText}"
+                                                    EditingElementStyle="{StaticResource VehicleCellEdit}"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SerialNumber"/>
                                 <DataGridTextColumn Header="لوحة سورية"
                                                     Binding="{Binding SyrianPlate, UpdateSourceTrigger=PropertyChanged}"
                                                     Width="120" MinWidth="100"
+                                                    ElementStyle="{StaticResource VehicleCellText}"
+                                                    EditingElementStyle="{StaticResource VehicleCellEdit}"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SyrianPlate"/>
                                 <DataGridTextColumn Header="سائق سوري"
                                                     Binding="{Binding SyrianDriver, UpdateSourceTrigger=PropertyChanged}"
                                                     Width="120" MinWidth="100"
+                                                    ElementStyle="{StaticResource VehicleCellText}"
+                                                    EditingElementStyle="{StaticResource VehicleCellEdit}"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SyrianDriver"/>
                                 <DataGridTextColumn Header="لوحة عراقية"
                                                     Binding="{Binding IraqiPlate, UpdateSourceTrigger=PropertyChanged}"
                                                     Width="120" MinWidth="100"
+                                                    ElementStyle="{StaticResource VehicleCellText}"
+                                                    EditingElementStyle="{StaticResource VehicleCellEdit}"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="IraqiPlate"/>
                                 <DataGridTextColumn Header="سائق عراقي"
                                                     Binding="{Binding IraqiDriver, UpdateSourceTrigger=PropertyChanged}"
                                                     Width="120" MinWidth="100"
+                                                    ElementStyle="{StaticResource VehicleCellText}"
+                                                    EditingElementStyle="{StaticResource VehicleCellEdit}"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="IraqiDriver"/>
                                 <DataGridTextColumn Header="الحمولة"
                                                     Binding="{Binding CargoType, UpdateSourceTrigger=PropertyChanged}"
                                                     Width="*" MinWidth="140"
+                                                    ElementStyle="{StaticResource VehicleCellText}"
+                                                    EditingElementStyle="{StaticResource VehicleCellEdit}"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CargoType"/>
                                 <DataGridTextColumn Header="السعر"
                                                     Binding="{Binding VehiclePrice, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                                                     Width="110" MinWidth="90"
+                                                    ElementStyle="{StaticResource VehicleCellText}"
+                                                    EditingElementStyle="{StaticResource VehicleCellEdit}"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="VehiclePrice"/>
                                 <DataGridTextColumn Header="غرامات تأخيرية"
                                                     Binding="{Binding DelayPenaltyAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
                                                     Width="120" MinWidth="100"
+                                                    ElementStyle="{StaticResource VehicleCellText}"
+                                                    EditingElementStyle="{StaticResource VehicleCellEdit}"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="DelayPenaltyAmount"/>
                                 <DataGridTemplateColumn Header="الحالة" Width="130" MinWidth="120"
                                                        behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StatusLabel">
@@ -265,9 +305,9 @@
                                                       SelectedValue="{Binding Status, UpdateSourceTrigger=PropertyChanged}"
                                                       SelectedValuePath="Value"
                                                       DisplayMemberPath="Label"
-                                                      IsEnabled="{Binding DataContext.CanEdit, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                      Style="{StaticResource FilledComboBox}"
-                                                      Margin="4,6"/>
+                                                      IsEnabled="{Binding DataContext.CanAddVehicle, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      Style="{StaticResource InvoiceGridComboBox}"
+                                                      Margin="2,0"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
@@ -367,11 +407,16 @@
                                                      ShowFilter="False">
                             <controls:ListTableHeaderBar.ExtraContent>
                                 <Button Command="{Binding OpenAddExpenseDialogCommand}"
-                                        Style="{StaticResource FlatButton}"
-                                        Foreground="White" Height="32" Padding="14,0"
+                                        Background="White"
+                                        Foreground="{DynamicResource PrimaryHueMidBrush}"
+                                        BorderThickness="0"
+                                        Height="34" Padding="16,0"
+                                        FontWeight="SemiBold"
+                                        md:ButtonAssist.CornerRadius="8"
                                         IsEnabled="{Binding CanAddExpense}">
                                     <StackPanel Orientation="Horizontal">
-                                        <md:PackIcon Kind="CashPlus" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <md:PackIcon Kind="CashPlus" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"
+                                                     Foreground="{DynamicResource PrimaryHueMidBrush}"/>
                                         <TextBlock Text="إضافة مصروف" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>

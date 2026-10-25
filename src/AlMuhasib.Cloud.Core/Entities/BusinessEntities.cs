@@ -217,6 +217,7 @@ public class CloudMaintenanceRecord : CloudBaseEntity, ITenantEntity, ICloudBran
     public int? ProductId { get; set; }
     public string ProductName { get; set; } = string.Empty;
     public string SerialNumber { get; set; } = string.Empty;
+    public string? PreviousSerialNumber { get; set; }
     public decimal CostAmount { get; set; }
     public string? Notes { get; set; }
     public MaintenanceStatus Status { get; set; }

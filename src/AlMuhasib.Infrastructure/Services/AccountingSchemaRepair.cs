@@ -174,6 +174,7 @@ public static class AccountingSchemaRepair
                     [ProductId] int NULL,
                     [ProductName] nvarchar(300) NOT NULL,
                     [SerialNumber] nvarchar(100) NOT NULL,
+                    [PreviousSerialNumber] nvarchar(100) NULL,
                     [CostAmount] decimal(18,2) NOT NULL,
                     [Notes] nvarchar(1000) NULL,
                     [Status] int NOT NULL,
@@ -193,6 +194,12 @@ public static class AccountingSchemaRepair
                 CREATE INDEX [IX_MaintenanceRecords_SerialNumber] ON [dbo].[MaintenanceRecords]([SerialNumber]);
                 CREATE INDEX [IX_MaintenanceRecords_Status] ON [dbo].[MaintenanceRecords]([Status]);
             END
+            """, cancellationToken);
+
+        await TryExecAsync(db, """
+            IF OBJECT_ID(N'dbo.MaintenanceRecords', N'U') IS NOT NULL
+               AND COL_LENGTH(N'dbo.MaintenanceRecords', N'PreviousSerialNumber') IS NULL
+                ALTER TABLE [dbo].[MaintenanceRecords] ADD [PreviousSerialNumber] nvarchar(100) NULL;
             """, cancellationToken);
     }
 

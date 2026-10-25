@@ -54,6 +54,10 @@ public partial class ProductsViewModel
     [ObservableProperty] private string _clothingDialogTitle = string.Empty;
     private int? _clothingDialogProductId;
 
+    [ObservableProperty] private bool _isSerialsDialogOpen;
+    [ObservableProperty] private string _serialsDialogTitle = string.Empty;
+    private int? _serialsDialogProductId;
+
     [ObservableProperty] private string? _selectedSizeFilter;
     [ObservableProperty] private string? _selectedColorFilter;
     [ObservableProperty] private bool _filterHasBatchesOnly;
@@ -319,6 +323,9 @@ public partial class ProductsViewModel
     private int? ResolveClothingProductId() =>
         _clothingDialogProductId ?? _editingProductId;
 
+    private int? ResolveSerialsProductId() =>
+        _serialsDialogProductId ?? _editingProductId;
+
     [RelayCommand]
     private async Task OpenProductClothingDialogAsync(Product? product)
     {
@@ -487,27 +494,101 @@ public partial class ProductsViewModel
     }
 
     [RelayCommand]
+    private async Task OpenProductSerialsDialogAsync(Product? product)
+    {
+        if (product is null || !ShowSerialsSection || _productSerialService is null)
+            return;
+
+        _serialsDialogProductId = product.Id;
+        SerialsDialogTitle = $"سيريال نمبر — {product.Name}";
+        NewSerialText = string.Empty;
+        await LoadFeatureDataForProductAsync(product.Id);
+        IsSerialsDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private async Task CloseSerialsDialogAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(NewSerialText) && ResolveSerialsProductId() is int pendingProductId)
+        {
+            try
+            {
+                await PersistPendingSerialTextAsync(pendingProductId);
+            }
+            catch (Exception ex)
+            {
+                BeautifulMessageDialog.ShowError(ex.Message);
+                return;
+            }
+        }
+
+        IsSerialsDialogOpen = false;
+        _serialsDialogProductId = null;
+        SerialsDialogTitle = string.Empty;
+        NewSerialText = string.Empty;
+        if (_editingProductId is null && !IsPackagingDialogOpen && !IsClothingDialogOpen)
+            ClearFeatureEditCollections();
+        await LoadProductsAsync();
+    }
+
+    [RelayCommand]
     private async Task AddProductSerialsAsync()
     {
-        if (_editingProductId is not int productId || _productSerialService is null)
+        if (ResolveSerialsProductId() is not int productId || _productSerialService is null)
         {
-            BeautifulMessageDialog.ShowWarning("احفظ المنتج أولاً ثم أضف السيريالات");
+            BeautifulMessageDialog.ShowWarning("اختر منتجاً أولاً ثم أضف السيريالات");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(NewSerialText))
         {
-            BeautifulMessageDialog.ShowWarning("أدخل رقماً تسلسلياً واحداً أو أكثر (مفصولة بفاصلة)");
+            BeautifulMessageDialog.ShowWarning("أدخل سيريال نمبر واحداً أو أكثر مفصولة بفاصلة");
             return;
         }
 
         try
         {
-            var serials = NewSerialText.Split(['\n', ',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            await _productSerialService.AddRangeAsync(productId, null, serials);
-            NewSerialText = string.Empty;
+            var count = await PersistPendingSerialTextAsync(productId);
+            BeautifulMessageDialog.ShowSuccess($"تم إضافة {count} سيريال");
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
+    }
+
+    private async Task<int> PersistPendingSerialTextAsync(int productId)
+    {
+        if (_productSerialService is null || string.IsNullOrWhiteSpace(NewSerialText))
+            return 0;
+
+        var serials = NewSerialText.Split(['\n', ',', ';', '،'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (serials.Length == 0)
+            return 0;
+
+        await _productSerialService.AddRangeAsync(productId, null, serials);
+        NewSerialText = string.Empty;
+        await LoadFeatureDataForProductAsync(productId);
+        return serials.Length;
+    }
+
+    [RelayCommand]
+    private async Task DeleteProductSerialAsync(ProductSerial? serial)
+    {
+        if (serial is null || _productSerialService is null || ResolveSerialsProductId() is not int productId)
+            return;
+        if (serial.IsSold)
+        {
+            BeautifulMessageDialog.ShowWarning("لا يمكن حذف سيريال مباع");
+            return;
+        }
+        if (!BeautifulMessageDialog.ShowConfirm($"حذف السيريال «{serial.SerialNumber}»؟"))
+            return;
+
+        try
+        {
+            await _productSerialService.DeleteAsync(serial.Id);
             await LoadFeatureDataForProductAsync(productId);
-            BeautifulMessageDialog.ShowSuccess($"تم إضافة {serials.Length} سيريال");
         }
         catch (Exception ex)
         {

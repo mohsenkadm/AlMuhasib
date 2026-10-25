@@ -11,6 +11,10 @@ public class MaintenanceRecord : BranchScopedEntity
     public int? ProductId { get; set; }
     public string ProductName { get; set; } = string.Empty;
     public string SerialNumber { get; set; } = string.Empty;
+
+    /// <summary>سيريال الجهاز قبل آخر استبدال (إن وُجد).</summary>
+    public string? PreviousSerialNumber { get; set; }
+
     public decimal CostAmount { get; set; }
     public string? Notes { get; set; }
     public MaintenanceStatus Status { get; set; } = MaintenanceStatus.UnderRepair;

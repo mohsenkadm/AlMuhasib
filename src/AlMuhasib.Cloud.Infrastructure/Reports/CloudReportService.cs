@@ -1683,7 +1683,9 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
         if (!string.IsNullOrWhiteSpace(serialNumber))
         {
             var serial = serialNumber.Trim();
-            query = query.Where(m => m.SerialNumber.Contains(serial));
+            query = query.Where(m =>
+                m.SerialNumber.Contains(serial)
+                || (m.PreviousSerialNumber != null && m.PreviousSerialNumber.Contains(serial)));
         }
 
         var records = await query.OrderByDescending(m => m.Date).ThenByDescending(m => m.Id).ToListAsync();
@@ -1695,6 +1697,7 @@ public sealed partial class CloudReportService : Application.Abstractions.ICloud
             CustomerName = m.Customer?.Name ?? "—",
             ProductName = m.ProductName,
             SerialNumber = m.SerialNumber,
+            PreviousSerialNumber = m.PreviousSerialNumber,
             CostAmount = m.CostAmount,
             Status = m.Status,
             StatusLabel = MaintenanceStatusHelper.ToArabic(m.Status),

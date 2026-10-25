@@ -23,34 +23,110 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="24,24,24,8">
-                <TextBlock Text="تقرير الفواتير" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
-                <UniformGrid Columns="4" Margin="0,0,0,16">
-                    <controls:AnimatedStatCard Title="العدد" TextValue="{Binding CountText}" Icon="FileDocumentMultiple" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="{DynamicResource PrimaryHueMidBrush}" ValueForeground="{DynamicResource PrimaryHueMidBrush}"/>
-                    <controls:AnimatedStatCard Title="إجمالي د.ع" TextValue="{Binding TotalIqd}" Icon="Cash" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
-                    <controls:AnimatedStatCard Title="إجمالي $" TextValue="{Binding TotalUsd}" Icon="CurrencyUsd" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="{DynamicResource DashboardKpiTealBrush}" ValueForeground="{DynamicResource DashboardKpiTealBrush}"/>
-                    <controls:AnimatedStatCard Title="المتبقي" TextValue="{Binding RemainingText}" Icon="CashClock" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
+                <TextBlock Text="تقرير فواتير التخليص الكمركي" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
+
+                <!-- Stats -->
+                <UniformGrid Columns="4" Margin="0,0,0,12">
+                    <controls:AnimatedStatCard Title="عدد الفواتير" TextValue="{Binding CountText}" Icon="FileDocumentMultiple"
+                                               IconBackground="{DynamicResource DashboardKpiBlueLightBrush}"
+                                               IconForeground="{DynamicResource PrimaryHueMidBrush}"
+                                               ValueForeground="{DynamicResource PrimaryHueMidBrush}"/>
+                    <controls:AnimatedStatCard Title="إجمالي د.ع" TextValue="{Binding TotalIqd}" Icon="Cash"
+                                               IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
+                                               IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                    <controls:AnimatedStatCard Title="إجمالي $" TextValue="{Binding TotalUsd}" Icon="CurrencyUsd"
+                                               IconBackground="{DynamicResource DashboardKpiTealLightBrush}"
+                                               IconForeground="{DynamicResource DashboardKpiTealBrush}"
+                                               ValueForeground="{DynamicResource DashboardKpiTealBrush}"/>
+                    <controls:AnimatedStatCard Title="المتبقي د.ع / $" TextValue="{Binding RemainingText}" Icon="CashClock"
+                                               IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}"
+                                               IconForeground="#EF6C00" ValueForeground="#EF6C00"/>
                 </UniformGrid>
-                <controls:ChartCard Title="حسب الحالة" Margin="0,0,0,12"
-                                    IsEmpty="{Binding IsStatusChartEmpty}">
+                <UniformGrid Columns="3" Margin="0,0,0,16">
+                    <controls:AnimatedStatCard Title="المدفوع د.ع / $" TextValue="{Binding PaidText}" Icon="CashCheck"
+                                               IconBackground="#E8F5E9" IconForeground="#388E3C" ValueForeground="#388E3C"/>
+                    <controls:AnimatedStatCard Title="متوسط الفاتورة د.ع / $" TextValue="{Binding AverageText}" Icon="Calculator"
+                                               IconBackground="{DynamicResource AccentLightBrush}"
+                                               IconForeground="{DynamicResource AccentBrush}"
+                                               ValueForeground="{DynamicResource AccentBrush}"/>
+                    <controls:AnimatedStatCard Title="اليوم (عدد — د.ع / $)" TextValue="{Binding TodayText}" Icon="CalendarToday"
+                                               IconBackground="{DynamicResource DashboardKpiTealLightBrush}"
+                                               IconForeground="#00796B" ValueForeground="#00796B"/>
+                </UniformGrid>
+
+                <!-- Charts -->
+                <controls:ChartCard Title="الإجمالي اليومي" Margin="0,0,0,12"
+                                    IsEmpty="{Binding IsDailyChartEmpty}">
                     <controls:ChartCard.ChartContent>
-                        <lvc:PieChart Series="{Binding StatusSeries}" Height="260"/>
+                        <lvc:CartesianChart Series="{Binding DailySeries}"
+                                            XAxes="{Binding DailyXAxes}"
+                                            YAxes="{Binding DailyYAxes}"
+                                            Height="280"/>
                     </controls:ChartCard.ChartContent>
                 </controls:ChartCard>
+
+                <UniformGrid Columns="2" Margin="0,0,0,12">
+                    <controls:ChartCard Title="حسب الحالة" Margin="0,0,8,0"
+                                        IsEmpty="{Binding IsStatusChartEmpty}">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:PieChart Series="{Binding StatusSeries}" Height="240"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                    <controls:ChartCard Title="حسب نوع الخدمة" Margin="8,0,0,0"
+                                        IsEmpty="{Binding IsServiceChartEmpty}">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:PieChart Series="{Binding ServiceSeries}" Height="240"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                </UniformGrid>
+
+                <!-- Filters -->
                 <Border Style="{StaticResource FilterBar}">
-                    <StackPanel Orientation="Horizontal">
-                        <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}" md:HintAssist.Hint="من" Width="130" Margin="0,0,8,0"/>
-                        <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}" md:HintAssist.Hint="إلى" Width="130" Margin="0,0,8,0"/>
-                        <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding SelectedCustomer}" Style="{StaticResource CustomerSearchableComboBox}" md:HintAssist.Hint="العميل" Width="160" Margin="0,0,8,0"/>
-                        <ComboBox ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding SelectedStatus}" DisplayMemberPath="Label" Style="{StaticResource FilledComboBox}" md:HintAssist.Hint="الحالة" Width="140" Margin="0,0,8,0"/>
-                        <ComboBox ItemsSource="{Binding CurrencyOptions}" SelectedItem="{Binding SelectedCurrency}" DisplayMemberPath="Label" Style="{StaticResource FilledComboBox}" md:HintAssist.Hint="العملة" Width="110" Margin="0,0,8,0"/>
-                        <ComboBox ItemsSource="{Binding ServiceTypeOptions}" SelectedItem="{Binding SelectedServiceType}" DisplayMemberPath="Label" Style="{StaticResource FilledComboBox}" md:HintAssist.Hint="الخدمة" Width="130" Margin="0,0,8,0"/>
-                        <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}"/>
+                    <StackPanel>
+                        <WrapPanel Margin="0,0,0,8">
+                            <Button Content="اليوم" Style="{StaticResource OutlinedButton}" Height="32" Padding="12,0" Margin="0,0,6,6"
+                                    Command="{Binding ApplyDatePresetCommand}" CommandParameter="today"/>
+                            <Button Content="أسبوع" Style="{StaticResource OutlinedButton}" Height="32" Padding="12,0" Margin="0,0,6,6"
+                                    Command="{Binding ApplyDatePresetCommand}" CommandParameter="week"/>
+                            <Button Content="هذا الشهر" Style="{StaticResource OutlinedButton}" Height="32" Padding="12,0" Margin="0,0,6,6"
+                                    Command="{Binding ApplyDatePresetCommand}" CommandParameter="month"/>
+                            <Button Content="آخر شهر" Style="{StaticResource OutlinedButton}" Height="32" Padding="12,0" Margin="0,0,6,6"
+                                    Command="{Binding ApplyDatePresetCommand}" CommandParameter="reset"/>
+                        </WrapPanel>
+                        <WrapPanel>
+                            <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}"
+                                        md:HintAssist.Hint="من تاريخ" Width="140" Margin="0,0,8,8"/>
+                            <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}"
+                                        md:HintAssist.Hint="إلى تاريخ" Width="140" Margin="0,0,8,8"/>
+                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}"
+                                     md:HintAssist.Hint="بحث رقم فاتورة / عميل / وصف"
+                                     Width="220" Margin="0,0,8,8"/>
+                            <ComboBox ItemsSource="{Binding Customers}" SelectedItem="{Binding SelectedCustomer}"
+                                      Style="{StaticResource CustomerSearchableComboBox}"
+                                      md:HintAssist.Hint="العميل" Width="180" Margin="0,0,8,8"/>
+                            <ComboBox ItemsSource="{Binding StatusOptions}" SelectedItem="{Binding SelectedStatus}"
+                                      DisplayMemberPath="Label" Style="{StaticResource FilledComboBox}"
+                                      md:HintAssist.Hint="الحالة" Width="150" Margin="0,0,8,8"/>
+                            <ComboBox ItemsSource="{Binding CurrencyOptions}" SelectedItem="{Binding SelectedCurrency}"
+                                      DisplayMemberPath="Label" Style="{StaticResource FilledComboBox}"
+                                      md:HintAssist.Hint="العملة" Width="110" Margin="0,0,8,8"/>
+                            <ComboBox ItemsSource="{Binding ServiceTypeOptions}" SelectedItem="{Binding SelectedServiceType}"
+                                      DisplayMemberPath="Label" Style="{StaticResource FilledComboBox}"
+                                      md:HintAssist.Hint="الخدمة" Width="140" Margin="0,0,8,8"/>
+                            <ComboBox ItemsSource="{Binding RemainingOptions}" SelectedItem="{Binding SelectedRemaining}"
+                                      DisplayMemberPath="Label" Style="{StaticResource FilledComboBox}"
+                                      md:HintAssist.Hint="المتبقي" Width="140" Margin="0,0,8,8"/>
+                            <Button Content="بحث" Style="{StaticResource PrimaryButton}"
+                                    Command="{Binding LoadDataCommand}" Height="40" Padding="20,0" Margin="0,0,0,8"/>
+                        </WrapPanel>
                     </StackPanel>
                 </Border>
             </StackPanel>
         </ScrollViewer>
+
         <md:Card Grid.Row="1" md:ElevationAssist.Elevation="Dp2" Margin="24,0,24,16">
             <Grid>
                 <Grid.RowDefinitions>
@@ -71,15 +147,24 @@
                           behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
                           behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="الرقم" Binding="{Binding InvoiceNumber}" Width="120" behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InvoiceNumber"/>
-                        <DataGridTextColumn Header="التاريخ" Binding="{Binding InvoiceDate, StringFormat=yyyy/MM/dd}" Width="110"/>
-                        <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*" behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
-                        <DataGridTextColumn Header="الحالة" Binding="{Binding StatusLabel}" Width="90"/>
-                        <DataGridTextColumn Header="الخدمة" Binding="{Binding ServiceTypeLabel}" Width="100"/>
-                        <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70"/>
-                        <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" Width="100"/>
-                        <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat=N0}" Width="100"/>
-                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="100"/>
+                        <DataGridTextColumn Header="الرقم" Binding="{Binding InvoiceNumber}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InvoiceNumber"/>
+                        <DataGridTextColumn Header="التاريخ" Binding="{Binding InvoiceDate, StringFormat=yyyy/MM/dd}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="InvoiceDate"/>
+                        <DataGridTextColumn Header="العميل" Binding="{Binding CustomerName}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                        <DataGridTextColumn Header="الحالة" Binding="{Binding StatusLabel}" Width="90"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StatusLabel"/>
+                        <DataGridTextColumn Header="الخدمة" Binding="{Binding ServiceTypeLabel}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ServiceTypeLabel"/>
+                        <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CurrencyLabel"/>
+                        <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="TotalAmount"/>
+                        <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat=N0}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PaidAmount"/>
+                        <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RemainingAmount"/>
                     </DataGrid.Columns>
                 </DataGrid>
                 <controls:PaginationBar Grid.Row="2"/>

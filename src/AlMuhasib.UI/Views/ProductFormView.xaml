@@ -431,6 +431,67 @@
                     </StackPanel>
                 </md:Card>
 
+                <!-- Serial numbers (mobile shop / serials feature) — multiple per product -->
+                <md:Card Style="{StaticResource ElevatedCard}" Padding="22" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2"
+                         Visibility="{Binding ShowSerialsSection, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <md:PackIcon Kind="Barcode" Width="22" Height="22" Foreground="#1565C0" VerticalAlignment="Center"/>
+                            <TextBlock Text="سيريال نمبر الأجهزة (IMEI / SN)" Style="{StaticResource SectionSubHeader}" Margin="8,0,0,0"/>
+                        </StackPanel>
+                        <TextBlock Text="أدخل عدة سيريالات مفصولة بفاصلة أو كل سيريال في سطر — عند البيع تختار سيريالاً واحداً من القائمة"
+                                   FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,12" TextWrapping="Wrap"/>
+
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding NewSerialText, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}"
+                                     AcceptsReturn="True" MinHeight="72" TextWrapping="Wrap"
+                                     md:HintAssist.Hint="مثال: 356938035643809, 356938035643810"/>
+                            <Button Grid.Column="1" Content="إضافة" Command="{Binding AddPendingSerialsCommand}"
+                                    Style="{StaticResource PrimaryButton}" Height="42" Margin="8,0,0,0"
+                                    Padding="16,0" VerticalAlignment="Top" md:ButtonAssist.CornerRadius="8"/>
+                        </Grid>
+
+                        <ItemsControl ItemsSource="{Binding SerialRows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="8" Padding="10,8" Margin="0,0,0,6">
+                                        <DockPanel>
+                                            <Button DockPanel.Dock="Left" Margin="0,0,8,0" Padding="8,2"
+                                                    Style="{StaticResource OutlinedButton}"
+                                                    Command="{Binding DataContext.RemovePendingSerialCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    ToolTip="حذف"
+                                                    IsEnabled="{Binding IsSold, Converter={StaticResource InverseBooleanConverter}}">
+                                                <md:PackIcon Kind="DeleteOutline" Width="16" Height="16" Foreground="#C62828"/>
+                                            </Button>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding StatusLabel}" VerticalAlignment="Center"
+                                                       FontSize="12" Margin="8,0,0,0" FontWeight="SemiBold">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#2E7D32"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSold}" Value="True">
+                                                                <Setter Property="Foreground" Value="#C62828"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding SerialNumber}" VerticalAlignment="Center"
+                                                       FontFamily="Consolas" FontWeight="SemiBold"/>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </md:Card>
+
                 <!-- Clothing sizes/colors -->
                 <md:Card Style="{StaticResource ElevatedCard}" Padding="22" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2"
                          Visibility="{Binding ShowSizesSection, Converter={StaticResource BoolToVis}}">

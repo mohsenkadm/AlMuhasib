@@ -116,12 +116,13 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     public bool CanPrintDocument => HasSavedInvoice && CanPrint;
     public bool CanExportDocument => HasSavedInvoice && CanExport;
     public bool CanManageAttachments => CanEdit && Status != CustomsInvoiceStatus.Cancelled;
-    public bool IsVehiclesReadOnly => !CanEdit || Status == CustomsInvoiceStatus.Cancelled;
-    public bool CanAddVehicle => CanAdd && Status != CustomsInvoiceStatus.Cancelled;
+    /// <summary>التعديل/الإضافة مسموحان إذا كانت الفاتورة قابلة للحفظ (إضافة أو تعديل حسب الوضع).</summary>
+    public bool IsVehiclesReadOnly => !CanSave;
+    public bool CanAddVehicle => CanSave;
     public bool CanDeleteVehicle => CanDelete && Status != CustomsInvoiceStatus.Cancelled;
     public bool HasSavedDetailVehicle => DetailVehicle?.Id is > 0;
-    public bool CanAddExpense => CanViewExpenses && CanAdd && Status != CustomsInvoiceStatus.Cancelled;
-    public bool CanEditExpense => CanViewExpenses && CanEdit && Status != CustomsInvoiceStatus.Cancelled;
+    public bool CanAddExpense => CanViewExpenses && CanSave;
+    public bool CanEditExpense => CanViewExpenses && CanSave;
     public bool CanDeleteExpense => CanViewExpenses && CanDelete && Status != CustomsInvoiceStatus.Cancelled;
     public bool HasSavedEditingExpense => _editingExpenseRow?.Id is > 0;
     public string InvoiceCurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";

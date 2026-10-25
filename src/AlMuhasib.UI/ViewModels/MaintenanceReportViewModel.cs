@@ -151,10 +151,11 @@ public partial class MaintenanceReportViewModel : ReportViewModelBase
     {
         var dlg = new Microsoft.Win32.SaveFileDialog { Filter = "Excel|*.xlsx", FileName = "تقرير_الصيانة.xlsx" };
         if (dlg.ShowDialog() != true) return;
-        var cols = new[] { "الرقم", "التاريخ", "الزبون", "المنتج", "سيريال", "المبلغ", "الحالة", "انتهاء الضمان", "حالة الضمان", "المتبقي", "ملاحظات" };
+        var cols = new[] { "الرقم", "التاريخ", "الزبون", "المنتج", "سيريال السابق", "سيريال الجديد", "المبلغ", "الحالة", "انتهاء الضمان", "حالة الضمان", "المتبقي", "ملاحظات" };
         var rows = _allRows.Select(r => new object[]
         {
-            r.RecordNumber, r.Date.ToString("yyyy/MM/dd"), r.CustomerName, r.ProductName, r.SerialNumber,
+            r.RecordNumber, r.Date.ToString("yyyy/MM/dd"), r.CustomerName, r.ProductName,
+            r.PreviousSerialNumber ?? "", r.SerialNumber,
             r.CostAmount, r.StatusLabel, r.WarrantyEndDate?.ToString("yyyy/MM/dd") ?? "",
             r.WarrantyStatusLabel, r.WarrantyRemainingLabel, r.Notes ?? ""
         }).ToList();
@@ -165,10 +166,11 @@ public partial class MaintenanceReportViewModel : ReportViewModelBase
     [RelayCommand]
     private void Print()
     {
-        var cols = new[] { "الرقم", "التاريخ", "الزبون", "المنتج", "سيريال", "المبلغ", "الحالة", "الضمان" };
+        var cols = new[] { "الرقم", "التاريخ", "الزبون", "المنتج", "سيريال السابق", "سيريال الجديد", "المبلغ", "الحالة", "الضمان" };
         var rows = _allRows.Select(r => new object[]
         {
-            r.RecordNumber, r.Date.ToString("yyyy/MM/dd"), r.CustomerName, r.ProductName, r.SerialNumber,
+            r.RecordNumber, r.Date.ToString("yyyy/MM/dd"), r.CustomerName, r.ProductName,
+            r.PreviousSerialNumber ?? "", r.SerialNumber,
             r.CostAmount.ToString("N0"), r.StatusLabel, WarrantyStatusHelper.CombinedLabel(r.WarrantyEndDate)
         }).ToList();
         _exportService.PrintTable("تقرير الصيانة", cols, rows);

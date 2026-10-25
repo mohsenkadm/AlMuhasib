@@ -365,11 +365,14 @@ public sealed class CustomsReportService : ICustomsReportService
         CustomsInvoiceStatus? status = null,
         AccountingCurrency? currency = null,
         CustomsServiceType? serviceType = null,
+        string? searchText = null,
+        bool? hasRemaining = null,
         CancellationToken cancellationToken = default)
     {
         _permissions.EnsureView(CustomsScreenNames.Reports);
         var from = fromDate.Date;
         var toEx = toDate.Date.AddDays(1);
+        var today = DateTime.Today;
         await using var db = await _contextFactory.CreateDbContextAsync(cancellationToken);
 
         var query = db.CustomsInvoices.AsNoTracking()
@@ -385,10 +388,24 @@ public sealed class CustomsReportService : ICustomsReportService
             query = query.Where(i => i.Currency == currency.Value);
         if (serviceType.HasValue)
             query = query.Where(i => i.ServiceType == serviceType.Value);
+        if (hasRemaining == true)
+            query = query.Where(i => i.RemainingAmount > 0);
+        else if (hasRemaining == false)
+            query = query.Where(i => i.RemainingAmount <= 0);
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var q = searchText.Trim();
+            query = query.Where(i =>
+                i.InvoiceNumber.Contains(q)
+                || i.Customer.Name.Contains(q)
+                || (i.Description != null && i.Description.Contains(q)));
+        }
 
         var data = await query
             .Select(i => new
             {
+                i.Id,
                 i.InvoiceNumber,
                 i.InvoiceDate,
                 CustomerName = i.Customer.Name,
@@ -404,6 +421,7 @@ public sealed class CustomsReportService : ICustomsReportService
 
         var rows = data.Select(i => new CustomsInvoiceReportRow
         {
+            InvoiceId = i.Id,
             InvoiceNumber = i.InvoiceNumber,
             InvoiceDate = i.InvoiceDate,
             CustomerName = i.CustomerName,
@@ -421,18 +439,43 @@ public sealed class CustomsReportService : ICustomsReportService
             ? data
             : data.Where(i => i.Status == CustomsInvoiceStatus.Approved).ToList();
 
+        var totalIqd = totalsSource.Where(i => i.Currency == AccountingCurrency.IQD).Sum(i => i.TotalAmount);
+        var totalUsd = totalsSource.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.TotalAmount);
+        var countIqd = totalsSource.Count(i => i.Currency == AccountingCurrency.IQD);
+        var countUsd = totalsSource.Count(i => i.Currency == AccountingCurrency.USD);
+        var todayRows = totalsSource.Where(i => i.InvoiceDate.Date == today).ToList();
+
         return new CustomsInvoiceReportResult
         {
             Count = rows.Count,
-            TotalIqd = totalsSource.Where(i => i.Currency == AccountingCurrency.IQD).Sum(i => i.TotalAmount),
-            TotalUsd = totalsSource.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.TotalAmount),
+            TotalIqd = totalIqd,
+            TotalUsd = totalUsd,
             PaidIqd = totalsSource.Where(i => i.Currency == AccountingCurrency.IQD).Sum(i => i.PaidAmount),
             PaidUsd = totalsSource.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.PaidAmount),
             RemainingIqd = totalsSource.Where(i => i.Currency == AccountingCurrency.IQD).Sum(i => i.RemainingAmount),
             RemainingUsd = totalsSource.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.RemainingAmount),
+            AverageIqd = countIqd > 0 ? totalIqd / countIqd : 0m,
+            AverageUsd = countUsd > 0 ? totalUsd / countUsd : 0m,
+            TodayCount = todayRows.Count,
+            TodayIqd = todayRows.Where(i => i.Currency == AccountingCurrency.IQD).Sum(i => i.TotalAmount),
+            TodayUsd = todayRows.Where(i => i.Currency == AccountingCurrency.USD).Sum(i => i.TotalAmount),
             StatusChart = data
                 .GroupBy(i => CustomsInvoiceStatusDisplay.ToArabic(i.Status))
                 .Select(g => new CustomsReportNameAmountPoint { Name = g.Key, Amount = g.Count() })
+                .ToList(),
+            ServiceTypeChart = data
+                .GroupBy(i => CustomsServiceTypeDisplay.ToArabic(i.ServiceType))
+                .Select(g => new CustomsReportNameAmountPoint { Name = g.Key, Amount = g.Count() })
+                .OrderByDescending(p => p.Amount)
+                .ToList(),
+            DailyChart = totalsSource
+                .GroupBy(i => i.InvoiceDate.Date)
+                .OrderBy(g => g.Key)
+                .Select(g => new CustomsReportNameAmountPoint
+                {
+                    Name = g.Key.ToString("MM/dd"),
+                    Amount = g.Sum(x => x.TotalAmount)
+                })
                 .ToList(),
             Rows = rows
         };

@@ -64,6 +64,14 @@ public class Product : BaseEntity
     [NotMapped]
     public string BranchesDisplay { get; set; } = "—";
 
+    /// <summary>عدد السيريالات المتاحة (للواجهة فقط — غير مخزّن).</summary>
+    [NotMapped]
+    public int AvailableSerialCount { get; set; }
+
+    /// <summary>نص عرض عدد السيريالات في جدول المنتجات.</summary>
+    [NotMapped]
+    public string SerialsDisplay => AvailableSerialCount > 0 ? AvailableSerialCount.ToString("N0") : "—";
+
     // Navigation
     public Category Category { get; set; } = null!;
     public ICollection<WarehouseStock> WarehouseStocks { get; set; } = [];

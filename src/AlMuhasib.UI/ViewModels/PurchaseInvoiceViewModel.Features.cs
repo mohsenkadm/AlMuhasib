@@ -436,7 +436,7 @@ public partial class PurchaseInvoiceViewModel
                 && !string.IsNullOrWhiteSpace(row.SerialNumber))
             {
                 var serials = row.SerialNumber
-                    .Split(['\n', ',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    .Split(['\n', ',', ';', '،'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                 await _productSerialService.AddRangeAsync(productId, SelectedWarehouse.Id, serials);
             }
 

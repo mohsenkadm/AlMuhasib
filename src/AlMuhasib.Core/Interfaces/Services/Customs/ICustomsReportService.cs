@@ -32,6 +32,8 @@ public interface ICustomsReportService
         CustomsInvoiceStatus? status = null,
         AccountingCurrency? currency = null,
         CustomsServiceType? serviceType = null,
+        string? searchText = null,
+        bool? hasRemaining = null,
         CancellationToken cancellationToken = default);
 
     Task<CustomsVehiclesReportResult> GetVehiclesReportAsync(

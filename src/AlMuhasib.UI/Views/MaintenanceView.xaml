@@ -4,10 +4,12 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
              xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
+             xmlns:enums="clr-namespace:AlMuhasib.Core.Enums;assembly=AlMuhasib.Core"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:MaintenanceViewModel}"
              Style="{StaticResource PageStyle}"
@@ -16,12 +18,66 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <converters:MaintenanceStatusToArabicConverter x:Key="MaintenanceStatusToArabicConverter"/>
+        <Style x:Key="MaintenanceStatusBadge" TargetType="Border">
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="12,5"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Background" Value="#ECEFF1"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#CFD8DC"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:MaintenanceStatus.Working}">
+                    <Setter Property="Background" Value="#E8F5E9"/>
+                    <Setter Property="BorderBrush" Value="#A5D6A7"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:MaintenanceStatus.NotWorking}">
+                    <Setter Property="Background" Value="#FFEBEE"/>
+                    <Setter Property="BorderBrush" Value="#EF9A9A"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:MaintenanceStatus.UnderRepair}">
+                    <Setter Property="Background" Value="#E8EAF6"/>
+                    <Setter Property="BorderBrush" Value="#9FA8DA"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:MaintenanceStatus.Delivered}">
+                    <Setter Property="Background" Value="#E0F2F1"/>
+                    <Setter Property="BorderBrush" Value="#80CBC4"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="MaintenanceStatusBadgeText" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#546E7A"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:MaintenanceStatus.Working}">
+                    <Setter Property="Foreground" Value="#2E7D32"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:MaintenanceStatus.NotWorking}">
+                    <Setter Property="Foreground" Value="#C62828"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:MaintenanceStatus.UnderRepair}">
+                    <Setter Property="Foreground" Value="#3949AB"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:MaintenanceStatus.Delivered}">
+                    <Setter Property="Foreground" Value="#00695C"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
         <ContextMenu x:Key="PageActionsMenu">
-            <MenuItem Header="حفظ" Command="{Binding SaveCommand}">
-                <MenuItem.Icon><materialDesign:PackIcon Kind="ContentSave" Width="16" Height="16"/></MenuItem.Icon>
+            <MenuItem Header="صيانة جهاز جديد" Command="{Binding OpenNewRecordCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Plus" Width="16" Height="16"/></MenuItem.Icon>
             </MenuItem>
-            <MenuItem Header="سجل جديد" Command="{Binding NewRecordCommand}">
-                <MenuItem.Icon><materialDesign:PackIcon Kind="FileDocumentPlusOutline" Width="16" Height="16"/></MenuItem.Icon>
+            <MenuItem Header="بحث / تحديث" Command="{Binding LoadDataCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Magnify" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="تصدير Excel" Command="{Binding ExportToExcelCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="MicrosoftExcel" Width="16" Height="16"/></MenuItem.Icon>
+            </MenuItem>
+            <Separator/>
+            <MenuItem Header="طباعة" Command="{Binding PrintCommand}">
+                <MenuItem.Icon><materialDesign:PackIcon Kind="Printer" Width="16" Height="16"/></MenuItem.Icon>
             </MenuItem>
         </ContextMenu>
     </UserControl.Resources>
@@ -32,166 +88,235 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" MaxHeight="520">
+        <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="24,24,24,8">
-                <Border CornerRadius="14" Margin="0,0,0,16" Padding="24,18">
-                    <Border.Background>
-                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                            <GradientStop Color="#1565C0" Offset="0"/>
-                            <GradientStop Color="#1E88E5" Offset="0.55"/>
-                            <GradientStop Color="#42A5F5" Offset="1"/>
-                        </LinearGradientBrush>
-                    </Border.Background>
-                    <StackPanel Orientation="Horizontal">
-                        <Border Width="52" Height="52" CornerRadius="14" Background="#33FFFFFF" Margin="0,0,14,0">
-                            <materialDesign:PackIcon Kind="CellphoneCog" Width="28" Height="28"
-                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
-                        <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="صيانة الأجهزة" FontSize="22" FontWeight="Bold" Foreground="White"/>
-                            <TextBlock Text="سجل صيانة مرتبط بالزبون والمنتج والسيريال" FontSize="13" Foreground="#E3F2FD" Margin="0,4,0,0"/>
-                        </StackPanel>
-                    </StackPanel>
+                <TextBlock Text="صيانة الأجهزة" FontSize="24" FontWeight="Bold" Margin="0,0,0,20"/>
+
+                <UniformGrid Columns="4" Margin="0,0,0,12">
+                    <controls:AnimatedStatCard Title="إجمالي السجلات" TextValue="{Binding TotalCount}" Icon="ClipboardList" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"/>
+                    <controls:AnimatedStatCard Title="إجمالي التكاليف" TextValue="{Binding TotalCostAmount}" Icon="Cash" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#E65100" ValueForeground="#E65100"/>
+                    <controls:AnimatedStatCard Title="أرباح الصيانة" TextValue="{Binding TotalProfit}" Icon="ChartLine" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                    <controls:AnimatedStatCard Title="تم التسليم" TextValue="{Binding DeliveredCount}" Icon="CheckCircle" IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="#00695C" ValueForeground="#00695C"/>
+                </UniformGrid>
+                <UniformGrid Columns="3" Margin="0,0,0,16">
+                    <controls:AnimatedStatCard Title="يعمل" TextValue="{Binding WorkingCount}" Icon="Check" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
+                    <controls:AnimatedStatCard Title="لا يعمل" TextValue="{Binding NotWorkingCount}" Icon="CloseCircle" IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"/>
+                    <controls:AnimatedStatCard Title="تحت الصيانة" TextValue="{Binding UnderRepairCount}" Icon="Wrench" IconBackground="{DynamicResource DashboardKpiIndigoLightBrush}" IconForeground="#3949AB" ValueForeground="#3949AB"/>
+                </UniformGrid>
+
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <controls:ChartCard Grid.Column="0" Title="تكاليف الصيانة اليومية"
+                                        Height="320" Margin="0,0,8,12"
+                                        IsEmpty="{Binding IsDailyChartEmpty}">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:CartesianChart Series="{Binding DailySeries}"
+                                                XAxes="{Binding DailyXAxes}"
+                                                YAxes="{Binding DailyYAxes}"
+                                                LegendPosition="Hidden"
+                                                Height="250"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                    <controls:ChartCard Grid.Column="1" Title="عدد الحالات"
+                                        Height="320" Margin="8,0,0,12"
+                                        IsEmpty="{Binding IsStatusChartEmpty}">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:CartesianChart Series="{Binding StatusSeries}"
+                                                XAxes="{Binding StatusXAxes}"
+                                                YAxes="{Binding StatusYAxes}"
+                                                LegendPosition="Hidden"
+                                                Height="250"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                </Grid>
+
+                <Border Style="{StaticResource FilterBar}">
+                    <WrapPanel>
+                        <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}" materialDesign:HintAssist.Hint="من تاريخ" Width="140" Margin="0,0,12,8"/>
+                        <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}" materialDesign:HintAssist.Hint="إلى تاريخ" Width="140" Margin="0,0,12,8"/>
+                        <ComboBox ItemsSource="{Binding FilteredFilterCustomers}" SelectedItem="{Binding FilterCustomer}"
+                                  IsEditable="True" Text="{Binding FilterCustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                  DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}"
+                                  materialDesign:HintAssist.Hint="الزبون" Width="180" Margin="0,0,12,8"/>
+                        <ComboBox ItemsSource="{Binding StatusFilterOptions}" SelectedValue="{Binding SelectedStatusFilter}"
+                                  SelectedValuePath="Value" DisplayMemberPath="Label"
+                                  Style="{StaticResource FilledComboBox}" materialDesign:HintAssist.Hint="الحالة"
+                                  Width="150" Margin="0,0,12,8"/>
+                        <TextBox Text="{Binding ProductFilter, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" materialDesign:HintAssist.Hint="المنتج"
+                                 Width="150" Margin="0,0,12,8"/>
+                        <TextBox Text="{Binding SerialFilter, UpdateSourceTrigger=PropertyChanged}"
+                                 Style="{StaticResource FilledTextBox}" materialDesign:HintAssist.Hint="سيريال"
+                                 Width="140" Margin="0,0,12,8"/>
+                        <Button Content="بحث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}" Margin="0,0,0,8"/>
+                    </WrapPanel>
                 </Border>
-
-                <materialDesign:Card Style="{StaticResource ElevatedCard}" Padding="20" Margin="0,0,0,12">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-
-                        <TextBox Grid.Row="0" Grid.Column="0" Margin="0,0,12,12"
-                                 Text="{Binding RecordNumber}" IsReadOnly="True"
-                                 Style="{StaticResource FilledTextBox}"
-                                 materialDesign:HintAssist.Hint="رقم السجل"/>
-                        <DatePicker Grid.Row="0" Grid.Column="1" Margin="0,0,12,12"
-                                    SelectedDate="{Binding Date}"
-                                    Style="{StaticResource FilledDatePicker}"
-                                    materialDesign:HintAssist.Hint="التاريخ"/>
-                        <ComboBox Grid.Row="0" Grid.Column="2" Margin="0,0,0,12"
-                                  ItemsSource="{Binding StatusOptions}"
-                                  SelectedValue="{Binding Status}"
-                                  SelectedValuePath="Value"
-                                  DisplayMemberPath="Label"
-                                  Style="{StaticResource FilledComboBox}"
-                                  materialDesign:HintAssist.Hint="حالة الصيانة"/>
-
-                        <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,12,12">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ComboBox ItemsSource="{Binding FilteredCustomers}"
-                                      SelectedItem="{Binding SelectedCustomer}"
-                                      IsEditable="True"
-                                      Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                      DisplayMemberPath="Name"
-                                      Style="{StaticResource FilledComboBox}"
-                                      materialDesign:HintAssist.Hint="الزبون *"/>
-                            <Button Grid.Column="1" Margin="8,0,0,0" Padding="10,0"
-                                    Style="{StaticResource FlatButton}"
-                                    Command="{Binding OpenQuickAddCustomerCommand}"
-                                    ToolTip="إضافة زبون سريع">
-                                <materialDesign:PackIcon Kind="AccountPlus" Width="22" Height="22"/>
-                            </Button>
-                        </Grid>
-
-                        <ComboBox Grid.Row="1" Grid.Column="2" Margin="0,0,0,12"
-                                  ItemsSource="{Binding CashBoxes}"
-                                  SelectedItem="{Binding SelectedCashBox}"
-                                  DisplayMemberPath="Name"
-                                  Style="{StaticResource FilledComboBox}"
-                                  materialDesign:HintAssist.Hint="القاصة"/>
-
-                        <ComboBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,12,12"
-                                  ItemsSource="{Binding FilteredProducts}"
-                                  SelectedItem="{Binding SelectedProduct}"
-                                  IsEditable="True"
-                                  Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}"
-                                  DisplayMemberPath="Name"
-                                  Style="{StaticResource FilledComboBox}"
-                                  materialDesign:HintAssist.Hint="اسم المنتج *"/>
-                        <TextBox Grid.Row="2" Grid.Column="2" Margin="0,0,0,12"
-                                 Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
-                                 Style="{StaticResource FilledTextBox}"
-                                 materialDesign:HintAssist.Hint="Serial Number"/>
-
-                        <TextBox Grid.Row="3" Grid.Column="0" Margin="0,0,12,12"
-                                 Text="{Binding CostAmount, UpdateSourceTrigger=PropertyChanged}"
-                                 Style="{StaticResource FilledTextBox}"
-                                 materialDesign:HintAssist.Hint="مبلغ تكلفة الصيانة"/>
-                        <DatePicker Grid.Row="3" Grid.Column="1" Margin="0,0,12,12"
-                                    SelectedDate="{Binding WarrantyEndDate}"
-                                    Style="{StaticResource FilledDatePicker}"
-                                    materialDesign:HintAssist.Hint="انتهاء الضمان"
-                                    Visibility="{Binding ShowWarrantyFields, Converter={StaticResource BoolToVis}}"/>
-                        <TextBox Grid.Row="3" Grid.Column="2" Margin="0,0,0,12"
-                                 Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
-                                 Style="{StaticResource FilledTextBox}"
-                                 materialDesign:HintAssist.Hint="ملاحظات"/>
-
-                        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal">
-                            <Button Content="حفظ" Command="{Binding SaveCommand}"
-                                    Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
-                            <Button Content="جديد" Command="{Binding NewRecordCommand}"
-                                    Style="{StaticResource FlatButton}" Margin="0,0,8,0"/>
-                            <TextBlock Text="{Binding FormError}" Foreground="#C62828" VerticalAlignment="Center"
-                                       Visibility="{Binding FormError, Converter={StaticResource NullToCollapsedConverter}}"/>
-                        </StackPanel>
-                    </Grid>
-                </materialDesign:Card>
             </StackPanel>
         </ScrollViewer>
 
-        <materialDesign:Card Grid.Row="1" Style="{StaticResource ElevatedCard}" Margin="24,0,24,16">
+        <materialDesign:Card Grid.Row="1" materialDesign:ElevationAssist.Elevation="Dp2" Margin="24,0,24,16">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
-                <controls:ListTableHeaderBar Grid.Row="0" Title="سجلات الصيانة الأخيرة"
+
+                <controls:ListTableHeaderBar Grid.Row="0"
+                                             Title="سجلات الصيانة"
                                              TargetDataGrid="{Binding ElementName=MaintGrid}"
-                                             ShowCardToggle="False"/>
-                <DataGrid x:Name="MaintGrid" Grid.Row="1" ItemsSource="{Binding RecentRecords}"
+                                             IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                             ActiveFilterCount="{Binding ActiveColumnFilterCount}"
+                                             ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                                             ExportCommand="{Binding ExportToExcelCommand}"
+                                             PrintCommand="{Binding PrintCommand}"
+                                             ShowCardToggle="False">
+                    <controls:ListTableHeaderBar.ExtraContent>
+                        <Button Command="{Binding OpenNewRecordCommand}"
+                                Style="{StaticResource FlatButton}"
+                                Foreground="White" Height="32" Padding="14,0"
+                                ToolTip="صيانة جهاز جديد">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Plus" Width="16" Height="16" VerticalAlignment="Center"/>
+                                <TextBlock Text="صيانة جهاز جديد" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12"/>
+                            </StackPanel>
+                        </Button>
+                    </controls:ListTableHeaderBar.ExtraContent>
+                </controls:ListTableHeaderBar>
+
+                <DataGrid x:Name="MaintGrid" Grid.Row="1"
+                          ItemsSource="{Binding Rows}"
                           Style="{StaticResource ModernDataGrid}"
                           IsReadOnly="True" AutoGenerateColumns="False"
-                          MouseDoubleClick="MaintGrid_OnMouseDoubleClick">
+                          CanUserAddRows="False" CanUserDeleteRows="False"
+                          SelectionMode="Single" MinHeight="240"
+                          MouseDoubleClick="MaintGrid_OnMouseDoubleClick"
+                          behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                          behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                          behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="الرقم" Binding="{Binding RecordNumber}" Width="100"/>
-                        <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" Width="100"/>
-                        <DataGridTextColumn Header="الزبون" Binding="{Binding Customer.Name}" Width="*"/>
-                        <DataGridTextColumn Header="المنتج" Binding="{Binding ProductName}" Width="*"/>
-                        <DataGridTextColumn Header="سيريال" Binding="{Binding SerialNumber}" Width="120"/>
-                        <DataGridTextColumn Header="المبلغ" Binding="{Binding CostAmount, StringFormat=N0}" Width="100"/>
-                        <DataGridTemplateColumn Header="الحالة" Width="110">
+                        <DataGridTextColumn Header="الرقم" Binding="{Binding RecordNumber}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="RecordNumber"/>
+                        <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Date"/>
+                        <DataGridTextColumn Header="الزبون" Binding="{Binding CustomerName}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CustomerName"/>
+                        <DataGridTextColumn Header="المنتج" Binding="{Binding ProductName}" Width="*"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ProductName"/>
+                        <DataGridTextColumn Header="سيريال السابق" Binding="{Binding PreviousSerialNumber}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PreviousSerialNumber"/>
+                        <DataGridTextColumn Header="سيريال الجديد" Binding="{Binding SerialNumber}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SerialNumber"/>
+                        <DataGridTextColumn Header="المبلغ" Binding="{Binding CostAmount, StringFormat=N0}" Width="90"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CostAmount"/>
+                        <DataGridTemplateColumn Header="حالة الجهاز" Width="130"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StatusLabel">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Status, Converter={StaticResource MaintenanceStatusToArabicConverter}}"/>
+                                    <Border Style="{StaticResource MaintenanceStatusBadge}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="7" Height="7" Margin="0,0,7,0" VerticalAlignment="Center">
+                                                <Ellipse.Style>
+                                                    <Style TargetType="Ellipse">
+                                                        <Setter Property="Fill" Value="#90A4AE"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:MaintenanceStatus.Working}">
+                                                                <Setter Property="Fill" Value="#43A047"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:MaintenanceStatus.NotWorking}">
+                                                                <Setter Property="Fill" Value="#E53935"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:MaintenanceStatus.UnderRepair}">
+                                                                <Setter Property="Fill" Value="#5C6BC0"/>
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding Status}" Value="{x:Static enums:MaintenanceStatus.Delivered}">
+                                                                <Setter Property="Fill" Value="#00897B"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Ellipse.Style>
+                                            </Ellipse>
+                                            <TextBlock Text="{Binding StatusLabel}" Style="{StaticResource MaintenanceStatusBadgeText}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Border>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
-                        <DataGridTemplateColumn Header="إجراءات" Width="140">
+                        <DataGridTextColumn Header="تاريخ الضمان" Binding="{Binding WarrantyEndDate, StringFormat=yyyy/MM/dd}" Width="110"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WarrantyEndDate"/>
+                        <DataGridTemplateColumn Header="حالة الضمان" Width="140"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WarrantyStatusLabel">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Button Style="{StaticResource FlatButton}" Padding="6"
-                                                Command="{Binding DataContext.EditRecordCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    <Border CornerRadius="12" Padding="10,5" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Background" Value="#ECEFF1"/>
+                                                <Setter Property="BorderBrush" Value="#CFD8DC"/>
+                                                <Setter Property="BorderThickness" Value="1"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding WarrantyStatusLabel}" Value="تحت الضمان">
+                                                        <Setter Property="Background" Value="#E8F5E9"/>
+                                                        <Setter Property="BorderBrush" Value="#A5D6A7"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding WarrantyStatusLabel}" Value="منتهي (Expired)">
+                                                        <Setter Property="Background" Value="#FFEBEE"/>
+                                                        <Setter Property="BorderBrush" Value="#EF9A9A"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <TextBlock Text="{Binding WarrantyStatusLabel}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="#546E7A"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding WarrantyStatusLabel}" Value="تحت الضمان">
+                                                            <Setter Property="Foreground" Value="#2E7D32"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding WarrantyStatusLabel}" Value="منتهي (Expired)">
+                                                            <Setter Property="Foreground" Value="#C62828"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="المتبقي" Binding="{Binding WarrantyRemainingLabel}" Width="120"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="WarrantyRemainingLabel"/>
+                        <DataGridTemplateColumn Header="الإجراءات" Width="220" MinWidth="220"
+                                                behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
+                            <DataGridTemplateColumn.CellStyle>
+                                <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                            </DataGridTemplateColumn.CellStyle>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Button Style="{StaticResource TableEditIconButton}"
+                                                Command="{Binding DataContext.EditRecordCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}" ToolTip="تعديل">
-                                            <materialDesign:PackIcon Kind="Pencil" Width="18" Height="18"/>
+                                            <materialDesign:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
                                         </Button>
-                                        <Button Style="{StaticResource FlatButton}" Padding="6"
-                                                Command="{Binding DataContext.DeleteRecordCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        <Button Style="{StaticResource TablePrintIconButton}"
+                                                Command="{Binding DataContext.PrintReceiptCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" ToolTip="طباعة الوصل">
+                                            <materialDesign:PackIcon Kind="Printer" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Style="{StaticResource TableSecondaryIconButton}"
+                                                Command="{Binding DataContext.OpenReplaceSerialCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}" ToolTip="استبدال السيريال">
+                                            <materialDesign:PackIcon Kind="SwapHorizontal" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Style="{StaticResource TableDeleteIconButton}"
+                                                Command="{Binding DataContext.DeleteRecordCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}" ToolTip="حذف">
-                                            <materialDesign:PackIcon Kind="Delete" Width="18" Height="18" Foreground="#C62828"/>
+                                            <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
                                         </Button>
                                     </StackPanel>
                                 </DataTemplate>
@@ -199,8 +324,151 @@
                         </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
+
+                <controls:PaginationBar Grid.Row="2"/>
             </Grid>
         </materialDesign:Card>
+
+        <!-- Busy -->
+        <Border Grid.RowSpan="2" Background="#66000000"
+                Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
+                Panel.ZIndex="50">
+            <ProgressBar IsIndeterminate="True" Width="220" Height="6" VerticalAlignment="Center"/>
+        </Border>
+
+        <!-- دايلوك إضافة / تعديل -->
+        <Grid Visibility="{Binding IsFormDialogOpen, Converter={StaticResource BoolToVis}}"
+              Panel.ZIndex="90">
+            <Border Background="#80000000"/>
+            <materialDesign:Card Padding="24" MinWidth="720" MaxWidth="900" MaxHeight="640"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                                 UniformCornerRadius="16"
+                                 materialDesign:ElevationAssist.Elevation="Dp8">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="600">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,16" LastChildFill="False">
+                            <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                                <materialDesign:PackIcon Kind="CellphoneCog" Width="24" Height="24"
+                                                         Foreground="#1565C0" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <TextBlock Text="{Binding FormDialogTitle}" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <Button DockPanel.Dock="Left" Style="{StaticResource FlatButton}" Padding="6"
+                                    Command="{Binding CancelFormDialogCommand}" ToolTip="إغلاق">
+                                <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                            </Button>
+                        </DockPanel>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBox Grid.Row="0" Grid.Column="0" Margin="0,0,12,12"
+                                     Text="{Binding RecordNumber}" IsReadOnly="True"
+                                     Style="{StaticResource FilledTextBox}"
+                                     materialDesign:HintAssist.Hint="رقم السجل"/>
+                            <DatePicker Grid.Row="0" Grid.Column="1" Margin="0,0,12,12"
+                                        SelectedDate="{Binding Date}"
+                                        Style="{StaticResource FilledDatePicker}"
+                                        materialDesign:HintAssist.Hint="التاريخ"/>
+                            <ComboBox Grid.Row="0" Grid.Column="2" Margin="0,0,0,12"
+                                      ItemsSource="{Binding StatusOptions}"
+                                      SelectedValue="{Binding Status}"
+                                      SelectedValuePath="Value"
+                                      DisplayMemberPath="Label"
+                                      Style="{StaticResource FilledComboBox}"
+                                      materialDesign:HintAssist.Hint="حالة الصيانة"/>
+
+                            <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,12,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <ComboBox ItemsSource="{Binding FilteredCustomers}"
+                                          SelectedItem="{Binding SelectedCustomer}"
+                                          IsEditable="True"
+                                          Text="{Binding CustomerSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                          DisplayMemberPath="Name"
+                                          Style="{StaticResource FilledComboBox}"
+                                          materialDesign:HintAssist.Hint="الزبون *"/>
+                                <Button Grid.Column="1" Margin="8,0,0,0" Padding="10,0"
+                                        Style="{StaticResource FlatButton}"
+                                        Command="{Binding OpenQuickAddCustomerCommand}"
+                                        ToolTip="إضافة زبون سريع">
+                                    <materialDesign:PackIcon Kind="AccountPlus" Width="22" Height="22"/>
+                                </Button>
+                            </Grid>
+
+                            <ComboBox Grid.Row="1" Grid.Column="2" Margin="0,0,0,12"
+                                      ItemsSource="{Binding CashBoxes}"
+                                      SelectedItem="{Binding SelectedCashBox}"
+                                      DisplayMemberPath="Name"
+                                      Style="{StaticResource FilledComboBox}"
+                                      materialDesign:HintAssist.Hint="القاصة"/>
+
+                            <ComboBox Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,12,12"
+                                      ItemsSource="{Binding FilteredProducts}"
+                                      SelectedItem="{Binding SelectedProduct}"
+                                      IsEditable="True"
+                                      Text="{Binding ProductSearchText, UpdateSourceTrigger=PropertyChanged}"
+                                      DisplayMemberPath="Name"
+                                      Style="{StaticResource FilledComboBox}"
+                                      materialDesign:HintAssist.Hint="اسم المنتج * (يُضاف تلقائياً إن لم يكن موجوداً)"/>
+                            <TextBox Grid.Row="2" Grid.Column="2" Margin="0,0,0,12"
+                                     Text="{Binding SerialNumber, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}"
+                                     materialDesign:HintAssist.Hint="سيريال نمبر الجهاز"/>
+
+                            <TextBox Grid.Row="3" Grid.Column="0" Margin="0,0,12,12"
+                                     Text="{Binding PreviousSerialNumber}"
+                                     IsReadOnly="True"
+                                     Style="{StaticResource FilledTextBox}"
+                                     materialDesign:HintAssist.Hint="السيريال السابق (بعد الاستبدال)"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Margin="0,0,12,12"
+                                     Text="{Binding CostAmount, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}"
+                                     materialDesign:HintAssist.Hint="مبلغ تكلفة الصيانة"/>
+                            <DatePicker Grid.Row="3" Grid.Column="2" Margin="0,0,0,12"
+                                        SelectedDate="{Binding WarrantyEndDate}"
+                                        Style="{StaticResource FilledDatePicker}"
+                                        materialDesign:HintAssist.Hint="تاريخ انتهاء الضمان"/>
+
+                            <TextBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,0,0,12"
+                                     Text="{Binding Notes, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}"
+                                     materialDesign:HintAssist.Hint="ملاحظات"/>
+
+                            <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal">
+                                <Button Content="حفظ" Command="{Binding SaveCommand}"
+                                        Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
+                                <Button Command="{Binding PrintReceiptFromFormCommand}"
+                                        Style="{StaticResource FlatButton}" Margin="0,0,8,0"
+                                        ToolTip="طباعة وصل الصيانة">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Printer" Width="18" Height="18" Margin="0,0,6,0"/>
+                                        <TextBlock Text="طباعة الوصل" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Content="إغلاق" Command="{Binding CancelFormDialogCommand}"
+                                        Style="{StaticResource FlatButton}" Margin="0,0,8,0"/>
+                                <TextBlock Text="{Binding FormError}" Foreground="#C62828" VerticalAlignment="Center"
+                                           Visibility="{Binding FormError, Converter={StaticResource NullToCollapsedConverter}}"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </materialDesign:Card>
+        </Grid>
 
         <Grid Visibility="{Binding IsQuickAddCustomerOpen, Converter={StaticResource BoolToVis}}"
               Panel.ZIndex="100">
@@ -226,6 +494,38 @@
                         <Button Content="حفظ" Command="{Binding SaveQuickCustomerCommand}"
                                 Style="{StaticResource MaterialDesignRaisedButton}" Margin="0,0,8,0"/>
                         <Button Content="إلغاء" Command="{Binding CancelQuickAddCustomerCommand}"
+                                Style="{StaticResource FlatButton}"/>
+                    </StackPanel>
+                </StackPanel>
+            </materialDesign:Card>
+        </Grid>
+
+        <Grid Visibility="{Binding IsReplaceSerialOpen, Converter={StaticResource BoolToVis}}"
+              Panel.ZIndex="110">
+            <Border Background="#80000000"/>
+            <materialDesign:Card Padding="24" MinWidth="420" MaxWidth="500"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                                 UniformCornerRadius="16"
+                                 materialDesign:ElevationAssist.Elevation="Dp8">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                        <materialDesign:PackIcon Kind="SwapHorizontal" Width="24" Height="24"
+                                                 Foreground="#1565C0" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Text="استبدال سيريال الجهاز" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBox materialDesign:HintAssist.Hint="السيريال الحالي"
+                             Text="{Binding ReplaceCurrentSerial}"
+                             IsReadOnly="True"
+                             Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBox materialDesign:HintAssist.Hint="السيريال الجديد *"
+                             Text="{Binding ReplaceNewSerial, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                    <TextBlock Text="{Binding ReplaceSerialError}" Foreground="#D32F2F" Margin="0,0,0,8"
+                               Visibility="{Binding ReplaceSerialError, Converter={StaticResource NullToCollapsedConverter}}"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">
+                        <Button Content="استبدال" Command="{Binding ConfirmReplaceSerialCommand}"
+                                Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"/>
+                        <Button Content="إلغاء" Command="{Binding CancelReplaceSerialCommand}"
                                 Style="{StaticResource FlatButton}"/>
                     </StackPanel>
                 </StackPanel>

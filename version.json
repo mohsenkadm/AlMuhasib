@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.40",
-  "releaseDate": "2026-10-19",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.40/AlMuhasib-1.14.40.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.40/Qayd-Setup-1.14.40.exe",
-  "sha256": "5CA6A7E4DD9690289EB4390AACB63A1EA5FCAFF0C5794672BA3162999BEEF719",
-  "sizeBytes": 162047384,
-  "releaseNotes": "إظهار المنتجات في الكاشير وتحسينات واجهة وتقارير — تحديث اختياري آمن (عمود إضافي افتراضي ظاهر)",
+  "version": "1.14.41",
+  "releaseDate": "2026-10-25",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.41/AlMuhasib-1.14.41.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.41/Qayd-Setup-1.14.41.exe",
+  "sha256": "DD3001B535214E9D1F539C5764D32DA6BD2A8459BC63E64DF4FEA34D0F39BE66",
+  "sizeBytes": 162732268,
+  "releaseNotes": "تكبير أصناف الكاشير 25٪ مع التفاف وتمرير ظاهر، وتحسينات الضمان والصيانة — تحديث اختياري آمن (أعمدة/جداول إضافية فقط)",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

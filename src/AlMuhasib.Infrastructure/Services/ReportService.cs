@@ -1699,7 +1699,9 @@ public partial class ReportService : IReportService
         if (!string.IsNullOrWhiteSpace(serialNumber))
         {
             var serial = serialNumber.Trim();
-            query = query.Where(m => m.SerialNumber.Contains(serial));
+            query = query.Where(m =>
+                m.SerialNumber.Contains(serial)
+                || (m.PreviousSerialNumber != null && m.PreviousSerialNumber.Contains(serial)));
         }
 
         var records = await query.OrderByDescending(m => m.Date).ThenByDescending(m => m.Id).ToListAsync();
@@ -1711,6 +1713,7 @@ public partial class ReportService : IReportService
             CustomerName = m.Customer?.Name ?? "—",
             ProductName = m.ProductName,
             SerialNumber = m.SerialNumber,
+            PreviousSerialNumber = m.PreviousSerialNumber,
             CostAmount = m.CostAmount,
             Status = m.Status,
             StatusLabel = MaintenanceStatusHelper.ToArabic(m.Status),

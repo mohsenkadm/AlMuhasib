@@ -344,6 +344,7 @@ public partial class ProductsViewModel : ViewModelBase
 
             var pageItems = items as IList<Product> ?? items.ToList();
             await ApplyBranchNamesAsync(pageItems);
+            await ApplySerialCountsAsync(pageItems);
 
             Products.Clear();
             foreach (var p in pageItems)
@@ -374,6 +375,31 @@ public partial class ProductsViewModel : ViewModelBase
         {
             foreach (var p in list)
                 p.BranchesDisplay = "—";
+        }
+    }
+
+    private async Task ApplySerialCountsAsync(IEnumerable<Product> products)
+    {
+        var list = products as IList<Product> ?? products.ToList();
+        if (list.Count == 0) return;
+
+        if (!ShowSerialsSection || _productSerialService is null)
+        {
+            foreach (var p in list)
+                p.AvailableSerialCount = 0;
+            return;
+        }
+
+        try
+        {
+            var map = await _productSerialService.GetAvailableCountsByProductIdsAsync(list.Select(p => p.Id));
+            foreach (var p in list)
+                p.AvailableSerialCount = map.TryGetValue(p.Id, out var count) ? count : 0;
+        }
+        catch
+        {
+            foreach (var p in list)
+                p.AvailableSerialCount = 0;
         }
     }
 

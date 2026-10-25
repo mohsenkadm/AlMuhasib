@@ -1,6 +1,6 @@
 using System.Windows.Controls;
 using System.Windows.Input;
-using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.ViewModels;
 
 namespace AlMuhasib.UI.Views;
@@ -13,8 +13,8 @@ public partial class MaintenanceView : UserControl
     {
         if (DataContext is not MaintenanceViewModel vm)
             return;
-        if (MaintGrid.SelectedItem is MaintenanceRecord record
-            && vm.EditRecordCommand.CanExecute(record))
-            vm.EditRecordCommand.Execute(record);
+        if (MaintGrid.SelectedItem is MaintenanceReportRow row
+            && vm.EditRecordCommand.CanExecute(row))
+            vm.EditRecordCommand.Execute(row);
     }
 }

@@ -112,12 +112,20 @@ public sealed class CustomsInvoiceReportResult
     public decimal PaidUsd { get; set; }
     public decimal RemainingIqd { get; set; }
     public decimal RemainingUsd { get; set; }
+    public decimal AverageIqd { get; set; }
+    public decimal AverageUsd { get; set; }
+    public int TodayCount { get; set; }
+    public decimal TodayIqd { get; set; }
+    public decimal TodayUsd { get; set; }
     public List<CustomsReportNameAmountPoint> StatusChart { get; set; } = [];
+    public List<CustomsReportNameAmountPoint> ServiceTypeChart { get; set; } = [];
+    public List<CustomsReportNameAmountPoint> DailyChart { get; set; } = [];
     public List<CustomsInvoiceReportRow> Rows { get; set; } = [];
 }
 
 public sealed class CustomsInvoiceReportRow
 {
+    public int InvoiceId { get; set; }
     public string InvoiceNumber { get; set; } = string.Empty;
     public DateTime InvoiceDate { get; set; }
     public string CustomerName { get; set; } = string.Empty;

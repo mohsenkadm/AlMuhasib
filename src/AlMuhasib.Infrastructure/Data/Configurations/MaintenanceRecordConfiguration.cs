@@ -21,6 +21,9 @@ public class MaintenanceRecordConfiguration : IEntityTypeConfiguration<Maintenan
         builder.Property(m => m.SerialNumber)
             .HasMaxLength(100);
 
+        builder.Property(m => m.PreviousSerialNumber)
+            .HasMaxLength(100);
+
         builder.Property(m => m.Notes)
             .HasMaxLength(1000);
 

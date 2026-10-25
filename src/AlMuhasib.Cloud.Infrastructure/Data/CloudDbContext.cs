@@ -355,6 +355,7 @@ public class CloudDbContext : DbContext
             e.Property(x => x.RecordNumber).HasMaxLength(50).IsRequired();
             e.Property(x => x.ProductName).HasMaxLength(300).IsRequired();
             e.Property(x => x.SerialNumber).HasMaxLength(100);
+            e.Property(x => x.PreviousSerialNumber).HasMaxLength(100);
             e.Property(x => x.Notes).HasMaxLength(1000);
             e.Property(x => x.CostAmount).HasPrecision(18, 2);
             e.Property(x => x.FxRate).HasPrecision(18, 6);

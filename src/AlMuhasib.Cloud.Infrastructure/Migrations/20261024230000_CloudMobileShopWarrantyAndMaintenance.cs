@@ -37,6 +37,7 @@ public partial class CloudMobileShopWarrantyAndMaintenance : Migration
                     [ProductId] int NULL,
                     [ProductName] nvarchar(300) NOT NULL,
                     [SerialNumber] nvarchar(100) NOT NULL,
+                    [PreviousSerialNumber] nvarchar(100) NULL,
                     [CostAmount] decimal(18,2) NOT NULL,
                     [Notes] nvarchar(1000) NULL,
                     [Status] int NOT NULL,

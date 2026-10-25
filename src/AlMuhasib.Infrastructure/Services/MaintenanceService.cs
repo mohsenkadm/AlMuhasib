@@ -60,10 +60,8 @@ public sealed class MaintenanceService : IMaintenanceService
             throw new InvalidOperationException("أدخل اسم المنتج");
         if (record.CostAmount < 0)
             throw new InvalidOperationException("مبلغ الصيانة غير صالح");
-        if (record.Status != MaintenanceStatus.Delivered)
-            record.WarrantyEndDate = null;
-        else if (!record.WarrantyEndDate.HasValue)
-            throw new InvalidOperationException("أدخل تاريخ انتهاء الضمان بعد التسليم");
+        // تاريخ الضمان اختياري في كل الحالات؛ يُحفظ كما أدخله المستخدم
+        record.WarrantyEndDate = record.WarrantyEndDate?.Date;
 
         var username = _currentUserService.Username ?? "system";
         await using var context = await _contextFactory.CreateDbContextAsync();
@@ -86,6 +84,11 @@ public sealed class MaintenanceService : IMaintenanceService
             entity.ProductId = record.ProductId;
             entity.ProductName = record.ProductName.Trim();
             entity.SerialNumber = (record.SerialNumber ?? string.Empty).Trim();
+            // لا تُمسح من الحفظ العادي — تُحدَّث عبر ReplaceSerialAsync
+            if (record.PreviousSerialNumber is not null)
+                entity.PreviousSerialNumber = string.IsNullOrWhiteSpace(record.PreviousSerialNumber)
+                    ? null
+                    : record.PreviousSerialNumber.Trim();
             entity.CostAmount = record.CostAmount;
             entity.Notes = string.IsNullOrWhiteSpace(record.Notes) ? null : record.Notes.Trim();
             entity.Status = record.Status;
@@ -108,6 +111,9 @@ public sealed class MaintenanceService : IMaintenanceService
                 ProductId = record.ProductId,
                 ProductName = record.ProductName.Trim(),
                 SerialNumber = (record.SerialNumber ?? string.Empty).Trim(),
+                PreviousSerialNumber = string.IsNullOrWhiteSpace(record.PreviousSerialNumber)
+                    ? null
+                    : record.PreviousSerialNumber.Trim(),
                 CostAmount = record.CostAmount,
                 Notes = string.IsNullOrWhiteSpace(record.Notes) ? null : record.Notes.Trim(),
                 Status = record.Status,
@@ -163,6 +169,30 @@ public sealed class MaintenanceService : IMaintenanceService
             // تمت إزالة المبلغ — لا سند جديد
         }
 
+        return (await GetByIdAsync(entity.Id))!;
+    }
+
+    public async Task<MaintenanceRecord> ReplaceSerialAsync(int id, string newSerialNumber)
+    {
+        var next = (newSerialNumber ?? string.Empty).Trim();
+        if (string.IsNullOrWhiteSpace(next))
+            throw new InvalidOperationException("أدخل السيريال الجديد");
+
+        var username = _currentUserService.Username ?? "system";
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var entity = await context.MaintenanceRecords.FirstOrDefaultAsync(m => m.Id == id)
+            ?? throw new InvalidOperationException("سجل الصيانة غير موجود");
+
+        var current = (entity.SerialNumber ?? string.Empty).Trim();
+        if (string.Equals(current, next, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("السيريال الجديد مطابق للسيريال الحالي");
+
+        if (!string.IsNullOrWhiteSpace(current))
+            entity.PreviousSerialNumber = current;
+        entity.SerialNumber = next;
+        entity.UpdatedAt = DateTime.UtcNow;
+        entity.UpdatedBy = username;
+        await context.SaveChangesAsync();
         return (await GetByIdAsync(entity.Id))!;
     }
 

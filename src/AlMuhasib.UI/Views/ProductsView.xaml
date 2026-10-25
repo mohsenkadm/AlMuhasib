@@ -434,6 +434,21 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
+                        <!-- Available serials count -->
+                        <DataGridTextColumn Header="سيريال متاح"
+                                            Binding="{Binding SerialsDisplay}"
+                                            Width="100"
+                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="AvailableSerialCount"
+                                            Visibility="{Binding DataContext.ShowSerialsSection, Source={x:Reference VmProxy}, Converter={StaticResource BoolToVis}}">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                    <Setter Property="Foreground" Value="#1565C0"/>
+                                    <Setter Property="HorizontalAlignment" Value="Center"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
                         <!-- Description -->
                         <DataGridTextColumn Header="الوصف"
                                             Binding="{Binding Description}"
@@ -489,7 +504,7 @@
                                             behaviors:DataGridColumnFilterBehavior.IsFilterable="False"/>
 
                         <!-- Actions -->
-                        <DataGridTemplateColumn Header="الإجراءات" Width="270" MinWidth="270" IsReadOnly="True"
+                        <DataGridTemplateColumn Header="الإجراءات" Width="310" MinWidth="310" IsReadOnly="True"
                                                 behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
@@ -512,6 +527,13 @@
                                                 ToolTip="أنواع التعبئة"
                                                 Visibility="{Binding DataContext.ShowUnitsSection, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BoolToVis}}">
                                             <materialDesign:PackIcon Kind="PackageVariant" Width="18" Height="18"/>
+                                        </Button>
+                                        <Button Command="{Binding DataContext.OpenProductSerialsDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableEditIconButton}"
+                                                ToolTip="سيريال نمبر"
+                                                Visibility="{Binding DataContext.ShowSerialsSection, RelativeSource={RelativeSource AncestorType=DataGrid}, Converter={StaticResource BoolToVis}}">
+                                            <materialDesign:PackIcon Kind="Barcode" Width="18" Height="18"/>
                                         </Button>
                                         <Button Command="{Binding DataContext.OpenProductClothingDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
@@ -650,6 +672,14 @@
                                                         Margin="0,0,4,0"
                                                         Visibility="{Binding DataContext.ShowUnitsSection, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
                                                     <materialDesign:PackIcon Kind="PackageVariant" Width="18" Height="18"/>
+                                                </Button>
+                                                <Button Command="{Binding DataContext.OpenProductSerialsDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding Product}"
+                                                        Style="{StaticResource TableEditIconButton}"
+                                                        ToolTip="سيريال نمبر"
+                                                        Margin="0,0,4,0"
+                                                        Visibility="{Binding DataContext.ShowSerialsSection, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
+                                                    <materialDesign:PackIcon Kind="Barcode" Width="18" Height="18"/>
                                                 </Button>
                                                 <Button Command="{Binding DataContext.OpenProductClothingDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                         CommandParameter="{Binding Product}"
@@ -1156,6 +1186,78 @@
                             </StackPanel>
                         </ScrollViewer>
                         <Button Grid.Row="2" Content="إغلاق" Command="{Binding CloseClothingDialogCommand}"
+                                Style="{StaticResource OutlinedButton}" HorizontalAlignment="Left"
+                                Height="40" Padding="22,0" materialDesign:ButtonAssist.CornerRadius="10"/>
+                    </Grid>
+                </Border>
+            </materialDesign:DialogHost.DialogContent>
+        </materialDesign:DialogHost>
+
+        <!-- Product serials dialog — multiple serials per product -->
+        <materialDesign:DialogHost IsOpen="{Binding IsSerialsDialogOpen}"
+                                   CloseOnClickAway="False"
+                                   DialogTheme="Inherit"
+                                   OverlayBackground="#80000000"
+                                   Identifier="ProductSerialsDialog">
+            <materialDesign:DialogHost.DialogContent>
+                <Border MinWidth="480" MaxWidth="560" MaxHeight="640" Padding="24"
+                        Background="{DynamicResource CardBrush}" CornerRadius="16">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                            <TextBlock Text="{Binding SerialsDialogTitle}" FontSize="18" FontWeight="Bold"
+                                       Foreground="{DynamicResource SidebarBackground}"/>
+                            <TextBlock Text="أضف عدة سيريالات مفصولة بفاصلة. عند البيع تختار سيريالاً واحداً من القائمة."
+                                       FontSize="12" Foreground="#1565C0" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,0,0,12">
+                            <StackPanel>
+                                <ItemsControl ItemsSource="{Binding EditSerials}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource NotepadPaperBrush}" CornerRadius="8" Padding="10" Margin="0,0,0,8">
+                                                <DockPanel>
+                                                    <Button Content="حذف" Style="{StaticResource OutlinedButton}" DockPanel.Dock="Right"
+                                                            Command="{Binding DataContext.DeleteProductSerialCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}" Padding="8,2"
+                                                            IsEnabled="{Binding IsSold, Converter={StaticResource InverseBooleanConverter}}"/>
+                                                    <StackPanel VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding SerialNumber}" FontWeight="SemiBold" FontFamily="Consolas"/>
+                                                        <TextBlock FontSize="11" Margin="0,2,0,0">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Text" Value="متاح"/>
+                                                                    <Setter Property="Foreground" Value="#2E7D32"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsSold}" Value="True">
+                                                                            <Setter Property="Text" Value="مباع"/>
+                                                                            <Setter Property="Foreground" Value="#C62828"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
+                                                    </StackPanel>
+                                                </DockPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBox Text="{Binding NewSerialText, UpdateSourceTrigger=PropertyChanged}"
+                                         materialDesign:HintAssist.Hint="سيريالات مفصولة بفاصلة — مثال: 111, 222, 333"
+                                         Style="{StaticResource FilledTextBox}" AcceptsReturn="True"
+                                         MinHeight="64" TextWrapping="Wrap" Margin="0,8,0,8"/>
+                                <Button Content="إضافة سيريالات" Style="{StaticResource PrimaryButton}"
+                                        Command="{Binding AddProductSerialsCommand}"
+                                        HorizontalAlignment="Left" Height="40" Padding="16,0"
+                                        materialDesign:ButtonAssist.CornerRadius="10"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                        <Button Grid.Row="2" Content="إغلاق" Command="{Binding CloseSerialsDialogCommand}"
                                 Style="{StaticResource OutlinedButton}" HorizontalAlignment="Left"
                                 Height="40" Padding="22,0" materialDesign:ButtonAssist.CornerRadius="10"/>
                     </Grid>

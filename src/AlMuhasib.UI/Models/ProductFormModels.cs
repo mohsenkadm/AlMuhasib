@@ -66,6 +66,17 @@ public partial class ProductFormUnitRow : ObservableObject
     [ObservableProperty] private bool _isDefault;
 }
 
+/// <summary>سيريال جهاز (IMEI/SN) داخل نموذج المنتج.</summary>
+public partial class ProductFormSerialRow : ObservableObject
+{
+    public int? ProductSerialId { get; set; }
+
+    [ObservableProperty] private string _serialNumber = string.Empty;
+    [ObservableProperty] private bool _isSold;
+
+    public string StatusLabel => IsSold ? "مباع" : "متاح";
+}
+
 /// <summary>خيار فرع لظهور المنتج.</summary>
 public partial class ProductBranchOption : ObservableObject
 {

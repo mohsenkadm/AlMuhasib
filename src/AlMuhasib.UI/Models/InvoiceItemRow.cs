@@ -215,6 +215,8 @@ public partial class InvoiceItemRow : ObservableObject
     }
 
     // ── سيريال ────────────────────────────────────────────
+    public ObservableCollection<string> AvailableSerials { get; } = [];
+
     [ObservableProperty]
     private string _serialNumber = string.Empty;
 
@@ -397,6 +399,7 @@ public partial class InvoiceItemRow : ObservableObject
         UnitConversionFactor = 1m;
         AvailableUnits.Clear();
         AvailableBatches.Clear();
+        AvailableSerials.Clear();
         AvailableColors.Clear();
     }
 

@@ -3,8 +3,8 @@ namespace AlMuhasib.Core.Helpers;
 /// <summary>حالة الضمان والمدة المتبقية لقالب محلات الموبايلات.</summary>
 public static class WarrantyStatusHelper
 {
-    public const string ActiveLabel = "ساري";
-    public const string ExpiredLabel = "منتهي";
+    public const string ActiveLabel = "تحت الضمان";
+    public const string ExpiredLabel = "منتهي (Expired)";
     public const string EmptyLabel = "—";
 
     public static bool IsActive(DateTime? warrantyEndDate, DateTime? asOf = null)
