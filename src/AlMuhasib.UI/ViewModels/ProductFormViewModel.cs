@@ -853,7 +853,8 @@ public partial class ProductFormViewModel : ViewModelBase
         {
             var stamp = DateTime.UtcNow.ToString("yyMMddHHmmss");
             var candidate = $"2{stamp}{Random.Shared.Next(100, 999)}";
-            if (candidate.Length > 50) candidate = candidate[..50];
+            if (candidate.Length > AlMuhasib.Core.Helpers.ProductBarcodeHelper.MaxStoredLength)
+                candidate = candidate[..AlMuhasib.Core.Helpers.ProductBarcodeHelper.MaxStoredLength];
             var existing = await _productService.GetByBarcodeAsync(candidate);
             if (existing is null || existing.Id == _editingProductId)
             {
@@ -909,6 +910,15 @@ public partial class ProductFormViewModel : ViewModelBase
                 FormError = "حدد تاريخ انتهاء الخصم أو ألغِ خيار الانتهاء";
                 return;
             }
+        }
+
+        var normalizedBarcode = AlMuhasib.Core.Helpers.ProductBarcodeHelper.Normalize(Barcode);
+        if (normalizedBarcode is not null
+            && !AlMuhasib.Core.Helpers.ProductBarcodeHelper.IsWithinLength(normalizedBarcode))
+        {
+            FormError =
+                $"حقل الباركود يتجاوز الحد الأقصى ({AlMuhasib.Core.Helpers.ProductBarcodeHelper.MaxStoredLength} حرفاً)";
+            return;
         }
 
         FormError = string.Empty;
@@ -988,7 +998,7 @@ public partial class ProductFormViewModel : ViewModelBase
     {
         product.Name = Name.Trim();
         product.Description = string.IsNullOrWhiteSpace(Description) ? null : Description.Trim();
-        product.Barcode = string.IsNullOrWhiteSpace(Barcode) ? null : Barcode.Trim();
+        product.Barcode = AlMuhasib.Core.Helpers.ProductBarcodeHelper.Normalize(Barcode);
         product.ShowInCashier = ShowInCashier;
         product.CategoryId = SelectedCategory!.Id;
         product.ScientificName = ShowScientificName && !string.IsNullOrWhiteSpace(ScientificName)

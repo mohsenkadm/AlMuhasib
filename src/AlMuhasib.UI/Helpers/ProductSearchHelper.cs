@@ -28,6 +28,7 @@ public static class ProductSearchHelper
 
     private static bool MatchesSingleTerm(Product product, string term) =>
         ContainsIgnoreCase(product.Name, term)
+        || ProductBarcodeHelper.Matches(product.Barcode, term)
         || ContainsIgnoreCase(product.Barcode, term)
         || ContainsIgnoreCase(product.ScientificName, term)
         || ContainsIgnoreCase(product.VehicleType, term)

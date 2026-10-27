@@ -167,7 +167,8 @@ public static class MigrationProductExcelHelper
             var row = new MigrationNamedBalanceRow
             {
                 Name = name.Trim(),
-                Barcode = NullIfEmpty(GetCell(sheet, r, headerMap, "الباركود")),
+                Barcode = AlMuhasib.Core.Helpers.ProductBarcodeHelper.Normalize(
+                    GetCell(sheet, r, headerMap, "الباركود")),
                 CategoryName = string.IsNullOrWhiteSpace(GetCell(sheet, r, headerMap, "الصنف"))
                     ? "عام"
                     : GetCell(sheet, r, headerMap, "الصنف").Trim(),

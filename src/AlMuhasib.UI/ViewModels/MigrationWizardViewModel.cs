@@ -3057,15 +3057,16 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 }
 
                 var nameKey = row.Name.Trim();
-                var barcodeKey = string.IsNullOrWhiteSpace(row.Barcode) ? null : row.Barcode.Trim();
+                var barcodeKey = AlMuhasib.Core.Helpers.ProductBarcodeHelper.Normalize(row.Barcode);
                 var product = products.FirstOrDefault(p =>
                     string.Equals(p.Name, nameKey, StringComparison.OrdinalIgnoreCase));
-                // هوية المنتج: الاسم أولاً، ثم الباركود إن وُجد — يمنع مكرراً عند ربط فرع آخر
+                // هوية المنتج: الاسم أولاً، ثم أي باركود فرعي إن وُجد — يمنع مكرراً عند ربط فرع آخر
                 if (product is null && barcodeKey is not null)
                 {
                     product = products.FirstOrDefault(p =>
-                        !string.IsNullOrWhiteSpace(p.Barcode)
-                        && string.Equals(p.Barcode, barcodeKey, StringComparison.OrdinalIgnoreCase));
+                        AlMuhasib.Core.Helpers.ProductBarcodeHelper.SharesAnyToken(
+                            p.Barcode,
+                            AlMuhasib.Core.Helpers.ProductBarcodeHelper.Split(barcodeKey)));
                 }
 
                 if (product is null)

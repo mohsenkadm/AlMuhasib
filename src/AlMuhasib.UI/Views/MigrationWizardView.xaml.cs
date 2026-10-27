@@ -239,7 +239,8 @@ public partial class MigrationWizardView
 
         ProductsGrid.Columns.Add(CreateTextColumn("اسم المنتج *", "Name", 200, minWidth: 160,
             toolTip: "حقل إلزامي — يُستخدم لمطابقة المنتج الموجود وتجنب التكرار"));
-        ProductsGrid.Columns.Add(CreateTextColumn("الباركود", "Barcode", 140, minWidth: 110));
+        ProductsGrid.Columns.Add(CreateTextColumn("الباركود", "Barcode", 160, minWidth: 120,
+            toolTip: "عدة باركودات لنفس المنتج مفصولة بـ | مثل: 111|222|333"));
         ProductsGrid.Columns.Add(CreateCategoryComboColumn());
         ProductsGrid.Columns.Add(CreateTextColumn("الوصف", "Description", 160, minWidth: 120));
         ProductsGrid.Columns.Add(CreateCheckBoxColumn(

@@ -298,8 +298,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         RefreshFilteredProducts();
 
         var barcodeMatch = _allProducts.FirstOrDefault(p =>
-            !string.IsNullOrEmpty(p.Barcode) &&
-            p.Barcode.Equals(term, StringComparison.OrdinalIgnoreCase));
+            AlMuhasib.Core.Helpers.ProductBarcodeHelper.Matches(p.Barcode, term));
 
         if (barcodeMatch is not null)
         {

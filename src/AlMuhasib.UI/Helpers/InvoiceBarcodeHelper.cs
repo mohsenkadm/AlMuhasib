@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.UI.Models;
 
 namespace AlMuhasib.UI.Helpers;
@@ -26,9 +27,7 @@ public static class InvoiceBarcodeHelper
         }
 
         var code = barcode.Trim();
-        var product = products.FirstOrDefault(p =>
-            !string.IsNullOrWhiteSpace(p.Barcode)
-            && string.Equals(p.Barcode.Trim(), code, StringComparison.OrdinalIgnoreCase));
+        var product = products.FirstOrDefault(p => ProductBarcodeHelper.Matches(p.Barcode, code));
 
         if (product is null)
         {

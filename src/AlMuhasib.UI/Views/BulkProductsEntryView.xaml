@@ -121,7 +121,7 @@
                       FontSize="13">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="الاسم" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="160" MinWidth="120"/>
-                    <DataGridTextColumn Header="الباركود" Binding="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}" Width="120"/>
+                    <DataGridTextColumn Header="الباركود" Binding="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}" Width="160" MinWidth="120"/>
                     <DataGridTemplateColumn Header="التصنيف" Width="160" MinWidth="120">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
