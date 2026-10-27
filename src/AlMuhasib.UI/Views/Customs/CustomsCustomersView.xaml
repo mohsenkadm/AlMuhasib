@@ -4,11 +4,15 @@
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
-             Style="{StaticResource PageStyle}"
+             Style="{StaticResource PosPageStyle}"
              FlowDirection="RightToLeft">
 
     <UserControl.Resources>
-        <ContextMenu x:Key="PageActionsMenu">
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Styles/CustomsUiStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+<ContextMenu x:Key="PageActionsMenu">
             <MenuItem Header="تحديث" Command="{Binding RefreshCommand}">
                 <MenuItem.Icon><md:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
             </MenuItem>
@@ -26,6 +30,7 @@
             </MenuItem>
         </ContextMenu>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid Margin="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
@@ -158,7 +163,9 @@
             </Grid>
         </md:Card>
 
-        <md:DialogHost IsOpen="{Binding IsDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
+        <md:DialogHost IsOpen="{Binding IsDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2"
+                       HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="200"
+                       Style="{StaticResource ModernDialogHost}">
             <md:DialogHost.DialogContent>
                 <md:Card Padding="24" MinWidth="420" MaxWidth="520">
                     <StackPanel>
@@ -191,18 +198,20 @@
                         <TextBlock Text="{Binding DialogError}" Foreground="#D32F2F" Margin="0,0,0,8"
                                    Visibility="{Binding DialogError, Converter={StaticResource NullToCollapsedConverter}}"/>
 
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,12,0,0">
                             <Button Content="حفظ" Command="{Binding SaveCustomerCommand}"
-                                    Style="{StaticResource MaterialDesignRaisedButton}"
-                                    md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
-                            <Button Content="إلغاء" Command="{Binding CancelDialogCommand}" Style="{StaticResource FlatButton}"/>
+                                    Style="{StaticResource CustomsDialogPrimaryButton}"/>
+                            <Button Content="إلغاء" Command="{Binding CancelDialogCommand}"
+                                    Style="{StaticResource CustomsDialogSecondaryButton}"/>
                         </StackPanel>
                     </StackPanel>
                 </md:Card>
             </md:DialogHost.DialogContent>
         </md:DialogHost>
 
-        <md:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
+        <md:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2"
+                       HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="200"
+                       Style="{StaticResource ModernDialogHost}">
             <md:DialogHost.DialogContent>
                 <md:Card Padding="24" MinWidth="360">
                     <StackPanel>
@@ -212,12 +221,11 @@
                             <Run Text="{Binding CustomerToDelete.Name, Mode=OneWay}" FontWeight="Bold"/>
                             <Run Text="؟"/>
                         </TextBlock>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                             <Button Content="حذف" Command="{Binding ExecuteDeleteCommand}"
-                                    Style="{StaticResource MaterialDesignRaisedButton}"
-                                    Background="#D32F2F" Foreground="White"
-                                    md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
-                            <Button Content="إلغاء" Command="{Binding CancelDeleteCommand}" Style="{StaticResource FlatButton}"/>
+                                    Style="{StaticResource CustomsDialogDangerButton}"/>
+                            <Button Content="إلغاء" Command="{Binding CancelDeleteCommand}"
+                                    Style="{StaticResource CustomsDialogSecondaryButton}"/>
                         </StackPanel>
                     </StackPanel>
                 </md:Card>

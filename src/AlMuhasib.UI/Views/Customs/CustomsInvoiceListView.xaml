@@ -4,11 +4,20 @@
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
-             Style="{StaticResource PageStyle}"
+             xmlns:helpers="clr-namespace:AlMuhasib.UI.Helpers"
+             xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
+             Style="{StaticResource PosPageStyle}"
              FlowDirection="RightToLeft">
 
     <UserControl.Resources>
-        <ContextMenu x:Key="PageActionsMenu">
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Styles/CustomsUiStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVisRes"/>
+            <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
+            <helpers:BindingProxy x:Key="ListProxy" Data="{Binding}"/>
+<ContextMenu x:Key="PageActionsMenu">
             <MenuItem Header="تحديث" Command="{Binding RefreshCommand}">
                 <MenuItem.Icon><md:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
             </MenuItem>
@@ -25,6 +34,47 @@
             </MenuItem>
         </ContextMenu>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <Style x:Key="DetailLabel" TargetType="TextBlock" BasedOn="{StaticResource FormFieldLabel}">
+            <Setter Property="Margin" Value="0,0,0,6"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+        </Style>
+        <Style x:Key="DetailValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,4"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+        <Style x:Key="DetailFieldPanel" TargetType="StackPanel">
+            <Setter Property="Margin" Value="0,0,0,14"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+        <Style x:Key="DetailSectionCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="16,14"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
+        </Style>
+        <Style x:Key="InvoiceStatusBadge" TargetType="Border">
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Padding" Value="10,4"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Background" Value="#E3F2FD"/>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding StatusLabel}" Value="مسودة">
+                    <Setter Property="Background" Value="#FFF8E1"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StatusLabel}" Value="معتمدة">
+                    <Setter Property="Background" Value="#E8F5E9"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding StatusLabel}" Value="ملغاة">
+                    <Setter Property="Background" Value="#FFEBEE"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid Margin="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
@@ -33,50 +83,122 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="20" Margin="0,0,0,16" md:ElevationAssist.Elevation="Dp2">
-            <StackPanel>
-                <TextBlock Text="فواتير التخليص الكمركي" FontSize="16" FontWeight="Bold"
-                           Foreground="{DynamicResource PrimaryHueMidBrush}" Margin="0,0,0,12"/>
-                <WrapPanel>
-                    <Button Command="{Binding OpenNewInvoiceCommand}"
-                            Style="{StaticResource MaterialDesignRaisedButton}"
-                            md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,8"
-                            IsEnabled="{Binding CanAdd}">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="FileDocumentPlus" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="فاتورة جديدة"/>
+        <!-- Header -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="0" Padding="0" Margin="0,0,0,16"
+                 md:ElevationAssist.Elevation="Dp2"
+                 RenderTransformOrigin="0.5,0.5">
+            <md:Card.RenderTransform>
+                <TranslateTransform Y="0"/>
+            </md:Card.RenderTransform>
+            <md:Card.Triggers>
+                <EventTrigger RoutedEvent="Loaded">
+                    <BeginStoryboard>
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                             From="0" To="1" Duration="0:0:0.35">
+                                <DoubleAnimation.EasingFunction>
+                                    <CubicEase EasingMode="EaseOut"/>
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                             From="16" To="0" Duration="0:0:0.35">
+                                <DoubleAnimation.EasingFunction>
+                                    <CubicEase EasingMode="EaseOut"/>
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </md:Card.Triggers>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Border Grid.Row="0" CornerRadius="4,4,0,0" Padding="20,16,20,14">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#1565C0" Offset="0"/>
+                            <GradientStop Color="#0D47A1" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <DockPanel>
+                        <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+                            <Button Command="{Binding OpenNewInvoiceCommand}"
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Background="White" Foreground="#1565C0"
+                                    md:ButtonAssist.CornerRadius="10" Padding="18,8" Margin="0,0,8,0"
+                                    IsEnabled="{Binding CanAdd}">
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="FileDocumentPlus" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="فاتورة جديدة" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{Binding RefreshCommand}"
+                                    Style="{StaticResource FlatButton}"
+                                    Foreground="White" md:ButtonAssist.CornerRadius="10" Padding="12,8">
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="Refresh" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="تحديث" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
-                    </Button>
-                    <Button Command="{Binding RefreshCommand}" Style="{StaticResource FlatButton}"
-                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,8">
-                        <StackPanel Orientation="Horizontal">
-                            <md:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                            <TextBlock Text="تحديث"/>
+                        <StackPanel>
+                            <TextBlock Text="فواتير التخليص الكمركي" FontSize="20" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="معاينة · تعديل · مصروف مباشر · مرفقات — دون ازدحام الأزرار"
+                                       FontSize="12" Foreground="#BBDEFB" Margin="0,4,0,0"/>
                         </StackPanel>
-                    </Button>
+                    </DockPanel>
+                </Border>
+                <WrapPanel Grid.Row="1" Margin="20,16,20,16">
                     <TextBox md:HintAssist.Hint="بحث برقم الفاتورة أو العميل..."
                              Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                             Style="{StaticResource FilledTextBox}" MinWidth="220" Margin="0,0,8,8"/>
+                             Style="{StaticResource FilledTextBox}" MinWidth="260" Margin="0,0,10,8"/>
                     <ComboBox ItemsSource="{Binding StatusOptions}"
                               SelectedValue="{Binding StatusFilter}"
                               SelectedValuePath="Value"
                               DisplayMemberPath="Label"
                               md:HintAssist.Hint="الحالة"
                               Style="{StaticResource FilledComboBox}"
-                              Width="140" Margin="0,0,8,8"/>
+                              Width="150" Margin="0,0,10,8"/>
                     <DatePicker SelectedDate="{Binding DateFrom}"
                                 md:HintAssist.Hint="من تاريخ"
                                 Style="{StaticResource MaterialDesignOutlinedDatePicker}"
-                                Width="140" Margin="0,0,8,8"/>
+                                Width="150" Margin="0,0,10,8"/>
                     <DatePicker SelectedDate="{Binding DateTo}"
                                 md:HintAssist.Hint="إلى تاريخ"
                                 Style="{StaticResource MaterialDesignOutlinedDatePicker}"
-                                Width="140" Margin="0,0,0,8"/>
+                                Width="150" Margin="0,0,0,8"/>
                 </WrapPanel>
-            </StackPanel>
+            </Grid>
         </md:Card>
 
-        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="0" md:ElevationAssist.Elevation="Dp2">
+        <!-- Grid -->
+        <md:Card Style="{StaticResource ElevatedCard}" Grid.Row="1" Padding="0" md:ElevationAssist.Elevation="Dp2"
+                 RenderTransformOrigin="0.5,0.5">
+            <md:Card.RenderTransform>
+                <TranslateTransform Y="0"/>
+            </md:Card.RenderTransform>
+            <md:Card.Triggers>
+                <EventTrigger RoutedEvent="Loaded">
+                    <BeginStoryboard>
+                        <Storyboard BeginTime="0:0:0.08">
+                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                             From="0" To="1" Duration="0:0:0.4">
+                                <DoubleAnimation.EasingFunction>
+                                    <CubicEase EasingMode="EaseOut"/>
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                                             From="20" To="0" Duration="0:0:0.4">
+                                <DoubleAnimation.EasingFunction>
+                                    <CubicEase EasingMode="EaseOut"/>
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
+                    </BeginStoryboard>
+                </EventTrigger>
+            </md:Card.Triggers>
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -97,7 +219,8 @@
                           AutoGenerateColumns="False" IsReadOnly="True"
                           CanUserAddRows="False" SelectionMode="Single"
                           Style="{StaticResource ModernDataGrid}"
-                          Sorting="InvoicesGrid_Sorting">
+                          Sorting="InvoicesGrid_Sorting"
+                          RowHeight="52">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="الرقم" Binding="{Binding InvoiceNumber}" SortMemberPath="InvoiceNumber" Width="110"/>
                         <DataGridTextColumn Header="التاريخ" Binding="{Binding InvoiceDate, StringFormat=yyyy/MM/dd}" SortMemberPath="InvoiceDate" Width="100"/>
@@ -107,127 +230,104 @@
                         <DataGridTextColumn Header="الإجمالي" Binding="{Binding TotalAmount, StringFormat=N0}" SortMemberPath="TotalAmount" Width="100"/>
                         <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat=N0}" SortMemberPath="PaidAmount" Width="90"/>
                         <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" SortMemberPath="RemainingAmount" Width="90"/>
-                        <DataGridTextColumn Header="الحالة" Binding="{Binding StatusLabel}" SortMemberPath="Status" Width="90"/>
-                        <DataGridTemplateColumn Header="الإجراءات" Width="420" MinWidth="360" CanUserSort="False">
+                        <DataGridTemplateColumn Header="الحالة" Width="100" SortMemberPath="Status">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource InvoiceStatusBadge}">
+                                        <TextBlock Text="{Binding StatusLabel}" FontSize="12" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Center"/>
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTemplateColumn Header="الإجراءات" Width="560" MinWidth="540" CanUserSort="False">
                             <DataGridTemplateColumn.CellStyle>
                                 <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
                             </DataGridTemplateColumn.CellStyle>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <WrapPanel Orientation="Horizontal" Margin="4,6">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <!-- معاينة التفاصيل -->
                                         <Button Command="{Binding DataContext.ViewDetailsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
-                                                Style="{StaticResource OutlinedButton}"
-                                                md:ButtonAssist.CornerRadius="6"
-                                                Height="30" Padding="10,0" Margin="0,0,6,4"
-                                                FontSize="11" ToolTip="عرض تفاصيل الفاتورة">
-                                            <StackPanel Orientation="Horizontal">
-                                                <md:PackIcon Kind="Eye" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                <TextBlock Text="عرض التفاصيل" VerticalAlignment="Center"/>
-                                            </StackPanel>
+                                                Style="{StaticResource TableViewIconButton}"
+                                                ToolTip="معاينة تفاصيل الفاتورة">
+                                            <md:PackIcon Kind="Eye" Width="18" Height="18"/>
                                         </Button>
+                                        <!-- تعديل -->
+                                        <Button Command="{Binding DataContext.EditInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableEditIconButton}"
+                                                ToolTip="تعديل الفاتورة"
+                                                IsEnabled="{Binding CanEdit}">
+                                            <md:PackIcon Kind="PencilOutline" Width="18" Height="18"/>
+                                        </Button>
+                                        <!-- اعتماد -->
                                         <Button Command="{Binding DataContext.ApproveInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
-                                                Style="{StaticResource OutlinedButton}"
-                                                md:ButtonAssist.CornerRadius="6"
-                                                Height="30" Padding="10,0" Margin="0,0,6,4"
-                                                FontSize="11" ToolTip="اعتماد المسودة"
+                                                Style="{StaticResource TableSecondaryIconButton}"
+                                                ToolTip="اعتماد المسودة"
                                                 IsEnabled="{Binding CanApprove}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <md:PackIcon Kind="CheckCircleOutline" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="#2E7D32"/>
-                                                <TextBlock Text="اعتماد" VerticalAlignment="Center"/>
-                                            </StackPanel>
+                                            <md:PackIcon Kind="CheckCircleOutline" Width="18" Height="18" Foreground="#2E7D32"/>
                                         </Button>
+                                        <!-- إلغاء -->
                                         <Button Command="{Binding DataContext.ConfirmCancelCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
-                                                Style="{StaticResource OutlinedButton}"
-                                                md:ButtonAssist.CornerRadius="6"
-                                                Height="30" Padding="10,0" Margin="0,0,6,4"
-                                                FontSize="11" ToolTip="إلغاء الفاتورة"
+                                                Style="{StaticResource TableSecondaryIconButton}"
+                                                ToolTip="إلغاء الفاتورة"
                                                 IsEnabled="{Binding CanCancel}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <md:PackIcon Kind="Cancel" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="#C62828"/>
-                                                <TextBlock Text="إلغاء" VerticalAlignment="Center"/>
-                                            </StackPanel>
+                                            <md:PackIcon Kind="Cancel" Width="18" Height="18" Foreground="#C62828"/>
                                         </Button>
-                                        <Button Command="{Binding DataContext.PreviewInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                                CommandParameter="{Binding}"
-                                                Style="{StaticResource OutlinedButton}"
-                                                md:ButtonAssist.CornerRadius="6"
-                                                Height="30" Padding="10,0" Margin="0,0,6,4"
-                                                FontSize="11" ToolTip="معاينة PDF — نسخة عميل">
-                                            <StackPanel Orientation="Horizontal">
-                                                <md:PackIcon Kind="FileEye" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                <TextBlock Text="معاينة" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Button>
+                                        <!-- طباعة -->
                                         <Button Command="{Binding DataContext.PrintInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
-                                                Style="{StaticResource OutlinedButton}"
-                                                md:ButtonAssist.CornerRadius="6"
-                                                Height="30" Padding="10,0" Margin="0,0,6,4"
-                                                FontSize="11" ToolTip="طباعة نسخة العميل عبر CustomsPrintService">
-                                            <StackPanel Orientation="Horizontal">
-                                                <md:PackIcon Kind="Printer" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                <TextBlock Text="طباعة" VerticalAlignment="Center"/>
-                                            </StackPanel>
+                                                Style="{StaticResource TablePrintIconButton}"
+                                                ToolTip="طباعة نسخة العميل">
+                                            <md:PackIcon Kind="Printer" Width="18" Height="18"/>
                                         </Button>
+                                        <!-- معاينة PDF -->
+                                        <Button Command="{Binding DataContext.PreviewInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource TableSecondaryIconButton}"
+                                                ToolTip="معاينة PDF">
+                                            <md:PackIcon Kind="FileEye" Width="18" Height="18"/>
+                                        </Button>
+                                        <!-- PDF -->
                                         <Button Command="{Binding DataContext.ExportInvoicePdfCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
-                                                Style="{StaticResource OutlinedButton}"
-                                                md:ButtonAssist.CornerRadius="6"
-                                                Height="30" Padding="10,0" Margin="0,0,6,4"
-                                                FontSize="11" ToolTip="تصدير PDF">
-                                            <StackPanel Orientation="Horizontal">
-                                                <md:PackIcon Kind="FilePdfBox" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                <TextBlock Text="PDF" VerticalAlignment="Center"/>
-                                            </StackPanel>
+                                                Style="{StaticResource TableSecondaryIconButton}"
+                                                ToolTip="تصدير PDF">
+                                            <md:PackIcon Kind="FilePdfBox" Width="18" Height="18"/>
                                         </Button>
-                                        <Button Command="{Binding DataContext.ViewInvoiceExpensesCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                        <!-- مصروف مباشر -->
+                                        <Button Command="{Binding DataContext.OpenAddExpenseDialogCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
-                                                Style="{StaticResource OutlinedButton}"
-                                                md:ButtonAssist.CornerRadius="6"
-                                                Height="30" Padding="10,0" Margin="0,0,6,4"
-                                                FontSize="11" ToolTip="مصاريف الفاتورة">
-                                            <StackPanel Orientation="Horizontal">
-                                                <md:PackIcon Kind="CashMinus" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                <TextBlock Text="مصاريف الفاتورة" VerticalAlignment="Center"/>
-                                            </StackPanel>
+                                                Style="{StaticResource TableSecondaryIconButton}"
+                                                ToolTip="إضافة مصروف مباشر"
+                                                IsEnabled="{Binding CanAddDirectExpense}">
+                                            <md:PackIcon Kind="CashPlus" Width="18" Height="18" Foreground="#EF6C00"/>
                                         </Button>
+                                        <!-- مرفقات -->
                                         <Button Command="{Binding DataContext.ViewInvoiceAttachmentsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
-                                                Style="{StaticResource OutlinedButton}"
-                                                md:ButtonAssist.CornerRadius="6"
-                                                Height="30" Padding="10,0" Margin="0,0,6,4"
-                                                FontSize="11" ToolTip="مرفقات الفاتورة">
-                                            <StackPanel Orientation="Horizontal">
-                                                <md:PackIcon Kind="Paperclip" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                <TextBlock Text="مرفقات الفاتورة" VerticalAlignment="Center"/>
-                                            </StackPanel>
+                                                Style="{StaticResource TableAttachIconButton}"
+                                                ToolTip="مرفقات الفاتورة">
+                                            <md:PackIcon Kind="Paperclip" Width="18" Height="18"/>
                                         </Button>
+                                        <!-- مركبات -->
                                         <Button Command="{Binding DataContext.ViewInvoiceVehiclesCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
-                                                Style="{StaticResource OutlinedButton}"
-                                                md:ButtonAssist.CornerRadius="6"
-                                                Height="30" Padding="10,0" Margin="0,0,6,4"
-                                                FontSize="11" ToolTip="المركبات والشحنات">
-                                            <StackPanel Orientation="Horizontal">
-                                                <md:PackIcon Kind="Car" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                <TextBlock Text="المركبات" VerticalAlignment="Center"/>
-                                            </StackPanel>
+                                                Style="{StaticResource TableSecondaryIconButton}"
+                                                ToolTip="المركبات والشحنات">
+                                            <md:PackIcon Kind="Car" Width="18" Height="18"/>
                                         </Button>
+                                        <!-- حذف مسودة -->
                                         <Button Command="{Binding DataContext.ConfirmDeleteCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                 CommandParameter="{Binding}"
-                                                Style="{StaticResource OutlinedButton}"
-                                                md:ButtonAssist.CornerRadius="6"
-                                                Height="30" Padding="10,0" Margin="0,0,0,4"
-                                                FontSize="11" ToolTip="حذف مسودة فقط">
-                                            <StackPanel Orientation="Horizontal">
-                                                <md:PackIcon Kind="DeleteOutline" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="#C62828"/>
-                                                <TextBlock Text="حذف مسودة" VerticalAlignment="Center"/>
-                                            </StackPanel>
-                                        </Button>
-                                    </WrapPanel>
+                                                Style="{StaticResource TableDeleteIconButton}"
+                                                ToolTip="حذف مسودة"
+                                                IsEnabled="{Binding CanSoftDelete}"/>
+                                    </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -238,54 +338,454 @@
             </Grid>
         </md:Card>
 
-        <md:DialogHost IsOpen="{Binding IsCancelDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
+        <!-- Detail preview dialog -->
+        <md:DialogHost IsOpen="{Binding IsDetailDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="200" Style="{StaticResource ModernDialogHost}">
             <md:DialogHost.DialogContent>
-                <md:Card Padding="24" MinWidth="400">
-                    <StackPanel>
-                        <TextBlock Text="تأكيد الإلغاء" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
-                        <TextBlock Margin="0,0,0,12">
-                            <Run Text="إلغاء الفاتورة "/>
-                            <Run Text="{Binding InvoiceToCancel.InvoiceNumber, Mode=OneWay}" FontWeight="Bold"/>
-                            <Run Text="؟"/>
-                        </TextBlock>
-                        <TextBox Text="{Binding CancelReason, UpdateSourceTrigger=PropertyChanged}"
-                                 md:HintAssist.Hint="سبب الإلغاء (اختياري)"
-                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,16"/>
-                        <StackPanel Orientation="Horizontal">
-                            <Button Content="إلغاء الفاتورة" Command="{Binding ExecuteCancelCommand}"
-                                    Style="{StaticResource MaterialDesignRaisedButton}"
-                                    Background="#D32F2F" Foreground="White"
-                                    md:ButtonAssist.CornerRadius="8" Padding="20,8" Margin="0,0,8,0"/>
-                            <Button Content="رجوع" Command="{Binding CloseCancelDialogCommand}" Style="{StaticResource FlatButton}"/>
-                        </StackPanel>
-                    </StackPanel>
-                </md:Card>
+                <Border Style="{StaticResource DialogContentWrapper}" MinWidth="920" MaxWidth="1180" MaxHeight="820" Padding="0">
+                    <md:Card UniformCornerRadius="16" md:ElevationAssist.Elevation="Dp8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Padding="16,12,16,14" CornerRadius="16,16,0,0">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#1565C0" Offset="0"/>
+                                        <GradientStop Color="#0D47A1" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <StackPanel>
+                                    <Button Command="{Binding CloseDetailDialogCommand}"
+                                            HorizontalAlignment="Left"
+                                            Style="{StaticResource FlatButton}"
+                                            Foreground="White" Padding="2" Margin="0,0,0,8" ToolTip="إغلاق">
+                                        <md:PackIcon Kind="Close" Width="22" Height="22"/>
+                                    </Button>
+                                    <TextBlock Text="معاينة تفاصيل الفاتورة" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                                        <TextBlock Text="{Binding DetailInvoice.InvoiceNumber}" FontSize="14" FontWeight="SemiBold" Foreground="#E3F2FD"/>
+                                        <TextBlock Text="  •  " Foreground="#90CAF9"/>
+                                        <TextBlock Text="{Binding DetailInvoice.StatusLabel}" FontSize="13" Foreground="#BBDEFB"/>
+                                        <TextBlock Text="  •  " Foreground="#90CAF9"/>
+                                        <TextBlock Text="{Binding DetailInvoice.CustomerName}" FontSize="13" Foreground="#BBDEFB"/>
+                                        <TextBlock Text="  •  " Foreground="#90CAF9"/>
+                                        <TextBlock Text="{Binding DetailInvoice.ServiceTypeLabel}" FontSize="13" Foreground="#BBDEFB"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="24,18"
+                                          behaviors:ScrollViewerMouseWheel.IsEnabled="True"
+                                          DataContext="{Binding DetailInvoice}">
+                                <StackPanel>
+                                    <Border Style="{StaticResource DetailSectionCard}">
+                                        <StackPanel>
+                                            <TextBlock Text="بيانات الفاتورة" FontWeight="Bold" Foreground="#1565C0" FontSize="14" Margin="0,0,0,12"/>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="16"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="16"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Style="{StaticResource DetailFieldPanel}">
+                                                    <TextBlock Text="التاريخ" Style="{StaticResource DetailLabel}"/>
+                                                    <TextBlock Text="{Binding InvoiceDate, StringFormat=yyyy/MM/dd}" Style="{StaticResource DetailValue}"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Style="{StaticResource DetailFieldPanel}">
+                                                    <TextBlock Text="الخدمة" Style="{StaticResource DetailLabel}"/>
+                                                    <TextBlock Text="{Binding ServiceTypeLabel}" Style="{StaticResource DetailValue}"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="4" Style="{StaticResource DetailFieldPanel}">
+                                                    <TextBlock Text="العملة" Style="{StaticResource DetailLabel}"/>
+                                                    <TextBlock Text="{Binding CurrencyLabel}" Style="{StaticResource DetailValue}"/>
+                                                </StackPanel>
+                                            </Grid>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="16"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="16"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Style="{StaticResource DetailFieldPanel}"
+                                                            Visibility="{Binding Data.DetailShowFxRate, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}">
+                                                    <TextBlock Text="سعر الصرف" Style="{StaticResource DetailLabel}"/>
+                                                    <TextBlock Text="{Binding FxRate, StringFormat=N4}" Style="{StaticResource DetailValue}"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Style="{StaticResource DetailFieldPanel}"
+                                                            Visibility="{Binding Data.DetailShowTransportRoute, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}">
+                                                    <TextBlock Text="مسار النقل الداخلي" Style="{StaticResource DetailLabel}"/>
+                                                    <TextBlock Text="{Binding TransportRoute}" Style="{StaticResource DetailValue}"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="4" Style="{StaticResource DetailFieldPanel}">
+                                                    <TextBlock Text="المدفوع" Style="{StaticResource DetailLabel}"/>
+                                                    <TextBlock Text="{Binding PaidAmount, StringFormat=N0}" Style="{StaticResource DetailValue}"/>
+                                                </StackPanel>
+                                            </Grid>
+                                            <StackPanel Style="{StaticResource DetailFieldPanel}">
+                                                <TextBlock Text="الوصف / نوع الخدمة" Style="{StaticResource DetailLabel}"/>
+                                                <TextBlock Text="{Binding Description}" Style="{StaticResource DetailValue}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource DetailSectionCard}">
+                                        <StackPanel>
+                                            <TextBlock Text="المبالغ" FontWeight="Bold" Foreground="#2E7D32" FontSize="14" Margin="0,0,0,12"/>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="12"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="12"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="12"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="12"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Style="{StaticResource DetailFieldPanel}">
+                                                    <TextBlock Text="مجموع المركبات/الرسوم" Style="{StaticResource DetailLabel}"/>
+                                                    <TextBlock Text="{Binding VehiclesSum, StringFormat=N0}" Style="{StaticResource DetailValue}"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="2" Style="{StaticResource DetailFieldPanel}"
+                                                            Visibility="{Binding Data.DetailShowDelayPenalties, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}">
+                                                    <TextBlock Text="غرامات تأخيرية" Style="{StaticResource DetailLabel}"/>
+                                                    <TextBlock Text="{Binding DelayPenaltiesSum, StringFormat=N0}" Style="{StaticResource DetailValue}"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="4" Style="{StaticResource DetailFieldPanel}">
+                                                    <TextBlock Text="الخصم" Style="{StaticResource DetailLabel}"/>
+                                                    <TextBlock Text="{Binding DiscountAmount, StringFormat=N0}" Style="{StaticResource DetailValue}"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="6" Style="{StaticResource DetailFieldPanel}">
+                                                    <TextBlock Text="الإجمالي" Style="{StaticResource DetailLabel}"/>
+                                                    <TextBlock Text="{Binding TotalAmount, StringFormat=N0}" Style="{StaticResource DetailValue}" Foreground="#1565C0"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="8" Style="{StaticResource DetailFieldPanel}">
+                                                    <TextBlock Text="المتبقي" Style="{StaticResource DetailLabel}"/>
+                                                    <TextBlock Text="{Binding RemainingAmount, StringFormat=N0}" Style="{StaticResource DetailValue}" Foreground="#C62828"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource DetailSectionCard}">
+                                        <StackPanel>
+                                            <TextBlock Text="المركبات / البنود" FontWeight="Bold" Foreground="#6A1B9A" FontSize="14" Margin="0,0,0,10"/>
+                                            <DataGrid ItemsSource="{Binding Vehicles}" AutoGenerateColumns="False" IsReadOnly="True"
+                                                      CanUserAddRows="False" Style="{StaticResource ModernDataGrid}" MaxHeight="280"
+                                                      HeadersVisibility="Column"
+                                                      ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                                                <DataGrid.Columns>
+                                                    <!-- تخليص -->
+                                                    <DataGridTextColumn Header="اسم السائق" Binding="{Binding IraqiDriver}" Width="120"
+                                                                        Visibility="{Binding Data.DetailIsClearanceGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="رقم العجلة" Binding="{Binding IraqiPlate}" Width="100"
+                                                                        Visibility="{Binding Data.DetailIsClearanceGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="تاريخ التفريغ" Binding="{Binding UnloadingDate, StringFormat=yyyy/MM/dd}" Width="110"
+                                                                        Visibility="{Binding Data.DetailIsClearanceGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="رقم الإرسالية" Binding="{Binding SerialNumber}" Width="120"
+                                                                        Visibility="{Binding Data.DetailIsClearanceGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="سيل" Binding="{Binding SealAmount, StringFormat=N0}" Width="80"
+                                                                        Visibility="{Binding Data.DetailIsClearanceGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="إشعاع" Binding="{Binding RadiationAmount, StringFormat=N0}" Width="80"
+                                                                        Visibility="{Binding Data.DetailIsClearanceGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="رسم" Binding="{Binding DutyAmount, StringFormat=N0}" Width="80"
+                                                                        Visibility="{Binding Data.DetailIsClearanceGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="فحص سيطرة" Binding="{Binding QualityControlAmount, StringFormat=N0}" Width="90"
+                                                                        Visibility="{Binding Data.DetailIsClearanceGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="نقل بري" Binding="{Binding LandTransportAmount, StringFormat=N0}" Width="90"
+                                                                        Visibility="{Binding Data.DetailIsClearanceGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="أتعاب التخليص" Binding="{Binding ClearanceFeeAmount, StringFormat=N0}" Width="100"
+                                                                        Visibility="{Binding Data.DetailIsClearanceGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="المصاريف" Binding="{Binding ExpensesAmount, StringFormat=N0}" Width="90"
+                                                                        Visibility="{Binding Data.DetailIsClearanceGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="120"
+                                                                        Visibility="{Binding Data.DetailIsClearanceGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+
+                                                    <!-- نقل -->
+                                                    <DataGridTextColumn Header="رقم الفاتورة" Binding="{Binding SerialNumber}" Width="120"
+                                                                        Visibility="{Binding Data.DetailIsTransportGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="لوحة سورية" Binding="{Binding SyrianPlate}" Width="100"
+                                                                        Visibility="{Binding Data.DetailIsTransportGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="سائق سوري" Binding="{Binding SyrianDriver}" Width="120"
+                                                                        Visibility="{Binding Data.DetailIsTransportGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="لوحة عراقية" Binding="{Binding IraqiPlate}" Width="100"
+                                                                        Visibility="{Binding Data.DetailIsInternalTransportGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="سائق عراقي" Binding="{Binding IraqiDriver}" Width="120"
+                                                                        Visibility="{Binding Data.DetailIsInternalTransportGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="البضاعة" Binding="{Binding CargoType}" Width="*"
+                                                                        Visibility="{Binding Data.DetailIsExternalTransportGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="الوجهة" Binding="{Binding Destination}" Width="120"
+                                                                        Visibility="{Binding Data.DetailIsExternalTransportGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="تاريخ التحميل" Binding="{Binding LoadingDate, StringFormat=yyyy/MM/dd}" Width="110"
+                                                                        Visibility="{Binding Data.DetailIsInternalTransportGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="تاريخ التخريج" Binding="{Binding ExitDate, StringFormat=yyyy/MM/dd}" Width="110"
+                                                                        Visibility="{Binding Data.DetailIsInternalTransportGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="أجرة / السعر" Binding="{Binding VehiclePrice, StringFormat=N0}" Width="100"
+                                                                        Visibility="{Binding Data.DetailIsTransportGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="غرامات" Binding="{Binding DelayPenaltyAmount, StringFormat=N0}" Width="90"
+                                                                        Visibility="{Binding Data.DetailShowDelayPenalties, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="الحالة" Binding="{Binding StatusLabel}" Width="100"
+                                                                        Visibility="{Binding Data.DetailIsTransportGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                    <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="120"
+                                                                        Visibility="{Binding Data.DetailIsInternalTransportGrid, Source={StaticResource ListProxy}, Converter={StaticResource BoolToVisRes}}"/>
+                                                </DataGrid.Columns>
+                                            </DataGrid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource DetailSectionCard}">
+                                        <StackPanel>
+                                            <TextBlock Text="المصاريف" FontWeight="Bold" Foreground="#EF6C00" FontSize="14" Margin="0,0,0,10"/>
+                                            <DataGrid ItemsSource="{Binding Expenses}" AutoGenerateColumns="False" IsReadOnly="True"
+                                                      CanUserAddRows="False" Style="{StaticResource ModernDataGrid}" MaxHeight="160"
+                                                      HeadersVisibility="Column">
+                                                <DataGrid.Columns>
+                                                    <DataGridTextColumn Header="النوع" Binding="{Binding ExpenseTypeName}" Width="120"/>
+                                                    <DataGridTextColumn Header="الوصف" Binding="{Binding Description}" Width="*"/>
+                                                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount, StringFormat=N0}" Width="90"/>
+                                                    <DataGridTextColumn Header="العملة" Binding="{Binding CurrencyLabel}" Width="70"/>
+                                                    <DataGridTextColumn Header="المستلم" Binding="{Binding Recipient}" Width="100"/>
+                                                    <DataGridTextColumn Header="التاريخ" Binding="{Binding ExpenseDate, StringFormat=yyyy/MM/dd}" Width="100"/>
+                                                </DataGrid.Columns>
+                                            </DataGrid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <Border Style="{StaticResource DetailSectionCard}" Margin="0">
+                                        <StackPanel>
+                                            <TextBlock Text="ملاحظات" FontWeight="Bold" Foreground="#455A64" FontSize="14" Margin="0,0,0,10"/>
+                                            <TextBlock Text="ملاحظات العميل" Style="{StaticResource DetailLabel}"/>
+                                            <TextBlock Text="{Binding CustomerNotes}" Style="{StaticResource DetailValue}" Margin="0,0,0,10"/>
+                                            <TextBlock Text="ملاحظات داخلية" Style="{StaticResource DetailLabel}"/>
+                                            <TextBlock Text="{Binding InternalNotes}" Style="{StaticResource DetailValue}"
+                                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+
+                            <Border Grid.Row="2" Style="{StaticResource CustomsDialogFooter}">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                    <Button Content="تعديل" Command="{Binding EditFromDetailCommand}"
+                                            Style="{StaticResource CustomsDialogPrimaryButton}"/>
+                                    <Button Content="إغلاق" Command="{Binding CloseDetailDialogCommand}"
+                                            Style="{StaticResource CustomsDialogSecondaryButton}"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </md:Card>
+                </Border>
             </md:DialogHost.DialogContent>
         </md:DialogHost>
 
-        <md:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
+        <!-- Direct expense dialog -->
+        <md:DialogHost IsOpen="{Binding IsExpenseDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="200" Style="{StaticResource ModernDialogHost}">
             <md:DialogHost.DialogContent>
-                <md:Card Padding="24" MinWidth="360">
-                    <StackPanel>
-                        <TextBlock Text="حذف المسودة" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
-                        <TextBlock Margin="0,0,0,16">
-                            <Run Text="حذف المسودة "/>
-                            <Run Text="{Binding InvoiceToDelete.InvoiceNumber, Mode=OneWay}" FontWeight="Bold"/>
-                            <Run Text="؟"/>
-                        </TextBlock>
-                        <StackPanel Orientation="Horizontal">
-                            <Button Content="حذف" Command="{Binding ExecuteDeleteCommand}"
-                                    Style="{StaticResource MaterialDesignRaisedButton}"
-                                    Background="#D32F2F" Foreground="White"
-                                    md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
-                            <Button Content="إلغاء" Command="{Binding CancelDeleteCommand}" Style="{StaticResource FlatButton}"/>
-                        </StackPanel>
-                    </StackPanel>
-                </md:Card>
+                <Border Style="{StaticResource DialogContentWrapper}" MinWidth="520" MaxWidth="580" MaxHeight="680" Padding="0">
+                    <md:Card UniformCornerRadius="16" md:ElevationAssist.Elevation="Dp8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Padding="16,12,16,14" CornerRadius="16,16,0,0">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#EF6C00" Offset="0"/>
+                                        <GradientStop Color="#E65100" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <StackPanel>
+                                    <Button Command="{Binding CloseExpenseDialogCommand}" HorizontalAlignment="Left"
+                                            Style="{StaticResource FlatButton}" Foreground="White" Padding="2" Margin="0,0,0,8">
+                                        <md:PackIcon Kind="Close" Width="22" Height="22"/>
+                                    </Button>
+                                    <TextBlock Text="إضافة مصروف مباشر" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="{Binding ExpenseDialogSubtitle}" FontSize="12" Foreground="#FFE0B2" Margin="0,6,0,0"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                                          behaviors:ScrollViewerMouseWheel.IsEnabled="True">
+                                <StackPanel Margin="24,20,24,8">
+                                    <TextBlock Text="نوع المصروف" FontWeight="SemiBold" FontSize="13"
+                                               Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,8"/>
+                                    <ComboBox ItemsSource="{Binding ExpenseTypes}"
+                                              SelectedItem="{Binding SelectedExpenseType}"
+                                              DisplayMemberPath="Name"
+                                              md:HintAssist.Hint="اختر نوع المصروف *"
+                                              Style="{StaticResource FilledComboBox}"
+                                              Margin="0,0,0,14"/>
+                                    <DockPanel Margin="0,0,0,14">
+                                        <Button Command="{Binding AddExpenseTypeCommand}"
+                                                Style="{StaticResource OutlinedButton}"
+                                                md:ButtonAssist.CornerRadius="8"
+                                                DockPanel.Dock="Right"
+                                                VerticalAlignment="Center" Padding="14,8" Margin="8,0,0,0"
+                                                ToolTip="إضافة نوع مصروف جديد للقائمة">
+                                            <StackPanel Orientation="Horizontal">
+                                                <md:PackIcon Kind="Plus" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                <TextBlock Text="نوع جديد" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                        <TextBox Text="{Binding NewExpenseTypeName, UpdateSourceTrigger=PropertyChanged}"
+                                                 md:HintAssist.Hint="اسم النوع الجديد"
+                                                 Style="{StaticResource FilledTextBox}"/>
+                                    </DockPanel>
+                                    <TextBox Text="{Binding ExpenseDescription, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="الوصف"
+                                             Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+                                    <UniformGrid Columns="2" Margin="0,0,0,12">
+                                        <TextBox Text="{Binding ExpenseAmount, UpdateSourceTrigger=PropertyChanged, StringFormat=N0}"
+                                                 md:HintAssist.Hint="المبلغ *"
+                                                 Style="{StaticResource NumericTextBox}" Margin="0,0,8,0"/>
+                                        <ComboBox ItemsSource="{Binding CurrencyOptions}"
+                                                  SelectedValue="{Binding ExpenseCurrency}"
+                                                  SelectedValuePath="Value" DisplayMemberPath="Label"
+                                                  md:HintAssist.Hint="العملة *"
+                                                  Style="{StaticResource FilledComboBox}"/>
+                                    </UniformGrid>
+                                    <TextBox Text="{Binding ExpenseFxRate, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="سعر الصرف (USD→IQD)"
+                                             Style="{StaticResource NumericTextBox}" Margin="0,0,0,12"
+                                             Visibility="{Binding ShowExpenseFxRate, Converter={StaticResource BoolToVis}}"/>
+                                    <UniformGrid Columns="2" Margin="0,0,0,8">
+                                        <DatePicker SelectedDate="{Binding ExpenseDate}"
+                                                    md:HintAssist.Hint="تاريخ المصروف *"
+                                                    Style="{StaticResource FilledDatePicker}" Margin="0,0,8,0"/>
+                                        <TextBox Text="{Binding ExpenseRecipient, UpdateSourceTrigger=PropertyChanged}"
+                                                 md:HintAssist.Hint="المستلم"
+                                                 Style="{StaticResource FilledTextBox}"/>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </ScrollViewer>
+                            <Border Grid.Row="2" Style="{StaticResource CustomsDialogFooter}">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="حفظ المصروف" Command="{Binding SaveDirectExpenseCommand}"
+                                            Style="{StaticResource CustomsDialogPrimaryButton}"
+                                            Background="#EF6C00"
+                                            IsEnabled="{Binding IsSavingExpense, Converter={StaticResource InverseBooleanConverter}}"/>
+                                    <Button Content="إلغاء" Command="{Binding CloseExpenseDialogCommand}"
+                                            Style="{StaticResource CustomsDialogSecondaryButton}"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </md:Card>
+                </Border>
             </md:DialogHost.DialogContent>
         </md:DialogHost>
 
-        <!-- M-02: loading overlay (same pattern as Customs reports) -->
+        <!-- Attachments dialog -->
+        <md:DialogHost IsOpen="{Binding IsAttachmentsDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="200" Style="{StaticResource ModernDialogHost}">
+            <md:DialogHost.DialogContent>
+                <Border Style="{StaticResource DialogContentWrapper}" MinWidth="620" MaxWidth="720" MaxHeight="640" Padding="0">
+                    <md:Card UniformCornerRadius="16" md:ElevationAssist.Elevation="Dp8">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Border Grid.Row="0" Padding="16,12,16,14" CornerRadius="16,16,0,0">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#00838F" Offset="0"/>
+                                        <GradientStop Color="#006064" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <StackPanel>
+                                    <Button Command="{Binding CloseAttachmentsDialogCommand}" HorizontalAlignment="Left"
+                                            Style="{StaticResource FlatButton}" Foreground="White" Padding="2" Margin="0,0,0,8">
+                                        <md:PackIcon Kind="Close" Width="22" Height="22"/>
+                                    </Button>
+                                    <TextBlock Text="مرفقات الفاتورة" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="{Binding AttachmentsDialogSubtitle}" FontSize="12" Foreground="#B2EBF2" Margin="0,6,0,0"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="24,18"
+                                          behaviors:ScrollViewerMouseWheel.IsEnabled="True">
+                                <controls:AttachmentsPanel
+                                    Title="تفاصيل المرفقات"
+                                    AddButtonText="+ إضافة مرفق"
+                                    SaveFirstHint="لا يمكن إدارة المرفقات لهذه الفاتورة"
+                                    MaxGridHeight="360"
+                                    UseLabeledActions="True"
+                                    Items="{Binding DialogAttachments}"
+                                    HasSavedOwner="True"
+                                    CanManage="{Binding CanManageListAttachments}"
+                                    CanDelete="{Binding CanDelete}"
+                                    AddCommand="{Binding AddListAttachmentCommand}"
+                                    OpenCommand="{Binding OpenListAttachmentCommand}"
+                                    DeleteCommand="{Binding DeleteListAttachmentCommand}"/>
+                            </ScrollViewer>
+                            <Border Grid.Row="2" Style="{StaticResource CustomsDialogFooter}">
+                                <Button Content="إغلاق" Command="{Binding CloseAttachmentsDialogCommand}"
+                                        Style="{StaticResource CustomsDialogSecondaryButton}"
+                                        HorizontalAlignment="Left"/>
+                            </Border>
+                        </Grid>
+                    </md:Card>
+                </Border>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
+        <md:DialogHost IsOpen="{Binding IsCancelDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="200" Style="{StaticResource ModernDialogHost}">
+            <md:DialogHost.DialogContent>
+                <Border Style="{StaticResource DialogContentWrapper}" MinWidth="400" Padding="0">
+                    <md:Card Padding="24" UniformCornerRadius="16">
+                        <StackPanel>
+                            <TextBlock Text="تأكيد الإلغاء" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
+                            <TextBlock Margin="0,0,0,12">
+                                <Run Text="إلغاء الفاتورة "/>
+                                <Run Text="{Binding InvoiceToCancel.InvoiceNumber, Mode=OneWay}" FontWeight="Bold"/>
+                                <Run Text="؟"/>
+                            </TextBlock>
+                            <TextBox Text="{Binding CancelReason, UpdateSourceTrigger=PropertyChanged}"
+                                     md:HintAssist.Hint="سبب الإلغاء (اختياري)"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,16"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="إلغاء الفاتورة" Command="{Binding ExecuteCancelCommand}"
+                                        Style="{StaticResource CustomsDialogDangerButton}"/>
+                                <Button Content="رجوع" Command="{Binding CloseCancelDialogCommand}" Style="{StaticResource CustomsDialogSecondaryButton}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </md:Card>
+                </Border>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
+        <md:DialogHost IsOpen="{Binding IsDeleteDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Panel.ZIndex="200" Style="{StaticResource ModernDialogHost}">
+            <md:DialogHost.DialogContent>
+                <Border Style="{StaticResource DialogContentWrapper}" MinWidth="360" Padding="0">
+                    <md:Card Padding="24" UniformCornerRadius="16">
+                        <StackPanel>
+                            <TextBlock Text="حذف المسودة" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
+                            <TextBlock Margin="0,0,0,16">
+                                <Run Text="حذف المسودة "/>
+                                <Run Text="{Binding InvoiceToDelete.InvoiceNumber, Mode=OneWay}" FontWeight="Bold"/>
+                                <Run Text="؟"/>
+                            </TextBlock>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="حذف" Command="{Binding ExecuteDeleteCommand}"
+                                        Style="{StaticResource CustomsDialogDangerButton}"/>
+                                <Button Content="إلغاء" Command="{Binding CancelDeleteCommand}" Style="{StaticResource CustomsDialogSecondaryButton}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </md:Card>
+                </Border>
+            </md:DialogHost.DialogContent>
+        </md:DialogHost>
+
         <Border Grid.RowSpan="2" Background="#80FFFFFF"
                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
             <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" IsIndeterminate="True"

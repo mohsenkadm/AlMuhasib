@@ -75,6 +75,14 @@ public class CustomsVehicleConfiguration : IEntityTypeConfiguration<CustomsVehic
         builder.Property(v => v.CargoType).HasMaxLength(200);
         builder.Property(v => v.VehiclePrice).HasPrecision(18, 2);
         builder.Property(v => v.DelayPenaltyAmount).HasPrecision(18, 2);
+        builder.Property(v => v.Destination).HasMaxLength(300);
+        builder.Property(v => v.SealAmount).HasPrecision(18, 2);
+        builder.Property(v => v.RadiationAmount).HasPrecision(18, 2);
+        builder.Property(v => v.DutyAmount).HasPrecision(18, 2);
+        builder.Property(v => v.QualityControlAmount).HasPrecision(18, 2);
+        builder.Property(v => v.LandTransportAmount).HasPrecision(18, 2);
+        builder.Property(v => v.ClearanceFeeAmount).HasPrecision(18, 2);
+        builder.Property(v => v.ExpensesAmount).HasPrecision(18, 2);
         builder.Property(v => v.Currency).HasConversion<string>().HasMaxLength(10);
         builder.Property(v => v.Status).HasConversion<string>().HasMaxLength(20);
         builder.Property(v => v.Notes).HasMaxLength(2000);

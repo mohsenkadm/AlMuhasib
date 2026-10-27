@@ -3430,17 +3430,68 @@
          CUSTOM TITLE BAR & QUICK ASSIST
     ══════════════════════════════════════════════════════════════ -->
 
-    <SolidColorBrush x:Key="AppTitleBarBackground" Color="#FAFCFF"/>
+    <!-- Title bar chrome — light defaults (ThemeService overrides for dark) -->
+    <SolidColorBrush x:Key="AppTitleBarBackground" Color="#DCE6F5"/>
+    <SolidColorBrush x:Key="AppTitleBarAccentLineBrush" Color="#5B9BD5"/>
+    <SolidColorBrush x:Key="TitleBarIconBrush" Color="#1E3A5F"/>
+    <SolidColorBrush x:Key="TitleBarIconAccentBrush" Color="#1565C0"/>
+    <SolidColorBrush x:Key="TitleBarIconTealBrush" Color="#00796B"/>
+    <SolidColorBrush x:Key="TitleBarIconGreenBrush" Color="#2E7D32"/>
+    <SolidColorBrush x:Key="TitleBarIconAmberBrush" Color="#EF6C00"/>
+    <SolidColorBrush x:Key="TitleBarDatePillBackground" Color="#F2F6FC"/>
+    <SolidColorBrush x:Key="TitleBarDatePillBorder" Color="#B8C9E0"/>
+    <SolidColorBrush x:Key="TitleBarClockPillBackground" Color="#E8F5E9"/>
+    <SolidColorBrush x:Key="TitleBarClockPillBorder" Color="#A5D6A7"/>
+    <SolidColorBrush x:Key="TitleBarClockPillForeground" Color="#1B5E20"/>
+    <SolidColorBrush x:Key="TrialChipBackgroundBrush" Color="#FFF4E5"/>
+    <SolidColorBrush x:Key="TrialChipBorderBrush" Color="#FFB74D"/>
+    <SolidColorBrush x:Key="TrialChipForegroundBrush" Color="#E65100"/>
+    <SolidColorBrush x:Key="TrialChipIconBrush" Color="#EF6C00"/>
 
     <Style x:Key="AppTitleBar" TargetType="Border">
-        <Setter Property="Height" Value="48"/>
+        <Setter Property="Height" Value="52"/>
         <Setter Property="Padding" Value="0"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
-        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource AppTitleBarAccentLineBrush}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,2"/>
         <Setter Property="Background" Value="{DynamicResource AppTitleBarBackground}"/>
         <Setter Property="Effect">
             <Setter.Value>
-                <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.08" Color="#1565C0" Direction="270"/>
+                <DropShadowEffect BlurRadius="18" ShadowDepth="1" Opacity="0.14" Color="#0D47A1" Direction="270"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TitleBarTrialChipButton" TargetType="Button">
+        <Setter Property="Margin" Value="0,0,10,0"/>
+        <Setter Property="Padding" Value="12,6"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Background" Value="{DynamicResource TrialChipBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource TrialChipBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground" Value="{DynamicResource TrialChipForegroundBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Chip"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="16"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chip" Property="Opacity" Value="0.92"/>
+                            <Setter TargetName="Chip" Property="BorderThickness" Value="1.5"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Chip" Property="Opacity" Value="0.85"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
             </Setter.Value>
         </Setter>
     </Style>
@@ -3452,7 +3503,7 @@
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
-        <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TitleBarIconBrush}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
@@ -3491,8 +3542,8 @@
         <Setter Property="CornerRadius" Value="10"/>
         <Setter Property="Padding" Value="10,6"/>
         <Setter Property="Margin" Value="4,0"/>
-        <Setter Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
+        <Setter Property="Background" Value="{DynamicResource TitleBarDatePillBackground}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource TitleBarDatePillBorder}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
         <Setter Property="RenderTransform">

@@ -6,12 +6,16 @@
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
-             Style="{StaticResource PageStyle}"
+             Style="{StaticResource PosPageStyle}"
              behaviors:ScrollViewerMouseWheel.IsEnabled="True"
              FlowDirection="RightToLeft"
              Background="Transparent">
 
     <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Styles/CustomsUiStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
         <converters:InverseBooleanConverter x:Key="InverseBool"/>
@@ -72,6 +76,7 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>

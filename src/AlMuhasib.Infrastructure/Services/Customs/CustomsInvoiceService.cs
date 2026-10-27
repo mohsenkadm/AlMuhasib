@@ -518,10 +518,11 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
 
         foreach (var v in request.Vehicles)
         {
-            if (v.VehiclePrice < 0)
-                throw new InvalidOperationException("سعر السيارة لا يمكن أن يكون سالباً");
-            if (v.DelayPenaltyAmount < 0)
-                throw new InvalidOperationException("الغرامة التأخيرية لا يمكن أن تكون سالبة");
+            if (v.VehiclePrice < 0 || v.FeeColumnsSum < 0 || v.DelayPenaltyAmount < 0
+                || v.SealAmount < 0 || v.RadiationAmount < 0 || v.DutyAmount < 0
+                || v.QualityControlAmount < 0 || v.LandTransportAmount < 0
+                || v.ClearanceFeeAmount < 0 || v.ExpensesAmount < 0)
+                throw new InvalidOperationException("مبالغ السيارة والرسوم لا يمكن أن تكون سالبة");
         }
 
         foreach (var e in request.Expenses)
@@ -547,7 +548,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
     private static (decimal VehiclesSum, decimal DelaySum, decimal Total) ComputeInvoiceTotals(
         CustomsInvoiceSaveRequest request)
     {
-        var vehiclesSum = request.Vehicles.Sum(v => v.VehiclePrice);
+        var vehiclesSum = request.Vehicles.Sum(v => v.RevenueAmount(request.ServiceType));
         var delaySum = request.ServiceType == CustomsServiceType.Transport
             && request.TransportKind == CustomsTransportKind.Internal
             ? request.Vehicles.Sum(v => v.DelayPenaltyAmount)
@@ -647,6 +648,14 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
         vehicle.UnloadingDate = draft.UnloadingDate;
         vehicle.VehiclePrice = draft.VehiclePrice;
         vehicle.DelayPenaltyAmount = draft.DelayPenaltyAmount;
+        vehicle.Destination = draft.Destination?.Trim() ?? string.Empty;
+        vehicle.SealAmount = draft.SealAmount;
+        vehicle.RadiationAmount = draft.RadiationAmount;
+        vehicle.DutyAmount = draft.DutyAmount;
+        vehicle.QualityControlAmount = draft.QualityControlAmount;
+        vehicle.LandTransportAmount = draft.LandTransportAmount;
+        vehicle.ClearanceFeeAmount = draft.ClearanceFeeAmount;
+        vehicle.ExpensesAmount = draft.ExpensesAmount;
         vehicle.Currency = currency;
         vehicle.Status = draft.Status;
         vehicle.Notes = draft.Notes?.Trim() ?? string.Empty;
@@ -728,8 +737,37 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
 
     private static CustomsInvoiceDetail ToDetail(CustomsInvoice i, List<CustomsAttachment> attachments)
     {
-        var vehiclesSum = i.Vehicles.Sum(v => v.VehiclePrice);
-        var delaySum = i.Vehicles.Sum(v => v.DelayPenaltyAmount);
+        var vehicleDrafts = i.Vehicles.Select(v => new CustomsInvoiceVehicleDraft
+        {
+            Id = v.Id,
+            SerialNumber = v.SerialNumber,
+            IraqiPlate = v.IraqiPlate,
+            IraqiDriver = v.IraqiDriver,
+            SyrianPlate = v.SyrianPlate,
+            SyrianDriver = v.SyrianDriver,
+            CargoType = v.CargoType,
+            LoadingDate = v.LoadingDate,
+            ExitDate = v.ExitDate,
+            WarehouseArrivalDate = v.WarehouseArrivalDate,
+            UnloadingDate = v.UnloadingDate,
+            VehiclePrice = v.VehiclePrice,
+            DelayPenaltyAmount = v.DelayPenaltyAmount,
+            Destination = v.Destination,
+            SealAmount = v.SealAmount,
+            RadiationAmount = v.RadiationAmount,
+            DutyAmount = v.DutyAmount,
+            QualityControlAmount = v.QualityControlAmount,
+            LandTransportAmount = v.LandTransportAmount,
+            ClearanceFeeAmount = v.ClearanceFeeAmount,
+            ExpensesAmount = v.ExpensesAmount,
+            Status = v.Status,
+            Notes = v.Notes
+        }).ToList();
+        var vehiclesSum = vehicleDrafts.Sum(v => v.RevenueAmount(i.ServiceType));
+        var delaySum = i.ServiceType == CustomsServiceType.Transport
+            && i.TransportKind == CustomsTransportKind.Internal
+            ? vehicleDrafts.Sum(v => v.DelayPenaltyAmount)
+            : 0m;
         return new CustomsInvoiceDetail
         {
             Id = i.Id,
@@ -755,24 +793,7 @@ public sealed class CustomsInvoiceService : ICustomsInvoiceService
             StatusLabel = CustomsInvoiceStatusDisplay.ToArabic(i.Status),
             InternalNotes = i.InternalNotes,
             CustomerNotes = i.CustomerNotes,
-            Vehicles = i.Vehicles.Select(v => new CustomsInvoiceVehicleDraft
-            {
-                Id = v.Id,
-                SerialNumber = v.SerialNumber,
-                IraqiPlate = v.IraqiPlate,
-                IraqiDriver = v.IraqiDriver,
-                SyrianPlate = v.SyrianPlate,
-                SyrianDriver = v.SyrianDriver,
-                CargoType = v.CargoType,
-                LoadingDate = v.LoadingDate,
-                ExitDate = v.ExitDate,
-                WarehouseArrivalDate = v.WarehouseArrivalDate,
-                UnloadingDate = v.UnloadingDate,
-                VehiclePrice = v.VehiclePrice,
-                DelayPenaltyAmount = v.DelayPenaltyAmount,
-                Status = v.Status,
-                Notes = v.Notes
-            }).ToList(),
+            Vehicles = vehicleDrafts,
             Expenses = i.Expenses.Select(e => new CustomsInvoiceExpenseDraft
             {
                 Id = e.Id,

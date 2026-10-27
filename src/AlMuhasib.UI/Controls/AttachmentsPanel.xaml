@@ -62,32 +62,20 @@
                                         <md:PackIcon Kind="DeleteOutline" Width="16" Height="16"/>
                                     </Button>
                                 </StackPanel>
-                                <!-- Labeled actions (Customs opt-in) -->
-                                <StackPanel Orientation="Horizontal" Margin="4,4"
+                                <!-- Labeled actions (Customs opt-in) — أيقونات واضحة بدون ضغط -->
+                                <StackPanel Orientation="Horizontal" Margin="2,0"
                                             Visibility="{Binding UseLabeledActions, ElementName=Root, Converter={StaticResource BoolToVis}}">
                                     <Button Command="{Binding OpenCommand, ElementName=Root}"
                                             CommandParameter="{Binding}"
-                                            Style="{StaticResource OutlinedButton}"
-                                            md:ButtonAssist.CornerRadius="6"
-                                            Height="30" Padding="12,0" Margin="0,0,8,0"
-                                            FontSize="11" ToolTip="عرض الملف">
-                                        <StackPanel Orientation="Horizontal">
-                                            <md:PackIcon Kind="Eye" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                            <TextBlock Text="عرض" VerticalAlignment="Center"/>
-                                        </StackPanel>
+                                            Style="{StaticResource TableViewIconButton}"
+                                            ToolTip="عرض الملف">
+                                        <md:PackIcon Kind="Eye" Width="18" Height="18"/>
                                     </Button>
                                     <Button Command="{Binding DeleteCommand, ElementName=Root}"
                                             CommandParameter="{Binding}"
-                                            Style="{StaticResource OutlinedButton}"
-                                            md:ButtonAssist.CornerRadius="6"
-                                            Height="30" Padding="12,0"
-                                            FontSize="11" ToolTip="حذف المرفق"
-                                            IsEnabled="{Binding CanDelete, ElementName=Root}">
-                                        <StackPanel Orientation="Horizontal">
-                                            <md:PackIcon Kind="DeleteOutline" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0" Foreground="#C62828"/>
-                                            <TextBlock Text="حذف" VerticalAlignment="Center"/>
-                                        </StackPanel>
-                                    </Button>
+                                            Style="{StaticResource TableDeleteIconButton}"
+                                            IsEnabled="{Binding CanDelete, ElementName=Root}"
+                                            ToolTip="حذف المرفق"/>
                                 </StackPanel>
                             </Grid>
                         </DataTemplate>

@@ -614,6 +614,7 @@ public sealed class CustomsPrintService : ICustomsPrintService
         var n = 1;
         foreach (var v in detail.Vehicles)
         {
+            var exitOrUnload = v.ExitDate ?? v.UnloadingDate;
             rows.Add(new CustomsTransportInvoicePrintRow
             {
                 Number = n++,
@@ -623,8 +624,11 @@ public sealed class CustomsPrintService : ICustomsPrintService
                 IraqiDriver = v.IraqiDriver?.Trim() ?? string.Empty,
                 IraqiPlate = v.IraqiPlate?.Trim() ?? string.Empty,
                 CargoType = v.CargoType?.Trim() ?? string.Empty,
+                Destination = string.IsNullOrWhiteSpace(v.Destination)
+                    ? (detail.TransportRoute?.Trim() ?? string.Empty)
+                    : v.Destination.Trim(),
                 LoadingDate = v.LoadingDate?.ToString("yyyy/M/d", CultureInfo.InvariantCulture) ?? string.Empty,
-                UnloadingDate = v.UnloadingDate?.ToString("yyyy/M/d", CultureInfo.InvariantCulture) ?? string.Empty,
+                UnloadingDate = exitOrUnload?.ToString("yyyy/M/d", CultureInfo.InvariantCulture) ?? string.Empty,
                 DelayPenaltyAmount = v.DelayPenaltyAmount,
                 VehiclePrice = v.VehiclePrice,
                 Notes = v.Notes?.Trim() ?? string.Empty
@@ -717,15 +721,18 @@ public sealed class CustomsPrintService : ICustomsPrintService
                     ? v.SerialNumber
                     : $"{v.SerialNumber} — {v.CargoType}";
 
-            decimal? clearance = null;
-            decimal? land = null;
-            if (v.VehiclePrice != 0)
-            {
-                if (detail.ServiceType == CustomsServiceType.Transport)
-                    land = v.VehiclePrice;
-                else
-                    clearance = v.VehiclePrice;
-            }
+            // Prefer per-row fee columns; fall back to VehiclePrice for legacy clearance rows.
+            var hasRowFees = v.FeeColumnsSum != 0m;
+            decimal? clearance = hasRowFees
+                ? NullIfZero(v.ClearanceFeeAmount)
+                : (v.VehiclePrice != 0 && detail.ServiceType != CustomsServiceType.Transport
+                    ? v.VehiclePrice
+                    : null);
+            decimal? land = hasRowFees
+                ? NullIfZero(v.LandTransportAmount)
+                : (v.VehiclePrice != 0 && detail.ServiceType == CustomsServiceType.Transport
+                    ? v.VehiclePrice
+                    : null);
 
             rows.Add(new CustomsDailyInvoicePrintRow
             {
@@ -734,27 +741,36 @@ public sealed class CustomsPrintService : ICustomsPrintService
                 WheelNumber = plate,
                 UnloadingDate = v.UnloadingDate?.ToString("yyyy/MM/dd") ?? string.Empty,
                 Consignment = consignment,
-                ClearanceFees = clearance,
+                Seal = NullIfZero(v.SealAmount),
+                Radiation = NullIfZero(v.RadiationAmount),
+                Duty = NullIfZero(v.DutyAmount),
+                QualityControl = NullIfZero(v.QualityControlAmount),
                 LandTransport = land,
+                ClearanceFees = clearance,
+                Expenses = NullIfZero(v.ExpensesAmount),
                 Notes = v.Notes ?? string.Empty
             });
         }
 
-        // Invoice-level fee types are not stored per vehicle — place classified
-        // amounts on the first data row so the grid matches the reference form.
+        // Legacy: invoice-level expense types not stored per vehicle — add classified
+        // amounts on the first data row only when no vehicle uses the new fee columns.
         if (rows.Count == 0)
         {
             rows.Add(new CustomsDailyInvoicePrintRow { Number = 1 });
         }
 
-        var first = rows[0];
-        first.Seal = AddNullable(first.Seal, classified.Seal);
-        first.Radiation = AddNullable(first.Radiation, classified.Radiation);
-        first.Duty = AddNullable(first.Duty, classified.Duty);
-        first.QualityControl = AddNullable(first.QualityControl, classified.QualityControl);
-        first.LandTransport = AddNullable(first.LandTransport, classified.LandTransport);
-        first.ClearanceFees = AddNullable(first.ClearanceFees, classified.ClearanceFees);
-        first.Expenses = AddNullable(first.Expenses, classified.OtherExpenses);
+        var usedPerRowFeeColumns = detail.Vehicles.Any(v => v.FeeColumnsSum != 0m);
+        if (!usedPerRowFeeColumns)
+        {
+            var first = rows[0];
+            first.Seal = AddNullable(first.Seal, classified.Seal);
+            first.Radiation = AddNullable(first.Radiation, classified.Radiation);
+            first.Duty = AddNullable(first.Duty, classified.Duty);
+            first.QualityControl = AddNullable(first.QualityControl, classified.QualityControl);
+            first.LandTransport = AddNullable(first.LandTransport, classified.LandTransport);
+            first.ClearanceFees = AddNullable(first.ClearanceFees, classified.ClearanceFees);
+            first.Expenses = AddNullable(first.Expenses, classified.OtherExpenses);
+        }
 
         var totalClearance = rows.Sum(r => r.ClearanceFees ?? 0m);
         var totalLand = rows.Sum(r => r.LandTransport ?? 0m);
@@ -858,6 +874,8 @@ public sealed class CustomsPrintService : ICustomsPrintService
 
     private static decimal? AddNullable(decimal? current, decimal add) =>
         add == 0 ? current : (current ?? 0m) + add;
+
+    private static decimal? NullIfZero(decimal value) => value == 0m ? null : value;
 
     private sealed class ClassifiedExpenses
     {

@@ -115,4 +115,12 @@ public static class CustomsPermissionRegistry
 
     public static string GetLabel(string screenName) =>
         Labels.TryGetValue(screenName, out var label) ? label : screenName;
+
+    /// <summary>
+    /// شاشات التخليص الكمركي التي تُفتح في نوافذ ويندوز منفصلة.
+    /// لوحة التحكم تبقى تبويباً داخل النافذة الرئيسية مع المنيو والهدر.
+    /// </summary>
+    public static bool IsCustomsDocumentViewModel(Type viewModelType) =>
+        viewModelType.Namespace == typeof(CustomsDashboardViewModel).Namespace
+        && viewModelType != typeof(CustomsDashboardViewModel);
 }

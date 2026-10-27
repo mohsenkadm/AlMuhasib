@@ -24,6 +24,8 @@ public sealed class CustomsInvoiceListItem
     public bool CanApprove => Status == CustomsInvoiceStatus.Draft;
     public bool CanCancel => Status != CustomsInvoiceStatus.Cancelled && PaidAmount <= 0;
     public bool CanEdit => Status != CustomsInvoiceStatus.Cancelled;
+    public bool CanSoftDelete => Status == CustomsInvoiceStatus.Draft;
+    public bool CanAddDirectExpense => Status != CustomsInvoiceStatus.Cancelled;
 }
 
 public sealed class CustomsInvoiceVehicleDraft
@@ -41,8 +43,31 @@ public sealed class CustomsInvoiceVehicleDraft
     public DateTime? UnloadingDate { get; set; }
     public decimal VehiclePrice { get; set; }
     public decimal DelayPenaltyAmount { get; set; }
+    public string Destination { get; set; } = string.Empty;
+    public decimal SealAmount { get; set; }
+    public decimal RadiationAmount { get; set; }
+    public decimal DutyAmount { get; set; }
+    public decimal QualityControlAmount { get; set; }
+    public decimal LandTransportAmount { get; set; }
+    public decimal ClearanceFeeAmount { get; set; }
+    public decimal ExpensesAmount { get; set; }
     public CustomsVehicleStatus Status { get; set; } = CustomsVehicleStatus.InProgress;
     public string Notes { get; set; } = string.Empty;
+    public string StatusLabel => CustomsVehicleStatusDisplay.ToArabic(Status);
+
+    /// <summary>Sum of clearance fee columns on this row.</summary>
+    public decimal FeeColumnsSum =>
+        SealAmount + RadiationAmount + DutyAmount + QualityControlAmount
+        + LandTransportAmount + ClearanceFeeAmount + ExpensesAmount;
+
+    /// <summary>
+    /// Revenue contribution of this vehicle for the given service type.
+    /// Clearance uses fee columns (fallback to <see cref="VehiclePrice"/> for legacy rows).
+    /// </summary>
+    public decimal RevenueAmount(CustomsServiceType serviceType) =>
+        serviceType is CustomsServiceType.Clearance or CustomsServiceType.ClearanceAndTransport
+            ? (FeeColumnsSum != 0m ? FeeColumnsSum : VehiclePrice)
+            : VehiclePrice;
 }
 
 public sealed class CustomsInvoiceExpenseDraft
@@ -56,6 +81,7 @@ public sealed class CustomsInvoiceExpenseDraft
     public decimal FxRate { get; set; } = 1m;
     public DateTime ExpenseDate { get; set; } = DateTime.Today;
     public string Recipient { get; set; } = string.Empty;
+    public string CurrencyLabel => Currency == AccountingCurrency.USD ? "$" : "د.ع";
 }
 
 public sealed class CustomsInvoiceSaveRequest

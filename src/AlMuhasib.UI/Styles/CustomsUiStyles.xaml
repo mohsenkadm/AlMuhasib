@@ -1,0 +1,306 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes">
+
+    <!--
+      أنماط خاصة بالتخليص الكمركي فقط:
+      - أزرار جدول أوضح (بدون قصّ الأيقونة)
+      - أزرار شبكة بإرتفاع مريح بدل Height=30 المضغوط
+    -->
+
+    <Style x:Key="CustomsTableActionIconBase" TargetType="Button" BasedOn="{StaticResource TableActionIconBase}">
+        <Setter Property="Width" Value="40"/>
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="MinWidth" Value="40"/>
+        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="Margin" Value="5,0"/>
+        <Setter Property="Padding" Value="0"/>
+    </Style>
+
+    <Style x:Key="TableEditIconButton" TargetType="Button" BasedOn="{StaticResource CustomsTableActionIconBase}">
+        <Setter Property="Background" Value="{DynamicResource TableEditIconBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource TableEditIconBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TableEditIconForegroundBrush}"/>
+        <Setter Property="ToolTip" Value="تعديل"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource TableEditIconHoverBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource TableEditIconForegroundBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="TableDeleteIconButton" TargetType="Button" BasedOn="{StaticResource CustomsTableActionIconBase}">
+        <Setter Property="Background" Value="{DynamicResource TableDeleteIconBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource TableDeleteIconBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TableDeleteIconForegroundBrush}"/>
+        <Setter Property="ToolTip" Value="حذف"/>
+        <Setter Property="Content">
+            <Setter.Value>
+                <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource TableDeleteIconHoverBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource TableDeleteIconForegroundBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="TableViewIconButton" TargetType="Button" BasedOn="{StaticResource CustomsTableActionIconBase}">
+        <Setter Property="Background" Value="{DynamicResource TableViewIconBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource TableViewIconBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TableViewIconForegroundBrush}"/>
+        <Setter Property="ToolTip" Value="عرض التفاصيل"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource TableViewIconHoverBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource TableViewIconForegroundBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="TablePrintIconButton" TargetType="Button" BasedOn="{StaticResource CustomsTableActionIconBase}">
+        <Setter Property="Background" Value="{DynamicResource TablePrintIconBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource TablePrintIconBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TablePrintIconForegroundBrush}"/>
+        <Setter Property="ToolTip" Value="طباعة"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource TablePrintIconHoverBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource TablePrintIconForegroundBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="TableSecondaryIconButton" TargetType="Button" BasedOn="{StaticResource CustomsTableActionIconBase}">
+        <Setter Property="Background" Value="{DynamicResource TableSecondaryIconBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource TableSecondaryIconBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TableSecondaryIconForegroundBrush}"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource TableSecondaryIconHoverBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource TableSecondaryIconForegroundBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="TableAttachIconButton" TargetType="Button" BasedOn="{StaticResource CustomsTableActionIconBase}">
+        <Setter Property="Background" Value="{DynamicResource TableAttachIconBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource TableAttachIconBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TableAttachIconForegroundBrush}"/>
+        <Setter Property="ToolTip" Value="المرفقات"/>
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource TableAttachIconHoverBackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource TableAttachIconForegroundBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- أزرار نص+أيقونة داخل الجداول والحوارات (بدل Height=30 المضغوط) -->
+    <Style x:Key="CustomsGridActionButton" TargetType="Button" BasedOn="{StaticResource OutlinedButton}">
+        <Setter Property="MinHeight" Value="36"/>
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="Padding" Value="12,0"/>
+        <Setter Property="Margin" Value="0,0,8,0"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="md:ButtonAssist.CornerRadius" Value="8"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="CustomsToolbarButton" TargetType="Button" BasedOn="{StaticResource OutlinedButton}">
+        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="MinWidth" Value="96"/>
+        <Setter Property="Padding" Value="16,8"/>
+        <Setter Property="Margin" Value="0,0,8,0"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="md:ButtonAssist.CornerRadius" Value="8"/>
+    </Style>
+
+    <Style x:Key="CustomsToolbarPrimaryButton" TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="MinWidth" Value="120"/>
+        <Setter Property="Padding" Value="20,8"/>
+        <Setter Property="Margin" Value="0,0,8,0"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="md:ButtonAssist.CornerRadius" Value="8"/>
+    </Style>
+
+    <!-- تذييل الحوارات: أزرار حفظ/إغلاق أوضح وغير مضغوطة -->
+    <Style x:Key="CustomsDialogFooter" TargetType="Border">
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="0,1,0,0"/>
+        <Setter Property="Padding" Value="24,18"/>
+        <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+        <Setter Property="MinHeight" Value="72"/>
+    </Style>
+
+    <Style x:Key="CustomsDialogPrimaryButton" TargetType="Button" BasedOn="{StaticResource CustomsToolbarPrimaryButton}">
+        <Setter Property="MinHeight" Value="44"/>
+        <Setter Property="Height" Value="44"/>
+        <Setter Property="MinWidth" Value="132"/>
+        <Setter Property="Padding" Value="28,12"/>
+        <Setter Property="Margin" Value="0,0,10,0"/>
+        <Setter Property="FontSize" Value="14"/>
+    </Style>
+
+    <Style x:Key="CustomsDialogSecondaryButton" TargetType="Button" BasedOn="{StaticResource CustomsToolbarButton}">
+        <Setter Property="MinHeight" Value="44"/>
+        <Setter Property="Height" Value="44"/>
+        <Setter Property="MinWidth" Value="112"/>
+        <Setter Property="Padding" Value="24,12"/>
+        <Setter Property="Margin" Value="0,0,0,0"/>
+        <Setter Property="FontSize" Value="14"/>
+    </Style>
+
+    <Style x:Key="CustomsDialogDangerButton" TargetType="Button" BasedOn="{StaticResource CustomsDialogPrimaryButton}">
+        <Setter Property="Background" Value="#D32F2F"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderBrush" Value="#C62828"/>
+    </Style>
+
+    <!-- خلية إدخال بأسلوب Excel: تملأ عرض العمود وارتفاع الصف بالكامل -->
+    <Style x:Key="CustomsExcelDataGridCell" TargetType="DataGridCell"
+           BasedOn="{StaticResource ModernDataGridCell}">
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+    </Style>
+
+    <Style x:Key="CustomsGridFieldBorder" TargetType="Border">
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    </Style>
+
+    <Style x:Key="CustomsVehicleInputBox" TargetType="TextBox">
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="Padding" Value="8,0"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource PrimaryHueMidBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderThickness="0"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                      Focusable="False"
+                                      HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Hidden"
+                                      VerticalAlignment="Center"/>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <Trigger Property="IsReadOnly" Value="True">
+                <Setter Property="Opacity" Value="0.75"/>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter Property="Background" Value="{DynamicResource HighlightLightBrush}"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="CustomsVehicleComboBox" TargetType="ComboBox">
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="Padding" Value="6,0"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        <Setter Property="md:TextFieldAssist.DecorationVisibility" Value="Collapsed"/>
+    </Style>
+
+    <!-- تاريخ مضغوط داخل خلية الجدول (بدون إطار Outlined المضغوط) -->
+    <Style x:Key="CustomsVehicleDatePicker" TargetType="DatePicker">
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="Padding" Value="6,0,2,0"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="MinHeight" Value="36"/>
+        <Setter Property="Height" Value="Auto"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalAlignment" Value="Stretch"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        <Setter Property="SelectedDateFormat" Value="Short"/>
+        <Setter Property="Focusable" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DatePicker">
+                    <Grid Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="32"/>
+                        </Grid.ColumnDefinitions>
+                        <DatePickerTextBox x:Name="PART_TextBox"
+                                           Grid.Column="0"
+                                           Margin="0"
+                                           Padding="{TemplateBinding Padding}"
+                                           VerticalContentAlignment="Center"
+                                           HorizontalContentAlignment="Stretch"
+                                           BorderThickness="0"
+                                           Background="Transparent"
+                                           Foreground="{TemplateBinding Foreground}"
+                                           FontSize="{TemplateBinding FontSize}"
+                                           Focusable="True"/>
+                        <Button x:Name="PART_Button"
+                                Grid.Column="1"
+                                Width="28" Height="28"
+                                Margin="0,0,2,0"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                Focusable="False"
+                                Style="{StaticResource MaterialDesignIconButton}"
+                                ToolTip="اختيار التاريخ">
+                            <md:PackIcon Kind="CalendarMonth" Width="18" Height="18"
+                                         Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                        </Button>
+                        <Popup x:Name="PART_Popup"
+                               AllowsTransparency="True"
+                               Placement="Bottom"
+                               PlacementTarget="{Binding ElementName=PART_TextBox}"
+                               StaysOpen="False"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource HighlightLightBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.55"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

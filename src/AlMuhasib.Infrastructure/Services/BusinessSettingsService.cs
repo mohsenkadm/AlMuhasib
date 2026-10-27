@@ -50,7 +50,7 @@ public class BusinessSettingsService : IBusinessSettingsService
             context.BusinessSettings.Add(new BusinessSettings
             {
                 BranchId = mainBranchId > 0 ? mainBranchId : 1,
-                ProductPricingEnabled = false,
+                ProductPricingEnabled = true,
                 UpdateProductPriceOnPurchase = false,
                 MultiCurrencyEnabled = false,
                 PeriodLockEnabled = false,

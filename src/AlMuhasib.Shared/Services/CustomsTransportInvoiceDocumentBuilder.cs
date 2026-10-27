@@ -195,7 +195,7 @@ public static class CustomsTransportInvoiceDocumentBuilder
         string[] headers =
         [
             "ت", "رقم الفاتورة", "السائق السوري", "رقم السيارة", "السائق العراقي",
-            "رقم السيارة", "تاريخ التحميل", "تاريخ التفريغ", "غرامات تأخيرية", "الملاحظات"
+            "رقم السيارة", "تاريخ التحميل", "تاريخ التخريج", "غرامات تأخيرية", "الملاحظات"
         ];
         double[] weights = [0.35, 1.1, 1.2, 0.9, 1.1, 0.9, 0.9, 0.9, 1.0, 0.9];
 
@@ -236,8 +236,8 @@ public static class CustomsTransportInvoiceDocumentBuilder
 
     private static Block BuildExternalTable(CustomsTransportInvoicePrintData data, double contentWidth)
     {
-        string[] headers = ["ت", "السيارة السورية", "اسم السائق", "البضاعة", "رقم الفاتورة", "السعر ($)"];
-        double[] weights = [0.4, 1.1, 1.4, 1.2, 1.2, 0.9];
+        string[] headers = ["ت", "السيارة السورية", "اسم السائق", "البضاعة", "رقم الفاتورة", "الوجهة", "أجرة النقل ($)"];
+        double[] weights = [0.35, 1.0, 1.2, 1.1, 1.1, 1.1, 0.9];
 
         var table = CreateTable(contentWidth, weights);
         AddHeaderRow(table, headers);
@@ -253,6 +253,7 @@ public static class CustomsTransportInvoiceDocumentBuilder
             row.Cells.Add(TextCell(r.SyrianDriver));
             row.Cells.Add(TextCell(r.CargoType, center: true));
             row.Cells.Add(TextCell(r.ReferenceNumber, center: true));
+            row.Cells.Add(TextCell(r.Destination, center: true));
             row.Cells.Add(TextCell(FormatMoney(r.VehiclePrice, data.CurrencyLabel, data.IsUsd), center: true, bold: true));
             body.Rows.Add(row);
         }

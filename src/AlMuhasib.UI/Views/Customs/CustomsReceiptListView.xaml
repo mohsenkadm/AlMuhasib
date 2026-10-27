@@ -4,11 +4,15 @@
              xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
-             Style="{StaticResource PageStyle}"
+             Style="{StaticResource PosPageStyle}"
              FlowDirection="RightToLeft">
 
     <UserControl.Resources>
-        <ContextMenu x:Key="PageActionsMenu">
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Styles/CustomsUiStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+<ContextMenu x:Key="PageActionsMenu">
             <MenuItem Header="تحديث" Command="{Binding RefreshCommand}">
                 <MenuItem.Icon><md:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
             </MenuItem>
@@ -25,6 +29,7 @@
             </MenuItem>
         </ContextMenu>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid Margin="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
@@ -164,10 +169,9 @@
                         </TextBlock>
                         <StackPanel Orientation="Horizontal">
                             <Button Content="إلغاء الوصل" Command="{Binding ExecuteCancelCommand}"
-                                    Style="{StaticResource MaterialDesignRaisedButton}"
-                                    Background="#D32F2F" Foreground="White"
-                                    md:ButtonAssist.CornerRadius="8" Padding="20,8" Margin="0,0,8,0"/>
-                            <Button Content="رجوع" Command="{Binding CloseCancelDialogCommand}" Style="{StaticResource FlatButton}"/>
+                                    Style="{StaticResource CustomsDialogDangerButton}"/>
+                            <Button Content="رجوع" Command="{Binding CloseCancelDialogCommand}"
+                                    Style="{StaticResource CustomsDialogSecondaryButton}"/>
                         </StackPanel>
                     </StackPanel>
                 </md:Card>

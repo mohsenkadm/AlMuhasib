@@ -1248,9 +1248,13 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                                 <TextBox Text="{Binding NewSerialText, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="سيريالات مفصولة بفاصلة — مثال: 111, 222, 333"
+                                         materialDesign:HintAssist.Hint="سيريال نمبر / IMEI"
+                                         materialDesign:HintAssist.IsFloating="True"
                                          Style="{StaticResource FilledTextBox}" AcceptsReturn="True"
-                                         MinHeight="64" TextWrapping="Wrap" Margin="0,8,0,8"/>
+                                         MinHeight="80" TextWrapping="Wrap" VerticalContentAlignment="Top"
+                                         Padding="12,22,12,10"
+                                         ToolTip="سيريالات مفصولة بفاصلة — مثال: 111, 222, 333"
+                                         Margin="0,8,0,8"/>
                                 <Button Content="إضافة سيريالات" Style="{StaticResource PrimaryButton}"
                                         Command="{Binding AddProductSerialsCommand}"
                                         HorizontalAlignment="Left" Height="40" Padding="16,0"

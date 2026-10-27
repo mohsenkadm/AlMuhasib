@@ -235,6 +235,7 @@ public partial class App : Application
         services.AddSingleton<IWhatsAppShareService, WhatsAppShareService>();
         services.AddSingleton<IHelpSupportService, HelpSupportService>();
         services.AddSingleton<IPosFullscreenService, PosFullscreenService>();
+        services.AddSingleton<IModuleDocumentWindowService, ModuleDocumentWindowService>();
         services.AddSingleton<IOpeningInstallmentExcelService, AlMuhasib.Shared.Services.OpeningInstallmentExcelService>();
         services.AddSingleton<IOpeningStockExcelService, AlMuhasib.Shared.Services.OpeningStockExcelService>();
         services.AddSingleton<IGoldItemsExcelService, AlMuhasib.Shared.Services.Gold.GoldItemsExcelService>();
@@ -507,6 +508,7 @@ public partial class App : Application
         services.AddTransient<MainWindow>();
         services.AddTransient<HelpVideosWindow>();
         services.AddTransient<PosFullscreenWindow>();
+        services.AddTransient<ModuleDocumentWindow>();
     }
 
     protected override async void OnStartup(StartupEventArgs e)
@@ -1091,6 +1093,7 @@ public partial class App : Application
         TryStop(() => _serviceProvider.GetService<IOfflineReminderService>()?.Stop());
         TryStop(() => _serviceProvider.GetService<BackupSchedulerService>()?.Stop());
         TryStop(() => _serviceProvider.GetService<IPosFullscreenService>()?.Close());
+        TryStop(() => _serviceProvider.GetService<IModuleDocumentWindowService>()?.ForceCloseAll());
         TryStop(() => _serviceProvider.GetService<IVoiceRecognitionService>()?.StopListening());
         TryStop(() => _serviceProvider.GetService<ISyncService>()?.StopAutoSync());
         TryStop(() => (_serviceProvider.GetService<IGoldScaleService>() as IDisposable)?.Dispose());

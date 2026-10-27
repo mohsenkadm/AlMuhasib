@@ -23,6 +23,7 @@ public class CustomsTransportInvoicePrintTests
                 SyrianPlate = "5514826",
                 SyrianDriver = "محمد أحمد",
                 CargoType = "مستلزمات طبية",
+                Destination = "ربيعة / العربية",
                 VehiclePrice = 9300m
             },
             new CustomsInvoiceVehicleDraft
@@ -31,6 +32,7 @@ public class CustomsTransportInvoicePrintTests
                 SyrianPlate = "216241",
                 SyrianDriver = "علي حسن",
                 CargoType = "مستلزمات طبية",
+                Destination = "ربيعة / العربية",
                 VehiclePrice = 9300m
             },
             new CustomsInvoiceVehicleDraft
@@ -39,6 +41,7 @@ public class CustomsTransportInvoicePrintTests
                 SyrianPlate = "999001",
                 SyrianDriver = "سائق ثالث",
                 CargoType = "مستلزمات طبية",
+                Destination = "ربيعة / العربية",
                 VehiclePrice = 9000m
             }
         ];
@@ -63,6 +66,62 @@ public class CustomsTransportInvoicePrintTests
         Assert.Contains("المحترمين", model.CustomsTransport.CustomerName);
         Assert.Equal("5514826", model.CustomsTransport.Rows[0].SyrianPlate);
         Assert.Equal("031581177", model.CustomsTransport.Rows[0].ReferenceNumber);
+        Assert.Equal("ربيعة / العربية", model.CustomsTransport.Rows[0].Destination);
+    }
+
+    [Fact]
+    public async Task BuildDailyInvoice_uses_per_row_clearance_fee_columns()
+    {
+        var h = CustomsTestHarness.CreateAdmin();
+        var customer = await h.SeedCustomerAsync();
+        var request = CustomsTestHarness.InvoiceRequest(customer.Id, AccountingCurrency.IQD, 0m);
+        request.ServiceType = CustomsServiceType.Clearance;
+        request.Vehicles =
+        [
+            new CustomsInvoiceVehicleDraft
+            {
+                IraqiDriver = "سائق أول",
+                IraqiPlate = "111",
+                SerialNumber = "CONS-1",
+                UnloadingDate = new DateTime(2026, 10, 12),
+                SealAmount = 10m,
+                RadiationAmount = 20m,
+                DutyAmount = 30m,
+                QualityControlAmount = 40m,
+                LandTransportAmount = 50m,
+                ClearanceFeeAmount = 100m,
+                ExpensesAmount = 5m,
+                Notes = "صف 1"
+            },
+            new CustomsInvoiceVehicleDraft
+            {
+                IraqiDriver = "سائق ثاني",
+                IraqiPlate = "222",
+                SerialNumber = "CONS-2",
+                ClearanceFeeAmount = 200m
+            }
+        ];
+
+        var inv = await h.Invoices.CreateAsync(request);
+        var detail = await h.Invoices.GetByIdAsync(inv.Id);
+        Assert.NotNull(detail);
+        Assert.Equal(455m, detail!.TotalAmount); // 255 + 200
+
+        var model = h.Print.BuildDailyInvoice(detail, customer.Phone);
+        Assert.Equal(2, model.CustomsDaily!.Rows.Count);
+        Assert.Equal(10m, model.CustomsDaily.Rows[0].Seal);
+        Assert.Equal(20m, model.CustomsDaily.Rows[0].Radiation);
+        Assert.Equal(30m, model.CustomsDaily.Rows[0].Duty);
+        Assert.Equal(40m, model.CustomsDaily.Rows[0].QualityControl);
+        Assert.Equal(50m, model.CustomsDaily.Rows[0].LandTransport);
+        Assert.Equal(100m, model.CustomsDaily.Rows[0].ClearanceFees);
+        Assert.Equal(5m, model.CustomsDaily.Rows[0].Expenses);
+        Assert.Equal(200m, model.CustomsDaily.Rows[1].ClearanceFees);
+        Assert.Equal(300m, model.CustomsDaily.TotalClearanceFees);
+        Assert.Equal(70m, model.CustomsDaily.TotalInspections); // seal+radiation+qc
+        Assert.Equal(30m, model.CustomsDaily.TotalDuties);
+        Assert.Equal(50m, model.CustomsDaily.TotalLandTransport);
+        Assert.Equal(5m, model.CustomsDaily.TotalExpenses);
     }
 
     [Fact]
@@ -82,7 +141,7 @@ public class CustomsTransportInvoicePrintTests
                 SerialNumber = "BRI202600000027",
                 SyrianPlate = "724030",
                 SyrianDriver = "أسعد الحج جاسم",
-                UnloadingDate = new DateTime(2026, 8, 2),
+                ExitDate = new DateTime(2026, 8, 2),
                 VehiclePrice = 1_200_000m,
                 DelayPenaltyAmount = 50_000m
             },
@@ -114,7 +173,8 @@ public class CustomsTransportInvoicePrintTests
         Assert.StartsWith("المبلغ فقط وقدره:", model.CustomsTransport.AmountInWords);
         Assert.Contains("دينار عراقي", model.CustomsTransport.AmountInWords);
         Assert.Equal("BRI202600000027", model.CustomsTransport.Rows[0].ReferenceNumber);
-        Assert.Equal("2026/8/2", model.CustomsTransport.Rows[0].UnloadingDate);
+        Assert.Equal("2026/8/2", model.CustomsTransport.Rows[0].UnloadingDate); // ExitDate preferred
+        Assert.Equal("2026/8/2", model.CustomsTransport.Rows[1].UnloadingDate); // UnloadingDate fallback
     }
 
     [Fact]

@@ -20,8 +20,8 @@ public class BusinessFeatureFlags
     public bool ExpiryTracking { get; set; }
     public bool SerialNumbers { get; set; }
 
-    /// <summary>عرض سعر المنتجات — معطّل افتراضياً (بدون سعر).</summary>
-    public bool ProductPricingEnabled { get; set; }
+    /// <summary>عرض سعر المنتجات — مفعّل افتراضياً (لا يغيّر التفضيلات المحفوظة مسبقاً).</summary>
+    public bool ProductPricingEnabled { get; set; } = true;
 
     /// <summary>تحديث سعر الشراء من فاتورة مشتريات عند الإنشاء — معطّل افتراضياً.</summary>
     public bool UpdateProductPriceOnPurchase { get; set; }

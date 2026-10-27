@@ -24,6 +24,8 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly MainWindowViewModel _mainWindow;
     private int? _editId;
+    private string? _cleanFingerprint;
+    private int _pendingAttachmentSeq;
 
     [ObservableProperty] private string _invoiceNumber = "يُنشأ تلقائياً";
     [ObservableProperty] private DateTime _invoiceDate = DateTime.Today;
@@ -33,6 +35,10 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     [ObservableProperty] private bool _showTransportKind;
     [ObservableProperty] private bool _showTransportRoute;
     [ObservableProperty] private bool _showDelayPenaltyColumn;
+    [ObservableProperty] private bool _isClearanceGrid;
+    [ObservableProperty] private bool _isInternalTransportGrid;
+    [ObservableProperty] private bool _isExternalTransportGrid;
+    [ObservableProperty] private bool _isTransportGrid;
     [ObservableProperty] private string _transportRoute = string.Empty;
     [ObservableProperty] private AccountingCurrency _currency = AccountingCurrency.IQD;
     [ObservableProperty] private decimal _fxRate = 1m;
@@ -113,9 +119,14 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     public bool IsEditMode => _editId.HasValue;
     public bool CanSave => (IsEditMode ? CanEdit : CanAdd) && Status != CustomsInvoiceStatus.Cancelled;
     public bool HasSavedInvoice => _editId.HasValue;
+    public override bool HasUnsavedChanges =>
+        _cleanFingerprint is not null
+        && Status != CustomsInvoiceStatus.Cancelled
+        && !string.Equals(_cleanFingerprint, BuildFingerprint(), StringComparison.Ordinal);
+    public override bool SupportsSaveBeforeLeave => CanSave;
     public bool CanPrintDocument => HasSavedInvoice && CanPrint;
     public bool CanExportDocument => HasSavedInvoice && CanExport;
-    public bool CanManageAttachments => CanEdit && Status != CustomsInvoiceStatus.Cancelled;
+    public bool CanManageAttachments => CanSave;
     /// <summary>التعديل/الإضافة مسموحان إذا كانت الفاتورة قابلة للحفظ (إضافة أو تعديل حسب الوضع).</summary>
     public bool IsVehiclesReadOnly => !CanSave;
     public bool CanAddVehicle => CanSave;
@@ -171,6 +182,43 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
 
         ApplyPendingServiceType();
         ApplyFocusSectionHint(pendingFocus);
+        CaptureCleanState();
+    }
+
+    public override async Task<bool> SavePendingChangesAsync()
+    {
+        if (!HasUnsavedChanges)
+            return true;
+        await SaveInternalAsync(approveAfterSave: false);
+        return !HasUnsavedChanges;
+    }
+
+    private void CaptureCleanState() => _cleanFingerprint = BuildFingerprint();
+
+    private string BuildFingerprint()
+    {
+        var vehicles = string.Join("|", Vehicles.Select(v =>
+            $"{v.Id}|{v.SerialNumber}|{v.IraqiPlate}|{v.IraqiDriver}|{v.SyrianPlate}|{v.SyrianDriver}|{v.CargoType}|{v.VehiclePrice}|{v.DelayPenaltyAmount}|{v.Destination}|{v.SealAmount}|{v.RadiationAmount}|{v.DutyAmount}|{v.QualityControlAmount}|{v.LandTransportAmount}|{v.ClearanceFeeAmount}|{v.ExpensesAmount}|{v.Status}|{v.Notes}|{v.LoadingDate:yyyyMMdd}|{v.ExitDate:yyyyMMdd}|{v.WarehouseArrivalDate:yyyyMMdd}|{v.UnloadingDate:yyyyMMdd}"));
+        var expenses = string.Join("|", Expenses.Select(e =>
+            $"{e.Id}|{e.ExpenseTypeId}|{e.Description}|{e.Amount}|{e.Currency}|{e.FxRate}|{e.ExpenseDate:yyyyMMdd}|{e.Recipient}"));
+        var pendingAttachments = string.Join("|", Attachments
+            .Where(a => a.Id <= 0)
+            .Select(a => a.FilePath));
+        return string.Join(";",
+            SelectedCustomer?.Id,
+            InvoiceDate.ToString("yyyyMMdd"),
+            ServiceType,
+            TransportKind,
+            TransportRoute?.Trim(),
+            Currency,
+            FxRate,
+            Description?.Trim(),
+            DiscountAmount,
+            InternalNotes?.Trim(),
+            CustomerNotes?.Trim(),
+            vehicles,
+            expenses,
+            pendingAttachments);
     }
 
     private void ApplyPendingServiceType()
@@ -248,6 +296,7 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         AddVehicleRow();
         RecalculateTotals();
         NotifyFormStateChanged();
+        CaptureCleanState();
     }
 
     private async Task LoadInvoiceAsync(int id)
@@ -306,6 +355,7 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
 
             RecalculateTotals();
             NotifyFormStateChanged();
+            CaptureCleanState();
         }
         catch (Exception ex)
         {
@@ -340,6 +390,10 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         ShowTransportKind = ServiceType == CustomsServiceType.Transport;
         ShowTransportRoute = ShowTransportKind && TransportKind == CustomsTransportKind.Internal;
         ShowDelayPenaltyColumn = ShowTransportRoute;
+        IsClearanceGrid = ServiceType is CustomsServiceType.Clearance or CustomsServiceType.ClearanceAndTransport;
+        IsInternalTransportGrid = ShowTransportRoute;
+        IsExternalTransportGrid = ShowTransportKind && TransportKind == CustomsTransportKind.External;
+        IsTransportGrid = ShowTransportKind;
     }
 
     partial void OnDiscountAmountChanged(decimal value) => RecalculateTotals();
@@ -376,11 +430,11 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
 
     private void RecalculateTotals()
     {
-        VehiclesSum = Vehicles.Sum(v => v.VehiclePrice);
+        VehiclesSum = Vehicles.Sum(v => v.RevenueAmount(ServiceType));
         var delaySum = ShowDelayPenaltyColumn
             ? Vehicles.Sum(v => v.DelayPenaltyAmount)
             : 0m;
-        // Revenue = vehicles (+ internal delay penalties) − discount
+        // Revenue = vehicles / clearance fees (+ internal delay penalties) − discount
         TotalAmount = Math.Max(0, VehiclesSum + delaySum - DiscountAmount);
         RemainingAmount = Math.Max(0, TotalAmount - PaidAmount);
         RecalculateInternalProfit();
@@ -883,6 +937,8 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
             CanApprove = saved.CanApprove && CanEdit;
             CanCancelInvoice = saved.CanCancel && CanEdit;
 
+            await PersistPendingInvoiceAttachmentsAsync(saved.Id);
+
             if (approveAfterSave)
             {
                 await _invoiceService.ApproveAsync(saved.Id, _currentUserService.Username);
@@ -957,12 +1013,6 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
             return;
         }
 
-        if (!_editId.HasValue)
-        {
-            BeautifulMessageDialog.ShowWarning("احفظ الفاتورة أولاً قبل إرفاق الملفات");
-            return;
-        }
-
         var dialog = new OpenFileDialog
         {
             Filter = "صور ومستندات|*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.pdf;*.doc;*.docx;*.xls;*.xlsx|كل الملفات|*.*",
@@ -973,6 +1023,27 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
 
         try
         {
+            if (!_editId.HasValue)
+            {
+                foreach (var path in dialog.FileNames)
+                {
+                    if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+                        continue;
+
+                    Attachments.Add(new CustomsAttachmentItem
+                    {
+                        Id = --_pendingAttachmentSeq,
+                        FileName = Path.GetFileName(path),
+                        FilePath = path,
+                        CreatedAt = DateTime.Now
+                    });
+                }
+
+                BeautifulMessageDialog.ShowSuccess(
+                    $"تم اختيار {dialog.FileNames.Length} ملف — سيُحفظ مع الفاتورة");
+                return;
+            }
+
             foreach (var path in dialog.FileNames)
             {
                 await _attachmentService.AddFromFileAsync(
@@ -996,6 +1067,26 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
         }
     }
 
+    private async Task PersistPendingInvoiceAttachmentsAsync(int invoiceId)
+    {
+        var pending = Attachments.Where(a => a.Id <= 0).ToList();
+        if (pending.Count == 0)
+            return;
+
+        foreach (var item in pending)
+        {
+            if (string.IsNullOrWhiteSpace(item.FilePath) || !File.Exists(item.FilePath))
+                continue;
+
+            await _attachmentService.AddFromFileAsync(
+                CustomsAttachmentOwnerType.Invoice,
+                invoiceId,
+                item.FilePath,
+                item.Description,
+                _currentUserService.Username);
+        }
+    }
+
     [RelayCommand]
     private void OpenAttachment(CustomsAttachmentItem? item)
     {
@@ -1013,7 +1104,19 @@ public partial class CustomsInvoiceFormViewModel : ViewModelBase
     [RelayCommand]
     private async Task DeleteAttachmentAsync(CustomsAttachmentItem? item)
     {
-        if (item is null || !CanDelete) return;
+        if (item is null) return;
+
+        // مرفقات لم تُحفظ بعد: يكفي صلاحية إدارة النموذج
+        if (item.Id <= 0)
+        {
+            if (!CanManageAttachments) return;
+            if (!BeautifulMessageDialog.ShowConfirm($"إزالة المرفق «{item.FileName}»؟"))
+                return;
+            Attachments.Remove(item);
+            return;
+        }
+
+        if (!CanDelete) return;
         if (!BeautifulMessageDialog.ShowConfirm($"حذف المرفق «{item.FileName}»؟"))
             return;
 
@@ -1124,14 +1227,37 @@ public partial class CustomsInvoiceVehicleRow : ObservableObject
     [ObservableProperty] private DateTime? _unloadingDate;
     [ObservableProperty] private decimal _vehiclePrice;
     [ObservableProperty] private decimal _delayPenaltyAmount;
+    [ObservableProperty] private string _destination = string.Empty;
+    [ObservableProperty] private decimal _sealAmount;
+    [ObservableProperty] private decimal _radiationAmount;
+    [ObservableProperty] private decimal _dutyAmount;
+    [ObservableProperty] private decimal _qualityControlAmount;
+    [ObservableProperty] private decimal _landTransportAmount;
+    [ObservableProperty] private decimal _clearanceFeeAmount;
+    [ObservableProperty] private decimal _expensesAmount;
     [ObservableProperty] private CustomsVehicleStatus _status = CustomsVehicleStatus.InProgress;
     [ObservableProperty] private string _notes = string.Empty;
 
     public string StatusLabel => CustomsVehicleStatusDisplay.ToArabic(Status);
 
-    partial void OnVehiclePriceChanged(decimal value) => PriceChanged?.Invoke();
+    public decimal FeeColumnsSum =>
+        SealAmount + RadiationAmount + DutyAmount + QualityControlAmount
+        + LandTransportAmount + ClearanceFeeAmount + ExpensesAmount;
 
+    public decimal RevenueAmount(CustomsServiceType serviceType) =>
+        serviceType is CustomsServiceType.Clearance or CustomsServiceType.ClearanceAndTransport
+            ? (FeeColumnsSum != 0m ? FeeColumnsSum : VehiclePrice)
+            : VehiclePrice;
+
+    partial void OnVehiclePriceChanged(decimal value) => PriceChanged?.Invoke();
     partial void OnDelayPenaltyAmountChanged(decimal value) => PriceChanged?.Invoke();
+    partial void OnSealAmountChanged(decimal value) => PriceChanged?.Invoke();
+    partial void OnRadiationAmountChanged(decimal value) => PriceChanged?.Invoke();
+    partial void OnDutyAmountChanged(decimal value) => PriceChanged?.Invoke();
+    partial void OnQualityControlAmountChanged(decimal value) => PriceChanged?.Invoke();
+    partial void OnLandTransportAmountChanged(decimal value) => PriceChanged?.Invoke();
+    partial void OnClearanceFeeAmountChanged(decimal value) => PriceChanged?.Invoke();
+    partial void OnExpensesAmountChanged(decimal value) => PriceChanged?.Invoke();
 
     partial void OnStatusChanged(CustomsVehicleStatus value) =>
         OnPropertyChanged(nameof(StatusLabel));
@@ -1151,6 +1277,14 @@ public partial class CustomsInvoiceVehicleRow : ObservableObject
         UnloadingDate = d.UnloadingDate,
         VehiclePrice = d.VehiclePrice,
         DelayPenaltyAmount = d.DelayPenaltyAmount,
+        Destination = d.Destination,
+        SealAmount = d.SealAmount,
+        RadiationAmount = d.RadiationAmount,
+        DutyAmount = d.DutyAmount,
+        QualityControlAmount = d.QualityControlAmount,
+        LandTransportAmount = d.LandTransportAmount,
+        ClearanceFeeAmount = d.ClearanceFeeAmount,
+        ExpensesAmount = d.ExpensesAmount,
         Status = d.Status,
         Notes = d.Notes
     };
@@ -1170,6 +1304,14 @@ public partial class CustomsInvoiceVehicleRow : ObservableObject
         UnloadingDate = UnloadingDate,
         VehiclePrice = VehiclePrice,
         DelayPenaltyAmount = DelayPenaltyAmount,
+        Destination = Destination,
+        SealAmount = SealAmount,
+        RadiationAmount = RadiationAmount,
+        DutyAmount = DutyAmount,
+        QualityControlAmount = QualityControlAmount,
+        LandTransportAmount = LandTransportAmount,
+        ClearanceFeeAmount = ClearanceFeeAmount,
+        ExpensesAmount = ExpensesAmount,
         Status = Status,
         Notes = Notes
     };

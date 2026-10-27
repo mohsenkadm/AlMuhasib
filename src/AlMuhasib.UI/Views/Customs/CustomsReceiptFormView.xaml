@@ -5,13 +5,18 @@
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
-             Style="{StaticResource PageStyle}"
+             Style="{StaticResource PosPageStyle}"
              behaviors:ScrollViewerMouseWheel.IsEnabled="True"
              FlowDirection="RightToLeft">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Styles/CustomsUiStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+<BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
+    </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid Margin="24">
@@ -30,27 +35,24 @@
                         <TextBlock Text="{Binding ReceiptNumber}" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryHueMidBrush}"/>
                     </Border>
                 </StackPanel>
-                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
+                <WrapPanel Orientation="Horizontal" DockPanel.Dock="Right" HorizontalAlignment="Right">
                     <Button Content="حفظ" Command="{Binding SaveCommand}"
-                            Style="{StaticResource MaterialDesignRaisedButton}"
-                            md:ButtonAssist.CornerRadius="8" Padding="18,8" Margin="0,0,8,0"
+                            Style="{StaticResource CustomsToolbarPrimaryButton}"
                             IsEnabled="{Binding CanSave}"/>
                     <Button Content="طباعة" Command="{Binding PrintCommand}"
-                            Style="{StaticResource OutlinedButton}"
-                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0"
+                            Style="{StaticResource CustomsToolbarButton}"
                             IsEnabled="{Binding HasSavedReceipt}"
                             Visibility="{Binding CanPrint, Converter={StaticResource BoolToVis}}"/>
                     <Button Content="PDF" Command="{Binding ExportPdfCommand}"
-                            Style="{StaticResource OutlinedButton}"
-                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0"
+                            Style="{StaticResource CustomsToolbarButton}"
                             IsEnabled="{Binding HasSavedReceipt}"
                             Visibility="{Binding CanPrint, Converter={StaticResource BoolToVis}}"/>
                     <Button Content="إلغاء الوصل" Command="{Binding CancelReceiptCommand}"
-                            Style="{StaticResource OutlinedButton}"
-                            md:ButtonAssist.CornerRadius="8" Margin="0,0,8,0"
+                            Style="{StaticResource CustomsToolbarButton}"
                             Visibility="{Binding CanCancelReceipt, Converter={StaticResource BoolToVis}}"/>
-                    <Button Content="إغلاق" Command="{Binding CloseCommand}" Style="{StaticResource FlatButton}"/>
-                </StackPanel>
+                    <Button Content="إغلاق" Command="{Binding CloseCommand}"
+                            Style="{StaticResource CustomsToolbarButton}"/>
+                </WrapPanel>
             </DockPanel>
         </md:Card>
 

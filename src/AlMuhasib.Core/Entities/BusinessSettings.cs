@@ -6,7 +6,8 @@ public class BusinessSettings : BranchScopedEntity
     public const int SingletonId = 1;
 
     /// <summary>عرض السعر — عند التعطيل يبقى النظام بدون سعر كما سابقاً.</summary>
-    public bool ProductPricingEnabled { get; set; }
+    /// <summary>عرض سعر المنتجات — مفعّل افتراضياً للتثبيتات الجديدة فقط.</summary>
+    public bool ProductPricingEnabled { get; set; } = true;
 
     /// <summary>تحديث سعر الشراء من فاتورة مشتريات عند الإنشاء فقط.</summary>
     public bool UpdateProductPriceOnPurchase { get; set; }

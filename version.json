@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.41",
-  "releaseDate": "2026-10-25",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.41/AlMuhasib-1.14.41.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.41/Qayd-Setup-1.14.41.exe",
-  "sha256": "DD3001B535214E9D1F539C5764D32DA6BD2A8459BC63E64DF4FEA34D0F39BE66",
-  "sizeBytes": 162732268,
-  "releaseNotes": "تكبير أصناف الكاشير 25٪ مع التفاف وتمرير ظاهر، وتحسينات الضمان والصيانة — تحديث اختياري آمن (أعمدة/جداول إضافية فقط)",
+  "version": "1.14.42",
+  "releaseDate": "2026-10-27",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.42/AlMuhasib-1.14.42.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.42/Qayd-Setup-1.14.42.exe",
+  "sha256": "C4801A50A674E441E65D21F6164976DF7E791741E099AF01E4C24BD7F6094CFB",
+  "sizeBytes": 162777127,
+  "releaseNotes": "باركودات متعددة وتحسينات واجهة التخليص ورسوم المركبات — تحديث اختياري آمن (توسيع حقل/أعمدة إضافية فقط)",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

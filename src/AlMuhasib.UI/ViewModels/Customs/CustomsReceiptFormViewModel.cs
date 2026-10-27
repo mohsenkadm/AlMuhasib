@@ -23,6 +23,7 @@ public partial class CustomsReceiptFormViewModel : ViewModelBase
     private readonly ICurrentUserService _currentUserService;
     private readonly MainWindowViewModel _mainWindow;
     private int? _editId;
+    private string? _cleanFingerprint;
 
     [ObservableProperty] private string _receiptNumber = "يُنشأ تلقائياً";
     [ObservableProperty] private DateTime _receiptDate = DateTime.Today;
@@ -62,6 +63,10 @@ public partial class CustomsReceiptFormViewModel : ViewModelBase
     public bool CanSave => (IsEditMode ? CanEdit : CanAdd);
     public bool HasSavedReceipt => _editId.HasValue;
     public bool CanManageAttachments => CanEdit;
+    public override bool HasUnsavedChanges =>
+        _cleanFingerprint is not null
+        && !string.Equals(_cleanFingerprint, BuildFingerprint(), StringComparison.Ordinal);
+    public override bool SupportsSaveBeforeLeave => CanSave;
 
     public CustomsReceiptFormViewModel(
         ICustomsReceiptService receiptService,
@@ -90,6 +95,33 @@ public partial class CustomsReceiptFormViewModel : ViewModelBase
             await LoadReceiptAsync(editId);
         else
             await ResetForNewAsync();
+        CaptureCleanState();
+    }
+
+    public override async Task<bool> SavePendingChangesAsync()
+    {
+        if (!HasUnsavedChanges)
+            return true;
+        await SaveAsync();
+        return !HasUnsavedChanges;
+    }
+
+    private void CaptureCleanState() => _cleanFingerprint = BuildFingerprint();
+
+    private string BuildFingerprint()
+    {
+        var allocations = string.Join("|", AllocationRows.Select(r =>
+            $"{r.InvoiceId}:{r.AllocateAmount}"));
+        return string.Join(";",
+            SelectedCustomer?.Id,
+            ReceiptDate.ToString("yyyyMMdd"),
+            Amount,
+            Currency,
+            FxRate,
+            PaymentMethod,
+            ReceiverName?.Trim(),
+            Notes?.Trim(),
+            allocations);
     }
 
     private async Task LoadCustomersAsync()
@@ -120,6 +152,7 @@ public partial class CustomsReceiptFormViewModel : ViewModelBase
         Attachments.Clear();
         RecalculateAllocationSum();
         NotifyFormState();
+        CaptureCleanState();
     }
 
     private async Task LoadReceiptAsync(int id)
@@ -160,6 +193,7 @@ public partial class CustomsReceiptFormViewModel : ViewModelBase
                 Attachments.Add(a);
 
             NotifyFormState();
+            CaptureCleanState();
         }
         catch (Exception ex)
         {

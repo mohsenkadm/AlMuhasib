@@ -60,6 +60,17 @@ public partial class CustomsCustomersViewModel : ViewModelBase
         new(CustomsCustomerType.Company, CustomsCustomerTypeDisplay.ToArabic(CustomsCustomerType.Company))
     ];
 
+    public override bool HasUnsavedChanges => IsDialogOpen;
+    public override bool SupportsSaveBeforeLeave => IsDialogOpen && (IsEditMode ? CanEdit : CanAdd);
+
+    public override async Task<bool> SavePendingChangesAsync()
+    {
+        if (!IsDialogOpen)
+            return true;
+        await SaveCustomerAsync();
+        return !IsDialogOpen;
+    }
+
     public CustomsCustomersViewModel(
         ICustomsCustomerService customerService,
         ICustomsPrintService printService,

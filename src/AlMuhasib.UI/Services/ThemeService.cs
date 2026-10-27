@@ -90,7 +90,23 @@ public sealed class ThemeService
         SetBrush(res, "CardBrush", isDark ? DarkCard : "#FFFFFF");
         SetBrush(res, "ContentBackground", isDark ? DarkBg : "#F5F7FA");
         SetBrush(res, "TopBarBackground", isDark ? DarkTopBar : "#FFFFFF");
-        SetBrush(res, "AppTitleBarBackground", isDark ? DarkTopBar : "#FAFCFF");
+        // Title bar only — cool blue chrome (not plain white) / elevated navy
+        SetBrush(res, "AppTitleBarBackground", isDark ? "#1A2550" : "#DCE6F5");
+        SetBrush(res, "AppTitleBarAccentLineBrush", isDark ? "#5BA3D9" : "#5B9BD5");
+        SetBrush(res, "TitleBarIconBrush", isDark ? "#C5D0E8" : "#1E3A5F");
+        SetBrush(res, "TitleBarIconAccentBrush", isDark ? "#64B5F6" : "#1565C0");
+        SetBrush(res, "TitleBarIconTealBrush", isDark ? "#4DB6AC" : "#00796B");
+        SetBrush(res, "TitleBarIconGreenBrush", isDark ? "#81C784" : "#2E7D32");
+        SetBrush(res, "TitleBarIconAmberBrush", isDark ? "#FFB74D" : "#EF6C00");
+        SetBrush(res, "TitleBarDatePillBackground", isDark ? "#243056" : "#F2F6FC");
+        SetBrush(res, "TitleBarDatePillBorder", isDark ? "#3A4870" : "#B8C9E0");
+        SetBrush(res, "TitleBarClockPillBackground", isDark ? "#1B3D2A" : "#E8F5E9");
+        SetBrush(res, "TitleBarClockPillBorder", isDark ? "#4CAF50" : "#A5D6A7");
+        SetBrush(res, "TitleBarClockPillForeground", isDark ? "#A5D6A5" : "#1B5E20");
+        SetBrush(res, "TrialChipBackgroundBrush", isDark ? "#3A2A14" : "#FFF4E5");
+        SetBrush(res, "TrialChipBorderBrush", isDark ? "#FFB74D" : "#FFB74D");
+        SetBrush(res, "TrialChipForegroundBrush", isDark ? "#FFCC80" : "#E65100");
+        SetBrush(res, "TrialChipIconBrush", isDark ? "#FFB74D" : "#EF6C00");
         SetBrush(res, "TitleBarBranchBadgeBackground", isDark ? "#1A3330" : "#E0F2F1");
         SetBrush(res, "TitleBarBranchBadgeBorder", isDark ? "#2A9D8F" : "#26A69A");
         SetBrush(res, "TitleBarBranchBadgeForeground", isDark ? "#80CBC4" : "#00695C");
@@ -132,7 +148,7 @@ public sealed class ThemeService
         // Glass / notepad paper
         SetBrush(res, "GlassCardBrush", isDark ? "#33132338" : "#EEFFFFFF");
         SetBrush(res, "NotepadPaperBrush", isDark ? "#1A2A3C" : "#FFF8E1");
-        SetBrush(res, "TitleBarButtonHoverBrush", isDark ? DarkHover : "#ECEFF1");
+        SetBrush(res, "TitleBarButtonHoverBrush", isDark ? "#243056" : "#C5D4E8");
 
         // Secondary flyout menu surfaces
         SetBrush(res, "FlyoutPanelBrush", isDark ? DarkTopBar : "#F5F7FA");

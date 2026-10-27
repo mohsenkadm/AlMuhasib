@@ -5,14 +5,19 @@
              xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
              xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
              xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
-             Style="{StaticResource PageStyle}"
+             Style="{StaticResource PosPageStyle}"
              behaviors:ScrollViewerMouseWheel.IsEnabled="True"
              FlowDirection="RightToLeft"
              Background="{DynamicResource BackgroundBrush}">
 
     <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-        <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Styles/CustomsUiStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+            <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
+        </ResourceDictionary>
     </UserControl.Resources>
 
     <Grid>
@@ -129,15 +134,15 @@
                                 Margin="0,12,0,0" HorizontalAlignment="Center"
                                 Visibility="{Binding ShowListPagination, Converter={StaticResource BoolToVis}}">
                         <Button Command="{Binding FirstListPageCommand}" Content="الأولى"
-                                Style="{StaticResource OutlinedButton}" Margin="0,0,6,0" Padding="12,4"/>
+                                Style="{StaticResource CustomsToolbarButton}" Margin="0,0,6,0"/>
                         <Button Command="{Binding PreviousListPageCommand}" Content="السابق"
-                                Style="{StaticResource OutlinedButton}" Margin="0,0,6,0" Padding="12,4"/>
+                                Style="{StaticResource CustomsToolbarButton}" Margin="0,0,6,0"/>
                         <TextBlock Text="{Binding ListPaginationText}" VerticalAlignment="Center"
                                    Margin="8,0" Foreground="{DynamicResource TextSecondaryBrush}"/>
                         <Button Command="{Binding NextListPageCommand}" Content="التالي"
-                                Style="{StaticResource OutlinedButton}" Margin="6,0,6,0" Padding="12,4"/>
+                                Style="{StaticResource CustomsToolbarButton}" Margin="6,0,6,0"/>
                         <Button Command="{Binding LastListPageCommand}" Content="الأخيرة"
-                                Style="{StaticResource OutlinedButton}" Padding="12,4"/>
+                                Style="{StaticResource CustomsToolbarButton}"/>
                     </StackPanel>
                     <TabControl SelectedIndex="{Binding SelectedTab}"
                                 Style="{StaticResource MaterialDesignTabControl}">
@@ -156,19 +161,17 @@
                                     <DataGridTextColumn Header="المدفوع" Binding="{Binding PaidAmount, StringFormat=N0}" Width="100"/>
                                     <DataGridTextColumn Header="المتبقي" Binding="{Binding RemainingAmount, StringFormat=N0}" Width="100"/>
                                     <DataGridTextColumn Header="الحالة" Binding="{Binding StatusLabel}" Width="90"/>
-                                    <DataGridTemplateColumn Header="الإجراءات" Width="160" MinWidth="150">
+                                    <DataGridTemplateColumn Header="الإجراءات" Width="80" MinWidth="72">
+                                        <DataGridTemplateColumn.CellStyle>
+                                            <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                                        </DataGridTemplateColumn.CellStyle>
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Button Command="{Binding DataContext.OpenInvoiceCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                         CommandParameter="{Binding}"
-                                                        Style="{StaticResource OutlinedButton}"
-                                                        materialDesign:ButtonAssist.CornerRadius="6"
-                                                        Height="30" Padding="12,0" Margin="4,4"
-                                                        FontSize="11" ToolTip="عرض تفاصيل الفاتورة">
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <materialDesign:PackIcon Kind="Eye" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                        <TextBlock Text="عرض التفاصيل" VerticalAlignment="Center"/>
-                                                    </StackPanel>
+                                                        Style="{StaticResource TableViewIconButton}"
+                                                        ToolTip="عرض تفاصيل الفاتورة">
+                                                    <materialDesign:PackIcon Kind="Eye" Width="18" Height="18"/>
                                                 </Button>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
@@ -270,9 +273,8 @@
                                            Visibility="{Binding NotesError, Converter={StaticResource NullToCollapsedConverter}}"/>
                                 <Button Content="حفظ الملاحظات"
                                         Command="{Binding SaveNotesCommand}"
-                                        Style="{StaticResource MaterialDesignRaisedButton}"
-                                        materialDesign:ButtonAssist.CornerRadius="8"
-                                        Padding="24,8" Margin="0,12,0,0"
+                                        Style="{StaticResource CustomsDialogPrimaryButton}"
+                                        Margin="0,12,0,0"
                                         HorizontalAlignment="Left"
                                         IsEnabled="{Binding CanEdit}"/>
                             </StackPanel>

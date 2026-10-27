@@ -533,7 +533,7 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
             TenantId = tenantId,
             BranchId = branchId.Value,
             SyncId = ProductPricingSyncIds.BusinessSettings,
-            ProductPricingEnabled = false,
+            ProductPricingEnabled = true,
             UpdateProductPriceOnPurchase = false,
             CreatedAt = DateTime.UtcNow,
             CreatedBy = "System"

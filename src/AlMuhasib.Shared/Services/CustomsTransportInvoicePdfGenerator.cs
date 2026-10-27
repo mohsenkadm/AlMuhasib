@@ -102,7 +102,7 @@ internal static class CustomsTransportInvoicePdfGenerator
         string[] headers =
         [
             "ت", "رقم الفاتورة", "السائق السوري", "رقم السيارة", "السائق العراقي",
-            "رقم السيارة", "تاريخ التحميل", "تاريخ التفريغ", "غرامات تأخيرية", "الملاحظات"
+            "رقم السيارة", "تاريخ التحميل", "تاريخ التخريج", "غرامات تأخيرية", "الملاحظات"
         ];
 
         col.Item().PaddingTop(8).Table(table =>
@@ -183,16 +183,17 @@ internal static class CustomsTransportInvoicePdfGenerator
             t.Span(data.CustomerName).SemiBold().FontSize(11);
         });
 
-        string[] headers = ["ت", "السيارة السورية", "اسم السائق", "البضاعة", "رقم الفاتورة", "السعر ($)"];
+        string[] headers = ["ت", "السيارة السورية", "اسم السائق", "البضاعة", "رقم الفاتورة", "الوجهة", "أجرة النقل ($)"];
         col.Item().PaddingTop(8).Table(table =>
         {
             table.ColumnsDefinition(c =>
             {
                 c.ConstantColumn(24);
+                c.RelativeColumn(1.0f);
+                c.RelativeColumn(1.2f);
                 c.RelativeColumn(1.1f);
-                c.RelativeColumn(1.4f);
-                c.RelativeColumn(1.2f);
-                c.RelativeColumn(1.2f);
+                c.RelativeColumn(1.1f);
+                c.RelativeColumn(1.1f);
                 c.RelativeColumn(0.9f);
             });
 
@@ -212,6 +213,7 @@ internal static class CustomsTransportInvoicePdfGenerator
                 table.Cell().Element(BodyCell).Text(r.SyrianDriver);
                 table.Cell().Element(BodyCell).AlignCenter().Text(r.CargoType);
                 table.Cell().Element(BodyCell).AlignCenter().Text(r.ReferenceNumber);
+                table.Cell().Element(BodyCell).AlignCenter().Text(r.Destination);
                 table.Cell().Element(BodyCell).AlignCenter().Text(FormatMoney(r.VehiclePrice, data)).Bold();
             }
         });

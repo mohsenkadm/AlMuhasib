@@ -41,7 +41,8 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _menuWeight;
     [ObservableProperty] private bool _expiryTracking;
     [ObservableProperty] private bool _serialNumbers;
-    [ObservableProperty] private bool _productPricingEnabled;
+    /// <summary>عرض سعر المنتجات — مفعّل افتراضياً.</summary>
+    [ObservableProperty] private bool _productPricingEnabled = true;
     [ObservableProperty] private bool _updateProductPriceOnPurchase;
     [ObservableProperty] private bool _updateSalePriceOnPurchase;
     [ObservableProperty] private bool _addMissingProductsOnPurchase;

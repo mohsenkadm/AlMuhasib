@@ -22,6 +22,19 @@ public sealed class CustomsUiUxNavigationTests
     }
 
     [Fact]
+    public void ListItem_CanSoftDelete_OnlyWhenDraft()
+    {
+        var draft = new CustomsInvoiceListItem { Status = CustomsInvoiceStatus.Draft };
+        var approved = new CustomsInvoiceListItem { Status = CustomsInvoiceStatus.Approved };
+
+        Assert.True(draft.CanSoftDelete);
+        Assert.True(draft.CanAddDirectExpense);
+        Assert.False(approved.CanSoftDelete);
+        Assert.True(approved.CanAddDirectExpense);
+        Assert.False(new CustomsInvoiceListItem { Status = CustomsInvoiceStatus.Cancelled }.CanAddDirectExpense);
+    }
+
+    [Fact]
     public void ListItem_CanCancel_RequiresNotCancelledAndUnpaid()
     {
         var unpaid = new CustomsInvoiceListItem

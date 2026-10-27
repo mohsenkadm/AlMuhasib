@@ -1,0 +1,51 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:customsViews="clr-namespace:AlMuhasib.UI.Views.Customs"
+                    xmlns:customsVm="clr-namespace:AlMuhasib.UI.ViewModels.Customs">
+
+    <DataTemplate DataType="{x:Type customsVm:CustomsDashboardViewModel}">
+        <customsViews:CustomsDashboardView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type customsVm:CustomsCustomersViewModel}">
+        <customsViews:CustomsCustomersView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type customsVm:CustomsCustomerFileViewModel}">
+        <customsViews:CustomsCustomerFileView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type customsVm:CustomsInvoiceListViewModel}">
+        <customsViews:CustomsInvoiceListView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type customsVm:CustomsInvoiceFormViewModel}">
+        <customsViews:CustomsInvoiceFormView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type customsVm:CustomsReceiptListViewModel}">
+        <customsViews:CustomsReceiptListView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type customsVm:CustomsReceiptFormViewModel}">
+        <customsViews:CustomsReceiptFormView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type customsVm:CustomsStatementViewModel}">
+        <customsViews:CustomsStatementView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type customsVm:CustomsDailyReportViewModel}">
+        <customsViews:CustomsDailyReportView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type customsVm:CustomsMonthlyReportViewModel}">
+        <customsViews:CustomsMonthlyReportView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type customsVm:CustomsCustomerReportViewModel}">
+        <customsViews:CustomsCustomerReportView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type customsVm:CustomsInvoiceReportViewModel}">
+        <customsViews:CustomsInvoiceReportView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type customsVm:CustomsVehiclesReportViewModel}">
+        <customsViews:CustomsVehiclesReportView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type customsVm:CustomsDebtsReportViewModel}">
+        <customsViews:CustomsDebtsReportView />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type customsVm:CustomsProfitReportViewModel}">
+        <customsViews:CustomsProfitReportView />
+    </DataTemplate>
+</ResourceDictionary>

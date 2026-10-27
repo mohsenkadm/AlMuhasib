@@ -557,8 +557,9 @@ public partial class MainWindowViewModel : ObservableObject
     {
         var status = _desktopLicense.GetStatus();
         ShowTrialBanner = status.ShowsTrialBanner;
+        var days = status.DaysRemaining ?? 0;
         TrialBannerText = status.ShowsTrialBanner
-            ? $"نسخة تجريبية — متبقي {status.DaysRemaining ?? 0} يوماً. فعّل النظام مدى الحياة عند الحاجة."
+            ? (days == 1 ? "متبقي يوم واحد" : $"متبقي {days} يوم")
             : string.Empty;
     }
 
@@ -907,6 +908,23 @@ public partial class MainWindowViewModel : ObservableObject
         if (!authorized)
             return;
 
+        // التخليص الكمركي: كل واجهة في نافذة ويندوز منفصلة بملء الشاشة.
+        if (CustomsPermissionRegistry.IsCustomsDocumentViewModel(viewModelType))
+        {
+            var moduleWindows = _serviceProvider.GetRequiredService<IModuleDocumentWindowService>();
+            var opened = await moduleWindows.TryOpenAsync(
+                viewModelType, title, icon, activateIfExists, permissionScreenName);
+            if (opened)
+            {
+                var screenName = string.IsNullOrWhiteSpace(permissionScreenName)
+                    ? ScreenPermissionRegistry.GetScreenName(viewModelType)
+                    : permissionScreenName;
+                _recentActivity.Record($"فتح: {title}", screenName, screenName, viewModelType);
+            }
+
+            return;
+        }
+
         if (activateIfExists)
         {
             var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == viewModelType);
@@ -1194,6 +1212,10 @@ public partial class MainWindowViewModel : ObservableObject
 
     public void CloseTabForViewModel(ViewModelBase viewModel)
     {
+        var moduleWindows = _serviceProvider.GetService<IModuleDocumentWindowService>();
+        if (moduleWindows?.TryCloseForViewModel(viewModel) == true)
+            return;
+
         var tab = OpenTabs.FirstOrDefault(t => ReferenceEquals(t.ViewModel, viewModel));
         if (tab is not null)
             CloseTab(tab);
@@ -1206,14 +1228,16 @@ public partial class MainWindowViewModel : ObservableObject
 
         foreach (var key in _userPreferences.Current.PinnedMenuScreens)
         {
-            if (OpenTabs.Count >= MaxOpenTabs)
-                break;
-
             var menu = FindMenuItemByPreferenceKey(key);
             if (menu?.ViewModelType is null || menu.ViewModelType == ActiveDashboardType)
                 continue;
             if (!menu.IsVisible || !CanMenuBeShownByPermissions(menu))
                 continue;
+
+            // شاشات التخليص تُفتح كنوافذ ولا تدخل ضمن حد التبويبات.
+            if (!CustomsPermissionRegistry.IsCustomsDocumentViewModel(menu.ViewModelType)
+                && OpenTabs.Count >= MaxOpenTabs)
+                break;
 
             await OpenTabAsync(
                 menu.ViewModelType,
@@ -1223,8 +1247,10 @@ public partial class MainWindowViewModel : ObservableObject
                 permissionScreenName: menu.ScreenName);
         }
 
+        UpdateTabCloseStates();
         UpdateTabPinStates();
-        ActivateTab(OpenTabs[0]);
+        if (OpenTabs.Count > 0)
+            ActivateTab(OpenTabs[0]);
         SyncSelectedMenuItem();
     }
 
@@ -1285,6 +1311,7 @@ public partial class MainWindowViewModel : ObservableObject
     public void CloseAllTabs()
     {
         ExitSplitView();
+        _serviceProvider.GetService<IModuleDocumentWindowService>()?.ForceCloseAll();
         foreach (var tab in OpenTabs.ToList())
         {
             OpenTabs.Remove(tab);

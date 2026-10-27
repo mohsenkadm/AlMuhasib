@@ -50,7 +50,8 @@ public class CloudProductPrice : CloudBaseEntity
 }
 public class CloudBusinessSettings : CloudBaseEntity
 {
-    public bool ProductPricingEnabled { get; set; }
+    /// <summary>عرض سعر المنتجات — مفعّل افتراضياً للتثبيتات الجديدة فقط.</summary>
+    public bool ProductPricingEnabled { get; set; } = true;
     public bool UpdateProductPriceOnPurchase { get; set; }
     public bool PeriodLockEnabled { get; set; }
     public DateTime? LockedThroughDate { get; set; }

@@ -13,6 +13,7 @@
                 <!-- Custom theme overrides MUST come AFTER MaterialDesign defaults -->
                 <ResourceDictionary Source="/Styles/Theme.xaml" />
                 <ResourceDictionary Source="/Styles/MasterDataCardTemplates.xaml" />
+                <ResourceDictionary Source="/Styles/CustomsViewTemplates.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <!-- Branding placeholders (replaced at startup by ProductBranding.Apply) -->

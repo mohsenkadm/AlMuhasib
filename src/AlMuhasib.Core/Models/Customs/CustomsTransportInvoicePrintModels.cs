@@ -39,6 +39,8 @@ public sealed class CustomsTransportInvoicePrintRow
     public string IraqiDriver { get; set; } = string.Empty;
     public string IraqiPlate { get; set; } = string.Empty;
     public string CargoType { get; set; } = string.Empty;
+    /// <summary>External transport destination (الوجهة).</summary>
+    public string Destination { get; set; } = string.Empty;
     public string LoadingDate { get; set; } = string.Empty;
     public string UnloadingDate { get; set; } = string.Empty;
     public decimal DelayPenaltyAmount { get; set; }

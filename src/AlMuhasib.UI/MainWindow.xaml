@@ -62,7 +62,7 @@
     </Window.Resources>
 
     <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="48"
+        <WindowChrome CaptionHeight="52"
                       CornerRadius="0"
                       GlassFrameThickness="0"
                       ResizeBorderThickness="6"
@@ -71,7 +71,6 @@
 
     <Grid x:Name="RootLayoutGrid">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
@@ -129,15 +128,17 @@
                     <Button Command="{Binding ToggleSidebarCommand}"
                             Style="{StaticResource IconButton}"
                             ToolTip="طي/فتح القائمة"
-                            Width="38" Height="38">
-                        <materialDesign:PackIcon Kind="Menu" Width="22" Height="22" />
+                            Width="38" Height="38"
+                            Foreground="{DynamicResource TitleBarIconBrush}">
+                        <materialDesign:PackIcon Kind="Menu" Width="22" Height="22"
+                                                 Foreground="{DynamicResource TitleBarIconBrush}" />
                     </Button>
                     <TextBlock Text="{Binding PageTitle}"
                                FontSize="17"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center"
                                Margin="10,0,0,0"
-                               Foreground="{DynamicResource TextPrimaryBrush}" />
+                               Foreground="{DynamicResource TitleBarIconBrush}" />
                 </StackPanel>
 
                 <!-- Current branch badge -->
@@ -169,17 +170,36 @@
                     </StackPanel>
                 </Border>
 
-                <!-- Animated date & time pills -->
+                <!-- Trial activation chip + date/time pills -->
                 <StackPanel Grid.Column="3"
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
                             FlowDirection="LeftToRight"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button Command="{Binding OpenDesktopActivationCommand}"
+                            Style="{StaticResource TitleBarTrialChipButton}"
+                            Visibility="{Binding ShowTrialBanner, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            ToolTip="فتح نافذة تفعيل النظام"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="KeyVariant"
+                                                     Width="16" Height="16"
+                                                     Foreground="{DynamicResource TrialChipIconBrush}"
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding TrialBannerText}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TrialChipForegroundBrush}"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <Border Style="{StaticResource TitleBarDatePill}"
                             WindowChrome.IsHitTestVisibleInChrome="False">
-                    <Border Style="{StaticResource TitleBarDatePill}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="CalendarStar"
                                                      Width="16" Height="16"
-                                                     Foreground="#1565C0"
+                                                     Foreground="{DynamicResource TitleBarIconAccentBrush}"
                                                      VerticalAlignment="Center"
                                                      Margin="0,0,6,0">
                                 <materialDesign:PackIcon.RenderTransform>
@@ -198,7 +218,7 @@
                             </materialDesign:PackIcon>
                             <TextBlock Text="{Binding CurrentHijriDate, Mode=OneWay}"
                                        FontSize="12" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       Foreground="{DynamicResource TitleBarIconBrush}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>
@@ -206,22 +226,22 @@
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="CalendarToday"
                                                      Width="16" Height="16"
-                                                     Foreground="#00897B"
+                                                     Foreground="{DynamicResource TitleBarIconTealBrush}"
                                                      VerticalAlignment="Center"
                                                      Margin="0,0,6,0" />
                             <TextBlock Text="{Binding CurrentGregorianDate, Mode=OneWay}"
                                        FontSize="12" FontWeight="Medium"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       Foreground="{DynamicResource TitleBarIconBrush}"
                                        VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>
                     <Border Style="{StaticResource TitleBarDatePill}"
-                            Background="{DynamicResource DashboardKpiGreenLightBrush}"
-                            BorderBrush="#C8E6C9">
+                            Background="{DynamicResource TitleBarClockPillBackground}"
+                            BorderBrush="{DynamicResource TitleBarClockPillBorder}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="ClockOutline"
                                                      Width="16" Height="16"
-                                                     Foreground="#2E7D32"
+                                                     Foreground="{DynamicResource TitleBarIconGreenBrush}"
                                                      VerticalAlignment="Center"
                                                      Margin="0,0,6,0">
                                 <materialDesign:PackIcon.Triggers>
@@ -239,7 +259,7 @@
                             <TextBlock x:Name="ClockText"
                                        Text="{Binding CurrentTime, Mode=OneWay}"
                                        FontSize="13" FontWeight="Bold"
-                                       Foreground="#1B5E20"
+                                       Foreground="{DynamicResource TitleBarClockPillForeground}"
                                        VerticalAlignment="Center"
                                        FontFamily="{DynamicResource AppFont}">
                                 <TextBlock.Style>
@@ -269,7 +289,7 @@
                         <Grid Width="24" Height="24">
                             <materialDesign:PackIcon Kind="MicrosoftExcel" Width="20" Height="20"
                                                      HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                     Foreground="#2E7D32"/>
+                                                     Foreground="{DynamicResource TitleBarIconGreenBrush}"/>
                             <Border Width="18" Height="18" CornerRadius="9"
                                     Background="#43A047" BorderBrush="White" BorderThickness="1.5"
                                     HorizontalAlignment="Right" VerticalAlignment="Top"
@@ -297,7 +317,7 @@
                         <Grid Width="24" Height="24">
                             <materialDesign:PackIcon Kind="ClipboardCheckOutline" Width="20" Height="20"
                                                      HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                     Foreground="#1565C0"/>
+                                                     Foreground="{DynamicResource TitleBarIconAccentBrush}"/>
                             <Border Width="18" Height="18" CornerRadius="9"
                                     Background="#E53935" BorderBrush="White" BorderThickness="1.5"
                                     HorizontalAlignment="Right" VerticalAlignment="Top"
@@ -323,7 +343,7 @@
                             Width="38" Height="38" Margin="0,0,8,0"
                             ToolTip="ملاحظاتي">
                         <materialDesign:PackIcon Kind="NotebookOutline" Width="20" Height="20"
-                                                 Foreground="#F57F17"/>
+                                                 Foreground="{DynamicResource TitleBarIconAmberBrush}"/>
                     </Button>
                     <Button Command="{Binding ToggleNotificationPanelCommand}"
                             Style="{StaticResource TitleBarCaptionButton}"
@@ -332,7 +352,7 @@
                         <Grid Width="24" Height="24">
                             <materialDesign:PackIcon Kind="BellOutline" Width="20" Height="20"
                                                      HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                     Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                     Foreground="{DynamicResource TitleBarIconBrush}"/>
                             <Border Width="18" Height="18" CornerRadius="9"
                                     Background="#E53935" BorderBrush="White" BorderThickness="1.5"
                                     HorizontalAlignment="Right" VerticalAlignment="Top"
@@ -358,16 +378,19 @@
                             Width="38" Height="38" Margin="0,0,8,0"
                             ToolTip="التحقق من تحديثات النظام"
                             IsEnabled="{Binding IsCheckingForUpdate, Converter={StaticResource InverseBooleanConverter}}">
-                        <materialDesign:PackIcon Kind="CloudDownload" Width="20" Height="20" Foreground="#1565C0"/>
+                        <materialDesign:PackIcon Kind="CloudDownload" Width="20" Height="20"
+                                                 Foreground="{DynamicResource TitleBarIconAccentBrush}"/>
                     </Button>
                     <Button Command="{Binding OpenHelpVideosCommand}"
                             Style="{StaticResource OutlinedButton}"
                             Height="34" Padding="10,0" Margin="0,0,6,0"
                             materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
-                            ToolTip="دليل الفيديوهات التعريفية">
+                            ToolTip="دليل الفيديوهات التعريفية"
+                            Foreground="{DynamicResource TitleBarIconBrush}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="PlayCircleOutline" Width="18" Height="18"
-                                                     VerticalAlignment="Center" Foreground="#1565C0"/>
+                                                     VerticalAlignment="Center"
+                                                     Foreground="{DynamicResource TitleBarIconAccentBrush}"/>
                             <TextBlock Text="الفيديوهات" Margin="6,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -375,10 +398,12 @@
                             Style="{StaticResource OutlinedButton}"
                             Height="34" Padding="10,0"
                             materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
-                            ToolTip="تواصل مع الدعم عبر واتساب">
+                            ToolTip="تواصل مع الدعم عبر واتساب"
+                            Foreground="{DynamicResource TitleBarIconBrush}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="Whatsapp" Width="18" Height="18"
-                                                     VerticalAlignment="Center" Foreground="#25D366"/>
+                                                     VerticalAlignment="Center"
+                                                     Foreground="{DynamicResource TitleBarIconGreenBrush}"/>
                             <TextBlock Text="الدعم" Margin="6,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
@@ -410,28 +435,8 @@
             </Grid>
         </Border>
 
-        <!-- Trial banner (new installs only while trial is active) -->
-        <Border Grid.Row="1"
-                Background="{DynamicResource NotepadPaperBrush}"
-                BorderBrush="#FFE082"
-                BorderThickness="0,0,0,1"
-                Padding="16,8"
-                Visibility="{Binding ShowTrialBanner, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <DockPanel>
-                <Button DockPanel.Dock="Left"
-                        Content="إدخال مفتاح التفعيل"
-                        Command="{Binding OpenDesktopActivationCommand}"
-                        Style="{StaticResource OutlinedButton}"
-                        Height="32" Padding="14,0" Margin="12,0,0,0"/>
-                <TextBlock VerticalAlignment="Center"
-                           FontSize="13"
-                           Foreground="#5D4037"
-                           Text="{Binding TrialBannerText}"/>
-            </DockPanel>
-        </Border>
-
         <!-- Body: sidebar + report flyout + main -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
@@ -1607,51 +1612,7 @@
                         <DataTemplate DataType="{x:Type goldVm:GoldSaleReturnsReportViewModel}">
                             <goldViews:GoldSaleReturnsReportView />
                         </DataTemplate>
-                        <DataTemplate DataType="{x:Type customsVm:CustomsDashboardViewModel}">
-                            <customsViews:CustomsDashboardView />
-                        </DataTemplate>
-                        <DataTemplate DataType="{x:Type customsVm:CustomsCustomersViewModel}">
-                            <customsViews:CustomsCustomersView />
-                        </DataTemplate>
-                        <DataTemplate DataType="{x:Type customsVm:CustomsCustomerFileViewModel}">
-                            <customsViews:CustomsCustomerFileView />
-                        </DataTemplate>
-                        <DataTemplate DataType="{x:Type customsVm:CustomsInvoiceListViewModel}">
-                            <customsViews:CustomsInvoiceListView />
-                        </DataTemplate>
-                        <DataTemplate DataType="{x:Type customsVm:CustomsInvoiceFormViewModel}">
-                            <customsViews:CustomsInvoiceFormView />
-                        </DataTemplate>
-                        <DataTemplate DataType="{x:Type customsVm:CustomsReceiptListViewModel}">
-                            <customsViews:CustomsReceiptListView />
-                        </DataTemplate>
-                        <DataTemplate DataType="{x:Type customsVm:CustomsReceiptFormViewModel}">
-                            <customsViews:CustomsReceiptFormView />
-                        </DataTemplate>
-                        <DataTemplate DataType="{x:Type customsVm:CustomsStatementViewModel}">
-                            <customsViews:CustomsStatementView />
-                        </DataTemplate>
-                        <DataTemplate DataType="{x:Type customsVm:CustomsDailyReportViewModel}">
-                            <customsViews:CustomsDailyReportView />
-                        </DataTemplate>
-                        <DataTemplate DataType="{x:Type customsVm:CustomsMonthlyReportViewModel}">
-                            <customsViews:CustomsMonthlyReportView />
-                        </DataTemplate>
-                        <DataTemplate DataType="{x:Type customsVm:CustomsCustomerReportViewModel}">
-                            <customsViews:CustomsCustomerReportView />
-                        </DataTemplate>
-                        <DataTemplate DataType="{x:Type customsVm:CustomsInvoiceReportViewModel}">
-                            <customsViews:CustomsInvoiceReportView />
-                        </DataTemplate>
-                        <DataTemplate DataType="{x:Type customsVm:CustomsVehiclesReportViewModel}">
-                            <customsViews:CustomsVehiclesReportView />
-                        </DataTemplate>
-                        <DataTemplate DataType="{x:Type customsVm:CustomsDebtsReportViewModel}">
-                            <customsViews:CustomsDebtsReportView />
-                        </DataTemplate>
-                        <DataTemplate DataType="{x:Type customsVm:CustomsProfitReportViewModel}">
-                            <customsViews:CustomsProfitReportView />
-                        </DataTemplate>
+                        <!-- Customs DataTemplates: Styles/CustomsViewTemplates.xaml (App resources) -->
                         <DataTemplate DataType="{x:Type vm:ProductsViewModel}">
                             <views:ProductsView />
                         </DataTemplate>
@@ -2470,7 +2431,7 @@
         <!-- ═══════════════════════════════════════════ -->
         <!-- MOBILE APP DOWNLOAD DIALOG                   -->
         <!-- ═══════════════════════════════════════════ -->
-        <Grid Grid.Row="0" Grid.RowSpan="3"
+        <Grid Grid.Row="0" Grid.RowSpan="2"
               Visibility="{Binding IsMobileDownloadDialogOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
               Panel.ZIndex="1006">
             <Border Background="#9900122B" MouseLeftButtonDown="MobileDownloadBackdrop_Click">
@@ -2655,7 +2616,7 @@
         <!-- ═══════════════════════════════════════════ -->
         <!-- MOBILE APP SUBSCRIBE DIALOG                  -->
         <!-- ═══════════════════════════════════════════ -->
-        <Grid Grid.Row="0" Grid.RowSpan="3"
+        <Grid Grid.Row="0" Grid.RowSpan="2"
               Visibility="{Binding IsMobileSubscribeDialogOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
               Panel.ZIndex="1007">
             <Border Background="#9900122B" MouseLeftButtonDown="MobileSubscribeBackdrop_Click">
@@ -2859,7 +2820,7 @@
         <!-- ═══════════════════════════════════════════ -->
         <!-- TELEGRAM SUBSCRIBE DIALOG                    -->
         <!-- ═══════════════════════════════════════════ -->
-        <Grid Grid.Row="0" Grid.RowSpan="3"
+        <Grid Grid.Row="0" Grid.RowSpan="2"
               Visibility="{Binding IsTelegramSubscribeDialogOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
               Panel.ZIndex="1005">
             <Border Background="#9900182A" MouseLeftButtonDown="TelegramSubscribeBackdrop_Click">
@@ -3083,7 +3044,7 @@
         <!-- ═══════════════════════════════════════════ -->
         <!-- EXIT DIALOG OVERLAY                          -->
         <!-- ═══════════════════════════════════════════ -->
-        <Grid Grid.Row="0" Grid.RowSpan="3"
+        <Grid Grid.Row="0" Grid.RowSpan="2"
               Visibility="{Binding IsExitDialogOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
               Panel.ZIndex="1000">
 
@@ -3289,7 +3250,7 @@
 
         <!-- جولة التعريف بالميزات -->
         <Grid Visibility="{Binding IsFeatureTourOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
-              Grid.RowSpan="3" Panel.ZIndex="2100">
+              Grid.RowSpan="2" Panel.ZIndex="2100">
             <Border Background="#99000000"/>
             <materialDesign:Card HorizontalAlignment="Center" VerticalAlignment="Center"
                                  MinWidth="400" MaxWidth="480" Padding="28,24"
@@ -3336,7 +3297,7 @@
         </Grid>
 
         <!-- المساعد الذكي -->
-        <Grid Grid.Row="1" Grid.RowSpan="2"
+        <Grid Grid.Row="0" Grid.RowSpan="2"
               Visibility="{Binding IsSmartAssistantOpen, Converter={StaticResource BooleanToVisibilityConverter}}"
               Panel.ZIndex="2050">
             <Border Background="#66000000" MouseLeftButtonDown="SmartAssistantBackdrop_Click"/>
@@ -3454,7 +3415,7 @@
 
         <!-- اختصارات لوحة المفاتيح (F1) -->
         <Grid Visibility="{Binding ShowKeyboardShortcutsHelp, Converter={StaticResource BooleanToVisibilityConverter}}"
-              Grid.RowSpan="3" Panel.ZIndex="2200"
+              Grid.RowSpan="2" Panel.ZIndex="2200"
               MouseLeftButtonDown="KeyboardShortcutsBackdrop_Click">
             <Border Background="#99000000"/>
             <materialDesign:Card HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -3569,18 +3530,18 @@
 
         <!-- بحث شامل Ctrl+K -->
         <controls:GlobalSearchOverlay x:Name="GlobalSearchOverlay"
-                                      Grid.RowSpan="3"
+                                      Grid.RowSpan="2"
                                       Panel.ZIndex="2000"
                                       Visibility="{Binding IsGlobalSearchOpen, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
         <controls:VoiceAssistantOverlay x:Name="VoiceAssistantOverlay"
-                                        Grid.RowSpan="3"
+                                        Grid.RowSpan="2"
                                         Panel.ZIndex="2300"
                                         DataContext="{Binding}"
                                         Visibility="{Binding IsVoiceAssistantOpen, Converter={StaticResource BooleanToVisibilityConverter}}" />
 
         <controls:CustomerQuickStatementOverlay x:Name="QuickStatementOverlay"
-                                                Grid.RowSpan="3"
+                                                Grid.RowSpan="2"
                                                 Panel.ZIndex="2100"
                                                 DataContext="{Binding}"
                                                 Visibility="{Binding IsQuickStatementOpen, Converter={StaticResource BooleanToVisibilityConverter}}" />
@@ -3593,7 +3554,7 @@
                DataContext="{Binding ElementName=RootLayoutGrid, Path=DataContext}"
                StaysOpen="False"
                AllowsTransparency="True"
-               Grid.RowSpan="3"
+               Grid.RowSpan="2"
                Panel.ZIndex="1990">
             <Border Background="{DynamicResource CardBrush}" CornerRadius="14" Padding="16"
                     MinWidth="380" MaxWidth="520" MinHeight="200" MaxHeight="440"
@@ -3663,7 +3624,7 @@
                DataContext="{Binding ElementName=RootLayoutGrid, Path=DataContext}"
                StaysOpen="False"
                AllowsTransparency="True"
-               Grid.RowSpan="3"
+               Grid.RowSpan="2"
                Panel.ZIndex="1985">
             <Border Background="{DynamicResource CardBrush}" CornerRadius="14" Padding="16"
                     MinWidth="380" MaxWidth="520" MinHeight="280" MaxHeight="520"
@@ -3748,7 +3709,7 @@
         </Popup>
 
         <!-- Tasks panel dropdown -->
-        <Grid Grid.RowSpan="3"
+        <Grid Grid.RowSpan="2"
               Panel.ZIndex="2201"
               Visibility="{Binding IsTasksPanelOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border Background="#44000000" MouseLeftButtonDown="TasksBackdrop_Click"/>
@@ -3792,7 +3753,7 @@
         </Grid>
 
         <!-- Notes panel dropdown -->
-        <Grid Grid.RowSpan="3"
+        <Grid Grid.RowSpan="2"
               Panel.ZIndex="2201"
               Visibility="{Binding IsNotesPanelOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border Background="#44000000" MouseLeftButtonDown="NotesBackdrop_Click"/>
@@ -3836,7 +3797,7 @@
         </Grid>
 
         <!-- Notification Center dropdown -->
-        <Grid Grid.RowSpan="3"
+        <Grid Grid.RowSpan="2"
               Panel.ZIndex="2200"
               Visibility="{Binding IsNotificationPanelOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border Background="#44000000" MouseLeftButtonDown="NotificationBackdrop_Click"/>
@@ -3880,7 +3841,7 @@
         </Grid>
 
         <!-- Open Recent Excel panel -->
-        <Grid Grid.RowSpan="3"
+        <Grid Grid.RowSpan="2"
               Panel.ZIndex="2202"
               Visibility="{Binding IsOpenRecentExcelPanelOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border Background="#55000000" MouseLeftButtonDown="OpenRecentExcelBackdrop_Click"/>
@@ -3929,7 +3890,7 @@
         </Grid>
 
         <!-- Bottom notification reminder -->
-        <Border Grid.RowSpan="3"
+        <Border Grid.RowSpan="2"
                 Panel.ZIndex="2150"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Bottom"
