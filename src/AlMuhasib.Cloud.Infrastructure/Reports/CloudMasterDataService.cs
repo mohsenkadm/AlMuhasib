@@ -68,7 +68,17 @@ public sealed class CloudMasterDataService : ICloudMasterDataService
         if (categorySyncId.HasValue)
             query = query.Where(p => p.Category.SyncId == categorySyncId.Value);
         if (!string.IsNullOrWhiteSpace(barcode))
-            query = query.Where(p => p.Barcode == barcode.Trim());
+        {
+            var code = barcode.Trim();
+            var prefix = code + "|";
+            var suffix = "|" + code;
+            var middle = "|" + code + "|";
+            query = query.Where(p => p.Barcode != null && (
+                p.Barcode == code
+                || p.Barcode.StartsWith(prefix)
+                || p.Barcode.EndsWith(suffix)
+                || p.Barcode.Contains(middle)));
+        }
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = $"%{search.Trim()}%";

@@ -54,7 +54,8 @@ public partial class ProductsViewModel
         _barcodePrintProduct = product;
         BarcodePrintCompanyName = PrintBrandingProvider.Current.CompanyName?.Trim() ?? string.Empty;
         BarcodePrintProductName = product.Name;
-        BarcodePrintCode = product.Barcode!;
+        BarcodePrintCode = AlMuhasib.Core.Helpers.ProductBarcodeHelper.Primary(product.Barcode)
+            ?? product.Barcode!;
         BarcodePrintCopies = 1;
 
         decimal? price = null;
@@ -131,7 +132,7 @@ public partial class ProductsViewModel
             {
                 CompanyName = companyName,
                 ProductName = p.Name,
-                Barcode = p.Barcode!
+                Barcode = AlMuhasib.Core.Helpers.ProductBarcodeHelper.Primary(p.Barcode) ?? p.Barcode!
             })
             .ToList();
         if (items.Count == 0)
@@ -175,6 +176,8 @@ public partial class ProductsViewModel
         var stamp = DateTime.UtcNow.ToString("yyMMddHHmmss");
         var rand = Random.Shared.Next(100, 999);
         var candidate = $"2{stamp}{rand}";
-        return candidate.Length <= 50 ? candidate : candidate[..50];
+        return candidate.Length <= AlMuhasib.Core.Helpers.ProductBarcodeHelper.MaxStoredLength
+            ? candidate
+            : candidate[..AlMuhasib.Core.Helpers.ProductBarcodeHelper.MaxStoredLength];
     }
 }

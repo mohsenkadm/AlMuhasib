@@ -273,8 +273,7 @@ public partial class WarehouseTransferViewModel : ViewModelBase, IProductQuickSe
         }
 
         var product = Products.FirstOrDefault(p =>
-            !string.IsNullOrWhiteSpace(p.Barcode)
-            && string.Equals(p.Barcode.Trim(), code, StringComparison.OrdinalIgnoreCase));
+            AlMuhasib.Core.Helpers.ProductBarcodeHelper.Matches(p.Barcode, code));
 
         if (product is null)
         {

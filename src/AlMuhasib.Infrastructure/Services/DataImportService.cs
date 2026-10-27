@@ -125,7 +125,14 @@ public class DataImportService : IDataImportService
                     continue;
                 }
 
-                var barcode = GetCell(row, headerMap, ProductImportSchema.Barcode).Trim();
+                var barcode = AlMuhasib.Core.Helpers.ProductBarcodeHelper.Normalize(
+                    GetCell(row, headerMap, ProductImportSchema.Barcode));
+                if (barcode is not null && !AlMuhasib.Core.Helpers.ProductBarcodeHelper.IsWithinLength(barcode))
+                {
+                    result.Errors.Add($"الصف {row.RowNumber()}: الباركود أطول من الحد المسموح");
+                    continue;
+                }
+
                 var catName = GetCell(row, headerMap, ProductImportSchema.Category).Trim();
                 var category = string.IsNullOrEmpty(catName)
                     ? defaultCategory
@@ -135,7 +142,7 @@ public class DataImportService : IDataImportService
                 var product = new Product
                 {
                     Name = name,
-                    Barcode = string.IsNullOrEmpty(barcode) ? null : barcode,
+                    Barcode = barcode,
                     Description = NullIfEmpty(GetCell(row, headerMap, ProductImportSchema.Description)),
                     CategoryId = category.Id
                 };

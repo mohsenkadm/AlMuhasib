@@ -141,7 +141,7 @@ public static class ProductImportSchema
             row[i] = header switch
             {
                 Name => "منتج 1",
-                Barcode => "123456",
+                Barcode => "123456|789012",
                 Category => "عام",
                 Description => "وصف مختصر",
                 ScientificName => "",

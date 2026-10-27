@@ -1,5 +1,6 @@
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Infrastructure.Data;
@@ -28,18 +29,28 @@ public class ProductService : IProductService
         await using var context = await _contextFactory.CreateDbContextAsync();
         var username = _currentUserService.Username;
         var name = product.Name.Trim();
-        var barcode = string.IsNullOrWhiteSpace(product.Barcode) ? null : product.Barcode.Trim();
+        var barcode = ProductBarcodeHelper.Normalize(product.Barcode);
+        if (barcode is not null && !ProductBarcodeHelper.IsWithinLength(barcode))
+            throw new InvalidOperationException(
+                $"حقل الباركود يتجاوز الحد الأقصى ({ProductBarcodeHelper.MaxStoredLength} حرفاً).");
         // المنتجات مشتركة على الشركة — لا تُقيَّد بـ BranchId
         _ = _branchContext.HasWriteBranchContext;
+
+        if (barcode is not null)
+            await EnsureBarcodeTokensAvailableAsync(context, barcode, excludeProductId: null);
 
         Product? softDeleted = null;
         if (barcode is not null)
         {
-            softDeleted = await context.Products
+            var deletedCandidates = await context.Products
                 .IgnoreQueryFilters()
-                .Where(p => p.IsDeleted && p.Barcode == barcode)
+                .Where(p => p.IsDeleted && p.Barcode != null)
                 .OrderByDescending(p => p.DeletedAt)
-                .FirstOrDefaultAsync();
+                .Take(200)
+                .ToListAsync();
+            softDeleted = deletedCandidates.FirstOrDefault(p =>
+                string.Equals(p.Barcode, barcode, StringComparison.OrdinalIgnoreCase)
+                || ProductBarcodeHelper.SharesAnyToken(p.Barcode, ProductBarcodeHelper.Split(barcode)));
         }
 
         if (softDeleted is null
@@ -203,8 +214,15 @@ public class ProductService : IProductService
             .FirstOrDefaultAsync(p => p.Id == product.Id)
             ?? throw new InvalidOperationException("المنتج غير موجود");
 
+        var barcode = ProductBarcodeHelper.Normalize(product.Barcode);
+        if (barcode is not null && !ProductBarcodeHelper.IsWithinLength(barcode))
+            throw new InvalidOperationException(
+                $"حقل الباركود يتجاوز الحد الأقصى ({ProductBarcodeHelper.MaxStoredLength} حرفاً).");
+        if (barcode is not null)
+            await EnsureBarcodeTokensAvailableAsync(context, barcode, excludeProductId: existing.Id);
+
         existing.Name = product.Name;
-        existing.Barcode = product.Barcode;
+        existing.Barcode = barcode;
         existing.ScientificName = product.ScientificName;
         existing.UsageInstructions = product.UsageInstructions;
         existing.Description = product.Description;
@@ -282,10 +300,42 @@ public class ProductService : IProductService
 
     public async Task<Product?> GetByBarcodeAsync(string barcode)
     {
+        if (string.IsNullOrWhiteSpace(barcode))
+            return null;
+
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.Products
             .Include(p => p.Category)
-            .FirstOrDefaultAsync(p => p.Barcode == barcode);
+            .FirstOrDefaultAsync(ProductBarcodeHelper.MatchesExpression(barcode));
+    }
+
+    /// <summary>يمنع تكرار أي باركود فرعي بين المنتجات النشطة.</summary>
+    private static async Task EnsureBarcodeTokensAvailableAsync(
+        AppDbContext context,
+        string normalizedBarcode,
+        int? excludeProductId)
+    {
+        var tokens = ProductBarcodeHelper.Split(normalizedBarcode);
+        if (tokens.Count == 0)
+            return;
+
+        foreach (var token in tokens)
+        {
+            var query = context.Products.AsNoTracking().AsQueryable();
+            if (excludeProductId is not null)
+                query = query.Where(p => p.Id != excludeProductId.Value);
+
+            var conflictName = await query
+                .Where(ProductBarcodeHelper.MatchesExpression(token))
+                .Select(p => p.Name)
+                .FirstOrDefaultAsync();
+
+            if (conflictName is not null)
+            {
+                throw new InvalidOperationException(
+                    $"الباركود «{token}» مستخدم مسبقاً في المنتج: {conflictName}");
+            }
+        }
     }
 
     public async Task<IEnumerable<Product>> SearchByNameAsync(string name)

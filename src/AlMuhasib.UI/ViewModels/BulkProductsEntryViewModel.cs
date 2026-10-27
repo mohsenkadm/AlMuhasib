@@ -411,7 +411,7 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
                     var product = new Product
                     {
                         Name = row.Name.Trim(),
-                        Barcode = string.IsNullOrWhiteSpace(row.Barcode) ? null : row.Barcode.Trim(),
+                        Barcode = AlMuhasib.Core.Helpers.ProductBarcodeHelper.Normalize(row.Barcode),
                         Description = string.IsNullOrWhiteSpace(row.Description) ? null : row.Description.Trim(),
                         CategoryId = category.Id,
                         CustomFieldsJson = row.BuildCustomFieldsJson(_enabledCustomSlots)
