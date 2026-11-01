@@ -85,4 +85,23 @@ public class ProductBarcodeHelperTests
         Assert.True(ProductBarcodeHelper.IsWithinLength(new string('1', ProductBarcodeHelper.MaxStoredLength)));
         Assert.False(ProductBarcodeHelper.IsWithinLength(new string('1', ProductBarcodeHelper.MaxStoredLength + 1)));
     }
+
+    [Fact]
+    public void InfarkarMax_allows_empty_and_long_pipe_separated_field()
+    {
+        Assert.Equal("انفاركار ماكس", ProductBarcodeHelper.InfarkarMaxTypeName);
+        Assert.Null(ProductBarcodeHelper.Normalize(null));
+        Assert.Null(ProductBarcodeHelper.Normalize(""));
+        Assert.Null(ProductBarcodeHelper.Normalize("   "));
+
+        const string sample =
+            "6292626181711|6282717230169|6282717238141|6282717237076|6930446840851|6930446829030|6691106078365|6124568797005|6292626182893|6930446830678|6292626191864|6691106076873|6292625172277|6930446839152|6930446839138|6930446829191|6930446844606|5060127731794|6930446809810|6282717212981|6282717234952|6282717226414|6930446844613|607469470032|6930446824509|6282717222690|6282717226384|6282717223017|6129226116594|6282717223024|6282717212998|6930446836786|6282717222966|6930446829283|6282717232675|6930446824516|6282717222676|6930446830654|6282717233672|8439627584310|6282717235119|6282717219683|6282717237106|6930446825186|6930446825193|6930446810816|6930446841018|6282717223864|6282717217627|697051001928|6936829067327|6930446828774|6282717213025|6282717226391|6282717235126|6930446830685|3346470133532|723803733684|6930446843166|6930446840844|4897138051860";
+
+        Assert.Equal(850, sample.Length);
+        var normalized = ProductBarcodeHelper.Normalize(sample);
+        Assert.NotNull(normalized);
+        Assert.True(ProductBarcodeHelper.IsWithinLength(normalized));
+        Assert.True(ProductBarcodeHelper.Matches(normalized, "4897138051860"));
+        Assert.True(ProductBarcodeHelper.Matches(normalized, "6292626181711"));
+    }
 }

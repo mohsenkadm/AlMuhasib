@@ -53,4 +53,7 @@ public class UserAppPreferences
 
     /// <summary>تصغير لوحة خطوات معالج النقل لتوسيع مساحة الإدخال.</summary>
     public bool MigrationWizardStepsPanelCollapsed { get; set; }
+
+    /// <summary>آخر كلمات البحث عن واجهات النظام من شريط العنوان.</summary>
+    public List<string> RecentMenuSearches { get; set; } = [];
 }

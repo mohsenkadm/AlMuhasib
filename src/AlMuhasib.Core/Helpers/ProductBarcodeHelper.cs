@@ -5,15 +5,21 @@ namespace AlMuhasib.Core.Helpers;
 
 /// <summary>
 /// عدة باركودات لنفس المنتج داخل حقل واحد، مفصولة بـ |.
+/// نوع التخزين: انفاركار ماكس — يقبل الفراغ أو سلسلة طويلة من الباركودات.
 /// مثال: 123|456|789
 /// </summary>
 public static class ProductBarcodeHelper
 {
     public const char Separator = '|';
     public const string SeparatorString = "|";
-    public const int MaxStoredLength = 500;
 
-    /// <summary>يقصّ الأجزاء، يزيل الفراغات الفارغة، ويزيل التكرار (بدون تمييز حالة).</summary>
+    /// <summary>اسم نوع الباركود المعتمد للمنتجات (عدة باركودات + فراغ).</summary>
+    public const string InfarkarMaxTypeName = "انفاركار ماكس";
+
+    /// <summary>الحد الأقصى لطول حقل الباركود بعد التطبيع (انفاركار ماكس).</summary>
+    public const int MaxStoredLength = 2000;
+
+    /// <summary>يقصّ الأجزاء، يزيل الفراغات الفارغة، ويزيل التكرار (بدون تمييز حالة). الفراغ → null.</summary>
     public static string? Normalize(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))

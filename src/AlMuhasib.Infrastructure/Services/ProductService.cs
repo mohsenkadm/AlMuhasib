@@ -32,7 +32,7 @@ public class ProductService : IProductService
         var barcode = ProductBarcodeHelper.Normalize(product.Barcode);
         if (barcode is not null && !ProductBarcodeHelper.IsWithinLength(barcode))
             throw new InvalidOperationException(
-                $"حقل الباركود يتجاوز الحد الأقصى ({ProductBarcodeHelper.MaxStoredLength} حرفاً).");
+                $"حقل الباركود (انفاركار ماكس) يتجاوز الحد الأقصى ({ProductBarcodeHelper.MaxStoredLength} حرفاً).");
         // المنتجات مشتركة على الشركة — لا تُقيَّد بـ BranchId
         _ = _branchContext.HasWriteBranchContext;
 
@@ -217,7 +217,7 @@ public class ProductService : IProductService
         var barcode = ProductBarcodeHelper.Normalize(product.Barcode);
         if (barcode is not null && !ProductBarcodeHelper.IsWithinLength(barcode))
             throw new InvalidOperationException(
-                $"حقل الباركود يتجاوز الحد الأقصى ({ProductBarcodeHelper.MaxStoredLength} حرفاً).");
+                $"حقل الباركود (انفاركار ماكس) يتجاوز الحد الأقصى ({ProductBarcodeHelper.MaxStoredLength} حرفاً).");
         if (barcode is not null)
             await EnsureBarcodeTokensAvailableAsync(context, barcode, excludeProductId: existing.Id);
 
@@ -505,6 +505,45 @@ public class ProductService : IProductService
             .Include(p => p.Category)
             .OrderBy(p => p.Name)
             .ToListAsync(ct);
+    }
+
+    public async Task<(IReadOnlyList<(int Id, string Name)> Items, int TotalCount)> GetVisibleNamesPagedAsync(
+        int page,
+        int pageSize,
+        string? searchTerm = null,
+        CancellationToken ct = default)
+    {
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 50;
+
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        IQueryable<Product> query = context.Products.AsNoTracking();
+
+        if (_branchContext.CurrentBranchId is int branchId && !_branchContext.IsAllBranchesMode)
+            query = ApplyVisibleInBranchFilter(query, context, branchId);
+
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            var term = searchTerm.Trim();
+            query = query.Where(p =>
+                p.Name.Contains(term) ||
+                (p.Barcode != null && p.Barcode.Contains(term)));
+        }
+
+        var totalCount = await query.CountAsync(ct);
+
+        var pageItems = await query
+            .OrderBy(p => p.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(p => new { p.Id, p.Name })
+            .ToListAsync(ct);
+
+        IReadOnlyList<(int Id, string Name)> items = pageItems
+            .Select(p => (p.Id, p.Name))
+            .ToList();
+
+        return (items, totalCount);
     }
 
     public async Task<bool> IsVisibleInBranchAsync(int productId, int branchId, CancellationToken ct = default)

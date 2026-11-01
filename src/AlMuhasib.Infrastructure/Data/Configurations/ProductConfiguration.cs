@@ -17,8 +17,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.Description)
             .HasMaxLength(500);
 
+        // انفاركار ماكس: عدة باركودات بـ | حتى 2000 حرف، والفراغ مسموح (null)
         builder.Property(p => p.Barcode)
-            .HasMaxLength(500);
+            .HasMaxLength(2000);
 
         builder.Property(p => p.ScientificName)
             .HasMaxLength(300);
@@ -61,9 +62,8 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .HasForeignKey(p => p.CategoryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(p => p.Barcode)
-            .IsUnique()
-            .HasFilter("[Barcode] IS NOT NULL AND [IsDeleted] = 0");
+        // لا فهرس فريد على العمود بالكامل: الطول 2000 يتجاوز حد مفتاح الفهرس،
+        // ومنع التكرار يتم لكل باركود فرعي عبر ProductService.EnsureBarcodeTokensAvailableAsync.
 
         builder.HasIndex(p => p.Name);
     }

@@ -3433,11 +3433,36 @@
     <!-- Title bar chrome — light defaults (ThemeService overrides for dark) -->
     <SolidColorBrush x:Key="AppTitleBarBackground" Color="#DCE6F5"/>
     <SolidColorBrush x:Key="AppTitleBarAccentLineBrush" Color="#5B9BD5"/>
+    <!-- Notification side drawer header (light default; ThemeService swaps for dark) -->
+    <LinearGradientBrush x:Key="NotificationDrawerHeaderBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#1565C0" Offset="0"/>
+        <GradientStop Color="#1E88E5" Offset="1"/>
+    </LinearGradientBrush>
+
     <SolidColorBrush x:Key="TitleBarIconBrush" Color="#1E3A5F"/>
     <SolidColorBrush x:Key="TitleBarIconAccentBrush" Color="#1565C0"/>
     <SolidColorBrush x:Key="TitleBarIconTealBrush" Color="#00796B"/>
     <SolidColorBrush x:Key="TitleBarIconGreenBrush" Color="#2E7D32"/>
     <SolidColorBrush x:Key="TitleBarIconAmberBrush" Color="#EF6C00"/>
+    <SolidColorBrush x:Key="TitleBarIconBadgeBlueBg" Color="#E3F2FD"/>
+    <SolidColorBrush x:Key="TitleBarIconBadgeBlueFg" Color="#1565C0"/>
+    <SolidColorBrush x:Key="TitleBarIconBadgeGreenBg" Color="#E8F5E9"/>
+    <SolidColorBrush x:Key="TitleBarIconBadgeGreenFg" Color="#2E7D32"/>
+    <SolidColorBrush x:Key="TitleBarIconBadgeAmberBg" Color="#FFF3E0"/>
+    <SolidColorBrush x:Key="TitleBarIconBadgeAmberFg" Color="#EF6C00"/>
+    <SolidColorBrush x:Key="TitleBarIconBadgeTealBg" Color="#E0F2F1"/>
+    <SolidColorBrush x:Key="TitleBarIconBadgeTealFg" Color="#00796B"/>
+    <SolidColorBrush x:Key="TitleBarIconBadgeNeutralBg" Color="#ECEFF1"/>
+    <SolidColorBrush x:Key="TitleBarIconBadgeNeutralFg" Color="#455A64"/>
+    <SolidColorBrush x:Key="TitleBarIconBadgeWhatsAppBg" Color="#E8F5E9"/>
+    <SolidColorBrush x:Key="TitleBarIconBadgeWhatsAppFg" Color="#25D366"/>
+    <SolidColorBrush x:Key="TitleBarIconBadgeRedBg" Color="#FFEBEE"/>
+    <SolidColorBrush x:Key="TitleBarIconBadgeRedFg" Color="#C62828"/>
+    <SolidColorBrush x:Key="TitleBarSearchFieldBackground" Color="#F0F4FA"/>
+    <SolidColorBrush x:Key="TitleBarSearchFieldFocusBackground" Color="#E8EEF8"/>
+    <SolidColorBrush x:Key="TitleBarSearchFieldForeground" Color="#1E3A5F"/>
+    <SolidColorBrush x:Key="TitleBarSearchFieldHintBrush" Color="#90A4AE"/>
+    <SolidColorBrush x:Key="TitleBarSearchFieldIconBrush" Color="#1565C0"/>
     <SolidColorBrush x:Key="TitleBarDatePillBackground" Color="#F2F6FC"/>
     <SolidColorBrush x:Key="TitleBarDatePillBorder" Color="#B8C9E0"/>
     <SolidColorBrush x:Key="TitleBarClockPillBackground" Color="#E8F5E9"/>
@@ -3518,6 +3543,130 @@
                             <Setter TargetName="Bd" Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Circular modern icon badges for title bar actions -->
+    <Style x:Key="TitleBarRoundIconButton" TargetType="Button">
+        <Setter Property="Width" Value="36"/>
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="MinWidth" Value="36"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Margin" Value="0,0,8,0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Background" Value="{DynamicResource TitleBarIconBadgeNeutralBg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TitleBarIconBadgeNeutralFg}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        </Grid.RenderTransform>
+                        <Border x:Name="Bd"
+                                Width="{TemplateBinding Width}"
+                                Height="{TemplateBinding Height}"
+                                CornerRadius="18"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.92"/>
+                            <Setter TargetName="Root" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="1.08" ScaleY="1.08"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Root" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="0.94" ScaleY="0.94"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Root" Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TitleBarRoundIconBlue" TargetType="Button" BasedOn="{StaticResource TitleBarRoundIconButton}">
+        <Setter Property="Background" Value="{DynamicResource TitleBarIconBadgeBlueBg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TitleBarIconBadgeBlueFg}"/>
+    </Style>
+    <Style x:Key="TitleBarRoundIconGreen" TargetType="Button" BasedOn="{StaticResource TitleBarRoundIconButton}">
+        <Setter Property="Background" Value="{DynamicResource TitleBarIconBadgeGreenBg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TitleBarIconBadgeGreenFg}"/>
+    </Style>
+    <Style x:Key="TitleBarRoundIconAmber" TargetType="Button" BasedOn="{StaticResource TitleBarRoundIconButton}">
+        <Setter Property="Background" Value="{DynamicResource TitleBarIconBadgeAmberBg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TitleBarIconBadgeAmberFg}"/>
+    </Style>
+    <Style x:Key="TitleBarRoundIconTeal" TargetType="Button" BasedOn="{StaticResource TitleBarRoundIconButton}">
+        <Setter Property="Background" Value="{DynamicResource TitleBarIconBadgeTealBg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TitleBarIconBadgeTealFg}"/>
+    </Style>
+    <Style x:Key="TitleBarRoundIconNeutral" TargetType="Button" BasedOn="{StaticResource TitleBarRoundIconButton}">
+        <Setter Property="Background" Value="{DynamicResource TitleBarIconBadgeNeutralBg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TitleBarIconBadgeNeutralFg}"/>
+    </Style>
+    <Style x:Key="TitleBarRoundIconWhatsApp" TargetType="Button" BasedOn="{StaticResource TitleBarRoundIconButton}">
+        <Setter Property="Background" Value="{DynamicResource TitleBarIconBadgeWhatsAppBg}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TitleBarIconBadgeWhatsAppFg}"/>
+    </Style>
+
+    <Style x:Key="TitleBarSearchTextBox" TargetType="TextBox">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CaretBrush" Value="{DynamicResource TitleBarSearchFieldForeground}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TitleBarSearchFieldForeground}"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="MinHeight" Value="28"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Grid>
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                      VerticalAlignment="Center"
+                                      HorizontalAlignment="Stretch"
+                                      Margin="0"/>
+                        <TextBlock x:Name="Hint"
+                                   Text="{TemplateBinding Tag}"
+                                   FontSize="12.5"
+                                   Foreground="{DynamicResource TitleBarSearchFieldHintBrush}"
+                                   VerticalAlignment="Center"
+                                   IsHitTestVisible="False"
+                                   Margin="1,0,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource TemplatedParent}}" Value="">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Text, RelativeSource={RelativeSource TemplatedParent}}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

@@ -3057,7 +3057,16 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 }
 
                 var nameKey = row.Name.Trim();
+                // انفاركار ماكس: الفراغ مسموح (null)، والسلسلة الطويلة متعددة الباركودات مسموحة
                 var barcodeKey = AlMuhasib.Core.Helpers.ProductBarcodeHelper.Normalize(row.Barcode);
+                if (barcodeKey is not null
+                    && !AlMuhasib.Core.Helpers.ProductBarcodeHelper.IsWithinLength(barcodeKey))
+                {
+                    rowErrors.Add(
+                        $"«{row.Name}»: الباركود أطول من حد انفاركار ماكس ({AlMuhasib.Core.Helpers.ProductBarcodeHelper.MaxStoredLength} حرفاً)");
+                    continue;
+                }
+
                 var product = products.FirstOrDefault(p =>
                     string.Equals(p.Name, nameKey, StringComparison.OrdinalIgnoreCase));
                 // هوية المنتج: الاسم أولاً، ثم أي باركود فرعي إن وُجد — يمنع مكرراً عند ربط فرع آخر

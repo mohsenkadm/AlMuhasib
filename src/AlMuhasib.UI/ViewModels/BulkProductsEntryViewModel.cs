@@ -408,10 +408,18 @@ public partial class BulkProductsEntryViewModel : ViewModelBase
                         }
                     }
 
+                    var barcode = AlMuhasib.Core.Helpers.ProductBarcodeHelper.Normalize(row.Barcode);
+                    if (barcode is not null
+                        && !AlMuhasib.Core.Helpers.ProductBarcodeHelper.IsWithinLength(barcode))
+                    {
+                        throw new InvalidOperationException(
+                            $"الباركود أطول من حد انفاركار ماكس ({AlMuhasib.Core.Helpers.ProductBarcodeHelper.MaxStoredLength} حرفاً)");
+                    }
+
                     var product = new Product
                     {
                         Name = row.Name.Trim(),
-                        Barcode = AlMuhasib.Core.Helpers.ProductBarcodeHelper.Normalize(row.Barcode),
+                        Barcode = barcode,
                         Description = string.IsNullOrWhiteSpace(row.Description) ? null : row.Description.Trim(),
                         CategoryId = category.Id,
                         CustomFieldsJson = row.BuildCustomFieldsJson(_enabledCustomSlots)

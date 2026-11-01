@@ -76,8 +76,9 @@
                                      materialDesign:ElevationAssist.Elevation="Dp1">
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="300"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="280"/>
+                            <ColumnDefinition Width="*" MinWidth="200"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <ComboBox Grid.Column="0"
                                   ItemsSource="{Binding Warehouses}"
@@ -88,15 +89,21 @@
                                   materialDesign:ComboBoxAssist.ShowSelectedItem="True"
                                   Style="{StaticResource FilledComboBox}"
                                   FontSize="14" />
-                        <StackPanel Grid.Column="1" Orientation="Horizontal"
-                                    HorizontalAlignment="Left" VerticalAlignment="Center" Margin="16,0,0,0">
-                            <Border Background="{DynamicResource DashboardKpiOrangeLightBrush}" CornerRadius="8" Padding="12,6" Margin="0,0,8,0">
-                                <TextBlock FontSize="13" Foreground="#E65100">
-                                    <Run Text="عدد التسويات:" FontWeight="SemiBold"/>
-                                    <Run Text="{Binding ChangedCount, Mode=OneWay}" FontWeight="Bold"/>
-                                </TextBlock>
-                            </Border>
-                        </StackPanel>
+                        <TextBox Grid.Column="1"
+                                 Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                 Margin="16,0,0,0"
+                                 materialDesign:HintAssist.Hint="بحث بالاسم أو الباركود..."
+                                 materialDesign:HintAssist.IsFloating="True"
+                                 materialDesign:TextFieldAssist.HasClearButton="True"
+                                 Style="{StaticResource MaterialDesignFilledTextBox}"
+                                 FontSize="14" />
+                        <Border Grid.Column="2" Background="{DynamicResource DashboardKpiOrangeLightBrush}"
+                                CornerRadius="8" Padding="12,6" Margin="16,0,0,0" VerticalAlignment="Center">
+                            <TextBlock FontSize="13" Foreground="#E65100">
+                                <Run Text="عدد التسويات:" FontWeight="SemiBold"/>
+                                <Run Text="{Binding ChangedCount, Mode=OneWay}" FontWeight="Bold"/>
+                            </TextBlock>
+                        </Border>
                     </Grid>
                 </materialDesign:Card>
 
@@ -111,6 +118,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <controls:ListTableHeaderBar Grid.Row="0"
@@ -136,8 +144,7 @@
                                 <DataGridTemplateColumn Header="#" Width="50" IsReadOnly="True">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
-                                            <TextBlock Text="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow},
-                                                       Path=(ItemsControl.AlternationIndex), StringFormat='{}{0}'}"
+                                            <TextBlock Text="{Binding RowNumber}"
                                                        HorizontalAlignment="Center" Foreground="{DynamicResource HintForegroundBrush}"/>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
@@ -204,6 +211,8 @@
                                 </DataGridTemplateColumn>
                             </DataGrid.Columns>
                 </DataGrid>
+
+                <controls:PaginationBar Grid.Row="2"/>
             </Grid>
         </materialDesign:Card>
 

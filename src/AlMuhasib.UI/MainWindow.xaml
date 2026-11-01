@@ -119,56 +119,261 @@
                     </Button>
                 </StackPanel>
 
-                <!-- Sidebar toggle + page title -->
+                <!-- Sidebar toggle + page title + branch (right side) -->
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
                             Margin="10,0,0,0"
                             WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button Command="{Binding ToggleSidebarCommand}"
-                            Style="{StaticResource IconButton}"
+                            Style="{StaticResource TitleBarRoundIconNeutral}"
                             ToolTip="طي/فتح القائمة"
-                            Width="38" Height="38"
-                            Foreground="{DynamicResource TitleBarIconBrush}">
-                        <materialDesign:PackIcon Kind="Menu" Width="22" Height="22"
-                                                 Foreground="{DynamicResource TitleBarIconBrush}" />
+                            Margin="0,0,8,0">
+                        <materialDesign:PackIcon Kind="Menu" Width="18" Height="18" />
                     </Button>
                     <TextBlock Text="{Binding PageTitle}"
                                FontSize="17"
                                FontWeight="SemiBold"
                                VerticalAlignment="Center"
-                               Margin="10,0,0,0"
+                               Margin="0,0,10,0"
                                Foreground="{DynamicResource TitleBarIconBrush}" />
+                    <Border VerticalAlignment="Center"
+                            CornerRadius="14"
+                            Padding="10,5"
+                            Background="{DynamicResource TitleBarBranchBadgeBackground}"
+                            BorderBrush="{DynamicResource TitleBarBranchBadgeBorder}"
+                            BorderThickness="1"
+                            Visibility="{Binding HasCurrentBranch, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            ToolTip="{Binding CurrentBranchName, StringFormat=الفرع الحالي: {0}}"
+                            WindowChrome.IsHitTestVisibleInChrome="False">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="StoreMarkerOutline"
+                                                     Width="14" Height="14"
+                                                     Foreground="{DynamicResource TitleBarBranchBadgeIcon}"
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,6,0" />
+                            <TextBlock Text="{Binding CurrentBranchName}"
+                                       FontSize="12"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TitleBarBranchBadgeForeground}"
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxWidth="160" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
-                <!-- Current branch badge -->
-                <Border Grid.Column="2"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        CornerRadius="14"
-                        Padding="12,5"
-                        Margin="8,0"
-                        Background="{DynamicResource TitleBarBranchBadgeBackground}"
-                        BorderBrush="{DynamicResource TitleBarBranchBadgeBorder}"
-                        BorderThickness="1"
-                        Visibility="{Binding HasCurrentBranch, Converter={StaticResource BooleanToVisibilityConverter}}"
-                        ToolTip="{Binding CurrentBranchName, StringFormat=الفرع الحالي: {0}}"
-                        WindowChrome.IsHitTestVisibleInChrome="False">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="StoreMarkerOutline"
-                                                 Width="15" Height="15"
-                                                 Foreground="{DynamicResource TitleBarBranchBadgeIcon}"
-                                                 VerticalAlignment="Center"
-                                                 Margin="0,0,6,0" />
-                        <TextBlock Text="{Binding CurrentBranchName}"
-                                   FontSize="12"
-                                   FontWeight="SemiBold"
-                                   Foreground="{DynamicResource TitleBarBranchBadgeForeground}"
-                                   VerticalAlignment="Center"
-                                   TextTrimming="CharacterEllipsis"
-                                   MaxWidth="220" />
-                    </StackPanel>
-                </Border>
+                <!-- Center: modern interface search -->
+                <Grid Grid.Column="2"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Stretch"
+                      MinWidth="260" MaxWidth="420" Width="360"
+                      Margin="12,8"
+                      WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Border x:Name="TitleBarSearchHost"
+                            CornerRadius="18"
+                            Padding="12,4"
+                            VerticalAlignment="Stretch"
+                            BorderThickness="0">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Background" Value="{DynamicResource TitleBarSearchFieldBackground}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsTitleBarSearchFocused}" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource TitleBarSearchFieldFocusBackground}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" Width="28" Height="28" CornerRadius="14"
+                                    Background="{DynamicResource TitleBarIconBadgeBlueBg}"
+                                    Margin="0,0,10,0" VerticalAlignment="Center"
+                                    IsHitTestVisible="False">
+                                <materialDesign:PackIcon Kind="Magnify" Width="16" Height="16"
+                                                         Foreground="{DynamicResource TitleBarSearchFieldIconBrush}"
+                                                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBox x:Name="TitleBarSearchBox"
+                                     Grid.Column="1"
+                                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource TitleBarSearchTextBox}"
+                                     Tag="ابحث عن واجهة داخل النظام..."
+                                     GotFocus="TitleBarSearchBox_GotFocus"
+                                     LostFocus="TitleBarSearchBox_LostFocus"
+                                     PreviewKeyDown="TitleBarSearchBox_PreviewKeyDown"/>
+                            <Button Grid.Column="2"
+                                    Command="{Binding ClearTitleBarSearchCommand}"
+                                    Width="26" Height="26" Padding="0" Margin="6,0,0,0"
+                                    Cursor="Hand" Focusable="False"
+                                    ToolTip="تفريغ البحث"
+                                    Background="Transparent" BorderThickness="0"
+                                    VerticalAlignment="Center">
+                                <Button.Style>
+                                    <Style TargetType="Button">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="Bd" Background="{DynamicResource TitleBarIconBadgeNeutralBg}"
+                                                            CornerRadius="13" Width="26" Height="26">
+                                                        <materialDesign:PackIcon Kind="Close" Width="14" Height="14"
+                                                                                 Foreground="{DynamicResource TitleBarIconBadgeNeutralFg}"
+                                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                                 IsHitTestVisible="False"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SearchText}" Value="{x:Null}">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding SearchText}" Value="">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <Popup x:Name="TitleBarSearchPopup"
+                           Placement="Bottom"
+                           PlacementTarget="{Binding ElementName=TitleBarSearchHost}"
+                           StaysOpen="True"
+                           AllowsTransparency="True"
+                           IsOpen="{Binding IsTitleBarSearchPopupOpen, Mode=OneWay}"
+                           PopupAnimation="Fade"
+                           HorizontalOffset="0"
+                           VerticalOffset="8">
+                        <Border Background="{DynamicResource SearchPanelBackgroundBrush}"
+                                BorderBrush="{DynamicResource SearchPanelBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="14"
+                                Padding="8"
+                                MinWidth="360"
+                                MaxWidth="420"
+                                MaxHeight="380"
+                                MouseDown="TitleBarSearchPopup_MouseDown">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="22" ShadowDepth="4" Opacity="0.16" Color="#0D1B2A"/>
+                            </Border.Effect>
+                            <Grid>
+                                <!-- Recent keywords -->
+                                <StackPanel Visibility="{Binding ShowRecentMenuSearches, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <Grid Margin="6,4,6,10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="المقترحات الأخيرة"
+                                                   FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource SearchResultSubtitleBrush}"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <Button Grid.Column="1"
+                                                Content="مسح"
+                                                FontSize="11"
+                                                FontWeight="SemiBold"
+                                                Padding="10,4"
+                                                Margin="12,0,0,0"
+                                                Cursor="Hand"
+                                                Background="{DynamicResource TitleBarIconBadgeBlueBg}"
+                                                BorderThickness="0"
+                                                Foreground="{DynamicResource TitleBarIconBadgeBlueFg}"
+                                                VerticalAlignment="Center"
+                                                Command="{Binding ClearRecentMenuSearchesCommand}">
+                                            <Button.Template>
+                                                <ControlTemplate TargetType="Button">
+                                                    <Border x:Name="Bd"
+                                                            Background="{TemplateBinding Background}"
+                                                            CornerRadius="8"
+                                                            Padding="{TemplateBinding Padding}">
+                                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Bd" Property="Opacity" Value="0.88"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Button.Template>
+                                        </Button>
+                                    </Grid>
+                                    <ItemsControl ItemsSource="{Binding RecentMenuSearches}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Command="{Binding DataContext.SelectRecentMenuSearchCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource SidebarSearchResultButton}"
+                                                        MinHeight="40"
+                                                        HorizontalContentAlignment="Stretch"
+                                                        Margin="0,1"
+                                                        PreviewMouseLeftButtonDown="TitleBarSearchResult_PreviewMouseLeftButtonDown">
+                                                    <StackPanel Orientation="Horizontal" IsHitTestVisible="False">
+                                                        <materialDesign:PackIcon Kind="History" Width="16" Height="16"
+                                                                                 Foreground="{DynamicResource SearchResultSubtitleBrush}"
+                                                                                 VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                                        <TextBlock Text="{Binding}" FontSize="13"
+                                                                   Foreground="{DynamicResource SearchResultTitleBrush}"
+                                                                   VerticalAlignment="Center"
+                                                                   TextTrimming="CharacterEllipsis"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+
+                                <!-- Interface results -->
+                                <ItemsControl ItemsSource="{Binding SearchResults}"
+                                              Visibility="{Binding HasSearchResults, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Button Command="{Binding DataContext.SelectSearchResultCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource SidebarSearchResultButton}"
+                                                    MinHeight="44"
+                                                    HorizontalContentAlignment="Stretch"
+                                                    PreviewMouseLeftButtonDown="TitleBarSearchResult_PreviewMouseLeftButtonDown">
+                                                <Grid IsHitTestVisible="False">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <Border Grid.Column="0" Width="34" Height="34" CornerRadius="17"
+                                                            Background="{DynamicResource TitleBarIconBadgeBlueBg}"
+                                                            Margin="0,0,10,0" VerticalAlignment="Center">
+                                                        <materialDesign:PackIcon Kind="{Binding Icon}" Width="18" Height="18"
+                                                                                 Foreground="{DynamicResource TitleBarIconBadgeBlueFg}"
+                                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                    <TextBlock Grid.Column="1" Text="{Binding Title}"
+                                                               FontSize="13.5" FontWeight="SemiBold"
+                                                               Foreground="{DynamicResource SearchResultTitleBrush}"
+                                                               VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                                </Grid>
+                                            </Button>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+                        </Border>
+                    </Popup>
+                </Grid>
 
                 <!-- Trial activation chip + date/time pills -->
                 <StackPanel Grid.Column="3"
@@ -276,24 +481,22 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Open Recent + Tasks + Notes + Notifications + Help -->
+                <!-- Open Recent + Tasks + Notes + Notifications + Help (circular modern icons) -->
                 <StackPanel Grid.Column="4"
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
-                            Margin="0,0,12,0"
+                            Margin="0,0,8,0"
                             WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button Command="{Binding ToggleOpenRecentExcelPanelCommand}"
-                            Style="{StaticResource TitleBarCaptionButton}"
-                            Width="38" Height="38" Margin="0,0,8,0"
+                            Style="{StaticResource TitleBarRoundIconGreen}"
                             ToolTip="Open Recent — ملفات Excel الأخيرة">
-                        <Grid Width="24" Height="24">
-                            <materialDesign:PackIcon Kind="MicrosoftExcel" Width="20" Height="20"
-                                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                     Foreground="{DynamicResource TitleBarIconGreenBrush}"/>
-                            <Border Width="18" Height="18" CornerRadius="9"
+                        <Grid Width="22" Height="22">
+                            <materialDesign:PackIcon Kind="MicrosoftExcel" Width="18" Height="18"
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Width="16" Height="16" CornerRadius="8"
                                     Background="#43A047" BorderBrush="White" BorderThickness="1.5"
                                     HorizontalAlignment="Right" VerticalAlignment="Top"
-                                    Margin="0,-7,-9,0">
+                                    Margin="0,-6,-8,0">
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Setter Property="Visibility" Value="Visible"/>
@@ -305,23 +508,21 @@
                                     </Style>
                                 </Border.Style>
                                 <TextBlock Text="{Binding RecentExcelExportBadgeText}"
-                                           FontSize="9" FontWeight="Bold" Foreground="White"
+                                           FontSize="8" FontWeight="Bold" Foreground="White"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </Grid>
                     </Button>
                     <Button Command="{Binding ToggleTasksPanelCommand}"
-                            Style="{StaticResource TitleBarCaptionButton}"
-                            Width="38" Height="38" Margin="0,0,8,0"
+                            Style="{StaticResource TitleBarRoundIconBlue}"
                             ToolTip="مهامي">
-                        <Grid Width="24" Height="24">
-                            <materialDesign:PackIcon Kind="ClipboardCheckOutline" Width="20" Height="20"
-                                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                     Foreground="{DynamicResource TitleBarIconAccentBrush}"/>
-                            <Border Width="18" Height="18" CornerRadius="9"
+                        <Grid Width="22" Height="22">
+                            <materialDesign:PackIcon Kind="ClipboardCheckOutline" Width="18" Height="18"
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Width="16" Height="16" CornerRadius="8"
                                     Background="#E53935" BorderBrush="White" BorderThickness="1.5"
                                     HorizontalAlignment="Right" VerticalAlignment="Top"
-                                    Margin="0,-7,-9,0">
+                                    Margin="0,-6,-8,0">
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Setter Property="Visibility" Value="Visible"/>
@@ -333,30 +534,26 @@
                                     </Style>
                                 </Border.Style>
                                 <TextBlock Text="{Binding PendingTaskBadgeText}"
-                                           FontSize="9" FontWeight="Bold" Foreground="White"
+                                           FontSize="8" FontWeight="Bold" Foreground="White"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </Grid>
                     </Button>
                     <Button Command="{Binding ToggleNotesPanelCommand}"
-                            Style="{StaticResource TitleBarCaptionButton}"
-                            Width="38" Height="38" Margin="0,0,8,0"
+                            Style="{StaticResource TitleBarRoundIconAmber}"
                             ToolTip="ملاحظاتي">
-                        <materialDesign:PackIcon Kind="NotebookOutline" Width="20" Height="20"
-                                                 Foreground="{DynamicResource TitleBarIconAmberBrush}"/>
+                        <materialDesign:PackIcon Kind="NotebookOutline" Width="18" Height="18"/>
                     </Button>
                     <Button Command="{Binding ToggleNotificationPanelCommand}"
-                            Style="{StaticResource TitleBarCaptionButton}"
-                            Width="38" Height="38" Margin="0,0,8,0"
+                            Style="{StaticResource TitleBarRoundIconNeutral}"
                             ToolTip="الإشعارات">
-                        <Grid Width="24" Height="24">
-                            <materialDesign:PackIcon Kind="BellOutline" Width="20" Height="20"
-                                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                     Foreground="{DynamicResource TitleBarIconBrush}"/>
-                            <Border Width="18" Height="18" CornerRadius="9"
+                        <Grid Width="22" Height="22">
+                            <materialDesign:PackIcon Kind="BellOutline" Width="18" Height="18"
+                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Width="16" Height="16" CornerRadius="8"
                                     Background="#E53935" BorderBrush="White" BorderThickness="1.5"
                                     HorizontalAlignment="Right" VerticalAlignment="Top"
-                                    Margin="0,-7,-9,0">
+                                    Margin="0,-6,-8,0">
                                 <Border.Style>
                                     <Style TargetType="Border">
                                         <Setter Property="Visibility" Value="Visible"/>
@@ -368,44 +565,27 @@
                                     </Style>
                                 </Border.Style>
                                 <TextBlock Text="{Binding UnreadNotificationBadgeText}"
-                                           FontSize="9" FontWeight="Bold" Foreground="White"
+                                           FontSize="8" FontWeight="Bold" Foreground="White"
                                            HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </Grid>
                     </Button>
                     <Button Command="{Binding CheckForUpdatesCommand}"
-                            Style="{StaticResource TitleBarCaptionButton}"
-                            Width="38" Height="38" Margin="0,0,8,0"
+                            Style="{StaticResource TitleBarRoundIconBlue}"
                             ToolTip="التحقق من تحديثات النظام"
                             IsEnabled="{Binding IsCheckingForUpdate, Converter={StaticResource InverseBooleanConverter}}">
-                        <materialDesign:PackIcon Kind="CloudDownload" Width="20" Height="20"
-                                                 Foreground="{DynamicResource TitleBarIconAccentBrush}"/>
+                        <materialDesign:PackIcon Kind="CloudDownload" Width="18" Height="18"/>
                     </Button>
                     <Button Command="{Binding OpenHelpVideosCommand}"
-                            Style="{StaticResource OutlinedButton}"
-                            Height="34" Padding="10,0" Margin="0,0,6,0"
-                            materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
-                            ToolTip="دليل الفيديوهات التعريفية"
-                            Foreground="{DynamicResource TitleBarIconBrush}">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="PlayCircleOutline" Width="18" Height="18"
-                                                     VerticalAlignment="Center"
-                                                     Foreground="{DynamicResource TitleBarIconAccentBrush}"/>
-                            <TextBlock Text="الفيديوهات" Margin="6,0,0,0" VerticalAlignment="Center"/>
-                        </StackPanel>
+                            Style="{StaticResource TitleBarRoundIconTeal}"
+                            ToolTip="دليل الفيديوهات التعريفية">
+                        <materialDesign:PackIcon Kind="PlayCircleOutline" Width="18" Height="18"/>
                     </Button>
                     <Button Command="{Binding OpenHelpWhatsAppCommand}"
-                            Style="{StaticResource OutlinedButton}"
-                            Height="34" Padding="10,0"
-                            materialDesign:ButtonAssist.CornerRadius="8" FontSize="12"
-                            ToolTip="تواصل مع الدعم عبر واتساب"
-                            Foreground="{DynamicResource TitleBarIconBrush}">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Whatsapp" Width="18" Height="18"
-                                                     VerticalAlignment="Center"
-                                                     Foreground="{DynamicResource TitleBarIconGreenBrush}"/>
-                            <TextBlock Text="الدعم" Margin="6,0,0,0" VerticalAlignment="Center"/>
-                        </StackPanel>
+                            Style="{StaticResource TitleBarRoundIconWhatsApp}"
+                            Margin="0"
+                            ToolTip="تواصل مع الدعم عبر واتساب">
+                        <materialDesign:PackIcon Kind="Whatsapp" Width="18" Height="18"/>
                     </Button>
                 </StackPanel>
 
@@ -583,7 +763,7 @@
                                PlacementTarget="{Binding ElementName=SidebarSearchPanel}"
                                StaysOpen="False"
                                AllowsTransparency="True"
-                               IsOpen="{Binding HasSearchResults}"
+                               IsOpen="{Binding IsSidebarSearchPopupOpen, Mode=OneWay}"
                                PopupAnimation="Fade"
                                HorizontalOffset="0"
                                VerticalOffset="6">
@@ -727,73 +907,144 @@
                 </ScrollViewer>
 
                 <!-- USER SECTION (bottom) -->
-                <Border Grid.Row="3" Padding="10,8,10,14">
-                    <Border CornerRadius="14" Padding="10,10"
-                            Background="#12FFFFFF"
-                            BorderBrush="#20FFFFFF"
+                <Border Grid.Row="3" Padding="10,10,10,14">
+                    <Border CornerRadius="16" Padding="12,12"
+                            Background="#18FFFFFF"
+                            BorderBrush="#28FFFFFF"
                             BorderThickness="1">
                         <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
 
-                            <Button Grid.Column="0"
-                                    Command="{Binding OpenUserActivityProfileCommand}"
-                                    ToolTip="عرض ملف المستخدم وسجل نشاطه"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    Padding="0"
-                                    Cursor="Hand"
-                                    HorizontalContentAlignment="Stretch">
-                                <Button.Template>
-                                    <ControlTemplate TargetType="Button">
-                                        <ContentPresenter/>
-                                    </ControlTemplate>
-                                </Button.Template>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Width="40" Height="40" CornerRadius="12">
+                            <!-- Collapsed: avatar + logout stacked -->
+                            <StackPanel Grid.Row="0" Grid.RowSpan="2"
+                                        HorizontalAlignment="Center"
+                                        Visibility="{Binding IsSidebarExpanded, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                                <Button Command="{Binding OpenUserActivityProfileCommand}"
+                                        ToolTip="عرض ملف المستخدم"
+                                        Width="44" Height="44" Padding="0"
+                                        Background="Transparent" BorderThickness="0" Cursor="Hand">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                    <Border Width="42" Height="42" CornerRadius="21">
                                         <Border.Background>
                                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                                 <GradientStop Color="#1565C0" Offset="0"/>
-                                                <GradientStop Color="#1976D2" Offset="1"/>
+                                                <GradientStop Color="#42A5F5" Offset="1"/>
                                             </LinearGradientBrush>
                                         </Border.Background>
-                                        <materialDesign:PackIcon Kind="Account"
-                                                                 Width="22" Height="22"
-                                                                 HorizontalAlignment="Center"
-                                                                 VerticalAlignment="Center"
-                                                                 Foreground="White" />
+                                        <materialDesign:PackIcon Kind="Account" Width="22" Height="22"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                 Foreground="White"/>
                                     </Border>
+                                </Button>
+                                <Button Command="{Binding LogoutCommand}"
+                                        ToolTip="تسجيل الخروج"
+                                        Style="{StaticResource SidebarHeaderIconButton}"
+                                        Margin="0,8,0,0"
+                                        Width="36" Height="36">
+                                    <materialDesign:PackIcon Kind="Logout" Width="18" Height="18"/>
+                                </Button>
+                            </StackPanel>
 
-                                    <StackPanel Grid.Column="1"
-                                                Margin="10,0,0,0"
-                                                VerticalAlignment="Center"
-                                                Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                        <TextBlock Text="{Binding LoggedInUsername}"
-                                                   FontSize="13"
-                                                   FontWeight="SemiBold"
-                                                   Foreground="White"
-                                                   TextTrimming="CharacterEllipsis"/>
-                                        <TextBlock Text="اضغط لعرض الملف"
-                                                   FontSize="10"
-                                                   Foreground="{DynamicResource TextSecondaryBrush}"
-                                                   Margin="0,2,0,0"/>
+                            <!-- Expanded: roomy profile card -->
+                            <Grid Grid.Row="0"
+                                  Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="46" Height="46" CornerRadius="23" Margin="0,0,12,0">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Color="#1565C0" Offset="0"/>
+                                            <GradientStop Color="#42A5F5" Offset="1"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <materialDesign:PackIcon Kind="Account" Width="24" Height="24"
+                                                             HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                             Foreground="White"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding LoggedInUsername}"
+                                               FontSize="14" FontWeight="Bold"
+                                               Foreground="White"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <Border Background="#28FFFFFF" CornerRadius="8" Padding="8,2"
+                                            HorizontalAlignment="Right" Margin="0,6,0,0">
+                                        <TextBlock Text="{Binding LoggedInUserRoleLabel}"
+                                                   FontSize="11" FontWeight="Medium"
+                                                   Foreground="#E3F2FD"/>
+                                    </Border>
+                                </StackPanel>
+                            </Grid>
+
+                            <UniformGrid Grid.Row="1" Columns="2" Margin="0,12,0,0"
+                                         Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Button Command="{Binding OpenUserActivityProfileCommand}"
+                                        ToolTip="عرض ملف المستخدم وسجل نشاطه"
+                                        Margin="0,0,4,0" Height="36" Cursor="Hand"
+                                        Background="#22FFFFFF" BorderBrush="#30FFFFFF" BorderThickness="1"
+                                        Foreground="White" FontSize="12" FontWeight="SemiBold"
+                                        Padding="8,0">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Bd"
+                                                    Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="10"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#33FFFFFF"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="AccountCircleOutline" Width="16" Height="16"
+                                                                 VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="عرض الملف" VerticalAlignment="Center"/>
                                     </StackPanel>
-                                </Grid>
-                            </Button>
-
-                            <Button Grid.Column="1"
-                                    Command="{Binding LogoutCommand}"
-                                    ToolTip="تسجيل الخروج"
-                                    Style="{StaticResource SidebarHeaderIconButton}"
-                                    Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <materialDesign:PackIcon Kind="Logout" Width="20" Height="20"/>
-                            </Button>
+                                </Button>
+                                <Button Command="{Binding LogoutCommand}"
+                                        ToolTip="تسجيل الخروج"
+                                        Margin="4,0,0,0" Height="36" Cursor="Hand"
+                                        Background="#33EF5350" BorderBrush="#55EF5350" BorderThickness="1"
+                                        Foreground="#FFCDD2" FontSize="12" FontWeight="SemiBold"
+                                        Padding="8,0">
+                                    <Button.Template>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border x:Name="Bd"
+                                                    Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="10"
+                                                    Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background" Value="#55EF5350"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Button.Template>
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Logout" Width="16" Height="16"
+                                                                 VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="خروج" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </UniformGrid>
                         </Grid>
                     </Border>
                 </Border>
@@ -3796,38 +4047,39 @@
             </controls:NotesPanel>
         </Grid>
 
-        <!-- Notification Center dropdown -->
-        <Grid Grid.RowSpan="2"
+        <!-- Notification Center — full-height left drawer (40% width) -->
+        <Grid x:Name="NotificationOverlayRoot"
+              Grid.RowSpan="2"
               Panel.ZIndex="2200"
+              FlowDirection="LeftToRight"
+              WindowChrome.IsHitTestVisibleInChrome="True"
               Visibility="{Binding IsNotificationPanelOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Border Background="#44000000" MouseLeftButtonDown="NotificationBackdrop_Click"/>
+            <Border Background="#5500122B"
+                    MouseLeftButtonDown="NotificationBackdrop_Click"
+                    WindowChrome.IsHitTestVisibleInChrome="True"/>
             <controls:NotificationPanel x:Name="NotificationPanelHost"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Stretch"
+                                        Width="{Binding ActualWidth, ElementName=NotificationOverlayRoot, Converter={StaticResource PercentWidthConverter}, ConverterParameter=0.4}"
                                         DataContext="{Binding}"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Top"
-                                        Margin="0,52,14,0"
-                                        Panel.ZIndex="1"
-                                        RenderTransformOrigin="0.5,0">
+                                        Panel.ZIndex="2"
+                                        RenderTransformOrigin="0,0.5"
+                                        WindowChrome.IsHitTestVisibleInChrome="True">
                 <controls:NotificationPanel.RenderTransform>
-                    <TranslateTransform Y="0"/>
+                    <TranslateTransform X="0"/>
                 </controls:NotificationPanel.RenderTransform>
                 <controls:NotificationPanel.Style>
                     <Style TargetType="controls:NotificationPanel">
+                        <Setter Property="Opacity" Value="1"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding IsNotificationPanelOpen}" Value="True">
                                 <DataTrigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                                                             From="0" To="1" Duration="0:0:0.28">
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)"
+                                                             From="-48" To="0" Duration="0:0:0.18">
                                                 <DoubleAnimation.EasingFunction>
                                                     <CubicEase EasingMode="EaseOut"/>
-                                                </DoubleAnimation.EasingFunction>
-                                            </DoubleAnimation>
-                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                                                             From="-16" To="0" Duration="0:0:0.32">
-                                                <DoubleAnimation.EasingFunction>
-                                                    <BackEase EasingMode="EaseOut" Amplitude="0.4"/>
                                                 </DoubleAnimation.EasingFunction>
                                             </DoubleAnimation>
                                         </Storyboard>

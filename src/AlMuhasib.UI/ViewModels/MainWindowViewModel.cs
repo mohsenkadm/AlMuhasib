@@ -76,6 +76,9 @@ public partial class MainWindowViewModel : ObservableObject
     private string _loggedInUsername = "المسؤول";
 
     [ObservableProperty]
+    private string _loggedInUserRoleLabel = "مستخدم";
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasCurrentBranch))]
     private string _currentBranchName = string.Empty;
 
@@ -88,13 +91,36 @@ public partial class MainWindowViewModel : ObservableObject
     private NavigationMenuItem? _selectedMenuItem;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowRecentMenuSearches))]
+    [NotifyPropertyChangedFor(nameof(IsTitleBarSearchPopupOpen))]
+    [NotifyPropertyChangedFor(nameof(IsSidebarSearchPopupOpen))]
     private string _searchText = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSidebarSearchPopupOpen))]
     private bool _isSearchOpen;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowRecentMenuSearches))]
+    [NotifyPropertyChangedFor(nameof(IsTitleBarSearchPopupOpen))]
+    [NotifyPropertyChangedFor(nameof(IsSidebarSearchPopupOpen))]
     private bool _hasSearchResults;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowRecentMenuSearches))]
+    [NotifyPropertyChangedFor(nameof(IsTitleBarSearchPopupOpen))]
+    private bool _isTitleBarSearchFocused;
+
+    public bool ShowRecentMenuSearches =>
+        IsTitleBarSearchFocused
+        && !HasSearchResults
+        && string.IsNullOrWhiteSpace(SearchText)
+        && RecentMenuSearches.Count > 0;
+
+    public bool IsTitleBarSearchPopupOpen =>
+        IsTitleBarSearchFocused && (HasSearchResults || ShowRecentMenuSearches);
+
+    public bool IsSidebarSearchPopupOpen => IsSearchOpen && HasSearchResults;
 
     [ObservableProperty]
     private bool _isQuickAssistOpen;
@@ -122,6 +148,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<DocumentTab> OpenTabs { get; } = [];
     public ObservableCollection<NavigationMenuItem> SearchResults { get; } = [];
+    public ObservableCollection<string> RecentMenuSearches { get; } = [];
+
+    private const int MaxRecentMenuSearches = 8;
 
     // ── Exit Dialog ──
     [ObservableProperty]
@@ -241,6 +270,8 @@ public partial class MainWindowViewModel : ObservableObject
         _themeService.ApplyFromPreferences();
         ApplyMenuVisibilityFromPreferences();
         LoadWorkspaceProfile();
+        LoadRecentMenuSearches();
+        RefreshLoggedInUserRoleLabel();
         _ = SyncMultiCurrencyFlagFromBusinessSettingsAsync();
         RefreshTrialBanner();
         RefreshCurrentBranchDisplay();
@@ -1441,11 +1472,52 @@ public partial class MainWindowViewModel : ObservableObject
     private void SelectSearchResult(NavigationMenuItem? item)
     {
         if (item is null) return;
+        RememberMenuSearch(SearchText);
         IsSearchOpen = false;
+        IsTitleBarSearchFocused = false;
         SearchText = string.Empty;
         SearchResults.Clear();
         HasSearchResults = false;
         NavigateMenuItem(item);
+    }
+
+    [RelayCommand]
+    private void SelectRecentMenuSearch(string? term)
+    {
+        if (string.IsNullOrWhiteSpace(term)) return;
+        SearchText = term.Trim();
+        IsTitleBarSearchFocused = true;
+        UpdateSearchResults();
+    }
+
+    [RelayCommand]
+    private void ClearTitleBarSearch()
+    {
+        SearchText = string.Empty;
+        SearchResults.Clear();
+        HasSearchResults = false;
+        IsTitleBarSearchFocused = true;
+        OnPropertyChanged(nameof(ShowRecentMenuSearches));
+        OnPropertyChanged(nameof(IsTitleBarSearchPopupOpen));
+    }
+
+    [RelayCommand]
+    private void ClearRecentMenuSearches()
+    {
+        RecentMenuSearches.Clear();
+        _userPreferences.Update(p => p.RecentMenuSearches = []);
+        OnPropertyChanged(nameof(ShowRecentMenuSearches));
+        OnPropertyChanged(nameof(IsTitleBarSearchPopupOpen));
+    }
+
+    public void SetTitleBarSearchFocused(bool focused)
+    {
+        IsTitleBarSearchFocused = focused;
+    }
+
+    public void RefreshLoggedInUserRoleLabel()
+    {
+        LoggedInUserRoleLabel = _currentUserService.IsAdmin ? "مدير النظام" : "مستخدم";
     }
 
     partial void OnSearchTextChanged(string value) => UpdateSearchResults();
@@ -1454,8 +1526,16 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (value)
             UpdateSearchResults();
-        else
+        else if (!IsTitleBarSearchFocused)
             HasSearchResults = false;
+    }
+
+    partial void OnIsTitleBarSearchFocusedChanged(bool value)
+    {
+        if (value)
+            UpdateSearchResults();
+        OnPropertyChanged(nameof(ShowRecentMenuSearches));
+        OnPropertyChanged(nameof(IsTitleBarSearchPopupOpen));
     }
 
     private void UpdateSearchResults()
@@ -1465,7 +1545,12 @@ public partial class MainWindowViewModel : ObservableObject
 
         var term = SearchText?.Trim();
         if (string.IsNullOrEmpty(term) || term.Length < 1)
+        {
+            OnPropertyChanged(nameof(ShowRecentMenuSearches));
+            OnPropertyChanged(nameof(IsTitleBarSearchPopupOpen));
+            OnPropertyChanged(nameof(IsSidebarSearchPopupOpen));
             return;
+        }
 
         foreach (var item in GetSearchableMenuItems())
         {
@@ -1473,7 +1558,41 @@ public partial class MainWindowViewModel : ObservableObject
                 SearchResults.Add(item);
         }
 
-        HasSearchResults = IsSearchOpen && SearchResults.Count > 0;
+        HasSearchResults = SearchResults.Count > 0;
+        OnPropertyChanged(nameof(ShowRecentMenuSearches));
+        OnPropertyChanged(nameof(IsTitleBarSearchPopupOpen));
+        OnPropertyChanged(nameof(IsSidebarSearchPopupOpen));
+    }
+
+    private void LoadRecentMenuSearches()
+    {
+        RecentMenuSearches.Clear();
+        foreach (var term in _userPreferences.Current.RecentMenuSearches
+                     .Where(t => !string.IsNullOrWhiteSpace(t))
+                     .Take(MaxRecentMenuSearches))
+        {
+            RecentMenuSearches.Add(term.Trim());
+        }
+    }
+
+    private void RememberMenuSearch(string? term)
+    {
+        var cleaned = term?.Trim();
+        if (string.IsNullOrWhiteSpace(cleaned) || cleaned.Length < 1)
+            return;
+
+        var existing = RecentMenuSearches
+            .FirstOrDefault(t => string.Equals(t, cleaned, StringComparison.OrdinalIgnoreCase));
+        if (existing is not null)
+            RecentMenuSearches.Remove(existing);
+
+        RecentMenuSearches.Insert(0, cleaned);
+        while (RecentMenuSearches.Count > MaxRecentMenuSearches)
+            RecentMenuSearches.RemoveAt(RecentMenuSearches.Count - 1);
+
+        _userPreferences.Update(p => p.RecentMenuSearches = RecentMenuSearches.ToList());
+        OnPropertyChanged(nameof(ShowRecentMenuSearches));
+        OnPropertyChanged(nameof(IsTitleBarSearchPopupOpen));
     }
 
     private IEnumerable<NavigationMenuItem> GetSearchableMenuItems()

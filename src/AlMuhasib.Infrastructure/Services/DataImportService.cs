@@ -129,7 +129,8 @@ public class DataImportService : IDataImportService
                     GetCell(row, headerMap, ProductImportSchema.Barcode));
                 if (barcode is not null && !AlMuhasib.Core.Helpers.ProductBarcodeHelper.IsWithinLength(barcode))
                 {
-                    result.Errors.Add($"الصف {row.RowNumber()}: الباركود أطول من الحد المسموح");
+                    result.Errors.Add(
+                        $"الصف {row.RowNumber()}: الباركود أطول من حد انفاركار ماكس ({AlMuhasib.Core.Helpers.ProductBarcodeHelper.MaxStoredLength} حرفاً)");
                     continue;
                 }
 

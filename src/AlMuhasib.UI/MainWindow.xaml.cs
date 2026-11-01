@@ -102,6 +102,7 @@ public partial class MainWindow : Window
 
                 var mainVm = app.Services.GetRequiredService<MainWindowViewModel>();
                 mainVm.LoggedInUsername = currentUser.Username;
+                mainVm.RefreshLoggedInUserRoleLabel();
                 mainVm.RefreshCurrentBranchDisplay();
                 _ = mainVm.ApplyPermissionsAsync();
                 TouchActivity();
@@ -411,5 +412,72 @@ public partial class MainWindow : Window
             SplitSplitterColumn.Width = new GridLength(0);
             SplitSecondaryColumn.Width = new GridLength(0);
         }
+    }
+
+    private void TitleBarSearchBox_GotFocus(object sender, RoutedEventArgs e)
+    {
+        _viewModel.SetTitleBarSearchFocused(true);
+    }
+
+    private void TitleBarSearchBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        // Keep popup open while interacting with its results.
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+        {
+            if (TitleBarSearchBox?.IsKeyboardFocusWithin == true)
+                return;
+            if (TitleBarSearchPopup?.IsMouseOver == true)
+                return;
+            _viewModel.SetTitleBarSearchFocused(false);
+        });
+    }
+
+    private void TitleBarSearchBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Escape)
+        {
+            _viewModel.ClearTitleBarSearchCommand.Execute(null);
+            _viewModel.SetTitleBarSearchFocused(false);
+            Keyboard.ClearFocus();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Enter && _viewModel.SearchResults.Count == 1)
+        {
+            _viewModel.SelectSearchResultCommand.Execute(_viewModel.SearchResults[0]);
+            e.Handled = true;
+        }
+    }
+
+    private void TitleBarSearchPopup_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        // Keep focus semantics with the search field while using the popup.
+        e.Handled = false;
+    }
+
+    private void TitleBarSearchResult_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not Button button)
+            return;
+
+        var parameter = button.CommandParameter;
+        if (button.Command?.CanExecute(parameter) == true)
+        {
+            button.Command.Execute(parameter);
+            e.Handled = true;
+        }
+    }
+
+    protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
+    {
+        base.OnPreviewMouseDown(e);
+
+        if (!_viewModel.IsTitleBarSearchPopupOpen)
+            return;
+
+        // Close search popup when clicking outside the field and popup.
+        if (TitleBarSearchHost?.IsMouseOver == true || TitleBarSearchPopup?.IsMouseOver == true)
+            return;
+
+        _viewModel.SetTitleBarSearchFocused(false);
     }
 }

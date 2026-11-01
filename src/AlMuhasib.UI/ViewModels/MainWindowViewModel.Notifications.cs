@@ -69,8 +69,9 @@ public partial class MainWindowViewModel
         IsTasksPanelOpen = false;
         IsNotesPanelOpen = false;
         IsOpenRecentExcelPanelOpen = false;
+        // افتح اللوحة فوراً؛ حدّث القائمة في الخلفية لتقليل الثقل
         IsNotificationPanelOpen = true;
-        await RefreshNotificationsAsync();
+        _ = RefreshNotificationsAsync();
     }
 
     [RelayCommand]

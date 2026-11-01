@@ -894,6 +894,7 @@ public partial class App : Application
         var mainVm = _serviceProvider.GetRequiredService<MainWindowViewModel>();
         var currentUser = _serviceProvider.GetRequiredService<CurrentUserService>();
         mainVm.LoggedInUsername = currentUser.Username;
+        mainVm.RefreshLoggedInUserRoleLabel();
         mainVm.RefreshCurrentBranchDisplay();
 
         try

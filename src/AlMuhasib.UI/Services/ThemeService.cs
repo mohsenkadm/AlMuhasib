@@ -98,6 +98,25 @@ public sealed class ThemeService
         SetBrush(res, "TitleBarIconTealBrush", isDark ? "#4DB6AC" : "#00796B");
         SetBrush(res, "TitleBarIconGreenBrush", isDark ? "#81C784" : "#2E7D32");
         SetBrush(res, "TitleBarIconAmberBrush", isDark ? "#FFB74D" : "#EF6C00");
+        SetBrush(res, "TitleBarIconBadgeBlueBg", isDark ? "#1A3048" : "#E3F2FD");
+        SetBrush(res, "TitleBarIconBadgeBlueFg", isDark ? "#64B5F6" : "#1565C0");
+        SetBrush(res, "TitleBarIconBadgeGreenBg", isDark ? "#1B3324" : "#E8F5E9");
+        SetBrush(res, "TitleBarIconBadgeGreenFg", isDark ? "#81C784" : "#2E7D32");
+        SetBrush(res, "TitleBarIconBadgeAmberBg", isDark ? "#3D2A14" : "#FFF3E0");
+        SetBrush(res, "TitleBarIconBadgeAmberFg", isDark ? "#FFB74D" : "#EF6C00");
+        SetBrush(res, "TitleBarIconBadgeTealBg", isDark ? "#1A3330" : "#E0F2F1");
+        SetBrush(res, "TitleBarIconBadgeTealFg", isDark ? "#4DB6AC" : "#00796B");
+        SetBrush(res, "TitleBarIconBadgeNeutralBg", isDark ? "#243056" : "#ECEFF1");
+        SetBrush(res, "TitleBarIconBadgeNeutralFg", isDark ? "#C5D0E8" : "#455A64");
+        SetBrush(res, "TitleBarIconBadgeWhatsAppBg", isDark ? "#1B3324" : "#E8F5E9");
+        SetBrush(res, "TitleBarIconBadgeWhatsAppFg", isDark ? "#69F0AE" : "#25D366");
+        SetBrush(res, "TitleBarIconBadgeRedBg", isDark ? "#3D2226" : "#FFEBEE");
+        SetBrush(res, "TitleBarIconBadgeRedFg", isDark ? "#EF5350" : "#C62828");
+        SetBrush(res, "TitleBarSearchFieldBackground", isDark ? "#243056" : "#F0F4FA");
+        SetBrush(res, "TitleBarSearchFieldFocusBackground", isDark ? "#2C3A62" : "#E8EEF8");
+        SetBrush(res, "TitleBarSearchFieldForeground", isDark ? "#E8EEF4" : "#1E3A5F");
+        SetBrush(res, "TitleBarSearchFieldHintBrush", isDark ? "#8FA8C4" : "#90A4AE");
+        SetBrush(res, "TitleBarSearchFieldIconBrush", isDark ? "#64B5F6" : "#1565C0");
         SetBrush(res, "TitleBarDatePillBackground", isDark ? "#243056" : "#F2F6FC");
         SetBrush(res, "TitleBarDatePillBorder", isDark ? "#3A4870" : "#B8C9E0");
         SetBrush(res, "TitleBarClockPillBackground", isDark ? "#1B3D2A" : "#E8F5E9");
@@ -473,6 +492,26 @@ public sealed class ThemeService
         SetBrush(res, "DashboardIconBadgeRedBrush", isDark ? "#3D2226" : "#FFEBEE");
         SetBrush(res, "DashboardIconBadgeCyanBrush", isDark ? "#143A5C" : "#E0F7FA");
         SetBrush(res, "DashboardIconBadgeAccentBrush", isDark ? "#143A5C" : "#E0F7FA");
+
+        res["NotificationDrawerHeaderBrush"] = CreateNotificationDrawerHeaderBrush(isDark);
+    }
+
+    private static LinearGradientBrush CreateNotificationDrawerHeaderBrush(bool isDark)
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
+        if (isDark)
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#123A5C")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1A4F7A")!, 0.55));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#286090")!, 1));
+        }
+        else
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1565C0")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#1E88E5")!, 1));
+        }
+
+        return FreezeBrush(brush);
     }
 
     private static LinearGradientBrush CreateDashboardAmbientBrush(bool isDark)

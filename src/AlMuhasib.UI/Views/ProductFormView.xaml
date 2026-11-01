@@ -110,7 +110,7 @@
                                     </Grid.ColumnDefinitions>
                                     <TextBox Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource FilledTextBox}"
-                                             ToolTip="يمكن إدخال أكثر من باركود مفصولة بـ | مثل: 111|222|333"/>
+                                             ToolTip="نوع الباركود: انفاركار ماكس — يمكن تركه فارغاً أو إدخال عدة باركودات مفصولة بـ | (حتى 2000 حرف)"/>
                                     <Button Grid.Column="1" Margin="8,0,0,0" Padding="12,0" Height="42"
                                             Style="{StaticResource OutlinedButton}"
                                             Command="{Binding GenerateBarcodeCommand}"

@@ -917,7 +917,7 @@ public partial class ProductFormViewModel : ViewModelBase
             && !AlMuhasib.Core.Helpers.ProductBarcodeHelper.IsWithinLength(normalizedBarcode))
         {
             FormError =
-                $"حقل الباركود يتجاوز الحد الأقصى ({AlMuhasib.Core.Helpers.ProductBarcodeHelper.MaxStoredLength} حرفاً)";
+                $"حقل الباركود (انفاركار ماكس) يتجاوز الحد الأقصى ({AlMuhasib.Core.Helpers.ProductBarcodeHelper.MaxStoredLength} حرفاً)";
             return;
         }
 
