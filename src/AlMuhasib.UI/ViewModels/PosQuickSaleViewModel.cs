@@ -35,6 +35,8 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     private readonly DispatcherTimer _searchDebounce;
 
     private List<Product> _allProducts = [];
+    /// <summary>فهرس كل باركود فرعي → المنتج (انفاركار ماكس / عدة |).</summary>
+    private Dictionary<string, Product> _barcodeIndex = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<int, decimal> _lastSalePrices = [];
     private Dictionary<int, (decimal SaleIqd, decimal SaleUsd)> _catalogListPrices = [];
     private Dictionary<int, int> _defaultPricingTypeByProduct = [];
@@ -169,6 +171,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         {
             var products = (await _productService.GetVisibleInCurrentBranchAsync()).OrderBy(p => p.Name).ToList();
             _allProducts = products;
+            RebuildBarcodeIndex();
 
             Categories.Clear();
             foreach (var category in (await _unitOfWork.Categories.GetAllAsync()).OrderBy(c => c.Name))
@@ -295,40 +298,57 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
         // أوقف debounce وحدّث القائمة فوراً حتى لا تُضاف مادة قديمة بالخطأ
         _searchDebounce.Stop();
-        RefreshFilteredProducts();
 
-        var barcodeMatch = _allProducts.FirstOrDefault(p =>
-            AlMuhasib.Core.Helpers.ProductBarcodeHelper.Matches(p.Barcode, term));
-
-        if (barcodeMatch is not null)
+        // عدة توكنات في الإدخال (نادر): عالج كل باركود؛ إن كانا لنفس المنتج تزيد الكمية
+        var unifiedTerm = ProductBarcodeHelper.UnifySeparators(term);
+        if (unifiedTerm.Contains(ProductBarcodeHelper.Separator))
         {
-            if (!barcodeMatch.ShowInCashier)
-            {
-                NotifyPosValidationError($"المنتج غير متاح في الكاشير — الباركود: {term}");
-                SearchText = string.Empty;
-                return;
-            }
-
-            if (!EnsureStockAllowsAdd(barcodeMatch, additionalQty: 1m))
-            {
-                SearchText = string.Empty;
-                return;
-            }
-
-            _sound.Play(SoundEffect.Scan);
-            await AddOrIncrementProductAsync(barcodeMatch);
+            var tokens = ProductBarcodeHelper.Split(unifiedTerm);
             SearchText = string.Empty;
+            if (tokens.Count == 0)
+                return;
+
+            var missing = new List<string>();
+            var added = 0;
+            foreach (var token in tokens)
+            {
+                if (await TryAddProductByBarcodeTokenAsync(token, notifyMissing: false))
+                    added++;
+                else
+                    missing.Add(token);
+            }
+
+            RefreshFilteredProducts();
+
+            if (missing.Count > 0)
+            {
+                NotifyPosValidationError(
+                    missing.Count == tokens.Count
+                        ? $"لم يُعثر على منتجات لهذه الباركودات: {string.Join(" | ", missing)}"
+                        : $"تمت إضافة {added} — غير موجود: {string.Join(" | ", missing)}");
+            }
+
             return;
         }
 
-        // مسح باركود (أرقام/رموز) بدون تطابق تام → خطأ، لا تأخذ أول نتيجة بحث جزئي
+        // مسار أساسي: باركود واحد (أي توكن فرعي من حقل المنتج)
+        if (await TryAddProductByBarcodeTokenAsync(term, notifyMissing: false))
+        {
+            SearchText = string.Empty;
+            RefreshFilteredProducts();
+            return;
+        }
+
+        // مسح باركود بدون تطابق → خطأ صريح (لا أول نتيجة بحث جزئي بالاسم)
         if (LooksLikeBarcodeScan(term))
         {
             NotifyPosValidationError($"لم يُعثر على منتج بهذا الباركود: {term}");
             SearchText = string.Empty;
+            RefreshFilteredProducts();
             return;
         }
 
+        RefreshFilteredProducts();
         var first = FilteredProducts.FirstOrDefault();
         if (first is not null)
         {
@@ -347,18 +367,90 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         SearchText = string.Empty;
     }
 
+    private void RebuildBarcodeIndex()
+    {
+        _barcodeIndex = new Dictionary<string, Product>(StringComparer.OrdinalIgnoreCase);
+        foreach (var product in _allProducts)
+        {
+            foreach (var token in ProductBarcodeHelper.Split(product.Barcode))
+            {
+                // أول منتج يملك التوكن يبقى؛ التكرار يُمنع عند الحفظ
+                _barcodeIndex.TryAdd(token, product);
+            }
+        }
+    }
+
+    /// <summary>إضافة منتج بأي باركود فرعي من حقل انفاركار ماكس.</summary>
+    private async Task<bool> TryAddProductByBarcodeTokenAsync(string token, bool notifyMissing)
+    {
+        var code = ProductBarcodeHelper.UnifySeparators(token).Trim();
+        if (code.Length == 0)
+            return false;
+
+        // 1) فهرس الذاكرة
+        Product? barcodeMatch = null;
+        if (_barcodeIndex.TryGetValue(code, out var indexed))
+            barcodeMatch = indexed;
+
+        // 2) مسح خطي احتياطي
+        barcodeMatch ??= _allProducts.FirstOrDefault(p => ProductBarcodeHelper.Matches(p.Barcode, code));
+
+        // 3) قاعدة البيانات (MatchesExpression يدعم |code| / بادئة / لاحقة)
+        if (barcodeMatch is null)
+        {
+            try
+            {
+                var fromDb = await _productService.GetByBarcodeAsync(code);
+                if (fromDb is not null)
+                {
+                    barcodeMatch = _allProducts.FirstOrDefault(p => p.Id == fromDb.Id) ?? fromDb;
+                    if (!_allProducts.Any(p => p.Id == fromDb.Id))
+                    {
+                        _allProducts.Add(fromDb);
+                        foreach (var t in ProductBarcodeHelper.Split(fromDb.Barcode))
+                            _barcodeIndex.TryAdd(t, fromDb);
+                    }
+                }
+            }
+            catch
+            {
+                // لا تعطل الكاشير إن فشل استعلام الباركود
+            }
+        }
+
+        if (barcodeMatch is null)
+        {
+            if (notifyMissing)
+                NotifyPosValidationError($"لم يُعثر على منتج بهذا الباركود: {code}");
+            return false;
+        }
+
+        if (!EnsureStockAllowsAdd(barcodeMatch, additionalQty: 1m))
+            return false;
+
+        _sound.Play(SoundEffect.Scan);
+        await AddOrIncrementProductAsync(barcodeMatch);
+        return true;
+    }
+
     private static bool LooksLikeBarcodeScan(string term)
     {
-        if (term.Length < 4)
+        if (string.IsNullOrWhiteSpace(term))
+            return false;
+
+        var unified = ProductBarcodeHelper.UnifySeparators(term);
+        var compact = unified.Replace(ProductBarcodeHelper.SeparatorString, string.Empty, StringComparison.Ordinal);
+
+        if (compact.Length < 3)
             return false;
 
         // قارئات الباركود تُرسل أرقاماً أو رموزاً بدون مسافات
-        if (term.Contains(' '))
+        if (compact.Contains(' '))
             return false;
 
         var alnum = 0;
         var digits = 0;
-        foreach (var ch in term)
+        foreach (var ch in compact)
         {
             if (char.IsLetterOrDigit(ch))
                 alnum++;
@@ -366,7 +458,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
                 digits++;
         }
 
-        return alnum == term.Length && digits >= term.Length * 0.7;
+        return alnum == compact.Length && digits >= compact.Length * 0.7;
     }
 
     private void NotifyPosValidationError(string message)

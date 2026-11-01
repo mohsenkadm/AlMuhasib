@@ -46,7 +46,8 @@ public partial class ProductCardDisplay : ObservableObject
     public string Name { get; init; } = string.Empty;
     public string? ScientificName { get; init; }
     public string? UsageInstructions { get; init; }
-    public string? Barcode { get; init; }
+    [ObservableProperty]
+    private string? _barcode;
     public string? Description { get; init; }
     public string CategoryName { get; init; } = "—";
     public string BranchesDisplay { get; init; } = "—";

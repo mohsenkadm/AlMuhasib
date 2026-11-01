@@ -34,6 +34,38 @@ public class ProductBarcodeHelperTests
     }
 
     [Fact]
+    public void Matches_multi_token_lookup_requires_all_parts_on_same_product()
+    {
+        const string field = "2116|25655";
+        Assert.True(ProductBarcodeHelper.Matches(field, "2116"));
+        Assert.True(ProductBarcodeHelper.Matches(field, "25655"));
+        Assert.True(ProductBarcodeHelper.Matches(field, "2116|25655"));
+        Assert.True(ProductBarcodeHelper.Matches(field, "25655|2116"));
+        Assert.False(ProductBarcodeHelper.Matches(field, "2116|99999"));
+        Assert.False(ProductBarcodeHelper.Matches("2116", "2116|25655"));
+    }
+
+    [Fact]
+    public void Matches_secondary_token_same_product()
+    {
+        const string field = "2116|25655|99901";
+        Assert.True(ProductBarcodeHelper.Matches(field, "2116"));
+        Assert.True(ProductBarcodeHelper.Matches(field, "25655"));
+        Assert.True(ProductBarcodeHelper.Matches(field, "99901"));
+    }
+
+    [Theory]
+    [InlineData("2116｜25655", "2116|25655")] // fullwidth vertical line
+    [InlineData("2116¦25655", "2116|25655")]  // broken bar
+    [InlineData("2116│25655", "2116|25655")]  // box drawing
+    public void Normalize_unifies_alternate_separators(string input, string expected)
+    {
+        Assert.Equal(expected, ProductBarcodeHelper.Normalize(input));
+        Assert.True(ProductBarcodeHelper.Matches(input, "25655"));
+        Assert.True(ProductBarcodeHelper.Matches(input, "2116"));
+    }
+
+    [Fact]
     public void Matches_does_not_match_substring_inside_longer_code()
     {
         Assert.False(ProductBarcodeHelper.Matches("0123456789012", "123456"));

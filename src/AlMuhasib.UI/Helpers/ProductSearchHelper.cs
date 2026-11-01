@@ -26,17 +26,31 @@ public static class ProductSearchHelper
         return words.Any(w => MatchesSingleTerm(product, w));
     }
 
-    private static bool MatchesSingleTerm(Product product, string term) =>
-        ContainsIgnoreCase(product.Name, term)
-        || ProductBarcodeHelper.Matches(product.Barcode, term)
-        || ContainsIgnoreCase(product.Barcode, term)
-        || ContainsIgnoreCase(product.ScientificName, term)
-        || ContainsIgnoreCase(product.VehicleType, term)
-        || ContainsIgnoreCase(product.ChassisNumber, term)
-        || ContainsIgnoreCase(product.VehicleColor, term)
-        || ContainsIgnoreCase(product.PlateNumber, term)
-        || ContainsIgnoreCase(product.PassengerCount?.ToString(), term)
-        || MatchesPlateType(product, term);
+    private static bool MatchesSingleTerm(Product product, string term)
+    {
+        if (ProductBarcodeHelper.Matches(product.Barcode, term))
+            return true;
+
+        // بحث بعدة باركودات: 2116|25655 يطابق إن وُجد أي جزء في حقل المنتج
+        if (term.Contains(ProductBarcodeHelper.Separator))
+        {
+            foreach (var token in ProductBarcodeHelper.Split(term))
+            {
+                if (ProductBarcodeHelper.Matches(product.Barcode, token))
+                    return true;
+            }
+        }
+
+        return ContainsIgnoreCase(product.Name, term)
+            || ContainsIgnoreCase(product.Barcode, term)
+            || ContainsIgnoreCase(product.ScientificName, term)
+            || ContainsIgnoreCase(product.VehicleType, term)
+            || ContainsIgnoreCase(product.ChassisNumber, term)
+            || ContainsIgnoreCase(product.VehicleColor, term)
+            || ContainsIgnoreCase(product.PlateNumber, term)
+            || ContainsIgnoreCase(product.PassengerCount?.ToString(), term)
+            || MatchesPlateType(product, term);
+    }
 
     private static bool MatchesPlateType(Product product, string term)
     {

@@ -866,6 +866,19 @@ public partial class ProductFormViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void EditBarcodes()
+    {
+        var owner = System.Windows.Application.Current.Windows
+                        .OfType<System.Windows.Window>()
+                        .FirstOrDefault(w => w.IsActive)
+                    ?? System.Windows.Application.Current.MainWindow;
+
+        var result = ProductBarcodeEditorDialog.Edit(owner, Barcode);
+        if (result is not null)
+            Barcode = result;
+    }
+
+    [RelayCommand]
     private void Cancel()
     {
         _mainWindow.CloseTabForViewModel(this);

@@ -3,15 +3,16 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
     <RootNamespace>AlMuhasib.UI</RootNamespace>
     <AssemblyName>AlMuhasib</AssemblyName>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <NoWarn>NU1701</NoWarn>
-     <Version>1.14.43</Version>
-    <AssemblyVersion>1.14.43.0</AssemblyVersion>
-    <FileVersion>1.14.43.0</FileVersion>
+     <Version>1.14.44</Version>
+    <AssemblyVersion>1.14.44.0</AssemblyVersion>
+    <FileVersion>1.14.44.0</FileVersion>
     <ApplicationIcon>Assets\Brand\qayd-icon.ico</ApplicationIcon>
   </PropertyGroup>
 

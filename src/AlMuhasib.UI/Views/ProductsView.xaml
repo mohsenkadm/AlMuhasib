@@ -422,17 +422,35 @@
                         </DataGridTextColumn>
 
                         <!-- Barcode -->
-                        <DataGridTextColumn Header="الباركود"
-                                            Binding="{Binding Barcode}"
-                                            Width="*"
-                                            behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Barcode">
-                            <DataGridTextColumn.ElementStyle>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="FontFamily" Value="Consolas" />
-                                    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
-                                </Style>
-                            </DataGridTextColumn.ElementStyle>
-                        </DataGridTextColumn>
+                        <DataGridTemplateColumn Header="الباركود"
+                                                Width="*"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Barcode">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="2,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Barcode}"
+                                                   FontFamily="Consolas"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                                   ToolTip="{Binding Barcode}"/>
+                                        <Button Grid.Column="1"
+                                                Margin="6,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Style="{StaticResource TableEditIconButton}"
+                                                Command="{Binding DataContext.EditProductBarcodesCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                CommandParameter="{Binding}"
+                                                ToolTip="عرض وإدارة الباركودات">
+                                            <materialDesign:PackIcon Kind="EyeOutline" Width="16" Height="16"/>
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
 
                         <!-- Available serials count -->
                         <DataGridTextColumn Header="سيريال متاح"
@@ -620,8 +638,25 @@
                                                            Text="{Binding UsageInstructions, Mode=OneWay, StringFormat=الاستخدام: {0}}"
                                                            TextTrimming="CharacterEllipsis"
                                                            Visibility="{Binding HasUsageInstructions, Converter={StaticResource BoolToVis}}"/>
-                                                <TextBlock Style="{StaticResource MasterDataCardMeta}" FontFamily="Consolas"
-                                                           Text="{Binding Barcode, Mode=OneWay, TargetNullValue=—, StringFormat=الباركود: {0}}"/>
+                                                <Grid Margin="0,2,0,0">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Style="{StaticResource MasterDataCardMeta}" FontFamily="Consolas"
+                                                               VerticalAlignment="Center"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               Text="{Binding Barcode, Mode=OneWay, TargetNullValue=—, StringFormat=الباركود: {0}}"
+                                                               ToolTip="{Binding Barcode}"/>
+                                                    <Button Grid.Column="1"
+                                                            Margin="6,0,0,0"
+                                                            Style="{StaticResource TableEditIconButton}"
+                                                            Command="{Binding DataContext.EditProductBarcodesCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding Product}"
+                                                            ToolTip="عرض وإدارة الباركودات">
+                                                        <materialDesign:PackIcon Kind="EyeOutline" Width="16" Height="16"/>
+                                                    </Button>
+                                                </Grid>
                                             </StackPanel>
                                             <ItemsControl Grid.Row="3" ItemsSource="{Binding Prices}" Margin="0,6,0,6"
                                                           Visibility="{Binding DataContext.ShowPricingOnCards, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource BoolToVis}}">

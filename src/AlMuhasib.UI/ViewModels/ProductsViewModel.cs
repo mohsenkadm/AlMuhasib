@@ -644,6 +644,55 @@ public partial class ProductsViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
+    private async Task EditProductBarcodes(Product? product)
+    {
+        if (product is null) return;
+        if (!CanEdit)
+        {
+            BeautifulMessageDialog.ShowWarning("ليس لديك صلاحية تعديل المنتجات");
+            return;
+        }
+
+        var owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+                    ?? Application.Current.MainWindow;
+        var result = ProductBarcodeEditorDialog.Edit(owner, product.Barcode);
+        if (result is null)
+            return;
+
+        try
+        {
+            var existing = await _productService.GetByIdAsync(product.Id);
+            if (existing is null)
+            {
+                BeautifulMessageDialog.ShowError("المنتج غير موجود");
+                return;
+            }
+
+            existing.Barcode = string.IsNullOrWhiteSpace(result) ? null : result;
+            await _productService.UpdateAsync(existing);
+
+            product.Barcode = existing.Barcode;
+            var index = Products.IndexOf(product);
+            if (index >= 0)
+            {
+                Products.RemoveAt(index);
+                Products.Insert(index, product);
+            }
+
+            var card = ProductCards.FirstOrDefault(c => c.Product.Id == product.Id);
+            if (card is not null)
+            {
+                card.Product.Barcode = existing.Barcode;
+                card.Barcode = existing.Barcode;
+            }
+        }
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError($"تعذّر حفظ الباركود: {ex.Message}");
+        }
+    }
+
     public async Task ReloadAfterExternalChangeAsync()
     {
         await LoadCategoriesAsync();

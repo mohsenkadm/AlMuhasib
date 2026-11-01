@@ -107,11 +107,19 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <TextBox Text="{Binding Barcode, UpdateSourceTrigger=PropertyChanged}"
                                              Style="{StaticResource FilledTextBox}"
                                              ToolTip="نوع الباركود: انفاركار ماكس — يمكن تركه فارغاً أو إدخال عدة باركودات مفصولة بـ | (حتى 2000 حرف)"/>
-                                    <Button Grid.Column="1" Margin="8,0,0,0" Padding="12,0" Height="42"
+                                    <Button Grid.Column="1"
+                                            Margin="8,0,0,0"
+                                            Style="{StaticResource TableEditIconButton}"
+                                            Command="{Binding EditBarcodesCommand}"
+                                            ToolTip="عرض وإدارة جميع الباركودات">
+                                        <md:PackIcon Kind="EyeOutline" Width="18" Height="18"/>
+                                    </Button>
+                                    <Button Grid.Column="2" Margin="8,0,0,0" Padding="12,0" Height="42"
                                             Style="{StaticResource OutlinedButton}"
                                             Command="{Binding GenerateBarcodeCommand}"
                                             ToolTip="توليد باركود">

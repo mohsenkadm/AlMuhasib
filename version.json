@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.43",
-  "releaseDate": "2026-11-01",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.43/AlMuhasib-1.14.43.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.43/Qayd-Setup-1.14.43.exe",
-  "sha256": "42275CB4136FEA4AEA1BE316843914680D57DDDC754A2078E6C1C376FCC307E9",
-  "sizeBytes": 162800144,
-  "releaseNotes": "توسيع باركود انفاركار ماكس وتحسين الواجهة والتنبيهات وتسوية المخزون — تحديث اختياري آمن (توسيع حقل فقط)",
+  "version": "1.14.44",
+  "releaseDate": "2026-11-02",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.44/AlMuhasib-1.14.44.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.44/Qayd-Setup-1.14.44.exe",
+  "sha256": "7CD0B6469B6C6070A0BB2C74D51D501CC1945E481A44E3AD9A52D6ACAFC92702",
+  "sizeBytes": 162812820,
+  "releaseNotes": "محرر باركودات المنتج وتحسين البحث والكاشير — تحديث اختياري آمن بدون تغيير قاعدة البيانات",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }
