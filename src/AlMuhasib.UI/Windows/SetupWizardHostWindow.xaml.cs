@@ -618,8 +618,7 @@ public partial class SetupWizardHostWindow : Window
 
         try
         {
-            // Ensure Initial Catalog matches the selected system database name.
-            var databaseName = SelectedSystem switch
+            var defaultDatabaseName = SelectedSystem switch
             {
                 ApplicationSystemType.CarContracts => SystemConnectionStrings.CarContractsDatabase,
                 ApplicationSystemType.HotelManagement => SystemConnectionStrings.HotelsDatabase,
@@ -630,12 +629,19 @@ public partial class SetupWizardHostWindow : Window
                 _ => SystemConnectionStrings.AccountingDatabase
             };
 
+            // Preserve Database= from the shared/server connection string when present;
+            // only fall back to the system default when catalog is empty or master.
             var builder = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(connectionString)
             {
-                InitialCatalog = databaseName,
                 TrustServerCertificate = true,
                 MultipleActiveResultSets = true
             };
+            var existing = builder.InitialCatalog?.Trim();
+            if (string.IsNullOrWhiteSpace(existing)
+                || existing.Equals("master", StringComparison.OrdinalIgnoreCase))
+            {
+                builder.InitialCatalog = defaultDatabaseName;
+            }
 
             _appSettingsStore.SaveDefaultConnection(builder.ConnectionString);
             return true;

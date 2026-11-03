@@ -61,11 +61,17 @@ public static class SystemConnectionStrings
         if (LocalDatabasePathResolver.UsesLocalDb(baseConnection))
             return LocalDatabasePathResolver.BuildLocalDbConnectionString(databaseName);
 
-        var builder = new SqlConnectionStringBuilder(baseConnection)
+        // External SQL Server: keep Database= from the connection string when set
+        // (hosted DBs often use fixed names like db_xxx and deny CREATE DATABASE).
+        var builder = new SqlConnectionStringBuilder(baseConnection);
+        var existing = builder.InitialCatalog?.Trim();
+        if (!string.IsNullOrWhiteSpace(existing)
+            && !existing.Equals("master", StringComparison.OrdinalIgnoreCase))
         {
-            InitialCatalog = databaseName
-        };
+            return builder.ConnectionString;
+        }
 
+        builder.InitialCatalog = databaseName;
         return builder.ConnectionString;
     }
 }

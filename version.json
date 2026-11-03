@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.44",
-  "releaseDate": "2026-11-02",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.44/AlMuhasib-1.14.44.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.44/Qayd-Setup-1.14.44.exe",
-  "sha256": "7CD0B6469B6C6070A0BB2C74D51D501CC1945E481A44E3AD9A52D6ACAFC92702",
-  "sizeBytes": 162812820,
-  "releaseNotes": "محرر باركودات المنتج وتحسين البحث والكاشير — تحديث اختياري آمن بدون تغيير قاعدة البيانات",
+  "version": "1.14.45",
+  "releaseDate": "2026-11-03",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.45/AlMuhasib-1.14.45.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.45/Qayd-Setup-1.14.45.exe",
+  "sha256": "01637C1B91539273A9F2BD493CEEA19A427C09C3973D4A5FF50BC5021B28BDD7",
+  "sizeBytes": 162813633,
+  "releaseNotes": "احترام اسم قاعدة السيرفر الخارجي من الكونكشن سترنغ — تحديث اختياري آمن بدون تغيير قاعدة البيانات",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }
