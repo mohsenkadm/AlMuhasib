@@ -9,45 +9,38 @@ namespace AlMuhasib.Shared.Services;
 
 public class OpeningStockExcelService : IOpeningStockExcelService
 {
-    private static readonly string[] BaseHeaders =
+    private static readonly string[] QtyOnlyHeaders =
     [
         "اسم_المنتج",
         "الباركود",
-        "الكمية",
-        "سعر_الوحدة"
+        "الكمية"
     ];
 
     private const string ProductSalePriceHeader = "سعر_المنتج";
 
     public byte[] GenerateTemplate(bool includeProductSalePrice)
     {
+        // القالب كمية فقط — الباركود اختياري؛ الأعمدة السعرية مهملة حتى لو طُلبت قديماً
+        _ = includeProductSalePrice;
         using var workbook = new XLWorkbook();
 
         var instructions = workbook.Worksheets.Add("تعليمات");
         instructions.RightToLeft = true;
         instructions.Column(1).Width = 90;
-        var lines = new List<string>
+        var lines = new[]
         {
-            "قالب استيراد الأرصدة الافتتاحية للمنتجات",
+            "قالب استيراد الأرصدة الافتتاحية للمنتجات (كميات فقط)",
             "",
-            "1) املأ البيانات في ورقة «البيانات» فقط — لا تغيّر أسماء الأعمدة.",
-            "2) اسم_المنتج أو الباركود: مطلوب أحدهما على الأقل لمطابقة المنتج الموجود.",
-            "3) الكمية: رقم أكبر من صفر.",
-            "4) سعر_الوحدة: كلفة الوحدة للرصيد الافتتاحي (رقم أكبر من صفر).",
+            "1) املأ ورقة «البيانات» فقط — لا تغيّر أسماء الأعمدة.",
+            "2) اسم_المنتج: مطلوب. إن كان موجوداً تُحدَّث الكمية، وإن كان جديداً يُنشأ المنتج تلقائياً.",
+            "3) الباركود: اختياري — للمطابقة إن وُجد، أو يُحفظ مع المنتج الجديد.",
+            "4) الكمية: رقم أكبر من صفر.",
+            "",
+            "ملاحظة: يُطبَّق الاستيراد على المخزن المحدد في شاشة الأرصدة الافتتاحية.",
+            "يمكن استيراد آلاف الصفوف دفعة واحدة — راقب شريط التقدم والإحصائيات في الشاشة."
         };
-        if (includeProductSalePrice)
-        {
-            lines.Add("5) سعر_المنتج: سعر البيع — يُحفظ تلقائياً على نوع التسعير «سعر مفرد».");
-            lines.Add("");
-            lines.Add("ملاحظة: ميزة تسعير المنتجات مفعّلة — عمود سعر_المنتج موجود في القالب.");
-        }
-        else
-        {
-            lines.Add("");
-            lines.Add("ملاحظة: الاستيراد يطبّق على المخزن المحدد في شاشة الأرصدة الافتتاحية.");
-        }
 
-        for (var i = 0; i < lines.Count; i++)
+        for (var i = 0; i < lines.Length; i++)
             instructions.Cell(i + 1, 1).Value = lines[i];
         instructions.Cell(1, 1).Style.Font.Bold = true;
         instructions.Cell(1, 1).Style.Font.FontSize = 14;
@@ -55,39 +48,25 @@ public class OpeningStockExcelService : IOpeningStockExcelService
         var data = workbook.Worksheets.Add("البيانات");
         data.RightToLeft = true;
 
-        var headers = includeProductSalePrice
-            ? BaseHeaders.Concat([ProductSalePriceHeader]).ToArray()
-            : BaseHeaders;
-
-        for (var col = 0; col < headers.Length; col++)
+        for (var col = 0; col < QtyOnlyHeaders.Length; col++)
         {
             var cell = data.Cell(1, col + 1);
-            cell.Value = headers[col];
+            cell.Value = QtyOnlyHeaders[col];
             cell.Style.Font.Bold = true;
-            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#2E7D32");
+            cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#1565C0");
             cell.Style.Font.FontColor = XLColor.White;
             cell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         }
 
         data.Cell(2, 1).Value = "منتج مثال";
-        data.Cell(2, 2).Value = "123456";
+        data.Cell(2, 2).Value = ""; // باركود اختياري
         data.Cell(2, 3).Value = 10;
-        data.Cell(2, 4).Value = 5000;
-        if (includeProductSalePrice)
-            data.Cell(2, 5).Value = 7500;
-        data.Row(2).Style.Fill.BackgroundColor = XLColor.FromHtml("#E8F5E9");
+        data.Row(2).Style.Fill.BackgroundColor = XLColor.FromHtml("#E3F2FD");
 
-        data.Column(1).Width = 24;
+        data.Column(1).Width = 28;
         data.Column(2).Width = 16;
         data.Column(3).Width = 12;
-        data.Column(4).Width = 14;
-        if (includeProductSalePrice)
-            data.Column(5).Width = 14;
-
-        data.Range(2, 3, 500, 3).CreateDataValidation().Decimal.Between(0.01, 999999999999);
-        data.Range(2, 4, 500, 4).CreateDataValidation().Decimal.Between(0.01, 999999999999);
-        if (includeProductSalePrice)
-            data.Range(2, 5, 500, 5).CreateDataValidation().Decimal.Between(0, 999999999999);
+        data.Range(2, 3, 5000, 3).CreateDataValidation().Decimal.Between(0.01, 999999999999);
 
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
@@ -96,6 +75,7 @@ public class OpeningStockExcelService : IOpeningStockExcelService
 
     public IReadOnlyList<OpeningStockImportRow> ParseImportFile(string filePath, bool includeProductSalePrice)
     {
+        _ = includeProductSalePrice;
         using var workbook = new XLWorkbook(filePath);
         var sheet = workbook.Worksheets.FirstOrDefault(w =>
             w.Name.Equals("البيانات", StringComparison.OrdinalIgnoreCase))
@@ -116,30 +96,34 @@ public class OpeningStockExcelService : IOpeningStockExcelService
             {
                 RowNumber = rowNum,
                 ProductName = productName,
-                Barcode = string.IsNullOrWhiteSpace(barcode) ? null : barcode
+                Barcode = string.IsNullOrWhiteSpace(barcode) ? null : barcode.Trim()
             };
+
+            if (string.IsNullOrWhiteSpace(importRow.ProductName))
+                importRow.Errors.Add("اسم_المنتج مطلوب للمنتجات الجديدة أو للمطابقة");
 
             if (!TryParseDecimal(sheet.Cell(rowNum, ResolveColumn(headerMap, "الكمية", 3)), out var qty) || qty <= 0)
                 importRow.Errors.Add("الكمية غير صالحة");
             else
                 importRow.Quantity = qty;
 
-            if (!TryParseDecimal(sheet.Cell(rowNum, ResolveColumn(headerMap, "سعر_الوحدة", 4)), out var unitCost) || unitCost <= 0)
-                importRow.Errors.Add("سعر_الوحدة غير صالح");
-            else
-                importRow.UnitCost = unitCost;
-
-            if (includeProductSalePrice)
+            // توافق قوالب قديمة: سعر الوحدة اختياري ولا يُبطل الصف
+            var unitCostCol = ResolveColumnOptional(headerMap, "سعر_الوحدة");
+            if (unitCostCol is int ucCol
+                && !IsBlankCell(sheet.Cell(rowNum, ucCol))
+                && TryParseDecimal(sheet.Cell(rowNum, ucCol), out var unitCost)
+                && unitCost > 0)
             {
-                var priceCol = ResolveColumn(headerMap, ProductSalePriceHeader, 5);
-                var priceCell = sheet.Cell(rowNum, priceCol);
-                if (!IsBlankCell(priceCell))
-                {
-                    if (!TryParseDecimal(priceCell, out var salePrice) || salePrice < 0)
-                        importRow.Errors.Add("سعر_المنتج غير صالح");
-                    else
-                        importRow.ProductSalePrice = salePrice;
-                }
+                importRow.UnitCost = unitCost;
+            }
+
+            var saleCol = ResolveColumnOptional(headerMap, ProductSalePriceHeader);
+            if (saleCol is int sc
+                && !IsBlankCell(sheet.Cell(rowNum, sc))
+                && TryParseDecimal(sheet.Cell(rowNum, sc), out var salePrice)
+                && salePrice >= 0)
+            {
+                importRow.ProductSalePrice = salePrice;
             }
 
             rows.Add(importRow);
@@ -163,6 +147,9 @@ public class OpeningStockExcelService : IOpeningStockExcelService
 
     private static int ResolveColumn(Dictionary<string, int> headerMap, string header, int fallback)
         => headerMap.TryGetValue(header, out var col) ? col : fallback;
+
+    private static int? ResolveColumnOptional(Dictionary<string, int> headerMap, string header)
+        => headerMap.TryGetValue(header, out var col) ? col : null;
 
     private static string GetCellString(IXLWorksheet sheet, int row, Dictionary<string, int> headerMap, string header, int fallback)
         => sheet.Cell(row, ResolveColumn(headerMap, header, fallback)).GetString().Trim();

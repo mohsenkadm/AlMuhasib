@@ -474,10 +474,12 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         BeautifulMessageDialog.ShowWarning(message);
     }
 
-    /// <summary>يرجع false إن تجاوزت الكمية رصيد المخزن.</summary>
+    /// <summary>يرجع false إن تجاوزت الكمية رصيد المخزن (يُتخطى عند AllowNegativeStockSales).</summary>
     private bool EnsureStockAllowsAdd(Product product, decimal additionalQty)
     {
         if (SelectedWarehouse is null)
+            return true;
+        if (_featureFlags.AllowNegativeStockSales)
             return true;
 
         var available = _warehouseQtyByProduct.GetValueOrDefault(product.Id);
@@ -734,45 +736,48 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             return;
         }
 
-        foreach (var line in CartLines)
-        {
-            var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
-                s => s.WarehouseId == SelectedWarehouse.Id && s.ProductId == line.ProductId);
-            var available = stocks.FirstOrDefault()?.Quantity ?? 0;
-            var needed = line.Quantity;
-            if (needed > available)
-            {
-                BeautifulMessageDialog.ShowWarning(
-                    $"الكمية من «{line.ProductName}» ({needed:N0}) تتجاوز الرصيد ({available:N0})");
-                return;
-            }
-        }
-
-        if (ShowExpiryTracking)
+        if (!_featureFlags.AllowNegativeStockSales)
         {
             foreach (var line in CartLines)
             {
-                if (line.BatchId is int batchId)
+                var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
+                    s => s.WarehouseId == SelectedWarehouse.Id && s.ProductId == line.ProductId);
+                var available = stocks.FirstOrDefault()?.Quantity ?? 0;
+                var needed = line.Quantity;
+                if (needed > available)
                 {
-                    var batch = line.AvailableBatches.FirstOrDefault(b => b.Id == batchId);
-                    if (batch is not null && batch.Quantity < line.Quantity)
+                    BeautifulMessageDialog.ShowWarning(
+                        $"الكمية من «{line.ProductName}» ({needed:N0}) تتجاوز الرصيد ({available:N0})");
+                    return;
+                }
+            }
+
+            if (ShowExpiryTracking)
+            {
+                foreach (var line in CartLines)
+                {
+                    if (line.BatchId is int batchId)
                     {
-                        BeautifulMessageDialog.ShowWarning(
-                            $"«{line.ProductName}»: كمية الدفعة غير كافية");
+                        var batch = line.AvailableBatches.FirstOrDefault(b => b.Id == batchId);
+                        if (batch is not null && batch.Quantity < line.Quantity)
+                        {
+                            BeautifulMessageDialog.ShowWarning(
+                                $"«{line.ProductName}»: كمية الدفعة غير كافية");
+                            return;
+                        }
+                        continue;
+                    }
+
+                    try
+                    {
+                        await _productBatchService.AllocateFefoAsync(
+                            line.ProductId, SelectedWarehouse.Id, line.Quantity);
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        BeautifulMessageDialog.ShowWarning($"«{line.ProductName}»: {ex.Message}");
                         return;
                     }
-                    continue;
-                }
-
-                try
-                {
-                    await _productBatchService.AllocateFefoAsync(
-                        line.ProductId, SelectedWarehouse.Id, line.Quantity);
-                }
-                catch (InvalidOperationException ex)
-                {
-                    BeautifulMessageDialog.ShowWarning($"«{line.ProductName}»: {ex.Message}");
-                    return;
                 }
             }
         }

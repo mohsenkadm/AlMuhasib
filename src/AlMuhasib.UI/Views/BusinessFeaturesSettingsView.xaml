@@ -257,6 +257,10 @@
                                                     Description="فواتير عرض سعر للعملاء بدون تأثير على المخزن أو الحسابات مع قائمة فواتير العرض"
                                                     Icon="FileDocumentOutline" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0"
                                                     IsChecked="{Binding PriceQuotes}"/>
+                        <controls:FeatureToggleCard Title="يجوز البيع بكميات بالسالب"
+                                                    Description="عند التفعيل: فاتورة البيع والكاشير والأقساط تسمح بالبيع دون التحقق من رصيد المخزن وقد تصبح الكمية سالبة. عند الإلغاء يبقى المنع الحالي"
+                                                    Icon="PackageVariantMinus" IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#E65100"
+                                                    IsChecked="{Binding AllowNegativeStockSales}"/>
                         <controls:FeatureToggleCard Title="تسديد الفواتير الآجلة من التقارير"
                                                     Description="إظهار زر تسديد الفواتير الآجلة في جدولي تقرير المبيعات وتقرير المشتريات — مفعّل افتراضياً"
                                                     Icon="CashCheck" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32"

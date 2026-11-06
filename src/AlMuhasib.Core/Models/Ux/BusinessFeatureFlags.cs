@@ -80,4 +80,10 @@ public class BusinessFeatureFlags
 
     /// <summary>توزيع أرباح المستثمرين يشترط مرور 15 يوماً على الإيداع — مفعّل افتراضياً.</summary>
     public bool InvestorProfitEligibility15Days { get; set; } = true;
+
+    /// <summary>
+    /// يجوز البيع بكميات بالسالب (بدون تحقق من رصيد المخزن في البيع/الكاشير/الأقساط) —
+    /// معطّل افتراضياً. عند التفعيل قد تصبح كمية المخزن سالبة.
+    /// </summary>
+    public bool AllowNegativeStockSales { get; set; }
 }

@@ -692,19 +692,22 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             return;
         }
 
-        foreach (var item in validItems.Where(i => i.ProductId.HasValue))
+        if (!_featureFlags.AllowNegativeStockSales)
         {
-            var lineWarehouseId = InvoiceLineWarehouseHelper.ResolveLineWarehouseId(item, SelectedWarehouse.Id);
-            var lineWarehouse = Warehouses.FirstOrDefault(w => w.Id == lineWarehouseId) ?? SelectedWarehouse;
-            var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
-                s => s.WarehouseId == lineWarehouseId && s.ProductId == item.ProductId!.Value);
-            var available = (stocks.FirstOrDefault()?.Quantity ?? 0)
-                + GetEditingStockCredit(item.ProductId!.Value, lineWarehouseId);
-            if (item.Quantity > available)
+            foreach (var item in validItems.Where(i => i.ProductId.HasValue))
             {
-                InvoiceValidationDialog.ShowBlockingError(
-                    $"الكمية المطلوبة من '{item.ItemName}' ({item.Quantity:N0}) تتجاوز الرصيد المتاح ({available:N0}) في المخزن '{lineWarehouse.Name}'");
-                return;
+                var lineWarehouseId = InvoiceLineWarehouseHelper.ResolveLineWarehouseId(item, SelectedWarehouse.Id);
+                var lineWarehouse = Warehouses.FirstOrDefault(w => w.Id == lineWarehouseId) ?? SelectedWarehouse;
+                var stocks = await _unitOfWork.WarehouseStocks.FindAsync(
+                    s => s.WarehouseId == lineWarehouseId && s.ProductId == item.ProductId!.Value);
+                var available = (stocks.FirstOrDefault()?.Quantity ?? 0)
+                    + GetEditingStockCredit(item.ProductId!.Value, lineWarehouseId);
+                if (item.Quantity > available)
+                {
+                    InvoiceValidationDialog.ShowBlockingError(
+                        $"الكمية المطلوبة من '{item.ItemName}' ({item.Quantity:N0}) تتجاوز الرصيد المتاح ({available:N0}) في المخزن '{lineWarehouse.Name}'");
+                    return;
+                }
             }
         }
 

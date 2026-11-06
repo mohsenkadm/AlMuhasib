@@ -16,20 +16,29 @@ public class InvoiceService : IInvoiceService
     private readonly LoyaltyService _loyaltyService;
     private readonly IAccountingPeriodLockService _periodLockService;
     private readonly IBranchContext _branchContext;
+    private readonly IFeatureFlagService? _featureFlags;
 
     public InvoiceService(
         IDbContextFactory<AppDbContext> contextFactory,
         ICurrentUserService currentUserService,
         LoyaltyService loyaltyService,
         IAccountingPeriodLockService periodLockService,
-        IBranchContext branchContext)
+        IBranchContext branchContext,
+        IFeatureFlagService? featureFlags = null)
     {
         _contextFactory = contextFactory;
         _currentUserService = currentUserService;
         _loyaltyService = loyaltyService;
         _periodLockService = periodLockService;
         _branchContext = branchContext;
+        _featureFlags = featureFlags;
     }
+
+    private bool AllowNegativeStockSales => _featureFlags?.AllowNegativeStockSales == true;
+
+    /// <summary>أنواع تنقص المخزن ويُسمح لها بالسالب عند تفعيل الميزة.</summary>
+    private static bool IsNegativeStockEligibleDecrease(InvoiceType type)
+        => type is InvoiceType.Sale or InvoiceType.Installment;
 
     public async Task<Invoice> CreateInvoiceAsync(
         Invoice invoice,
@@ -239,18 +248,15 @@ public class InvoiceService : IInvoiceService
                     }
                     else
                     {
-                        // Sale / Installment / PurchaseReturn: decrease stock
-                        if (stock is not null)
-                        {
-                            stock.Quantity -= item.Quantity;
-                            stock.UpdatedBy = username;
-                            stock.UpdatedAt = DateTime.UtcNow;
-                        }
-                        else if (invoice.InvoiceType == InvoiceType.PurchaseReturn)
-                        {
-                            throw new InvalidOperationException(
-                                $"لا يوجد رصيد كافٍ لإرجاع المنتج (#{item.ProductId}) من المخزن");
-                        }
+                        // Sale / Installment / Damage / PurchaseReturn: decrease stock
+                        await DecreaseWarehouseStockAsync(
+                            context,
+                            invoice.InvoiceType,
+                            warehouseId,
+                            item.ProductId!.Value,
+                            item.Quantity,
+                            item.ItemName,
+                            username);
                     }
                 }
                 await context.SaveChangesAsync();
@@ -1565,5 +1571,91 @@ public class InvoiceService : IInvoiceService
         return int.TryParse(maybeId, out var parsed) && parsed == invoiceId
             ? invoiceNumber[..idx]
             : invoiceNumber;
+    }
+
+    /// <summary>
+    /// خصم مخزون للبيع/الأقساط/التلف/مرتجع المشتريات مع احترام AllowNegativeStockSales.
+    /// </summary>
+    private async Task DecreaseWarehouseStockAsync(
+        AppDbContext context,
+        InvoiceType invoiceType,
+        int warehouseId,
+        int productId,
+        decimal quantity,
+        string? itemName,
+        string username)
+    {
+        if (quantity <= 0)
+            return;
+
+        var stock = await context.WarehouseStocks
+            .FirstOrDefaultAsync(s =>
+                s.WarehouseId == warehouseId &&
+                s.ProductId == productId);
+
+        var label = string.IsNullOrWhiteSpace(itemName) ? $"#{productId}" : itemName.Trim();
+
+        if (stock is not null)
+        {
+            var next = stock.Quantity - quantity;
+            if (next < 0
+                && IsNegativeStockEligibleDecrease(invoiceType)
+                && !AllowNegativeStockSales)
+            {
+                throw new InvalidOperationException(
+                    $"الكمية المطلوبة من «{label}» تتجاوز الرصيد المتاح ({stock.Quantity:N0}) في المخزن");
+            }
+
+            stock.Quantity = next;
+            stock.UpdatedBy = username;
+            stock.UpdatedAt = DateTime.UtcNow;
+            return;
+        }
+
+        if (invoiceType == InvoiceType.PurchaseReturn)
+        {
+            throw new InvalidOperationException(
+                $"لا يوجد رصيد كافٍ لإرجاع المنتج ({label}) من المخزن");
+        }
+
+        if (IsNegativeStockEligibleDecrease(invoiceType))
+        {
+            if (!AllowNegativeStockSales)
+            {
+                throw new InvalidOperationException(
+                    $"لا يوجد رصيد للمنتج «{label}» في المخزن");
+            }
+
+            var unitCost = await ResolveUnitCostForNewStockAsync(context, productId);
+            await context.WarehouseStocks.AddAsync(new WarehouseStock
+            {
+                WarehouseId = warehouseId,
+                ProductId = productId,
+                Quantity = -quantity,
+                UnitCost = unitCost,
+                CreatedBy = username,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        // Damage بدون صف مخزون: الإبقاء على السلوك السابق (لا إنشاء صامت)
+    }
+
+    private static async Task<decimal> ResolveUnitCostForNewStockAsync(AppDbContext context, int productId)
+    {
+        var fromStock = await context.WarehouseStocks.AsNoTracking()
+            .Where(s => s.ProductId == productId && s.UnitCost > 0)
+            .OrderByDescending(s => s.UpdatedAt ?? s.CreatedAt)
+            .Select(s => (decimal?)s.UnitCost)
+            .FirstOrDefaultAsync();
+        if (fromStock is > 0)
+            return fromStock.Value;
+
+        var fromPrice = await context.ProductPrices.AsNoTracking()
+            .Where(p => p.ProductId == productId && p.PurchasePrice > 0)
+            .OrderByDescending(p => p.UpdatedAt ?? p.CreatedAt)
+            .Select(p => (decimal?)p.PurchasePrice)
+            .FirstOrDefaultAsync();
+        return fromPrice ?? 0m;
     }
 }

@@ -6,6 +6,7 @@ public class OpeningStockImportRow
     public string ProductName { get; set; } = string.Empty;
     public string? Barcode { get; set; }
     public decimal Quantity { get; set; }
+    /// <summary>اختياري للتوافق مع قوالب قديمة — غير مطلوب للكمية فقط.</summary>
     public decimal UnitCost { get; set; }
     public decimal? ProductSalePrice { get; set; }
     public List<string> Errors { get; set; } = [];

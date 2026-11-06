@@ -45,6 +45,9 @@ public interface IFeatureFlagService
     /// <summary>توزيع أرباح المستثمرين بعد 15 يوماً من الإيداع — مفعّل افتراضياً.</summary>
     bool InvestorProfitEligibility15Days { get; }
 
+    /// <summary>يجوز البيع بكميات بالسالب دون تحقق رصيد المخزن — معطّل افتراضياً.</summary>
+    bool AllowNegativeStockSales { get; }
+
     /// <summary>أي قالب سوق مفعّل</summary>
     bool AnyMarketTemplateEnabled { get; }
 

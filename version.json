@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.46",
-  "releaseDate": "2026-11-06",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.46/AlMuhasib-1.14.46.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.46/Qayd-Setup-1.14.46.exe",
-  "sha256": "2AFCEF5EF86BFCDF3929E852F9527E7077E829D3A963515F5B192237BFFF9D9B",
-  "sizeBytes": 162845341,
-  "releaseNotes": "مرفقات السندات وتحسينات الواجهة والطباعة — تحديث اختياري آمن (جدول إضافي فقط)",
+  "version": "1.14.47",
+  "releaseDate": "2026-11-07",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.47/AlMuhasib-1.14.47.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.47/Qayd-Setup-1.14.47.exe",
+  "sha256": "0BFE23D6A24EB8DDCB8AC0A5D432A787268863AE2E1528944FBD1B8385D2A66C",
+  "sizeBytes": 162855501,
+  "releaseNotes": "تحسينات المخزون الافتتاحي والفواتير والكاشير وميزات الأعمال — تحديث اختياري آمن بدون تغيير قاعدة البيانات",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

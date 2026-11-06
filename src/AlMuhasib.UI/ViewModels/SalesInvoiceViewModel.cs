@@ -1374,7 +1374,9 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
 
         // Stock validation for sales/damage (not returns — returns increase stock; quotes never touch stock).
         // عند التعديل: أضف كميات الفاتورة الأصلية لأنها ستُعاد للمخزن قبل إعادة الخصم.
-        if (!IsReturnMode && !IsQuoteMode)
+        // مع AllowNegativeStockSales يُتخطى فحص الرصيد وFEFO المسبق للبيع (التلف يبقى متحققاً).
+        var allowNegativeStock = !IsDamageMode && _featureFlags?.AllowNegativeStockSales == true;
+        if (!IsReturnMode && !IsQuoteMode && !allowNegativeStock)
         {
             foreach (var item in validItems.Where(i => i.ProductId.HasValue))
             {

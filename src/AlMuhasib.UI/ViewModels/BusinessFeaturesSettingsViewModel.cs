@@ -76,6 +76,9 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     /// <summary>توزيع أرباح المستثمرين بعد 15 يوماً — مفعّل افتراضياً.</summary>
     [ObservableProperty] private bool _investorProfitEligibility15Days = true;
 
+    /// <summary>يجوز البيع بكميات بالسالب — معطّل افتراضياً.</summary>
+    [ObservableProperty] private bool _allowNegativeStockSales;
+
     [ObservableProperty] private int _idleLockMinutes;
     [ObservableProperty] private decimal _posMinInstallmentAmount = 50_000m;
 
@@ -93,7 +96,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             UpdateSalePriceOnPurchase, AddMissingProductsOnPurchase, PurchaseExpenses,
             AllocatePurchaseExpensesToProducts, WhatsAppApiMessaging,
             ProductDiscountEnabled, LoyaltySystem, ProductOffers, SalesRepresentatives,
-            DamageInvoices, PriceQuotes,
+            DamageInvoices, PriceQuotes, AllowNegativeStockSales,
             TemplateMobileShop, TemplateClothing,
             TemplateConstruction, TemplatePharmacy, CarShowroom, SettleCreditInvoicesInReports,
             InvestorProfitEligibility15Days);
@@ -201,6 +204,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
         CarShowroom = p.FeatureFlags.CarShowroom;
         SettleCreditInvoicesInReports = p.FeatureFlags.SettleCreditInvoicesInReports;
         InvestorProfitEligibility15Days = p.FeatureFlags.InvestorProfitEligibility15Days;
+        AllowNegativeStockSales = p.FeatureFlags.AllowNegativeStockSales;
 
         IdleLockMinutes = p.IdleLockMinutes;
         PosMinInstallmentAmount = p.PosMinInstallmentAmount;
@@ -251,6 +255,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
     partial void OnCarShowroomChanged(bool value) => NotifyFeaturesCount();
     partial void OnSettleCreditInvoicesInReportsChanged(bool value) => NotifyFeaturesCount();
     partial void OnInvestorProfitEligibility15DaysChanged(bool value) => NotifyFeaturesCount();
+    partial void OnAllowNegativeStockSalesChanged(bool value) => NotifyFeaturesCount();
 
     [RelayCommand]
     private void BrowseBackupFolder()
@@ -315,6 +320,7 @@ public partial class BusinessFeaturesSettingsViewModel : ViewModelBase
             p.FeatureFlags.CarShowroom = CarShowroom;
             p.FeatureFlags.SettleCreditInvoicesInReports = SettleCreditInvoicesInReports;
             p.FeatureFlags.InvestorProfitEligibility15Days = InvestorProfitEligibility15Days;
+            p.FeatureFlags.AllowNegativeStockSales = AllowNegativeStockSales;
 
             p.IdleLockMinutes = Math.Max(0, IdleLockMinutes);
             p.PosMinInstallmentAmount = Math.Max(0, PosMinInstallmentAmount);
