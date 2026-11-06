@@ -54,6 +54,7 @@ public class Voucher : BranchScopedEntity
     public BankAccount? BankAccount { get; set; }
     public Invoice? Invoice { get; set; }
     public Installment? Installment { get; set; }
+    public ICollection<VoucherAttachment> Attachments { get; set; } = [];
 
     [NotMapped]
     public string PartyDisplayName =>

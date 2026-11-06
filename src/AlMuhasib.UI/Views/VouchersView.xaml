@@ -386,6 +386,94 @@
                                      MinHeight="56"
                                      TextWrapping="Wrap"
                                      VerticalContentAlignment="Top"/>
+
+                            <!-- Attachments (pending until save) -->
+                            <Border Margin="0,16,0,4" Padding="14,12"
+                                    CornerRadius="12"
+                                    Background="{DynamicResource PrimaryHueLightBrush}"
+                                    BorderBrush="{DynamicResource CardBorderBrush}"
+                                    BorderThickness="1">
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,10">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                                    HorizontalAlignment="Right">
+                                            <Border Width="32" Height="32" CornerRadius="8" Margin="0,0,10,0"
+                                                    Background="{DynamicResource PrimaryHueMidBrush}">
+                                                <materialDesign:PackIcon Kind="Paperclip" Width="18" Height="18"
+                                                                         Foreground="White"
+                                                                         HorizontalAlignment="Center"
+                                                                         VerticalAlignment="Center"/>
+                                            </Border>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock Text="المرفقات" FontSize="14" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                <TextBlock Text="{Binding PendingAttachmentsSummary}"
+                                                           FontSize="11"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                                           Margin="0,2,0,0"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                                    HorizontalAlignment="Left">
+                                            <Button Command="{Binding AddPendingAttachmentFromFileCommand}"
+                                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                                    materialDesign:ButtonAssist.CornerRadius="8"
+                                                    Padding="14,7" Margin="0,0,8,0"
+                                                    ToolTip="اختيار ملف من الحاسوب">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="FolderOpenOutline" Width="16" Height="16"
+                                                                              VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="من الحاسوب" VerticalAlignment="Center" FontSize="12"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Command="{Binding AddPendingAttachmentFromScannerCommand}"
+                                                    Style="{StaticResource PrimaryButton}"
+                                                    materialDesign:ButtonAssist.CornerRadius="8"
+                                                    Padding="14,7"
+                                                    ToolTip="مسح ضوئي عبر الماسح المتصل">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="Scanner" Width="16" Height="16"
+                                                                              VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="مسح ضوئي" VerticalAlignment="Center" FontSize="12"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <ItemsControl ItemsSource="{Binding PendingAttachments}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel Orientation="Horizontal"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Margin="0,0,8,8" Padding="10,6" CornerRadius="8"
+                                                        Background="{DynamicResource CardBrush}"
+                                                        BorderBrush="{DynamicResource SubtleBorderBrush}"
+                                                        BorderThickness="1">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="FileDocumentOutline" Width="16" Height="16"
+                                                                                 VerticalAlignment="Center" Margin="0,0,6,0"
+                                                                                 Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                                        <TextBlock Text="{Binding FileName}" FontSize="12"
+                                                                   VerticalAlignment="Center" MaxWidth="180"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   ToolTip="{Binding FileName}"/>
+                                                        <Button Command="{Binding DataContext.RemovePendingAttachmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                Style="{StaticResource FlatButton}"
+                                                                Padding="4" Margin="6,0,0,0"
+                                                                ToolTip="إزالة">
+                                                            <materialDesign:PackIcon Kind="Close" Width="14" Height="14"/>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </ScrollViewer>
 
@@ -418,7 +506,8 @@
             </Border>
         </materialDesign:DialogHost.DialogContent>
 
-        <!-- Main page: list only -->
+        <!-- Main page + attachments overlay -->
+        <Grid>
         <Grid Margin="24" behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -573,7 +662,7 @@
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Invoice.InvoiceNumber"/>
                             <DataGridTextColumn Header="ملاحظات" Binding="{Binding Notes}" Width="*"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Notes"/>
-                            <DataGridTemplateColumn Header="إرسال" Width="120"
+                            <DataGridTemplateColumn Header="إرسال" Width="150"
                                                     behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                                 <DataGridTemplateColumn.CellStyle>
                                     <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
@@ -581,6 +670,12 @@
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <Button Command="{Binding DataContext.OpenVoucherAttachmentsCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource TableAttachIconButton}"
+                                                    ToolTip="عرض المرفقات">
+                                                <materialDesign:PackIcon Kind="Paperclip" Width="18" Height="18"/>
+                                            </Button>
                                             <Button Command="{Binding DataContext.PrintVoucherCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                     CommandParameter="{Binding}"
                                                     Style="{StaticResource TablePrintIconButton}"
@@ -617,6 +712,137 @@
                     <controls:PaginationBar Grid.Row="2"/>
                 </Grid>
             </materialDesign:Card>
+        </Grid>
+
+        <!-- Attachments dialog overlay -->
+        <Grid Visibility="{Binding IsAttachmentsDialogOpen, Converter={StaticResource BoolToVis}}"
+              Panel.ZIndex="100">
+            <Border Background="#80000000"/>
+            <Border MinWidth="640" MaxWidth="820" MaxHeight="640"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    CornerRadius="16" Padding="0"
+                    Background="{DynamicResource CardBrush}"
+                    BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                    materialDesign:ElevationAssist.Elevation="Dp8">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" CornerRadius="16,16,0,0" Padding="20,14"
+                            Background="{DynamicResource PrimaryHueLightBrush}"
+                            BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,0,1">
+                        <Grid>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Width="36" Height="36" CornerRadius="10" Margin="0,0,12,0"
+                                        Background="{DynamicResource PrimaryHueMidBrush}">
+                                    <materialDesign:PackIcon Kind="Paperclip" Width="20" Height="20"
+                                                             Foreground="White"
+                                                             HorizontalAlignment="Center"
+                                                             VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock FontSize="16" FontWeight="Bold"
+                                               Foreground="{DynamicResource TextPrimaryBrush}">
+                                        <Run Text="مرفقات السند"/>
+                                        <Run Text=" "/>
+                                        <Run Text="{Binding AttachmentsVoucher.VoucherNumber, Mode=OneWay}"
+                                             Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                                    </TextBlock>
+                                    <TextBlock Text="إضافة من الحاسوب أو عبر الماسح الضوئي"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                            <Button HorizontalAlignment="Left"
+                                    Command="{Binding CloseVoucherAttachmentsCommand}"
+                                    Style="{StaticResource FlatButton}"
+                                    Foreground="{DynamicResource TextSecondaryBrush}"
+                                    Padding="6" ToolTip="إغلاق">
+                                <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                            </Button>
+                        </Grid>
+                    </Border>
+
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="20,14,20,8">
+                        <Button Command="{Binding AddVoucherAttachmentFromFileCommand}"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                materialDesign:ButtonAssist.CornerRadius="8"
+                                Padding="16,8" Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FolderOpenOutline" Width="18" Height="18"
+                                                          VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="من الحاسوب" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding AddVoucherAttachmentFromScannerCommand}"
+                                Style="{StaticResource PrimaryButton}"
+                                materialDesign:ButtonAssist.CornerRadius="8"
+                                Padding="16,8">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Scanner" Width="18" Height="18"
+                                                          VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="مسح ضوئي" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <DataGrid Grid.Row="2"
+                              ItemsSource="{Binding VoucherAttachments}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              SelectionMode="Single"
+                              Style="{StaticResource ModernDataGrid}"
+                              Margin="16,0,16,0"
+                              MaxHeight="360">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="اسم الملف" Binding="{Binding FileName}" Width="*"/>
+                            <DataGridTextColumn Header="التاريخ"
+                                                Binding="{Binding CreatedAt, StringFormat=yyyy/MM/dd HH:mm}"
+                                                Width="150"/>
+                            <DataGridTemplateColumn Header="إجراءات" Width="110" MinWidth="110">
+                                <DataGridTemplateColumn.CellStyle>
+                                    <Style TargetType="DataGridCell" BasedOn="{StaticResource TableActionsCellStyle}"/>
+                                </DataGridTemplateColumn.CellStyle>
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center">
+                                            <Button Command="{Binding DataContext.OpenVoucherAttachmentFileCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource TableViewIconButton}"
+                                                    ToolTip="فتح">
+                                                <materialDesign:PackIcon Kind="Eye" Width="18" Height="18"/>
+                                            </Button>
+                                            <Button Command="{Binding DataContext.DeleteVoucherAttachmentCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource TableDeleteIconButton}"
+                                                    ToolTip="حذف">
+                                                <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <Border Grid.Row="3" Padding="20,12" BorderBrush="{DynamicResource SubtleBorderBrush}"
+                            BorderThickness="0,1,0,0" CornerRadius="0,0,16,16">
+                        <Button Content="إغلاق" Command="{Binding CloseVoucherAttachmentsCommand}"
+                                Style="{StaticResource FlatButton}"
+                                HorizontalAlignment="Left"
+                                Padding="20,8"
+                                materialDesign:ButtonAssist.CornerRadius="8"/>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
         </Grid>
     </materialDesign:DialogHost>
 </UserControl>

@@ -109,6 +109,7 @@ public class AppDbContext : DbContext
     public DbSet<CapitalEntry> CapitalEntries => Set<CapitalEntry>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<CustomerAttachment> CustomerAttachments => Set<CustomerAttachment>();
+    public DbSet<VoucherAttachment> VoucherAttachments => Set<VoucherAttachment>();
     public DbSet<PrintBrandingSettings> PrintBrandingSettings => Set<PrintBrandingSettings>();
     public DbSet<UserTask> UserTasks => Set<UserTask>();
     public DbSet<UserNote> UserNotes => Set<UserNote>();

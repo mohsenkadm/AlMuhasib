@@ -132,6 +132,37 @@
     <SolidColorBrush x:Key="DashboardAlertTitleBrush" Color="#E65100"/>
     <SolidColorBrush x:Key="DashboardAlertBodyBrush" Color="#6D4C41"/>
     <SolidColorBrush x:Key="DashboardAlertItemBorderBrush" Color="#FFE082"/>
+    <!-- Retail POS (ThemeService overrides for light/dark) -->
+    <SolidColorBrush x:Key="PosProductCardBackgroundBrush" Color="#F5F9FF"/>
+    <SolidColorBrush x:Key="PosProductCardHoverBackgroundBrush" Color="#EEF5FF"/>
+    <SolidColorBrush x:Key="PosProductCardBorderBrush" Color="#D7E6F7"/>
+    <SolidColorBrush x:Key="PosProductCardBorderHoverBrush" Color="#90CAF9"/>
+    <SolidColorBrush x:Key="PosAccentBrush" Color="#1565C0"/>
+    <SolidColorBrush x:Key="PosAccentDarkBrush" Color="#0D47A1"/>
+    <SolidColorBrush x:Key="PosAccentSurfaceBrush" Color="#E3F2FD"/>
+    <SolidColorBrush x:Key="PosAccentSurfaceBorderBrush" Color="#BBDEFB"/>
+    <SolidColorBrush x:Key="PosSuccessBrush" Color="#2E7D32"/>
+    <SolidColorBrush x:Key="PosSuccessDarkBrush" Color="#1B5E20"/>
+    <SolidColorBrush x:Key="PosSuccessSurfaceBrush" Color="#E8F5E9"/>
+    <SolidColorBrush x:Key="PosWarningBrush" Color="#EF6C00"/>
+    <SolidColorBrush x:Key="PosWarningDarkBrush" Color="#E65100"/>
+    <SolidColorBrush x:Key="PosWarningSurfaceBrush" Color="#FFF3E0"/>
+    <SolidColorBrush x:Key="PosDangerBrush" Color="#C62828"/>
+    <SolidColorBrush x:Key="PosDangerSurfaceBrush" Color="#FFEBEE"/>
+    <SolidColorBrush x:Key="PosMutedTextBrush" Color="#78909C"/>
+    <SolidColorBrush x:Key="PosChipSelectedBackgroundBrush" Color="#1565C0"/>
+    <SolidColorBrush x:Key="PosChipSelectedBorderBrush" Color="#0D47A1"/>
+    <SolidColorBrush x:Key="PosChipSelectedForegroundBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="PosActionPayBrush" Color="#2E7D32"/>
+    <SolidColorBrush x:Key="PosActionPayHoverBrush" Color="#1B5E20"/>
+    <SolidColorBrush x:Key="PosActionHoldBrush" Color="#1565C0"/>
+    <SolidColorBrush x:Key="PosActionHoldHoverBrush" Color="#0D47A1"/>
+    <SolidColorBrush x:Key="PosActionClearBrush" Color="#EF6C00"/>
+    <SolidColorBrush x:Key="PosActionClearHoverBrush" Color="#E65100"/>
+    <SolidColorBrush x:Key="PosActionAddBrush" Color="#1565C0"/>
+    <SolidColorBrush x:Key="PosActionAddHoverBrush" Color="#0D47A1"/>
+    <SolidColorBrush x:Key="PosActionForegroundBrush" Color="#FFFFFF"/>
+
     <SolidColorBrush x:Key="DashboardKpiGreenBrush" Color="#2E7D32"/>
     <SolidColorBrush x:Key="DashboardKpiGreenLightBrush" Color="#E8F5E9"/>
     <SolidColorBrush x:Key="DashboardKpiOrangeBrush" Color="#EF6C00"/>
@@ -3628,6 +3659,125 @@
         <Setter Property="Foreground" Value="{DynamicResource TitleBarIconBadgeWhatsAppFg}"/>
     </Style>
 
+    <!-- Chrome-like content zoom chip in title bar -->
+    <Style x:Key="TitleBarZoomChip" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource TitleBarIconBadgeNeutralBg}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource TitleBarSearchFieldBackground}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="18"/>
+        <Setter Property="Padding" Value="4"/>
+        <Setter Property="Margin" Value="0,0,6,0"/>
+        <Setter Property="Height" Value="36"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    </Style>
+
+    <Style x:Key="TitleBarZoomButton" TargetType="Button">
+        <Setter Property="Width" Value="28"/>
+        <Setter Property="Height" Value="28"/>
+        <Setter Property="MinWidth" Value="28"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Margin" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource TitleBarIconBadgeBlueFg}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd"
+                            Width="{TemplateBinding Width}"
+                            Height="{TemplateBinding Height}"
+                            CornerRadius="14"
+                            Background="{TemplateBinding Background}"
+                            RenderTransformOrigin="0.5,0.5">
+                        <Border.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        </Border.RenderTransform>
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TitleBarIconBadgeBlueBg}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TitleBarIconBadgeBlueFg}"/>
+                            <Setter TargetName="Bd" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="1.1" ScaleY="1.1"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TitleBarIconBadgeBlueBg}"/>
+                            <Setter TargetName="Bd" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="0.92" ScaleY="0.92"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="TitleBarZoomPercentButton" TargetType="Button">
+        <Setter Property="MinWidth" Value="44"/>
+        <Setter Property="Height" Value="28"/>
+        <Setter Property="Padding" Value="8,0"/>
+        <Setter Property="Margin" Value="2,0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource TitleBarSearchFieldForeground}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd"
+                            CornerRadius="10"
+                            Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}"
+                            MinWidth="{TemplateBinding MinWidth}"
+                            Height="{TemplateBinding Height}">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource TitleBarIconBadgeBlueBg}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TitleBarIconBadgeBlueFg}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="HeaderOptionsDialogCard" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="16"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="MinWidth" Value="300"/>
+        <Setter Property="Width" Value="320"/>
+        <Setter Property="Effect">
+            <Setter.Value>
+                <DropShadowEffect BlurRadius="24" ShadowDepth="5" Opacity="0.2" Color="#0D1B2A"/>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="TitleBarSearchTextBox" TargetType="TextBox">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderThickness" Value="0"/>
@@ -4314,6 +4464,13 @@
         </Setter>
     </Style>
 
+    <Style x:Key="HeaderOptionsMenuButton" TargetType="Button" BasedOn="{StaticResource QuickAssistActionButton}">
+        <Setter Property="Height" Value="50"/>
+        <Setter Property="MinWidth" Value="0"/>
+        <Setter Property="Margin" Value="0,0,0,8"/>
+        <Setter Property="Padding" Value="12,10"/>
+    </Style>
+
     <!-- Personal workspace: task filter chips -->
     <Style x:Key="TaskFilterChip" TargetType="Button" BasedOn="{StaticResource OutlinedButton}">
         <Setter Property="Padding" Value="12,5"/>
@@ -4426,24 +4583,24 @@
     </Style>
 
     <Style x:Key="PosProductCard" TargetType="Border">
-        <Setter Property="Background" Value="#F5F9FF"/>
-        <Setter Property="BorderBrush" Value="#D7E6F7"/>
+        <Setter Property="Background" Value="{DynamicResource PosProductCardBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PosProductCardBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="14"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Effect">
             <Setter.Value>
-                <DropShadowEffect BlurRadius="18" ShadowDepth="3" Direction="270" Opacity="0.14" Color="#1565C0"/>
+                <DropShadowEffect BlurRadius="16" ShadowDepth="2" Direction="270" Opacity="0.18" Color="#000000"/>
             </Setter.Value>
         </Setter>
         <Style.Triggers>
             <Trigger Property="IsMouseOver" Value="True">
-                <Setter Property="BorderBrush" Value="#90CAF9"/>
-                <Setter Property="Background" Value="#EEF5FF"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource PosProductCardBorderHoverBrush}"/>
+                <Setter Property="Background" Value="{DynamicResource PosProductCardHoverBackgroundBrush}"/>
                 <Setter Property="Effect">
                     <Setter.Value>
-                        <DropShadowEffect BlurRadius="22" ShadowDepth="4" Direction="270" Opacity="0.2" Color="#1565C0"/>
+                        <DropShadowEffect BlurRadius="20" ShadowDepth="3" Direction="270" Opacity="0.24" Color="#000000"/>
                     </Setter.Value>
                 </Setter>
             </Trigger>
@@ -4468,15 +4625,17 @@
         <Setter Property="Height" Value="30"/>
         <Setter Property="Padding" Value="0"/>
         <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Foreground" Value="{DynamicResource PosActionForegroundBrush}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" Background="#1565C0" CornerRadius="8">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Border x:Name="Bd" Background="{DynamicResource PosActionAddBrush}" CornerRadius="8">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#0D47A1"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PosActionAddHoverBrush}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -4486,17 +4645,18 @@
 
     <Style x:Key="PosActionPayButton" TargetType="Button">
         <Setter Property="Height" Value="64"/>
-        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Foreground" Value="{DynamicResource PosActionForegroundBrush}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" Background="#2E7D32" CornerRadius="12" Padding="8,6">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Border x:Name="Bd" Background="{DynamicResource PosActionPayBrush}" CornerRadius="12" Padding="8,6">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#1B5E20"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PosActionPayHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Bd" Property="Opacity" Value="0.5"/>
@@ -4509,17 +4669,18 @@
 
     <Style x:Key="PosActionHoldButton" TargetType="Button">
         <Setter Property="Height" Value="64"/>
-        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Foreground" Value="{DynamicResource PosActionForegroundBrush}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" Background="#1565C0" CornerRadius="12" Padding="8,6">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Border x:Name="Bd" Background="{DynamicResource PosActionHoldBrush}" CornerRadius="12" Padding="8,6">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#0D47A1"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PosActionHoldHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Bd" Property="Opacity" Value="0.5"/>
@@ -4532,17 +4693,18 @@
 
     <Style x:Key="PosActionClearButton" TargetType="Button">
         <Setter Property="Height" Value="64"/>
-        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Foreground" Value="{DynamicResource PosActionForegroundBrush}"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
-                    <Border x:Name="Bd" Background="#EF6C00" CornerRadius="12" Padding="8,6">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Border x:Name="Bd" Background="{DynamicResource PosActionClearBrush}" CornerRadius="12" Padding="8,6">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#E65100"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PosActionClearHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Bd" Property="Opacity" Value="0.5"/>
@@ -4554,9 +4716,9 @@
     </Style>
 
     <Style x:Key="PosPayPrintButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-        <Setter Property="Background" Value="#2E7D32"/>
-        <Setter Property="BorderBrush" Value="#2E7D32"/>
-        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Background" Value="{DynamicResource PosActionPayBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PosActionPayBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PosActionForegroundBrush}"/>
     </Style>
 
     <!-- Selectable chip buttons for POS (warehouse / cash box / currency / discount type) -->
@@ -4589,9 +4751,9 @@
                             <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource HighlightBorderBrush}"/>
                         </Trigger>
                         <Trigger Property="Tag" Value="Selected">
-                            <Setter TargetName="Bd" Property="Background" Value="#1565C0"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="#0D47A1"/>
-                            <Setter Property="Foreground" Value="White"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PosChipSelectedBackgroundBrush}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PosChipSelectedBorderBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource PosChipSelectedForegroundBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>

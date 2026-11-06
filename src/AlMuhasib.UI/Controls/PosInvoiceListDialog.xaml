@@ -31,17 +31,16 @@
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" CornerRadius="16,16,0,0" Padding="18,14"
+                    Background="{DynamicResource PosActionHoldBrush}"
                     MouseLeftButtonDown="Header_MouseLeftButtonDown">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                        <GradientStop Color="#1565C0" Offset="0"/>
-                        <GradientStop Color="#0D47A1" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
                 <StackPanel>
-                    <TextBlock x:Name="TitleText" Text="الفواتير" FontSize="17" FontWeight="Bold" Foreground="White"
+                    <TextBlock x:Name="TitleText" Text="الفواتير" FontSize="17" FontWeight="Bold"
+                               Foreground="{DynamicResource PosActionForegroundBrush}"
                                FontFamily="{DynamicResource AppFont}"/>
-                    <TextBlock x:Name="SubtitleText" FontSize="12" Foreground="#BBDEFB" Margin="0,4,0,0"
+                    <TextBlock x:Name="SubtitleText" FontSize="12"
+                               Foreground="{DynamicResource PosActionForegroundBrush}"
+                               Opacity="0.82"
+                               Margin="0,4,0,0"
                                FontFamily="{DynamicResource AppFont}"/>
                 </StackPanel>
             </Border>
@@ -74,7 +73,7 @@
                                                Foreground="{DynamicResource TextSecondaryBrush}"
                                                FontFamily="{DynamicResource AppFont}"/>
                                     <TextBlock Text="{Binding AmountText}" FontSize="14" FontWeight="SemiBold"
-                                               Margin="0,6,0,0" Foreground="#1565C0"
+                                               Margin="0,6,0,0" Foreground="{DynamicResource PosAccentBrush}"
                                                FontFamily="{DynamicResource AppFont}"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">

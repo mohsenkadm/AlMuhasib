@@ -206,10 +206,10 @@ public static class MigrationProductExcelHelper
                 row.FxRate = 1m;
             }
 
-            // كميات المخازن
+            // كميات المخازن — مطابقة مرنة للرأس مثل الأسعار (لا تفشل بصمت عند اختلاف المسافات/الأقواس)
             foreach (var wh in warehouseNames.Where(n => !string.IsNullOrWhiteSpace(n)))
             {
-                var qty = MigrationExcelHelper.ParseDecimal(GetCell(sheet, r, headerMap, $"كمية_{SanitizeHeader(wh)}"));
+                var qty = FindWarehouseQty(sheet, r, headerMap, wh);
                 row.WarehouseQtys.Add(new MigrationWarehouseQtyCell
                 {
                     WarehouseName = wh,
@@ -310,6 +310,46 @@ public static class MigrationProductExcelHelper
                 : !kv.Key.Contains("دولار", StringComparison.OrdinalIgnoreCase)));
         if (match.Key is null) return 0;
         return MigrationExcelHelper.ParseDecimal(sheet.Cell(row, match.Value).GetFormattedString());
+    }
+
+    /// <summary>
+    /// قراءة كمية مخزن من Excel: رأس القالب الدقيق أولاً، ثم مطابقة مرنة على أعمدة «كمية_*».
+    /// </summary>
+    private static decimal FindWarehouseQty(
+        IXLWorksheet sheet, int row, Dictionary<string, int> headerMap, string warehouseDisplayName)
+    {
+        var exactKey = $"كمية_{SanitizeHeader(warehouseDisplayName)}";
+        if (headerMap.TryGetValue(exactKey, out var exactCol))
+            return MigrationExcelHelper.ParseDecimal(sheet.Cell(row, exactCol).GetFormattedString());
+
+        // بدون أقواس الفرع: «كمية_المخزن_الرئيسي» يطابق «كمية_المخزن_الرئيسي_(الفرع)»
+        var bareName = warehouseDisplayName.Trim();
+        var paren = bareName.LastIndexOf(" (", StringComparison.Ordinal);
+        if (paren > 0 && bareName.EndsWith(')'))
+            bareName = bareName[..paren].Trim();
+        var bareKey = $"كمية_{SanitizeHeader(bareName)}";
+        if (headerMap.TryGetValue(bareKey, out var bareCol))
+            return MigrationExcelHelper.ParseDecimal(sheet.Cell(row, bareCol).GetFormattedString());
+
+        var token = SanitizeHeader(bareName);
+        var match = headerMap.FirstOrDefault(kv =>
+            (kv.Key.StartsWith("كمية_", StringComparison.OrdinalIgnoreCase)
+             || kv.Key.StartsWith("كمية ", StringComparison.OrdinalIgnoreCase))
+            && (kv.Key.Contains(token, StringComparison.OrdinalIgnoreCase)
+                || kv.Key.Contains(SanitizeHeader(warehouseDisplayName), StringComparison.OrdinalIgnoreCase)
+                || NormalizeHeaderToken(kv.Key).Contains(NormalizeHeaderToken(bareName), StringComparison.OrdinalIgnoreCase)));
+        if (match.Key is not null)
+            return MigrationExcelHelper.ParseDecimal(sheet.Cell(row, match.Value).GetFormattedString());
+
+        return 0m;
+    }
+
+    private static string NormalizeHeaderToken(string value)
+    {
+        var s = SanitizeHeader(value);
+        if (s.StartsWith("كمية_", StringComparison.OrdinalIgnoreCase))
+            s = s["كمية_".Length..];
+        return s.Replace("(", "_").Replace(")", "_").Replace("__", "_").Trim('_');
     }
 
     private static Dictionary<string, int> ReadHeaderMap(IXLWorksheet sheet)

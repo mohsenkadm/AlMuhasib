@@ -151,6 +151,11 @@ internal sealed class FakeExportService : IExportService
         return Path.Combine(Path.GetTempPath(), $"customs-invoice-{Guid.NewGuid():N}.pdf");
     }
 
+    public void PrintVoucher(VoucherPrintModel model)
+    {
+        LastVoucher = model;
+    }
+
     public string ExportVoucherToPdf(VoucherPrintModel model)
     {
         ExportVoucherPdfCalls++;

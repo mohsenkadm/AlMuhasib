@@ -56,6 +56,7 @@ public class UnitOfWork : IUnitOfWork
     private IRepository<CapitalEntry>? _capitalEntries;
     private IRepository<AuditLog>? _auditLogs;
     private IRepository<CustomerAttachment>? _customerAttachments;
+    private IRepository<VoucherAttachment>? _voucherAttachments;
     private IRepository<PrintBrandingSettings>? _printBrandingSettings;
     private IRepository<UserTask>? _userTasks;
     private IRepository<UserNote>? _userNotes;
@@ -100,6 +101,7 @@ public class UnitOfWork : IUnitOfWork
     public IRepository<CapitalEntry> CapitalEntries => _capitalEntries ??= CreateRepo<CapitalEntry>();
     public IRepository<AuditLog> AuditLogs => _auditLogs ??= CreateRepo<AuditLog>();
     public IRepository<CustomerAttachment> CustomerAttachments => _customerAttachments ??= CreateRepo<CustomerAttachment>();
+    public IRepository<VoucherAttachment> VoucherAttachments => _voucherAttachments ??= CreateRepo<VoucherAttachment>();
     public IRepository<PrintBrandingSettings> PrintBrandingSettings => _printBrandingSettings ??= CreateRepo<PrintBrandingSettings>();
     public IRepository<UserTask> UserTasks => _userTasks ??= CreateRepo<UserTask>();
     public IRepository<UserNote> UserNotes => _userNotes ??= CreateRepo<UserNote>();

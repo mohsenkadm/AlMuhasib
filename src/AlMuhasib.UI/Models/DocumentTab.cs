@@ -1,3 +1,5 @@
+using System.Windows;
+using System.Windows.Controls;
 using AlMuhasib.UI.ViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;
 using MaterialDesignThemes.Wpf;
@@ -33,10 +35,38 @@ public partial class DocumentTab : ObservableObject, IDisposable
     public ViewModelBase ViewModel { get; init; } = null!;
     public IServiceScope Scope { get; init; } = null!;
 
+    /// <summary>Cached visual for this tab (null when trimmed or never shown).</summary>
+    public FrameworkElement? CachedView { get; set; }
+
     /// <summary>اسم شاشة الصلاحية إن وُجد — يُستخدم لإعادة الفتح.</summary>
     public string? PermissionScreenName { get; init; }
 
-    public void Dispose() => Scope.Dispose();
+    public void ReleaseCachedView()
+    {
+        if (CachedView is null)
+            return;
+
+        switch (CachedView.Parent)
+        {
+            case ContentControl host:
+                host.Content = null;
+                break;
+            case Decorator decorator when ReferenceEquals(decorator.Child, CachedView):
+                decorator.Child = null;
+                break;
+            case Panel panel:
+                panel.Children.Remove(CachedView);
+                break;
+        }
+
+        CachedView = null;
+    }
+
+    public void Dispose()
+    {
+        ReleaseCachedView();
+        Scope.Dispose();
+    }
 }
 
 /// <summary>سجل خفيف لإعادة فتح تبويب مغلق (بدون حالة النموذج).</summary>

@@ -1170,6 +1170,28 @@ public class ExcelExportService : IExportService
         return SavePdfToWhatsAppFolder(bytes, SanitizeFileName(name));
     }
 
+    public void PrintVoucher(VoucherPrintModel model)
+    {
+        FlowDocument doc;
+        Size size;
+        if (model.IsCustomsReceipt)
+        {
+            doc = CustomsReceiptDocumentBuilder.Build(model);
+            size = CustomsReceiptDocumentBuilder.ResolvePageSize(model);
+        }
+        else
+        {
+            doc = AccountingVoucherDocumentBuilder.Build(model);
+            size = AccountingVoucherDocumentBuilder.ResolvePageSize(model);
+        }
+
+        var jobName = string.IsNullOrWhiteSpace(model.Title)
+            ? (string.IsNullOrWhiteSpace(model.VoucherNumber) ? "سند" : $"سند {model.VoucherNumber}")
+            : (string.IsNullOrWhiteSpace(model.VoucherNumber) ? model.Title : $"{model.Title} - {model.VoucherNumber}");
+
+        DocumentPrintHelper.PrintDocument(doc, jobName, size, preferredPrinter: null, showPreview: true);
+    }
+
     public string ExportVoucherToPdf(VoucherPrintModel model)
     {
         var bytes = model.IsCustomsReceipt

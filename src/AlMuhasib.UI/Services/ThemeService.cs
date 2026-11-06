@@ -245,6 +245,7 @@ public sealed class ThemeService
         ApplyTableActionBrushes(res, isDark);
         ApplyPanelChromeBrushes(res, isDark);
         ApplyDashboardBrushes(res, isDark);
+        ApplyPosBrushes(res, isDark);
 
         if (!isGold)
             SetBrush(res, "PrimaryHueDarkBrush", isDark ? "#BBDEFB" : "#0D47A1");
@@ -420,6 +421,44 @@ public sealed class ThemeService
         SetBrush(res, "PanelCloseHoverBorderBrush", isDark ? "#EF5350" : "#EF9A9A");
         SetBrush(res, "PanelCloseHoverForegroundBrush", "#C62828");
         SetBrush(res, "PanelClosePressedBackgroundBrush", isDark ? "#4D2A30" : "#FFCDD2");
+    }
+
+    private static void ApplyPosBrushes(ResourceDictionary res, bool isDark)
+    {
+        // Retail POS surfaces — readable in light and dark without pastel-on-dark clash.
+        SetBrush(res, "PosProductCardBackgroundBrush", isDark ? "#1A2744" : "#F5F9FF");
+        SetBrush(res, "PosProductCardHoverBackgroundBrush", isDark ? "#223356" : "#EEF5FF");
+        SetBrush(res, "PosProductCardBorderBrush", isDark ? "#2F4570" : "#D7E6F7");
+        SetBrush(res, "PosProductCardBorderHoverBrush", isDark ? "#5BA3D9" : "#90CAF9");
+
+        SetBrush(res, "PosAccentBrush", isDark ? "#64B5F6" : "#1565C0");
+        SetBrush(res, "PosAccentDarkBrush", isDark ? "#BBDEFB" : "#0D47A1");
+        SetBrush(res, "PosAccentSurfaceBrush", isDark ? "#1A3048" : "#E3F2FD");
+        SetBrush(res, "PosAccentSurfaceBorderBrush", isDark ? "#2F4570" : "#BBDEFB");
+
+        SetBrush(res, "PosSuccessBrush", isDark ? "#81C784" : "#2E7D32");
+        SetBrush(res, "PosSuccessDarkBrush", isDark ? "#A5D6A7" : "#1B5E20");
+        SetBrush(res, "PosSuccessSurfaceBrush", isDark ? "#1B3324" : "#E8F5E9");
+        SetBrush(res, "PosWarningBrush", isDark ? "#FFB74D" : "#EF6C00");
+        SetBrush(res, "PosWarningDarkBrush", isDark ? "#FFCC80" : "#E65100");
+        SetBrush(res, "PosWarningSurfaceBrush", isDark ? "#3D2A14" : "#FFF3E0");
+        SetBrush(res, "PosDangerBrush", isDark ? "#EF5350" : "#C62828");
+        SetBrush(res, "PosDangerSurfaceBrush", isDark ? "#3D2226" : "#FFEBEE");
+        SetBrush(res, "PosMutedTextBrush", isDark ? DarkTextSecondary : "#78909C");
+
+        SetBrush(res, "PosChipSelectedBackgroundBrush", isDark ? "#1565C0" : "#1565C0");
+        SetBrush(res, "PosChipSelectedBorderBrush", isDark ? "#42A5F5" : "#0D47A1");
+        SetBrush(res, "PosChipSelectedForegroundBrush", "#FFFFFF");
+
+        SetBrush(res, "PosActionPayBrush", isDark ? "#388E3C" : "#2E7D32");
+        SetBrush(res, "PosActionPayHoverBrush", isDark ? "#2E7D32" : "#1B5E20");
+        SetBrush(res, "PosActionHoldBrush", isDark ? "#1E88E5" : "#1565C0");
+        SetBrush(res, "PosActionHoldHoverBrush", isDark ? "#1565C0" : "#0D47A1");
+        SetBrush(res, "PosActionClearBrush", isDark ? "#FB8C00" : "#EF6C00");
+        SetBrush(res, "PosActionClearHoverBrush", isDark ? "#EF6C00" : "#E65100");
+        SetBrush(res, "PosActionAddBrush", isDark ? "#1E88E5" : "#1565C0");
+        SetBrush(res, "PosActionAddHoverBrush", isDark ? "#1565C0" : "#0D47A1");
+        SetBrush(res, "PosActionForegroundBrush", "#FFFFFF");
     }
 
     private static void ApplyDashboardBrushes(ResourceDictionary res, bool isDark)

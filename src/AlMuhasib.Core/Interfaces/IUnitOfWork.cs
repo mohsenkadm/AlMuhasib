@@ -36,6 +36,7 @@ public interface IUnitOfWork : IDisposable
     IRepository<CapitalEntry> CapitalEntries { get; }
     IRepository<AuditLog> AuditLogs { get; }
     IRepository<CustomerAttachment> CustomerAttachments { get; }
+    IRepository<VoucherAttachment> VoucherAttachments { get; }
     IRepository<PrintBrandingSettings> PrintBrandingSettings { get; }
     IRepository<UserTask> UserTasks { get; }
     IRepository<UserNote> UserNotes { get; }

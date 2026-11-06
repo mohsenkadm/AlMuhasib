@@ -4518,6 +4518,81 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.ToTable("UserTasks", (string)null);
                 });
 
+            modelBuilder.Entity("AlMuhasib.Core.Entities.VoucherAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BranchId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("SyncId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("VoucherId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BranchId");
+
+                    b.HasIndex("IsDeleted");
+
+                    b.HasIndex("SyncId");
+
+                    b.HasIndex("VoucherId");
+
+                    b.ToTable("VoucherAttachments", (string)null);
+                });
+
             modelBuilder.Entity("AlMuhasib.Core.Entities.Voucher", b =>
                 {
                     b.Property<int>("Id")
@@ -5872,6 +5947,25 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("AlMuhasib.Core.Entities.VoucherAttachment", b =>
+                {
+                    b.HasOne("AlMuhasib.Core.Entities.Branch", "Branch")
+                        .WithMany()
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AlMuhasib.Core.Entities.Voucher", "Voucher")
+                        .WithMany("Attachments")
+                        .HasForeignKey("VoucherId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Voucher");
+                });
+
             modelBuilder.Entity("AlMuhasib.Core.Entities.Voucher", b =>
                 {
                     b.HasOne("AlMuhasib.Core.Entities.BankAccount", "BankAccount")
@@ -5938,6 +6032,8 @@ namespace AlMuhasib.Infrastructure.Data.Migrations
                     b.Navigation("Invoice");
 
                     b.Navigation("Supplier");
+
+                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("AlMuhasib.Core.Entities.Warehouse", b =>

@@ -59,6 +59,7 @@ public sealed class HotelUnitOfWork : IUnitOfWork
     public IRepository<ProfitDistributionDetail> ProfitDistributionDetails => new UnsupportedHotelRepository<ProfitDistributionDetail>();
     public IRepository<CapitalEntry> CapitalEntries => new UnsupportedHotelRepository<CapitalEntry>();
     public IRepository<CustomerAttachment> CustomerAttachments => new UnsupportedHotelRepository<CustomerAttachment>();
+    public IRepository<VoucherAttachment> VoucherAttachments => new UnsupportedHotelRepository<VoucherAttachment>();
     public IRepository<UserTask> UserTasks => new UnsupportedHotelRepository<UserTask>();
     public IRepository<UserNote> UserNotes => new UnsupportedHotelRepository<UserNote>();
     public IRepository<PricingType> PricingTypes => new UnsupportedHotelRepository<PricingType>();

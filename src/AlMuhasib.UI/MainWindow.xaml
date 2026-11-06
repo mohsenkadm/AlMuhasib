@@ -47,13 +47,7 @@
     <Window.Resources>
         <Storyboard x:Key="TabContentFadeIn">
             <DoubleAnimation Storyboard.TargetProperty="Opacity"
-                             From="0" To="1" Duration="0:0:0.28">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseOut"/>
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
-                             From="12" To="0" Duration="0:0:0.32">
+                             From="0.92" To="1" Duration="0:0:0.08">
                 <DoubleAnimation.EasingFunction>
                     <CubicEase EasingMode="EaseOut"/>
                 </DoubleAnimation.EasingFunction>
@@ -163,13 +157,20 @@
                     </Border>
                 </StackPanel>
 
-                <!-- Center: modern interface search -->
+                <!-- Center: modern interface search + options (search shrinks; options always visible) -->
                 <Grid Grid.Column="2"
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Stretch"
-                      MinWidth="260" MaxWidth="420" Width="360"
+                      VerticalAlignment="Center"
                       Margin="12,8"
                       WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MaxWidth="420"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0"
+                      MinWidth="80"
+                      MaxWidth="420"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch">
                     <Border x:Name="TitleBarSearchHost"
                             CornerRadius="18"
                             Padding="12,4"
@@ -263,7 +264,7 @@
                                 BorderThickness="1"
                                 CornerRadius="14"
                                 Padding="8"
-                                MinWidth="360"
+                                MinWidth="{Binding ActualWidth, ElementName=TitleBarSearchHost}"
                                 MaxWidth="420"
                                 MaxHeight="380"
                                 MouseDown="TitleBarSearchPopup_MouseDown">
@@ -375,6 +376,154 @@
                     </Popup>
                 </Grid>
 
+                    <Button x:Name="HeaderOptionsButton"
+                            Grid.Column="1"
+                            Command="{Binding ToggleHeaderOptionsCommand}"
+                            Style="{StaticResource TitleBarRoundIconBlue}"
+                            Margin="12,0,0,0"
+                            VerticalAlignment="Center"
+                            ToolTip="خيارات النظام"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                        <materialDesign:PackIcon Kind="CogOutline" Width="18" Height="18"/>
+                    </Button>
+
+                    <Popup x:Name="HeaderOptionsPopup"
+                           IsOpen="{Binding IsHeaderOptionsOpen, Mode=TwoWay}"
+                           Placement="Bottom"
+                           PlacementTarget="{Binding ElementName=HeaderOptionsButton}"
+                           StaysOpen="True"
+                           AllowsTransparency="True"
+                           PopupAnimation="Fade"
+                           HorizontalOffset="0"
+                           VerticalOffset="10"
+                           DataContext="{Binding ElementName=RootLayoutGrid, Path=DataContext}">
+                        <Border Style="{StaticResource HeaderOptionsDialogCard}">
+                            <StackPanel>
+                                <TextBlock Text="خيارات النظام"
+                                           FontSize="15" FontWeight="Bold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           Margin="2,0,2,14"/>
+
+                                <!-- Zoom -->
+                                <Border Background="{DynamicResource BackgroundBrush}"
+                                        BorderBrush="{DynamicResource SubtleBorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="12"
+                                        Padding="12,10"
+                                        Margin="0,0,0,12">
+                                    <Grid>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                                    HorizontalAlignment="Right">
+                                            <materialDesign:PackIcon Kind="MagnifyPlusOutline" Width="18" Height="18"
+                                                                     Foreground="{DynamicResource TitleBarIconBadgeBlueFg}"
+                                                                     VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Text="حجم العرض" FontSize="13" FontWeight="SemiBold"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                                                    HorizontalAlignment="Left">
+                                            <Button Command="{Binding ZoomOutContentCommand}"
+                                                    Style="{StaticResource TitleBarZoomButton}"
+                                                    ToolTip="تصغير العرض">
+                                                <materialDesign:PackIcon Kind="Minus" Width="14" Height="14"/>
+                                            </Button>
+                                            <Button Command="{Binding ResetContentZoomCommand}"
+                                                    Style="{StaticResource TitleBarZoomPercentButton}"
+                                                    Content="{Binding MainZoomPercentText}"
+                                                    MinWidth="52"
+                                                    ToolTip="إعادة 100%"/>
+                                            <Button Command="{Binding ZoomInContentCommand}"
+                                                    Style="{StaticResource TitleBarZoomButton}"
+                                                    ToolTip="تكبير العرض">
+                                                <materialDesign:PackIcon Kind="Plus" Width="14" Height="14"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+
+                                <Button Style="{StaticResource HeaderOptionsMenuButton}"
+                                        Command="{Binding ToggleThemeCommand}"
+                                        Height="52">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="36" Height="36" CornerRadius="10"
+                                                Background="{DynamicResource TitleBarIconBadgeNeutralBg}" Margin="0,0,12,0">
+                                            <materialDesign:PackIcon Kind="ThemeLightDark" Width="20" Height="20"
+                                                                     Foreground="{DynamicResource TitleBarIconBadgeNeutralFg}"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="تبديل الوضع الليلي / النهاري"
+                                                   VerticalAlignment="Center"
+                                                   FontWeight="SemiBold" FontSize="14"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Style="{StaticResource HeaderOptionsMenuButton}"
+                                        Command="{Binding OpenBusinessFeaturesSettingsCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="34" Height="34" CornerRadius="10"
+                                                Background="{DynamicResource DashboardKpiIndigoLightBrush}" Margin="0,0,12,0">
+                                            <materialDesign:PackIcon Kind="TuneVariant" Width="18" Height="18"
+                                                                     Foreground="#3949AB"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="إعدادات الميزات" VerticalAlignment="Center"
+                                                   FontWeight="SemiBold" FontSize="13"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Style="{StaticResource HeaderOptionsMenuButton}"
+                                        Command="{Binding OpenUsersManagementCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="34" Height="34" CornerRadius="10"
+                                                Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,12,0">
+                                            <materialDesign:PackIcon Kind="AccountMultiple" Width="18" Height="18"
+                                                                     Foreground="#1565C0"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="المستخدمون" VerticalAlignment="Center"
+                                                   FontWeight="SemiBold" FontSize="13"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Style="{StaticResource HeaderOptionsMenuButton}"
+                                        Command="{Binding OpenMigrationWizardFromOptionsCommand}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="34" Height="34" CornerRadius="10"
+                                                Background="{DynamicResource DashboardKpiOrangeLightBrush}" Margin="0,0,12,0">
+                                            <materialDesign:PackIcon Kind="DatabaseImport" Width="18" Height="18"
+                                                                     Foreground="#EF6C00"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="معالج النقل" VerticalAlignment="Center"
+                                                   FontWeight="SemiBold" FontSize="13"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <Button Style="{StaticResource HeaderOptionsMenuButton}"
+                                        Command="{Binding OpenPrintSettingsFromOptionsCommand}"
+                                        Margin="0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Border Width="34" Height="34" CornerRadius="10"
+                                                Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,12,0">
+                                            <materialDesign:PackIcon Kind="PrinterSettings" Width="18" Height="18"
+                                                                     Foreground="#1565C0"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <TextBlock Text="إعدادات الطباعة" VerticalAlignment="Center"
+                                                   FontWeight="SemiBold" FontSize="13"
+                                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+                </Grid>
+
                 <!-- Trial activation chip + date/time pills -->
                 <StackPanel Grid.Column="3"
                             Orientation="Horizontal"
@@ -399,34 +548,6 @@
                                        VerticalAlignment="Center"/>
                         </StackPanel>
                     </Button>
-                    <Border Style="{StaticResource TitleBarDatePill}"
-                            WindowChrome.IsHitTestVisibleInChrome="False">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="CalendarStar"
-                                                     Width="16" Height="16"
-                                                     Foreground="{DynamicResource TitleBarIconAccentBrush}"
-                                                     VerticalAlignment="Center"
-                                                     Margin="0,0,6,0">
-                                <materialDesign:PackIcon.RenderTransform>
-                                    <RotateTransform x:Name="HijriIconRotate" Angle="0" />
-                                </materialDesign:PackIcon.RenderTransform>
-                                <materialDesign:PackIcon.Triggers>
-                                    <EventTrigger RoutedEvent="Loaded">
-                                        <BeginStoryboard>
-                                            <Storyboard RepeatBehavior="Forever">
-                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
-                                                                 From="0" To="360" Duration="0:0:12"/>
-                                            </Storyboard>
-                                        </BeginStoryboard>
-                                    </EventTrigger>
-                                </materialDesign:PackIcon.Triggers>
-                            </materialDesign:PackIcon>
-                            <TextBlock Text="{Binding CurrentHijriDate, Mode=OneWay}"
-                                       FontSize="12" FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TitleBarIconBrush}"
-                                       VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Border>
                     <Border Style="{StaticResource TitleBarDatePill}">
                         <StackPanel Orientation="Horizontal">
                             <materialDesign:PackIcon Kind="CalendarToday"
@@ -632,6 +753,10 @@
                 BorderThickness="1,0,0,0"
                 CornerRadius="0"
                 Effect="{x:Null}">
+            <Border.LayoutTransform>
+                <ScaleTransform ScaleX="{Binding MainContentZoom}"
+                                ScaleY="{Binding MainContentZoom}"/>
+            </Border.LayoutTransform>
             <Border.Width>
                 <Binding Path="IsSidebarExpanded">
                     <Binding.Converter>
@@ -1055,6 +1180,10 @@
         <Grid Grid.Column="1"
               VerticalAlignment="Top"
               Visibility="{Binding IsReportFlyoutOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid.LayoutTransform>
+                <ScaleTransform ScaleX="{Binding MainContentZoom}"
+                                ScaleY="{Binding MainContentZoom}"/>
+            </Grid.LayoutTransform>
             <Border ClipToBounds="True"
                     VerticalAlignment="Top"
                     RenderTransformOrigin="1,0.5">
@@ -1588,16 +1717,6 @@
                                 ToolTip="وضع ليلي / نهاري">
                             <materialDesign:PackIcon Kind="ThemeLightDark" Width="18" Height="18" />
                         </Button>
-                        <Button Command="{Binding IncreaseFontSizeCommand}"
-                                Style="{StaticResource IconButton}" Width="34" Height="34"
-                                ToolTip="تكبير الخط">
-                            <materialDesign:PackIcon Kind="FormatFontSizeIncrease" Width="18" Height="18" />
-                        </Button>
-                        <Button Command="{Binding DecreaseFontSizeCommand}"
-                                Style="{StaticResource IconButton}" Width="34" Height="34"
-                                ToolTip="تصغير الخط">
-                            <materialDesign:PackIcon Kind="FormatFontSizeDecrease" Width="18" Height="18" />
-                        </Button>
                     </StackPanel>
                 </ScrollViewer>
             </Border>
@@ -1607,9 +1726,14 @@
             <Border x:Name="TabContentHost"
                     Background="{DynamicResource BackgroundBrush}"
                     Padding="24,16,24,20"
-                    RenderTransformOrigin="0.5,0">
+                    RenderTransformOrigin="0.5,0"
+                    ClipToBounds="True">
                 <Border.RenderTransform>
-                    <TranslateTransform Y="0"/>
+                    <TransformGroup>
+                        <ScaleTransform ScaleX="{Binding MainContentZoom}"
+                                        ScaleY="{Binding MainContentZoom}"/>
+                        <TranslateTransform Y="0"/>
+                    </TransformGroup>
                 </Border.RenderTransform>
                 <Grid x:Name="SplitContentGrid">
                     <Grid.Resources>
@@ -2327,7 +2451,8 @@
                                                VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                 </DockPanel>
                             </Border>
-                            <ContentControl Grid.Row="1" Content="{Binding CurrentViewModel}"
+                            <ContentControl x:Name="PrimaryTabContentHost"
+                                            Grid.Row="1"
                                             HorizontalContentAlignment="Stretch"
                                             VerticalContentAlignment="Stretch"/>
                         </Grid>
@@ -2376,7 +2501,8 @@
                                                VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                                 </DockPanel>
                             </Border>
-                            <ContentControl Grid.Row="1" Content="{Binding SecondaryViewModel}"
+                            <ContentControl x:Name="SecondaryTabContentHost"
+                                            Grid.Row="1"
                                             HorizontalContentAlignment="Stretch"
                                             VerticalContentAlignment="Stretch"/>
                         </Grid>

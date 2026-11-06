@@ -67,9 +67,6 @@ public partial class MainWindowViewModel : ObservableObject
     private string _currentGregorianDate = string.Empty;
 
     [ObservableProperty]
-    private string _currentHijriDate = string.Empty;
-
-    [ObservableProperty]
     private string _currentTime = string.Empty;
 
     [ObservableProperty]
@@ -268,6 +265,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         InitializeMenu();
         _themeService.ApplyFromPreferences();
+        LoadMainContentZoomFromPreferences();
         ApplyMenuVisibilityFromPreferences();
         LoadWorkspaceProfile();
         LoadRecentMenuSearches();
@@ -678,7 +676,7 @@ public partial class MainWindowViewModel : ObservableObject
                 item.ViewModelType,
                 item.Title,
                 item.Icon,
-                activateIfExists: false,
+                activateIfExists: true,
                 permissionScreenName: item.ScreenName);
         }
     }
@@ -758,7 +756,7 @@ public partial class MainWindowViewModel : ObservableObject
             entry.ViewModelType,
             entry.Title,
             entry.Icon,
-            activateIfExists: false,
+            activateIfExists: true,
             permissionScreenName: entry.ScreenName);
     }
 
@@ -1053,7 +1051,6 @@ public partial class MainWindowViewModel : ObservableObject
 
         CurrentViewModel = tab.ViewModel;
         PageTitle = tab.Title;
-        TabContentGeneration++;
         OnTabViewModelActivated(tab.ViewModel);
         SyncSplitAfterTabChange(tab, previousPrimaryVm);
     }
@@ -1146,7 +1143,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         PushClosedTab(tab);
         OpenTabs.Remove(tab);
-        tab.Dispose();
+        DeferTabScopeDispose(tab);
 
         if (OpenTabs.Count == 0)
         {
@@ -1168,6 +1165,26 @@ public partial class MainWindowViewModel : ObservableObject
             _pendingTabOpen = null;
             _ = OpenTabAsync(pending.Type, pending.Title, pending.Icon);
         }
+    }
+
+    private static void DeferTabScopeDispose(DocumentTab tab)
+    {
+        tab.ReleaseCachedView();
+        var scope = tab.Scope;
+        var dispatcher = System.Windows.Application.Current?.Dispatcher;
+        if (dispatcher is null)
+        {
+            try { scope.Dispose(); } catch { /* ignore dispose races */ }
+            return;
+        }
+
+        _ = dispatcher.BeginInvoke(
+            System.Windows.Threading.DispatcherPriority.Background,
+            () =>
+            {
+                try { scope.Dispose(); }
+                catch { /* ignore dispose races */ }
+            });
     }
 
     private void PushClosedTab(DocumentTab tab)
@@ -1413,19 +1430,6 @@ public partial class MainWindowViewModel : ObservableObject
         var now = DateTime.Now;
         CurrentGregorianDate = now.ToString("yyyy/MM/dd", CultureInfo.InvariantCulture);
         CurrentTime = now.ToString("hh:mm tt", new CultureInfo("ar-IQ"));
-
-        try
-        {
-            var hijri = new HijriCalendar();
-            int hYear = hijri.GetYear(now);
-            int hMonth = hijri.GetMonth(now);
-            int hDay = hijri.GetDayOfMonth(now);
-            CurrentHijriDate = $"{hYear}/{hMonth:D2}/{hDay:D2} هـ";
-        }
-        catch
-        {
-            CurrentHijriDate = string.Empty;
-        }
     }
 
     private DispatcherTimer? _clockTimer;

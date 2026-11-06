@@ -949,6 +949,16 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
 
             await _cashBankService.CreateVoucherAsync(voucher);
 
+            try
+            {
+                await PersistPendingAttachmentsAsync(voucher.Id);
+            }
+            catch (Exception attachEx)
+            {
+                BeautifulMessageDialog.ShowWarning(
+                    $"تم إنشاء السند بنجاح، لكن تعذر حفظ بعض المرفقات:\n{attachEx.Message}");
+            }
+
             BeautifulMessageDialog.ShowSuccess($"تم إنشاء {GetVoucherTypeName(SelectedVoucherType)} رقم {voucher.VoucherNumber} بنجاح");
 
             IsCreateDialogOpen = false;
@@ -1040,33 +1050,14 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
     {
         if (voucher is null) return;
 
-        var columns = new[] { "الحقل", "القيمة" };
-        var rows = new List<object[]>
+        try
         {
-            new object[] { "رقم السند", voucher.VoucherNumber },
-            new object[] { "النوع", GetVoucherTypeName(voucher.VoucherType) },
-            new object[] { "المبلغ", voucher.Amount.ToString("N0") },
-            new object[] { "التاريخ", voucher.Date.ToString("yyyy/MM/dd") },
-            new object[] { "القاصة", voucher.CashBox?.Name ?? string.Empty },
-        };
-
-        if (voucher.BankFees > 0)
-        {
-            rows.Add(new object[] { "عمولة المصرف", voucher.BankFees.ToString("N0") });
-            rows.Add(new object[] { "صافي المبلغ", (voucher.Amount - voucher.BankFees).ToString("N0") });
+            _exportService.PrintVoucher(BuildVoucherPrintModel(voucher));
         }
-        if (voucher.Customer is not null)
-            rows.Add(new object[] { "العميل", voucher.Customer.Name });
-        if (voucher.Supplier is not null)
-            rows.Add(new object[] { "المورد", voucher.Supplier.Name });
-        if (voucher.Investor is not null)
-            rows.Add(new object[] { "المستثمر", voucher.Investor.Name });
-        if (voucher.BankAccount is not null)
-            rows.Add(new object[] { "المصرف", voucher.BankAccount.Name });
-        if (!string.IsNullOrWhiteSpace(voucher.Notes))
-            rows.Add(new object[] { "ملاحظات", voucher.Notes });
-
-        _exportService.PrintTable($"{GetVoucherTypeName(voucher.VoucherType)} - {voucher.VoucherNumber}", columns, rows);
+        catch (Exception ex)
+        {
+            BeautifulMessageDialog.ShowError(ex.Message);
+        }
     }
 
     [RelayCommand]
@@ -1104,6 +1095,12 @@ public partial class VouchersViewModel : PagedViewModelBase, IInvestorLookupHost
             partyLabel = "المستثمر";
             partyName = voucher.Investor.Name;
             partyPhone = voucher.Investor.Phone;
+        }
+        else if (voucher.Employee is not null)
+        {
+            partyLabel = "الموظف";
+            partyName = voucher.Employee.Name;
+            partyPhone = voucher.Employee.Phone;
         }
 
         return new VoucherPrintModel

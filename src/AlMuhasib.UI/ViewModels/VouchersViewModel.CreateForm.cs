@@ -148,6 +148,7 @@ public partial class VouchersViewModel
         SelectedBankAccount = null;
         ClearDocumentLinks();
         ClearPartyBalances();
+        ClearPendingAttachments(deleteFiles: true);
         VoucherDate = DateTime.Now;
         if (!keepType)
             SelectedVoucherType = VoucherTypes[0].Type;

@@ -487,11 +487,94 @@ public partial class MainWindowViewModel
         _toast.ShowSuccess(_userPreferences.Current.IsDarkTheme ? "تم تفعيل الوضع الليلي" : "تم تفعيل الوضع النهاري");
     }
 
-    [RelayCommand]
-    private void IncreaseFontSize() => _themeService.SetFontScale(_userPreferences.Current.FontScale + 0.05);
+    private const double ContentZoomStep = 0.10;
+    private const double ContentZoomMin = 0.50;
+    private const double ContentZoomMax = 2.00;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(MainZoomPercentText))]
+    [NotifyCanExecuteChangedFor(nameof(ZoomInContentCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ZoomOutContentCommand))]
+    private double _mainContentZoom = 1.0;
+
+    public string MainZoomPercentText => $"{(int)Math.Round(MainContentZoom * 100)}%";
+
+    public void LoadMainContentZoomFromPreferences()
+    {
+        MainContentZoom = ClampContentZoom(_userPreferences.Current.MainContentZoom);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanZoomInContent))]
+    private void ZoomInContent() => SetMainContentZoom(MainContentZoom + ContentZoomStep);
+
+    private bool CanZoomInContent() => MainContentZoom < ContentZoomMax - 0.001;
+
+    [RelayCommand(CanExecute = nameof(CanZoomOutContent))]
+    private void ZoomOutContent() => SetMainContentZoom(MainContentZoom - ContentZoomStep);
+
+    private bool CanZoomOutContent() => MainContentZoom > ContentZoomMin + 0.001;
 
     [RelayCommand]
-    private void DecreaseFontSize() => _themeService.SetFontScale(_userPreferences.Current.FontScale - 0.05);
+    private void ResetContentZoom() => SetMainContentZoom(1.0);
+
+    private void SetMainContentZoom(double scale)
+    {
+        var clamped = ClampContentZoom(scale);
+        if (Math.Abs(MainContentZoom - clamped) < 0.0001)
+            return;
+
+        MainContentZoom = clamped;
+        _userPreferences.Update(p => p.MainContentZoom = clamped);
+    }
+
+    private static double ClampContentZoom(double scale)
+    {
+        var clamped = Math.Clamp(scale, ContentZoomMin, ContentZoomMax);
+        // Snap to one decimal place so percent display stays clean (90%, 100%, …).
+        return Math.Round(clamped, 2);
+    }
+
+    [ObservableProperty]
+    private bool _isHeaderOptionsOpen;
+
+    [RelayCommand]
+    private void ToggleHeaderOptions()
+    {
+        IsHeaderOptionsOpen = !IsHeaderOptionsOpen;
+        if (IsHeaderOptionsOpen)
+            IsQuickAssistOpen = false;
+    }
+
+    [RelayCommand]
+    private void CloseHeaderOptions() => IsHeaderOptionsOpen = false;
+
+    [RelayCommand]
+    private async Task OpenBusinessFeaturesSettingsAsync()
+    {
+        IsHeaderOptionsOpen = false;
+        await OpenTabAsync(typeof(BusinessFeaturesSettingsViewModel), "إعدادات الميزات", PackIconKind.TuneVariant);
+    }
+
+    [RelayCommand]
+    private async Task OpenUsersManagementAsync()
+    {
+        IsHeaderOptionsOpen = false;
+        await OpenTabAsync(typeof(UsersViewModel), "المستخدمون", PackIconKind.AccountMultiple);
+    }
+
+    [RelayCommand]
+    private async Task OpenMigrationWizardFromOptionsAsync()
+    {
+        IsHeaderOptionsOpen = false;
+        await OpenTabAsync(typeof(MigrationWizardViewModel), "معالج النقل", PackIconKind.DatabaseImport);
+    }
+
+    [RelayCommand]
+    private async Task OpenPrintSettingsFromOptionsAsync()
+    {
+        IsHeaderOptionsOpen = false;
+        await OpenPrintSettings();
+    }
 
     [RelayCommand]
     private void ToggleKeyboardShortcutsHelp() =>

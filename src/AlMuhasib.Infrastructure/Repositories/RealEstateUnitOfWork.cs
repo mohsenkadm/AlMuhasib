@@ -59,6 +59,7 @@ public sealed class RealEstateUnitOfWork : IUnitOfWork
     public IRepository<ProfitDistributionDetail> ProfitDistributionDetails => new UnsupportedRealEstateRepository<ProfitDistributionDetail>();
     public IRepository<CapitalEntry> CapitalEntries => new UnsupportedRealEstateRepository<CapitalEntry>();
     public IRepository<CustomerAttachment> CustomerAttachments => new UnsupportedRealEstateRepository<CustomerAttachment>();
+    public IRepository<VoucherAttachment> VoucherAttachments => new UnsupportedRealEstateRepository<VoucherAttachment>();
     public IRepository<UserTask> UserTasks => new UnsupportedRealEstateRepository<UserTask>();
     public IRepository<UserNote> UserNotes => new UnsupportedRealEstateRepository<UserNote>();
     public IRepository<PricingType> PricingTypes => new UnsupportedRealEstateRepository<PricingType>();

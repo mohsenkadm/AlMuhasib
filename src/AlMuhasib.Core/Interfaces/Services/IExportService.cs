@@ -30,6 +30,9 @@ public interface IExportService
     /// <summary>Exports installment payment receipt to PDF and returns the full path.</summary>
     string ExportInstallmentPaymentReceiptToPdf(InstallmentPaymentReceiptPrintModel model);
 
+    /// <summary>طباعة سند قبض/صرف عبر معاينة الطباعة.</summary>
+    void PrintVoucher(VoucherPrintModel model);
+
     /// <summary>تصدير سند قبض/صرف إلى PDF.</summary>
     string ExportVoucherToPdf(VoucherPrintModel model);
 

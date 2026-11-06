@@ -113,9 +113,9 @@
             <Setter Property="FontSize" Value="14"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Padding" Value="10,8"/>
-            <Setter Property="Foreground" Value="#0D47A1"/>
-            <Setter Property="Background" Value="#E3F2FD"/>
-            <Setter Property="BorderBrush" Value="#BBDEFB"/>
+            <Setter Property="Foreground" Value="{DynamicResource PosAccentDarkBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource PosAccentSurfaceBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource PosAccentSurfaceBorderBrush}"/>
             <Setter Property="BorderThickness" Value="0,0,0,2"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
         </Style>
@@ -189,7 +189,7 @@
                                Foreground="{DynamicResource TextSecondaryBrush}"
                                TextTrimming="CharacterEllipsis"/>
                     <TextBlock Text="{Binding FxRateText}" FontSize="12"
-                               VerticalAlignment="Center" Margin="12,0,0,0" Foreground="#1565C0"
+                               VerticalAlignment="Center" Margin="12,0,0,0" Foreground="{DynamicResource PosAccentBrush}"
                                Visibility="{Binding ShowFxInfo, Converter={StaticResource BoolVis}}"/>
                 </StackPanel>
 
@@ -314,11 +314,11 @@
                                                 </Border>
                                                 <ControlTemplate.Triggers>
                                                     <Trigger Property="IsSelected" Value="True">
-                                                        <Setter TargetName="Bd" Property="Background" Value="#E3F2FD"/>
-                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#1565C0"/>
+                                                        <Setter TargetName="Bd" Property="Background" Value="{DynamicResource PosAccentSurfaceBrush}"/>
+                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PosAccentBrush}"/>
                                                     </Trigger>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="#90CAF9"/>
+                                                        <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource PosProductCardBorderHoverBrush}"/>
                                                     </Trigger>
                                                 </ControlTemplate.Triggers>
                                             </ControlTemplate>
@@ -336,7 +336,7 @@
                                                 <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
-                                                        <Setter Property="Foreground" Value="#1565C0"/>
+                                                        <Setter Property="Foreground" Value="{DynamicResource PosAccentBrush}"/>
                                                         <Setter Property="FontWeight" Value="SemiBold"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>
@@ -418,8 +418,9 @@
                                         <StackPanel Margin="14,12,14,0" IsHitTestVisible="False">
                                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16"
                                                        TextWrapping="Wrap" MaxHeight="50" TextTrimming="CharacterEllipsis"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"
                                                        FontFamily="{DynamicResource AppFont}"/>
-                                            <TextBlock FontSize="15" Margin="0,5,0,0" Foreground="#2E7D32"
+                                            <TextBlock FontSize="15" Margin="0,5,0,0" Foreground="{DynamicResource PosSuccessBrush}"
                                                        FontFamily="{DynamicResource AppFont}">
                                                 <Run Text="متوفر"/>
                                                 <Run Text=" "/>
@@ -427,7 +428,7 @@
                                             </TextBlock>
                                         </StackPanel>
                                         <TextBlock Grid.Row="1" Margin="14,0,14,12" IsHitTestVisible="False"
-                                                   FontWeight="Bold" FontSize="18" Foreground="#1565C0"
+                                                   FontWeight="Bold" FontSize="18" Foreground="{DynamicResource PosAccentBrush}"
                                                    VerticalAlignment="Center" HorizontalAlignment="Left"
                                                    FontFamily="{DynamicResource AppFont}">
                                             <Run Text="{Binding Price, StringFormat=N0, Mode=OneWay}"/>
@@ -557,7 +558,7 @@
                                                 HorizontalAlignment="Center" VerticalAlignment="Center"
                                                 ToolTip="حذف البند">
                                             <materialDesign:PackIcon Kind="TrashCanOutline" Width="16" Height="16"
-                                                                     Foreground="#C62828"/>
+                                                                     Foreground="{DynamicResource PosDangerBrush}"/>
                                         </Button>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
@@ -668,7 +669,7 @@
                                                     CommandParameter="{Binding}"
                                                     ToolTip="اضغط لإدخال الكمية">
                                                 <TextBlock Text="{Binding Quantity, StringFormat=N0}" FontWeight="Bold" FontSize="15"
-                                                           FontFamily="{DynamicResource AppFont}" Foreground="#0D47A1"/>
+                                                           FontFamily="{DynamicResource AppFont}" Foreground="{DynamicResource PosAccentDarkBrush}"/>
                                             </Button>
                                             <Button Content="+" Width="34" Height="34" Padding="0" FontSize="16" FontWeight="Bold"
                                                     Command="{Binding DataContext.IncreaseLineCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -688,7 +689,7 @@
                                                 ToolTip="اضغط لإدخال السعر">
                                             <TextBlock Text="{Binding UnitPrice, StringFormat=N0}" FontWeight="Bold" FontSize="14"
                                                        FontFamily="{DynamicResource AppFont}" TextAlignment="Center"
-                                                       Foreground="#1565C0"/>
+                                                       Foreground="{DynamicResource PosAccentBrush}"/>
                                         </Button>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
@@ -714,7 +715,7 @@
                                         <TextBlock Text="{Binding LineTotal, StringFormat=N0}"
                                                    FontWeight="Bold" FontSize="15" VerticalAlignment="Center"
                                                    HorizontalAlignment="Center" Margin="4,0"
-                                                   Foreground="#0D47A1"
+                                                   Foreground="{DynamicResource PosAccentDarkBrush}"
                                                    FontFamily="{DynamicResource AppFont}"
                                                    TextWrapping="NoWrap"/>
                                     </DataTemplate>
@@ -733,7 +734,7 @@
 
                             <StackPanel VerticalAlignment="Center">
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                    <TextBlock Text="فرعي" FontSize="11" Foreground="#78909C" VerticalAlignment="Center"/>
+                                    <TextBlock Text="فرعي" FontSize="11" Foreground="{DynamicResource PosMutedTextBrush}" VerticalAlignment="Center"/>
                                     <TextBlock FontWeight="SemiBold" FontSize="12" Margin="6,0,0,0" VerticalAlignment="Center">
                                         <Run Text="{Binding SubTotal, StringFormat=N0, Mode=OneWay}"/>
                                         <Run Text=" "/>
@@ -763,7 +764,7 @@
                                         </TextBlock>
                                     </Button>
                                     <TextBlock Grid.Column="2" Margin="6,0,0,0"
-                                               FontWeight="SemiBold" Foreground="#2E7D32" FontSize="11"
+                                               FontWeight="SemiBold" Foreground="{DynamicResource PosSuccessBrush}" FontSize="11"
                                                VerticalAlignment="Center">
                                         <Run Text="{Binding InvoiceDiscountAmount, StringFormat=N0, Mode=OneWay}"/>
                                     </TextBlock>
@@ -772,19 +773,20 @@
                                 <loyalty:LoyaltyPanel Margin="0,4,0,0" IsCompact="True" DataContext="{Binding}"/>
                             </StackPanel>
 
-                            <Border Grid.Column="1" Background="#E3F2FD" CornerRadius="10" Padding="14,8" Margin="10,0,0,0"
-                                    MinWidth="140" VerticalAlignment="Center">
+                            <Border Grid.Column="1" Background="{DynamicResource PosAccentSurfaceBrush}" CornerRadius="10" Padding="14,8" Margin="10,0,0,0"
+                                    MinWidth="140" VerticalAlignment="Center"
+                                    BorderBrush="{DynamicResource PosAccentSurfaceBorderBrush}" BorderThickness="1">
                                 <StackPanel HorizontalAlignment="Right">
                                     <TextBlock Text="الإجمالي" FontSize="11" FontWeight="SemiBold"
-                                               Foreground="#1565C0" HorizontalAlignment="Right"/>
-                                    <TextBlock FontSize="22" FontWeight="Bold" Foreground="#0D47A1"
+                                               Foreground="{DynamicResource PosAccentBrush}" HorizontalAlignment="Right"/>
+                                    <TextBlock FontSize="22" FontWeight="Bold" Foreground="{DynamicResource PosAccentDarkBrush}"
                                                FontFamily="{DynamicResource AppFont}" TextAlignment="Right" Margin="0,2,0,0">
                                         <Run Text="{Binding GrandTotal, StringFormat=N0, Mode=OneWay}"/>
                                         <Run Text=" "/>
                                         <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
                                     </TextBlock>
                                     <TextBlock Text="{Binding UsdEquivalentText}" FontSize="11"
-                                               Foreground="#546E7A"
+                                               Foreground="{DynamicResource PosMutedTextBrush}"
                                                HorizontalAlignment="Right"
                                                Visibility="{Binding ShowFxInfo, Converter={StaticResource BoolVis}}"
                                                FontFamily="{DynamicResource AppFont}"/>
@@ -808,7 +810,7 @@
                             <Button Grid.Column="0" Command="{Binding OpenCurrencyChangeCommand}"
                                     Style="{StaticResource OutlinedButton}" Height="46" Padding="12,0" Margin="0,0,6,0"
                                     materialDesign:ButtonAssist.CornerRadius="10"
-                                    BorderBrush="#1565C0" Foreground="#1565C0"
+                                    BorderBrush="{DynamicResource PosAccentBrush}" Foreground="{DynamicResource PosAccentBrush}"
                                     ToolTip="حساب الباقي بعملات الدينار العراقي (F7)">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="CashMultiple" Width="18" Height="18" VerticalAlignment="Center"/>
@@ -839,7 +841,7 @@
                         <Button Grid.Row="1" Command="{Binding PrintPharmacyReceiptCommand}"
                                 Style="{StaticResource OutlinedButton}" Height="36" Margin="0,6,0,0"
                                 materialDesign:ButtonAssist.CornerRadius="10"
-                                BorderBrush="#2E7D32" Foreground="#2E7D32"
+                                BorderBrush="{DynamicResource PosSuccessBrush}" Foreground="{DynamicResource PosSuccessBrush}"
                                 Visibility="{Binding ShowPharmacy, Converter={StaticResource BoolVis}}"
                                 ToolTip="طباعة إيصال صيدلية">
                             <StackPanel Orientation="Horizontal">
@@ -865,17 +867,17 @@
             <materialDesign:DialogHost.DialogContent>
                 <Border MinWidth="420" MaxWidth="480" Padding="28,24" Background="{DynamicResource CardBrush}" CornerRadius="18">
                     <Border.Effect>
-                        <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.18" Color="#0D47A1"/>
+                        <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.22" Color="#000000"/>
                     </Border.Effect>
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
                             <Border Width="44" Height="44" CornerRadius="12" Background="{DynamicResource PrimaryHueLightBrush}" Margin="0,0,12,0">
                                 <materialDesign:PackIcon Kind="CashRegister" Width="24" Height="24"
-                                                         Foreground="#1565C0"
-                                                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                         Foreground="{DynamicResource PosAccentBrush}"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                             <StackPanel VerticalAlignment="Center">
-                                <TextBlock Text="إتمام الدفع" FontSize="20" FontWeight="Bold" Foreground="#0D47A1"/>
+                                <TextBlock Text="إتمام الدفع" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource PosAccentDarkBrush}"/>
                                 <TextBlock Text="راجع المبلغ ثم أكّد الدفع" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
                             </StackPanel>
                         </StackPanel>
@@ -888,7 +890,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock Text="المبلغ الكامل" VerticalAlignment="Center" Foreground="{DynamicResource TextSecondaryBrush}" FontSize="14"/>
                                 <StackPanel Grid.Column="1" HorizontalAlignment="Right">
-                                    <TextBlock FontSize="26" FontWeight="Bold" Foreground="#1565C0" TextAlignment="Right">
+                                    <TextBlock FontSize="26" FontWeight="Bold" Foreground="{DynamicResource PosAccentBrush}" TextAlignment="Right">
                                         <Run Text="{Binding GrandTotal, StringFormat=N0, Mode=OneWay}"/>
                                         <Run Text=" "/>
                                         <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
@@ -948,7 +950,7 @@
                         <Button Command="{Binding OpenCurrencyChangeCommand}"
                                 Style="{StaticResource FlatButton}"
                                 HorizontalAlignment="Left"
-                                Foreground="#1565C0"
+                                Foreground="{DynamicResource PosAccentBrush}"
                                 Padding="4,2"
                                 Margin="0,0,0,8"
                                 ToolTip="حساب الباقي بعملات الدينار (F7)">
@@ -958,15 +960,15 @@
                             </StackPanel>
                         </Button>
 
-                        <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,0,8"
+                        <Border Background="{DynamicResource PosSuccessSurfaceBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,0,8"
                                 Visibility="{Binding ShowChangeDue, Converter={StaticResource BoolVis}}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="الباقي للزبون" VerticalAlignment="Center" Foreground="#2E7D32" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Column="1" FontWeight="Bold" FontSize="18" Foreground="#1B5E20">
+                                <TextBlock Text="الباقي للزبون" VerticalAlignment="Center" Foreground="{DynamicResource PosSuccessBrush}" FontWeight="SemiBold"/>
+                                <TextBlock Grid.Column="1" FontWeight="Bold" FontSize="18" Foreground="{DynamicResource PosSuccessDarkBrush}">
                                     <Run Text="{Binding ChangeAmount, StringFormat=N0, Mode=OneWay}"/>
                                     <Run Text=" "/>
                                     <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
@@ -974,7 +976,7 @@
                             </Grid>
                         </Border>
 
-                        <Border Background="{DynamicResource NotepadPaperBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,0,8"
+                        <Border Background="{DynamicResource PosWarningSurfaceBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,0,8"
                                 Visibility="{Binding ShowCreditRemaining, Converter={StaticResource BoolVis}}">
                             <StackPanel>
                                 <Grid>
@@ -982,8 +984,8 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="المتبقي آجل" VerticalAlignment="Center" Foreground="#F57F17" FontWeight="SemiBold"/>
-                                    <TextBlock Grid.Column="1" FontWeight="Bold" FontSize="18" Foreground="#E65100">
+                                    <TextBlock Text="المتبقي آجل" VerticalAlignment="Center" Foreground="{DynamicResource PosWarningBrush}" FontWeight="SemiBold"/>
+                                    <TextBlock Grid.Column="1" FontWeight="Bold" FontSize="18" Foreground="{DynamicResource PosWarningDarkBrush}">
                                         <Run Text="{Binding CreditRemainingAmount, StringFormat=N0, Mode=OneWay}"/>
                                         <Run Text=" "/>
                                         <Run Text="{Binding CurrencyAmountSuffix, Mode=OneWay}"/>
@@ -995,9 +997,9 @@
                                             Style="{StaticResource FilledDatePicker}"
                                             Margin="0,10,0,0"
                                             FontSize="13"
-                                            Foreground="#C62828"/>
+                                            Foreground="{DynamicResource PosDangerBrush}"/>
                                 <TextBlock Text="سيُسجَّل كفاتورة آجلة — يلزم اختيار عميل" FontSize="11"
-                                           Foreground="#F9A825" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                           Foreground="{DynamicResource PosWarningBrush}" Margin="0,6,0,0" TextWrapping="Wrap"/>
                             </StackPanel>
                         </Border>
 
@@ -1049,7 +1051,7 @@
                     <TextBox materialDesign:HintAssist.Hint="العنوان"
                              Text="{Binding QuickCustomerAddress, UpdateSourceTrigger=PropertyChanged}"
                              Style="{StaticResource FilledTextBox}" Margin="0,0,0,10"/>
-                    <TextBlock Text="{Binding QuickCustomerError}" Foreground="#D32F2F" Margin="0,0,0,8"
+                    <TextBlock Text="{Binding QuickCustomerError}" Foreground="{DynamicResource PosDangerBrush}" Margin="0,0,0,8"
                                Visibility="{Binding QuickCustomerError, Converter={StaticResource NullToCollapsedConverter}}"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,4,0,0">
                         <Button Content="حفظ" Command="{Binding SaveQuickCustomerCommand}"

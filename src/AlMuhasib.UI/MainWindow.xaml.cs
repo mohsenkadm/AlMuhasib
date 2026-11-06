@@ -1,4 +1,5 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -20,8 +21,11 @@ public partial class MainWindow : Window
     private readonly MainWindowViewModel _viewModel;
     private readonly IUserPreferencesService _preferences;
     private readonly ISessionActivityService _sessionActivity;
+    private readonly List<Guid> _tabViewLru = [];
     private DispatcherTimer? _idleTimer;
     private bool _isSessionLocked;
+    private bool _isSyncingTabViews;
+    private bool _tabViewSyncScheduled;
 
     public MainWindow(
         MainWindowViewModel viewModel,
@@ -38,6 +42,7 @@ public partial class MainWindow : Window
         StateChanged += (_, _) => UpdateMaximizeIcon();
         Loaded += OnFirstLoaded;
         _viewModel.PropertyChanged += OnViewModelPropertyChanged;
+        _viewModel.OpenTabs.CollectionChanged += OnOpenTabsChanged;
         _viewModel.SplitLayoutChanged += OnSplitLayoutChanged;
         PreviewKeyDown += OnPreviewKeyDown;
         PreviewMouseDown += (_, _) => TouchActivity();
@@ -265,14 +270,108 @@ public partial class MainWindow : Window
             var theme = app.Services.GetRequiredService<ThemeService>();
             theme.ApplyFromPreferences();
         }
+
+        ScheduleSyncTabViews();
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(MainWindowViewModel.TabContentGeneration)
-            or nameof(MainWindowViewModel.CurrentViewModel))
+        if (e.PropertyName is nameof(MainWindowViewModel.SelectedTab)
+            or nameof(MainWindowViewModel.SecondaryTab)
+            or nameof(MainWindowViewModel.CurrentViewModel)
+            or nameof(MainWindowViewModel.SecondaryViewModel)
+            or nameof(MainWindowViewModel.IsSplitViewActive))
         {
-            PlayTabContentAnimation();
+            ScheduleSyncTabViews();
+        }
+    }
+
+    private void OnOpenTabsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.Action == NotifyCollectionChangedAction.Remove && e.OldItems is not null)
+        {
+            foreach (DocumentTab tab in e.OldItems)
+            {
+                tab.ReleaseCachedView();
+                _tabViewLru.Remove(tab.Id);
+            }
+        }
+        else if (e.Action == NotifyCollectionChangedAction.Reset)
+        {
+            _tabViewLru.Clear();
+            if (PrimaryTabContentHost is not null)
+                PrimaryTabContentHost.Content = null;
+            if (SecondaryTabContentHost is not null)
+                SecondaryTabContentHost.Content = null;
+        }
+
+        ScheduleSyncTabViews();
+    }
+
+    private void ScheduleSyncTabViews()
+    {
+        if (_tabViewSyncScheduled)
+            return;
+
+        _tabViewSyncScheduled = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.DataBind, () =>
+        {
+            _tabViewSyncScheduled = false;
+            SyncTabViews();
+        });
+    }
+
+    private void SyncTabViews()
+    {
+        if (_isSyncingTabViews || PrimaryTabContentHost is null || SplitContentGrid is null)
+            return;
+
+        _isSyncingTabViews = true;
+        try
+        {
+            var primary = _viewModel.SelectedTab;
+            var secondary = _viewModel.IsSplitViewActive ? _viewModel.SecondaryTab : null;
+            var primaryChanged = false;
+
+            if (primary is not null)
+            {
+                TabViewCache.TouchLru(_tabViewLru, primary.Id);
+                var view = TabViewCache.EnsureView(primary, SplitContentGrid);
+                if (!ReferenceEquals(PrimaryTabContentHost.Content, view))
+                {
+                    PrimaryTabContentHost.Content = view;
+                    primaryChanged = true;
+                }
+            }
+            else if (PrimaryTabContentHost.Content is not null)
+            {
+                PrimaryTabContentHost.Content = null;
+                primaryChanged = true;
+            }
+
+            if (SecondaryTabContentHost is not null)
+            {
+                if (secondary is not null)
+                {
+                    TabViewCache.TouchLru(_tabViewLru, secondary.Id);
+                    var view = TabViewCache.EnsureView(secondary, SplitContentGrid);
+                    if (!ReferenceEquals(SecondaryTabContentHost.Content, view))
+                        SecondaryTabContentHost.Content = view;
+                }
+                else if (SecondaryTabContentHost.Content is not null)
+                {
+                    SecondaryTabContentHost.Content = null;
+                }
+            }
+
+            TabViewCache.Trim(_viewModel.OpenTabs, primary, secondary, _tabViewLru);
+
+            if (primaryChanged)
+                PlayTabContentAnimation();
+        }
+        finally
+        {
+            _isSyncingTabViews = false;
         }
     }
 
@@ -471,13 +570,19 @@ public partial class MainWindow : Window
     {
         base.OnPreviewMouseDown(e);
 
-        if (!_viewModel.IsTitleBarSearchPopupOpen)
-            return;
+        if (_viewModel.IsTitleBarSearchPopupOpen
+            && TitleBarSearchHost?.IsMouseOver != true
+            && TitleBarSearchPopup?.IsMouseOver != true)
+        {
+            _viewModel.SetTitleBarSearchFocused(false);
+        }
 
-        // Close search popup when clicking outside the field and popup.
-        if (TitleBarSearchHost?.IsMouseOver == true || TitleBarSearchPopup?.IsMouseOver == true)
-            return;
-
-        _viewModel.SetTitleBarSearchFocused(false);
+        // Close header options when clicking outside the gear and popup.
+        if (_viewModel.IsHeaderOptionsOpen
+            && HeaderOptionsButton?.IsMouseOver != true
+            && HeaderOptionsPopup?.IsMouseOver != true)
+        {
+            _viewModel.IsHeaderOptionsOpen = false;
+        }
     }
 }

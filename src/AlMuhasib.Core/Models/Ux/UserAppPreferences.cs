@@ -4,6 +4,9 @@ public class UserAppPreferences
 {
     public bool IsDarkTheme { get; set; }
     public double FontScale { get; set; } = 1.0;
+
+    /// <summary>زوم منطقة محتوى الشاشة الرئيسية (مثل متصفح كروم)، 1.0 = 100%.</summary>
+    public double MainContentZoom { get; set; } = 1.0;
     public List<string> HiddenMenuScreens { get; set; } = [];
     public List<string> PinnedMenuScreens { get; set; } = [];
 

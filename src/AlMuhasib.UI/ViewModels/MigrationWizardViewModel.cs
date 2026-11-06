@@ -937,27 +937,68 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 break;
 
             case MigrationStepKind.Products:
-                var stocks = (await _unitOfWork.WarehouseStocks.GetAllAsync()).ToList();
+            {
+                // مخزون متعدد الفروع: اقرأ بـ Bypass حتى لا تختفي الكميات خارج فرع الجلسة
+                List<WarehouseStock> stocks;
+                Dictionary<int, (string Name, int BranchId)> whById;
+                await using (var dbProd = await _dbFactory.CreateDbContextAsync(ct))
+                {
+                    dbProd.BypassBranchFilter = true;
+                    var allowedBranchIds = GetAllowedBranchIds();
+                    stocks = await dbProd.WarehouseStocks.IgnoreQueryFilters()
+                        .Where(s => !s.IsDeleted && allowedBranchIds.Contains(s.BranchId))
+                        .AsNoTracking()
+                        .ToListAsync(ct);
+                    var warehouses = await dbProd.Warehouses.IgnoreQueryFilters()
+                        .Where(w => !w.IsDeleted && allowedBranchIds.Contains(w.BranchId))
+                        .AsNoTracking()
+                        .ToListAsync(ct);
+                    var branchNames = await dbProd.Branches.IgnoreQueryFilters()
+                        .AsNoTracking()
+                        .ToDictionaryAsync(b => b.Id, b => b.Name, ct);
+                    whById = warehouses.ToDictionary(
+                        w => w.Id,
+                        w =>
+                        {
+                            branchNames.TryGetValue(w.BranchId, out var bn);
+                            var display = string.IsNullOrWhiteSpace(bn) ? w.Name : $"{w.Name} ({bn})";
+                            return (display, w.BranchId);
+                        });
+                }
+
                 var cats = (await _unitOfWork.Categories.GetAllAsync()).ToDictionary(c => c.Id, c => c.Name);
-                var whs = (await _unitOfWork.Warehouses.GetAllAsync()).ToDictionary(w => w.Id, w => w.Name);
                 var allPrices = (await _unitOfWork.ProductPrices.GetAllAsync()).ToList();
                 var pricingLookup = (await _pricingTypeService.GetActiveAsync())
                     .ToDictionary(t => t.Id, t => t.Name);
                 foreach (var p in await _unitOfWork.Products.GetAllAsync())
                 {
                     if (ct.IsCancellationRequested) break;
-                    var stock = stocks.Where(s => s.ProductId == p.Id).OrderByDescending(s => s.Quantity).FirstOrDefault();
+                    var productStocks = stocks.Where(s => s.ProductId == p.Id).ToList();
+                    var primary = productStocks.OrderByDescending(s => s.Quantity).FirstOrDefault();
                     var row = new MigrationNamedBalanceRow
                     {
                         SourceId = p.Id, IsExisting = true, Name = p.Name,
                         Barcode = p.Barcode,
                         CategoryName = cats.GetValueOrDefault(p.CategoryId),
-                        Quantity = stock?.Quantity ?? 0,
-                        UnitCost = stock?.UnitCost ?? 0,
-                        WarehouseName = stock is not null ? whs.GetValueOrDefault(stock.WarehouseId) : null,
+                        Quantity = primary?.Quantity ?? 0,
+                        UnitCost = primary?.UnitCost ?? 0,
+                        WarehouseName = primary is not null && whById.TryGetValue(primary.WarehouseId, out var pw)
+                            ? pw.Name
+                            : null,
                         Notes = "موجود مسبقاً",
-                        CostCurrency = AccountingCurrency.IQD
+                        CostCurrency = AccountingCurrency.IQD,
+                        ShowInCashier = p.ShowInCashier
                     };
+                    foreach (var s in productStocks)
+                    {
+                        if (!whById.TryGetValue(s.WarehouseId, out var whInfo))
+                            continue;
+                        row.WarehouseQtys.Add(new MigrationWarehouseQtyCell
+                        {
+                            WarehouseName = whInfo.Name,
+                            Quantity = s.Quantity
+                        });
+                    }
                     foreach (var price in allPrices.Where(pp => pp.ProductId == p.Id))
                     {
                         if (!pricingLookup.TryGetValue(price.PricingTypeId, out var typeName))
@@ -975,6 +1016,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
                     list.Add(row);
                 }
                 break;
+            }
 
             case MigrationStepKind.CashAndBank:
                 foreach (var c in await _unitOfWork.CashBoxes.GetAllAsync())
@@ -1245,7 +1287,36 @@ public partial class MigrationWizardViewModel : ViewModelBase
             ShowProductBranchColumns && AvailableBranches.Count > 1
                 ? AvailableBranches.Select(b => (b.Id, b.Name, b.IsMain)).ToList()
                 : []);
+        HookProductNestedDirty(row);
     }
+
+    /// <summary>
+    /// تعديلات كمية المخزن / الأسعار داخل الصف لا تُطلق PropertyChanged على الصف نفسه —
+    /// نربطها يدوياً حتى يُعلَّم الخطوة Dirty ويُعاد الحفظ.
+    /// </summary>
+    private void HookProductNestedDirty(MigrationNamedBalanceRow row)
+    {
+        foreach (var q in row.WarehouseQtys)
+        {
+            q.PropertyChanged -= OnNestedProductCellPropertyChanged;
+            q.PropertyChanged += OnNestedProductCellPropertyChanged;
+        }
+
+        foreach (var p in row.ProductPrices)
+        {
+            p.PropertyChanged -= OnNestedProductCellPropertyChanged;
+            p.PropertyChanged += OnNestedProductCellPropertyChanged;
+        }
+
+        foreach (var b in row.BranchVisibility)
+        {
+            b.PropertyChanged -= OnNestedProductCellPropertyChanged;
+            b.PropertyChanged += OnNestedProductCellPropertyChanged;
+        }
+    }
+
+    private void OnNestedProductCellPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        => MarkStepDirty();
 
     public IReadOnlyList<string> GetProductPricingTypeNames()
         => AvailablePricingTypes.Count > 0
@@ -2110,6 +2181,10 @@ public partial class MigrationWizardViewModel : ViewModelBase
     {
         if (CurrentKind is null || IsCompleted || IsBusy) return;
 
+        // فرض CommitEdit قبل فحص «محفوظ ونظيف» — كميات/أسعار الخلايا النشطة قد لا تُعلّم Dirty بعد
+        System.Windows.Input.Keyboard.ClearFocus();
+        RequestCommitGridEdits?.Invoke();
+
         // تجنب إعادة الحفظ الكاملة عندما لا توجد تغييرات
         if (IsStepAlreadySavedClean)
         {
@@ -2206,6 +2281,10 @@ public partial class MigrationWizardViewModel : ViewModelBase
         {
             IsBusy = true;
             NotifyStepProps();
+
+            // قبل تقرير needsPersist — طبّق خلايا الجدول النشطة (كميات المنتجات خصوصاً)
+            System.Windows.Input.Keyboard.ClearFocus();
+            RequestCommitGridEdits?.Invoke();
 
             // احفظ فقط عند عدم الحفظ مسبقاً أو وجود تعديلات (يتجنب الحفظ المزدوج بعد «حفظ الخطوة»)
             var needsPersist = !_savedSteps.Contains(CurrentKind.Value) || _stepDirty;
@@ -2949,6 +3028,13 @@ public partial class MigrationWizardViewModel : ViewModelBase
         if (!EnsureProductBranchReady("حفظ المنتجات"))
             return false;
 
+        // أخرج من تحرير خلايا الكمية/الأسعار قبل القراءة — وإلا تبقى الكمية 0 رغم ظهورها في الجدول
+        System.Windows.Input.Keyboard.ClearFocus();
+        RequestCommitGridEdits?.Invoke();
+
+        // ضمان خلايا WarehouseQtys وترحيل Quantity العامة قبل بناء سجلات المخزون
+        SyncAllProductRowStructures();
+
         var namedRows = CurrentRows
             .Where(r => !string.IsNullOrWhiteSpace(r.Name))
             .ToList();
@@ -3274,8 +3360,9 @@ public partial class MigrationWizardViewModel : ViewModelBase
                 return false;
             }
 
+            var stocksWritten = 0;
             if (pendingStocks.Count > 0)
-                await PersistAllowedWarehouseStocksAsync(pendingStocks, allowedBranchIds);
+                stocksWritten = await PersistAllowedWarehouseStocksAsync(pendingStocks, allowedBranchIds);
 
             // دمج الفروع — لا نستبدل حتى لا يمحو الفرع الثاني ظهور الفرع الرئيسي
             foreach (var (productId, branchIds) in pendingBranches)
@@ -3288,8 +3375,11 @@ public partial class MigrationWizardViewModel : ViewModelBase
             var pricePart = EnableMultiCurrency
                 ? $"حُدّثت {pricesUpdated} تسعيرة (دينار/دولار)"
                 : $"حُدّثت {pricesUpdated} تسعيرة بالدينار";
+            var stockPart = stocksWritten > 0
+                ? $"كميات مخزن: {stocksWritten} سجل"
+                : "تنبيه: لم تُحفظ أي كميات مخزن — راجع أعمدة الكمية ثم احفظ مجدداً";
             StatusMessage =
-                $"تم حفظ المنتجات — أُضيف {added} · حُدّث {updated}{skipPart} — {pricePart}.";
+                $"تم حفظ المنتجات — أُضيف {added} · حُدّث {updated}{skipPart} — {pricePart} — {stockPart}.";
             _lastPersistSummary = StatusMessage;
             await RefreshLookupsAsync();
             return true;
@@ -3339,7 +3429,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
     /// <summary>
     /// حفظ كميات المخازن للفروع المسموحة فقط، مع ختم BranchId من المخزن.
     /// </summary>
-    private async Task PersistAllowedWarehouseStocksAsync(
+    private async Task<int> PersistAllowedWarehouseStocksAsync(
         IReadOnlyList<(int ProductId, int WarehouseId, int BranchId, decimal Qty, decimal UnitCost)> pending,
         HashSet<int> allowedBranchIds)
     {
@@ -3350,7 +3440,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
                         && allowedBranchIds.Contains(p.BranchId)
                         && p.Qty > 0)
             .ToList();
-        if (safe.Count == 0) return;
+        if (safe.Count == 0) return 0;
 
         await using var db = await _dbFactory.CreateDbContextAsync();
         db.BypassBranchFilter = true;
@@ -3393,6 +3483,7 @@ public partial class MigrationWizardViewModel : ViewModelBase
         }
 
         await db.SaveChangesAsync();
+        return safe.Count;
     }
 
     private HashSet<int> GetAllowedBranchIds()

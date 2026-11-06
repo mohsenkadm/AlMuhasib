@@ -60,6 +60,7 @@ public sealed class GoldUnitOfWork : IUnitOfWork
     public IRepository<ProfitDistributionDetail> ProfitDistributionDetails => new UnsupportedCarRepository<ProfitDistributionDetail>();
     public IRepository<CapitalEntry> CapitalEntries => new UnsupportedCarRepository<CapitalEntry>();
     public IRepository<CustomerAttachment> CustomerAttachments => new UnsupportedCarRepository<CustomerAttachment>();
+    public IRepository<VoucherAttachment> VoucherAttachments => new UnsupportedCarRepository<VoucherAttachment>();
     public IRepository<UserTask> UserTasks => new UnsupportedCarRepository<UserTask>();
     public IRepository<UserNote> UserNotes => new UnsupportedCarRepository<UserNote>();
     public IRepository<PricingType> PricingTypes => new UnsupportedCarRepository<PricingType>();
