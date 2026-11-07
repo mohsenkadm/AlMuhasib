@@ -1,4 +1,5 @@
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Enums;
 
 namespace AlMuhasib.UI.Services;
 
@@ -9,6 +10,15 @@ public static class PermissionCatalogHelper
 {
     private static readonly string[] AdminRecoveryScreens = ["Users", "Permissions"];
 
+    private static readonly HashSet<string> CashierGrantedScreens = new(StringComparer.Ordinal)
+    {
+        ScreenPermissionRegistry.Dashboard,
+        ScreenPermissionRegistry.CashierPos,
+        ScreenPermissionRegistry.BarcodePrinting,
+        ScreenPermissionRegistry.DailyOperationsReport,
+        ScreenPermissionRegistry.SalesReturn
+    };
+
     /// <summary>
     /// صلاحيات نطاق الفروع — لا تُمنح تلقائياً مع الكتالوج الكامل أو «تحديد الكل».
     /// مصدر وصول الفروع = ربط المستخدم بالفروع في شاشة المستخدمين.
@@ -16,6 +26,20 @@ public static class PermissionCatalogHelper
     public static bool IsExplicitBranchScopeScreen(string screenName) =>
         screenName is BranchPermissionScreens.ViewAllBranches
             or BranchPermissionScreens.ManageAllBranches;
+
+    public static string GetRoleDisplayName(UserRole role) => role switch
+    {
+        UserRole.Admin => "مدير",
+        UserRole.Cashier => "كاشير",
+        _ => "مستخدم"
+    };
+
+    public static string GetRoleHeaderLabel(UserRole role) => role switch
+    {
+        UserRole.Admin => "مدير النظام",
+        UserRole.Cashier => "كاشير",
+        _ => "مستخدم"
+    };
 
     public static Permission CreateFull(string screenName) => new()
     {
@@ -47,6 +71,44 @@ public static class PermissionCatalogHelper
         };
     }
 
+    private static Permission CreateCashierScreen(string screenName)
+    {
+        return screenName switch
+        {
+            ScreenPermissionRegistry.Dashboard => new Permission
+            {
+                ScreenName = screenName,
+                CanView = true
+            },
+            ScreenPermissionRegistry.CashierPos => new Permission
+            {
+                ScreenName = screenName,
+                CanView = true,
+                CanAdd = true,
+                CanPrint = true
+            },
+            ScreenPermissionRegistry.BarcodePrinting => new Permission
+            {
+                ScreenName = screenName,
+                CanView = true,
+                CanPrint = true
+            },
+            ScreenPermissionRegistry.DailyOperationsReport => new Permission
+            {
+                ScreenName = screenName,
+                CanView = true,
+                CanPrint = true
+            },
+            ScreenPermissionRegistry.SalesReturn => new Permission
+            {
+                ScreenName = screenName,
+                CanView = true,
+                CanAdd = true
+            },
+            _ => CreateDenied(screenName)
+        };
+    }
+
     private static IReadOnlyList<(string Name, string Label)> AllScreens =>
         ScreenPermissionRegistry.AllScreens;
 
@@ -57,12 +119,24 @@ public static class PermissionCatalogHelper
                 : CreateFull(s.Name))
             .ToList();
 
+    /// <summary>قالب صلاحيات دور الكاشير الافتراضي.</summary>
+    public static List<Permission> CreateCashierCatalog() =>
+        ScreenPermissionRegistry.AllScreens
+            .Select(s => CashierGrantedScreens.Contains(s.Name)
+                ? CreateCashierScreen(s.Name)
+                : CreateDenied(s.Name))
+            .ToList();
+
     /// <summary>
-    /// Ensures login permissions match the registry. May grant admin recovery access.
+    /// Ensures login permissions match the registry. May grant admin recovery access
+    /// or seed cashier defaults / migrate SaleInvoice → CashierPos.
     /// </summary>
     public static (List<Permission> Permissions, bool ShouldSave, string? InfoMessage, string? WarningMessage)
-        NormalizeForLogin(bool isAdmin, List<Permission> existing)
+        NormalizeForLogin(UserRole role, List<Permission> existing)
     {
+        var isAdmin = role == UserRole.Admin;
+        var isCashier = role == UserRole.Cashier;
+
         if (existing.Count == 0)
         {
             if (isAdmin)
@@ -71,6 +145,15 @@ public static class PermissionCatalogHelper
                     CreateFullCatalog(),
                     true,
                     "تم تفعيل صلاحيات كاملة تلقائياً لهذا المدير. يمكنك تخصيصها من شاشة «الصلاحيات».",
+                    null);
+            }
+
+            if (isCashier)
+            {
+                return (
+                    CreateCashierCatalog(),
+                    true,
+                    "تم تفعيل صلاحيات الكاشير الافتراضية (POS، طباعة باركودات، التقرير اليومي، مرتجع مبيعات).",
                     null);
             }
 
@@ -83,25 +166,60 @@ public static class PermissionCatalogHelper
 
         var byScreen = existing.ToDictionary(p => p.ScreenName, StringComparer.Ordinal);
         var changed = false;
+        string? info = null;
+
+        // مستخدمو SaleInvoice الحاليون يحتفظون بـ POS عبر مفتاح CashierPos الجديد.
+        if (byScreen.TryGetValue("SaleInvoice", out var saleInvoice)
+            && saleInvoice.CanView
+            && !byScreen.ContainsKey(ScreenPermissionRegistry.CashierPos))
+        {
+            byScreen[ScreenPermissionRegistry.CashierPos] = new Permission
+            {
+                ScreenName = ScreenPermissionRegistry.CashierPos,
+                CanView = saleInvoice.CanView,
+                CanAdd = saleInvoice.CanAdd,
+                CanEdit = saleInvoice.CanEdit,
+                CanDelete = saleInvoice.CanDelete,
+                CanPrint = saleInvoice.CanPrint,
+                CanExport = saleInvoice.CanExport,
+                CanEditPrice = saleInvoice.CanEditPrice,
+                IsViewOnly = saleInvoice.IsViewOnly
+            };
+            changed = true;
+            info = "تمت إضافة صلاحية «بيع سريع (POS)» تلقائياً بناءً على صلاحية فاتورة المبيعات.";
+        }
+
+        // من لديهم تقارير عامة يحصلون على التقرير اليومي المنفصل إن لم يكن موجوداً.
+        if (byScreen.TryGetValue(ScreenPermissionRegistry.Reports, out var reports)
+            && reports.CanView
+            && !byScreen.ContainsKey(ScreenPermissionRegistry.DailyOperationsReport))
+        {
+            byScreen[ScreenPermissionRegistry.DailyOperationsReport] = new Permission
+            {
+                ScreenName = ScreenPermissionRegistry.DailyOperationsReport,
+                CanView = reports.CanView,
+                CanPrint = reports.CanPrint,
+                CanExport = reports.CanExport
+            };
+            changed = true;
+        }
 
         foreach (var (name, _) in ScreenPermissionRegistry.AllScreens)
         {
             if (byScreen.ContainsKey(name))
                 continue;
 
-            // الشاشات الجديدة للمدير: كامل — ما عدا نطاق «كل الفروع» يدوياً فقط.
             byScreen[name] = isAdmin && !IsExplicitBranchScopeScreen(name)
                 ? CreateFull(name)
                 : CreateDenied(name);
             changed = true;
         }
 
-        if (isAdmin && !CanViewScreen(existing, "Users"))
+        if (isAdmin && !CanViewScreen(byScreen.Values, "Users"))
         {
             foreach (var screen in AdminRecoveryScreens)
                 byScreen[screen] = CreateFull(screen);
 
-            changed = true;
             return (
                 byScreen.Values.ToList(),
                 true,
@@ -114,12 +232,17 @@ public static class PermissionCatalogHelper
             return (
                 byScreen.Values.ToList(),
                 true,
-                "تمت إضافة شاشات جديدة إلى سجل الصلاحيات (بدون عرض حتى تحفظها من شاشة «الصلاحيات»).",
+                info ?? "تمت إضافة شاشات جديدة إلى سجل الصلاحيات (بدون عرض حتى تحفظها من شاشة «الصلاحيات»).",
                 null);
         }
 
         return (existing, false, null, null);
     }
+
+    /// <summary>توافق مع الاستدعاءات القديمة.</summary>
+    public static (List<Permission> Permissions, bool ShouldSave, string? InfoMessage, string? WarningMessage)
+        NormalizeForLogin(bool isAdmin, List<Permission> existing) =>
+        NormalizeForLogin(isAdmin ? UserRole.Admin : UserRole.User, existing);
 
     public static PermissionCoverageReport AnalyzeCoverage(IEnumerable<Permission> permissions)
     {

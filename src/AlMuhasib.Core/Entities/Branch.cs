@@ -13,4 +13,5 @@ public class Branch : BaseEntity
 
     public ICollection<UserBranch> UserBranches { get; set; } = [];
     public ICollection<ProductBranch> ProductBranches { get; set; } = [];
+    public ICollection<CategoryBranch> CategoryBranches { get; set; } = [];
 }

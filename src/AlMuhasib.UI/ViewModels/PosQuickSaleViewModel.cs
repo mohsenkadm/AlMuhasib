@@ -22,6 +22,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
     private readonly IUnitOfWork _unitOfWork;
     private readonly IInvoiceService _invoiceService;
     private readonly IProductService _productService;
+    private readonly ICategoryService _categoryService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserPreferencesService _userPreferences;
     private readonly IRecentActivityService _recentActivity;
@@ -98,6 +99,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         IUnitOfWork unitOfWork,
         IInvoiceService invoiceService,
         IProductService productService,
+        ICategoryService categoryService,
         ICurrentUserService currentUserService,
         IUserPreferencesService userPreferences,
         IRecentActivityService recentActivity,
@@ -116,6 +118,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
         _unitOfWork = unitOfWork;
         _invoiceService = invoiceService;
         _productService = productService;
+        _categoryService = categoryService;
         _sound = sound;
         _currentUserService = currentUserService;
         _userPreferences = userPreferences;
@@ -159,10 +162,10 @@ public partial class PosQuickSaleViewModel : ViewModelBase
 
     public override async Task InitializeAsync()
     {
-        LoadPermissions(_currentUserService, "SaleInvoice");
+        LoadPermissions(_currentUserService, ScreenPermissionRegistry.CashierPos);
         if (!CanAdd)
         {
-            StatusMessage = "ليس لديك صلاحية إنشاء فواتير مبيعات";
+            StatusMessage = "ليس لديك صلاحية استخدام شاشة الكاشير";
             return;
         }
 
@@ -174,7 +177,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             RebuildBarcodeIndex();
 
             Categories.Clear();
-            foreach (var category in (await _unitOfWork.Categories.GetAllAsync()).OrderBy(c => c.Name))
+            foreach (var category in (await _categoryService.GetVisibleInCurrentBranchAsync()).OrderBy(c => c.Name))
                 Categories.Add(category);
             SelectedCategory = Categories.FirstOrDefault();
 
@@ -891,7 +894,7 @@ public partial class PosQuickSaleViewModel : ViewModelBase
             _recentActivity.Record(
                 "بيع سريع",
                 $"{saved.InvoiceNumber} — {AccountingCurrencyHelper.Format(saved.NetAmount, currency)}",
-                "SaleInvoice",
+                ScreenPermissionRegistry.CashierPos,
                 typeof(PosQuickSaleViewModel));
 
             CartLines.Clear();

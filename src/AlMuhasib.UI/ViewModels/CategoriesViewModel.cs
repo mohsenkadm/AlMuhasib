@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
 
 namespace AlMuhasib.UI.ViewModels;
@@ -17,8 +18,11 @@ public partial class CategoriesViewModel : ViewModelBase
     private readonly IExportService _exportService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserPreferencesService _userPreferences;
+    private readonly IBranchService _branchService;
+    private readonly ICategoryService _categoryService;
 
     public ObservableCollection<Category> Categories { get; } = [];
+    public ObservableCollection<ProductBranchOption> BranchOptions { get; } = [];
 
     [ObservableProperty]
     private string _searchText = string.Empty;
@@ -60,6 +64,12 @@ public partial class CategoriesViewModel : ViewModelBase
     [ObservableProperty]
     private string _dialogError = string.Empty;
 
+    [ObservableProperty]
+    private string _selectedBranchesSummary = string.Empty;
+
+    [ObservableProperty]
+    private bool _isBranchPickerOpen;
+
     // Delete confirmation
     [ObservableProperty]
     private bool _isDeleteDialogOpen;
@@ -74,12 +84,16 @@ public partial class CategoriesViewModel : ViewModelBase
         IUnitOfWork unitOfWork,
         IExportService exportService,
         ICurrentUserService currentUserService,
-        IUserPreferencesService userPreferences)
+        IUserPreferencesService userPreferences,
+        IBranchService branchService,
+        ICategoryService categoryService)
     {
         _unitOfWork = unitOfWork;
         _exportService = exportService;
         _currentUserService = currentUserService;
         _userPreferences = userPreferences;
+        _branchService = branchService;
+        _categoryService = categoryService;
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Categories);
         PageTitle = "تصنيفات المنتجات";
     }
@@ -91,12 +105,60 @@ public partial class CategoriesViewModel : ViewModelBase
         try
         {
             LoadPermissions(_currentUserService, "Categories");
+            await LoadBranchesAsync();
             await LoadCategoriesAsync();
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private async Task LoadBranchesAsync()
+    {
+        BranchOptions.Clear();
+        var branches = await _branchService.GetActiveAsync();
+        foreach (var b in branches.OrderByDescending(x => x.IsMain).ThenBy(x => x.Name))
+        {
+            var opt = new ProductBranchOption
+            {
+                BranchId = b.Id,
+                Name = b.Name,
+                Code = b.Code,
+                IsMain = b.IsMain
+            };
+            opt.SelectionChanged += RefreshSelectedBranchesSummary;
+            BranchOptions.Add(opt);
+        }
+    }
+
+    private void RefreshSelectedBranchesSummary()
+    {
+        var selected = BranchOptions.Where(o => o.IsSelected).ToList();
+        SelectedBranchesSummary = selected.Count == 0
+            ? "لم يُختر أي فرع"
+            : string.Join(" · ", selected.Select(o => o.Name));
+    }
+
+    private void ResetBranchSelectionForNew()
+    {
+        foreach (var opt in BranchOptions)
+            opt.SetSelectedSilent(opt.IsMain || BranchOptions.Count == 1);
+        if (!BranchOptions.Any(o => o.IsSelected) && BranchOptions.Count > 0)
+            BranchOptions[0].SetSelectedSilent(true);
+        RefreshSelectedBranchesSummary();
+    }
+
+    private async Task ApplyBranchSelectionForEditAsync(int categoryId)
+    {
+        var ids = await _categoryService.GetBranchIdsForCategoryAsync(categoryId);
+        var idSet = ids.ToHashSet();
+        foreach (var opt in BranchOptions)
+            opt.SetSelectedSilent(idSet.Contains(opt.BranchId));
+        if (!BranchOptions.Any(o => o.IsSelected))
+            ResetBranchSelectionForNew();
+        else
+            RefreshSelectedBranchesSummary();
     }
 
     private async Task LoadCategoriesAsync()
@@ -114,7 +176,10 @@ public partial class CategoriesViewModel : ViewModelBase
             var (allItems, _) = await _unitOfWork.Categories.GetPagedAsync(
                 1, int.MaxValue, searchPredicate, q => q.OrderByDescending(c => c.CreatedAt));
 
-            var filtered = ColumnFilterEngine.Apply(allItems, ColumnFilters).ToList();
+            var allList = allItems as IList<Category> ?? allItems.ToList();
+            await ApplyBranchNamesAsync(allList);
+
+            var filtered = ColumnFilterEngine.Apply(allList, ColumnFilters).ToList();
             MasterDataColumnFilterHelper.ApplyClientPagination(
                 filtered, Categories, CurrentPage, PageSize,
                 out var filteredTotal, out var filteredPages, out var filteredText);
@@ -131,9 +196,32 @@ public partial class CategoriesViewModel : ViewModelBase
         TotalPages = PaginationHelper.ComputeTotalPages(totalCount, PageSize);
         PaginationText = PaginationHelper.BuildPaginationText(totalCount, CurrentPage, PageSize);
 
+        var pageItems = items as IList<Category> ?? items.ToList();
+        await ApplyBranchNamesAsync(pageItems);
+
         Categories.Clear();
-        foreach (var c in items)
+        foreach (var c in pageItems)
             Categories.Add(c);
+    }
+
+    private async Task ApplyBranchNamesAsync(IEnumerable<Category> categories)
+    {
+        var list = categories as IList<Category> ?? categories.ToList();
+        if (list.Count == 0) return;
+
+        try
+        {
+            var map = await _categoryService.GetBranchNamesByCategoryIdsAsync(list.Select(c => c.Id));
+            foreach (var c in list)
+                c.BranchesDisplay = map.TryGetValue(c.Id, out var names) && !string.IsNullOrWhiteSpace(names)
+                    ? names
+                    : "—";
+        }
+        catch
+        {
+            foreach (var c in list)
+                c.BranchesDisplay = "—";
+        }
     }
 
     protected override void OnColumnFiltersChanged()
@@ -188,11 +276,12 @@ public partial class CategoriesViewModel : ViewModelBase
         DialogTitle = "إضافة تصنيف جديد";
         EditName = string.Empty;
         DialogError = string.Empty;
+        ResetBranchSelectionForNew();
         IsDialogOpen = true;
     }
 
     [RelayCommand]
-    private void OpenEditDialog(Category category)
+    private async Task OpenEditDialog(Category category)
     {
         if (category is null) return;
         _editingCategoryId = category.Id;
@@ -200,7 +289,23 @@ public partial class CategoriesViewModel : ViewModelBase
         DialogTitle = "تعديل التصنيف";
         EditName = category.Name;
         DialogError = string.Empty;
+        await ApplyBranchSelectionForEditAsync(category.Id);
         IsDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private void OpenBranchPicker() => IsBranchPickerOpen = true;
+
+    [RelayCommand]
+    private void CloseBranchPicker()
+    {
+        if (!BranchOptions.Any(o => o.IsSelected))
+        {
+            DialogError = "يجب اختيار فرع واحد على الأقل";
+            return;
+        }
+        DialogError = string.Empty;
+        IsBranchPickerOpen = false;
     }
 
     [RelayCommand]
@@ -209,6 +314,13 @@ public partial class CategoriesViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(EditName))
         {
             DialogError = "اسم التصنيف مطلوب";
+            return;
+        }
+
+        var selectedBranchIds = BranchOptions.Where(o => o.IsSelected).Select(o => o.BranchId).ToList();
+        if (selectedBranchIds.Count == 0)
+        {
+            DialogError = "يجب اختيار فرع واحد على الأقل";
             return;
         }
 
@@ -234,6 +346,7 @@ public partial class CategoriesViewModel : ViewModelBase
 
                 _unitOfWork.Categories.Update(category);
                 await _unitOfWork.SaveChangesAsync();
+                await _categoryService.SetCategoryBranchesAsync(category.Id, selectedBranchIds);
             }
             else
             {
@@ -244,6 +357,7 @@ public partial class CategoriesViewModel : ViewModelBase
                     return;
                 }
 
+                int categoryId;
                 var softDeleted = await _unitOfWork.Categories.FindSoftDeletedFirstAsync(c => c.Name == name);
                 if (softDeleted is not null)
                 {
@@ -251,6 +365,7 @@ public partial class CategoriesViewModel : ViewModelBase
                     softDeleted.Name = name;
                     _unitOfWork.Categories.Update(softDeleted);
                     await _unitOfWork.SaveChangesAsync();
+                    categoryId = softDeleted.Id;
                 }
                 else
                 {
@@ -262,7 +377,10 @@ public partial class CategoriesViewModel : ViewModelBase
 
                     await _unitOfWork.Categories.AddAsync(category);
                     await _unitOfWork.SaveChangesAsync();
+                    categoryId = category.Id;
                 }
+
+                await _categoryService.SetCategoryBranchesAsync(categoryId, selectedBranchIds);
             }
 
             IsDialogOpen = false;
@@ -316,9 +434,12 @@ public partial class CategoriesViewModel : ViewModelBase
         try
         {
             var (allItems, _) = await _unitOfWork.Categories.GetPagedAsync(1, int.MaxValue);
-            var exportData = allItems.Select(c => new
+            var allList = allItems as IList<Category> ?? allItems.ToList();
+            await ApplyBranchNamesAsync(allList);
+            var exportData = allList.Select(c => new
             {
                 الاسم = c.Name,
+                الفروع = c.BranchesDisplay,
                 تاريخ_الإنشاء = c.CreatedAt.ToString("yyyy/MM/dd")
             });
 
@@ -347,10 +468,13 @@ public partial class CategoriesViewModel : ViewModelBase
         try
         {
             var (allItems, _) = await _unitOfWork.Categories.GetPagedAsync(1, int.MaxValue);
-            var columns = new[] { "الاسم", "تاريخ الإنشاء" };
-            IList<object[]> rows = allItems.Select(c => new object[]
+            var allList = allItems as IList<Category> ?? allItems.ToList();
+            await ApplyBranchNamesAsync(allList);
+            var columns = new[] { "الاسم", "الفروع", "تاريخ الإنشاء" };
+            IList<object[]> rows = allList.Select(c => new object[]
             {
                 c.Name,
+                c.BranchesDisplay,
                 c.CreatedAt.ToString("yyyy/MM/dd")
             }).ToList();
             _exportService.PrintTable("قائمة التصنيفات", columns, rows);

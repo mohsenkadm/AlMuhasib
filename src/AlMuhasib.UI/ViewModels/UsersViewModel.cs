@@ -74,7 +74,7 @@ public partial class UsersViewModel : ViewModelBase
                 Username = u.Username,
                 FullName = u.FullName,
                 Role = u.Role,
-                RoleDisplay = u.Role == UserRole.Admin ? "مدير" : "مستخدم",
+                RoleDisplay = PermissionCatalogHelper.GetRoleDisplayName(u.Role),
                 IsActive = u.IsActive,
                 StatusDisplay = u.IsActive ? "فعال" : "معطّل"
             }).ToList();
@@ -271,6 +271,12 @@ public partial class UsersViewModel : ViewModelBase
                 var created = await _authService.CreateUserAsync(
                     FormUsername.Trim(), FormPassword, FormFullName.Trim(), FormRole);
                 userId = created.Id;
+
+                if (FormRole == UserRole.Cashier)
+                {
+                    await _authService.SaveUserPermissionsAsync(
+                        userId, PermissionCatalogHelper.CreateCashierCatalog());
+                }
             }
 
             if (CanAssignBranches)
@@ -438,7 +444,7 @@ public partial class UsersViewModel : ViewModelBase
                 {
                     اسم_المستخدم = u.Username,
                     الاسم_الكامل = u.FullName,
-                    الصلاحية = u.Role == UserRole.Admin ? "مدير" : "مستخدم",
+                    الصلاحية = PermissionCatalogHelper.GetRoleDisplayName(u.Role),
                     الفروع = branches.Count == 0 ? "—" : string.Join("، ", branches.Select(b => b.Name)),
                     الحالة = u.IsActive ? "فعال" : "معطّل"
                 });
@@ -478,7 +484,7 @@ public partial class UsersViewModel : ViewModelBase
                 [
                     u.Username,
                     u.FullName,
-                    u.Role == UserRole.Admin ? "مدير" : "مستخدم",
+                    PermissionCatalogHelper.GetRoleDisplayName(u.Role),
                     branches.Count == 0 ? "—" : string.Join("، ", branches.Select(b => b.Name)),
                     u.IsActive ? "فعال" : "معطّل"
                 ]);

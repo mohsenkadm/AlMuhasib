@@ -69,6 +69,8 @@ public sealed partial class SyncEngine : ISyncEngine
             foreach (var dto in request.Data.Categories)
                 accepted += await UpsertCategoryAsync(tenantId, dto, response, ct);
             await _db.SaveChangesAsync(ct);
+            await ApplyCategoryVisibleBranchesAsync(tenantId, request.Data.Categories, response, ct);
+            await _db.SaveChangesAsync(ct);
 
             foreach (var dto in request.Data.Products)
             {
@@ -318,7 +320,7 @@ public sealed partial class SyncEngine : ISyncEngine
         var bundle = new SyncDataBundle();
 
         bundle.Branches = await PullBranchesAsync(tenantId, since, ct);
-        bundle.Categories = await PullEntitiesAsync(_db.Categories, tenantId, since, MapCategory, ct);
+        bundle.Categories = await PullCategoriesAsync(tenantId, since, ct);
         bundle.Products = await PullProductsAsync(tenantId, since, ct);
         bundle.PricingTypes = await PullEntitiesAsync(_db.PricingTypes, tenantId, since, MapPricingType, ct);
         bundle.ProductPrices = await PullProductPricesAsync(tenantId, since, ct);
@@ -950,6 +952,41 @@ public sealed partial class SyncEngine : ISyncEngine
                 {
                     TenantId = tenantId,
                     ProductId = product.Id,
+                    BranchId = branchId,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+        }
+    }
+
+    private async Task ApplyCategoryVisibleBranchesAsync(
+        int tenantId, List<CategorySyncDto> categories, SyncPushResponse response, CancellationToken ct)
+    {
+        foreach (var dto in categories)
+        {
+            var category = await FindBySyncIdAsync(_db.Categories, tenantId, dto.SyncId, ct);
+            if (category is null) continue;
+
+            var existingLinks = await _db.CategoryBranches
+                .Where(cb => cb.TenantId == tenantId && cb.CategoryId == category.Id)
+                .ToListAsync(ct);
+            _db.CategoryBranches.RemoveRange(existingLinks);
+
+            if (dto.VisibleBranchSyncIds is null || dto.VisibleBranchSyncIds.Count == 0)
+                continue;
+
+            foreach (var branchSyncId in dto.VisibleBranchSyncIds.Distinct())
+            {
+                if (!_branchSyncCache.TryGetValue(branchSyncId, out var branchId))
+                {
+                    AddConflict(response, "Category", dto.SyncId, $"VisibleBranchSyncId غير معروف: {branchSyncId:D}");
+                    continue;
+                }
+
+                _db.CategoryBranches.Add(new CloudCategoryBranch
+                {
+                    TenantId = tenantId,
+                    CategoryId = category.Id,
                     BranchId = branchId,
                     CreatedAt = DateTime.UtcNow
                 });
@@ -1870,6 +1907,38 @@ public sealed partial class SyncEngine : ISyncEngine
             IsDeleted = a.IsDeleted, DeletedAt = a.DeletedAt, DeletedBy = a.DeletedBy, RowVersion = a.RowVersion,
             CustomerSyncId = customers.GetValueOrDefault(a.CustomerId),
             FileName = a.FileName, FilePath = a.FilePath, Description = a.Description, FileData = a.FileData
+        }).ToList();
+    }
+
+    private async Task<List<CategorySyncDto>> PullCategoriesAsync(int tenantId, DateTime since, CancellationToken ct)
+    {
+        var categories = await QueryTenantBranchSince(_db.Categories, tenantId, since).ToListAsync(ct);
+        var categoryIds = categories.Select(c => c.Id).ToHashSet();
+        var visibility = categoryIds.Count == 0
+            ? new Dictionary<int, List<Guid>>()
+            : (await _db.CategoryBranches.AsNoTracking()
+                .Where(cb => cb.TenantId == tenantId && categoryIds.Contains(cb.CategoryId))
+                .Select(cb => new { cb.CategoryId, cb.BranchId })
+                .ToListAsync(ct))
+            .GroupBy(x => x.CategoryId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Select(x => ResolveBranchSyncId(x.BranchId)).Where(id => id != Guid.Empty).Distinct().ToList());
+
+        return categories.Select(e => new CategorySyncDto
+        {
+            SyncId = e.SyncId,
+            BranchSyncId = ResolveBranchSyncId(e.BranchId),
+            CreatedAt = e.CreatedAt,
+            CreatedBy = e.CreatedBy,
+            UpdatedAt = e.UpdatedAt,
+            UpdatedBy = e.UpdatedBy,
+            IsDeleted = e.IsDeleted,
+            DeletedAt = e.DeletedAt,
+            DeletedBy = e.DeletedBy,
+            RowVersion = e.RowVersion,
+            Name = e.Name,
+            VisibleBranchSyncIds = visibility.GetValueOrDefault(e.Id) ?? []
         }).ToList();
     }
 

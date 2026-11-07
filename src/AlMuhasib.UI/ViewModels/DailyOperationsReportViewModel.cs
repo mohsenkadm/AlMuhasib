@@ -4,6 +4,7 @@ using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Charts;
 using AlMuhasib.UI.Controls;
+using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LiveChartsCore;
@@ -82,7 +83,7 @@ public partial class DailyOperationsReportViewModel : ReportViewModelBase
 
     public override async Task InitializeAsync()
     {
-        LoadPermissions(_currentUserService, "Reports");
+        LoadPermissions(_currentUserService, ScreenPermissionRegistry.DailyOperationsReport);
         await LoadDataAsync();
     }
 

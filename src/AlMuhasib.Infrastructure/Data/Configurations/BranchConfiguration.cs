@@ -60,3 +60,24 @@ public class ProductBranchConfiguration : IEntityTypeConfiguration<ProductBranch
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
+
+public class CategoryBranchConfiguration : IEntityTypeConfiguration<CategoryBranch>
+{
+    public void Configure(EntityTypeBuilder<CategoryBranch> builder)
+    {
+        builder.ToTable("CategoryBranches");
+
+        builder.HasIndex(cb => new { cb.CategoryId, cb.BranchId }).IsUnique();
+        builder.HasIndex(cb => cb.BranchId);
+
+        builder.HasOne(cb => cb.Category)
+            .WithMany(c => c.CategoryBranches)
+            .HasForeignKey(cb => cb.CategoryId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(cb => cb.Branch)
+            .WithMany(b => b.CategoryBranches)
+            .HasForeignKey(cb => cb.BranchId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}

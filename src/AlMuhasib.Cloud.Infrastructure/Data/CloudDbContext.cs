@@ -69,6 +69,7 @@ public class CloudDbContext : DbContext
     public DbSet<CloudBranch> Branches => Set<CloudBranch>();
     public DbSet<TenantAccountBranch> TenantAccountBranches => Set<TenantAccountBranch>();
     public DbSet<CloudProductBranch> ProductBranches => Set<CloudProductBranch>();
+    public DbSet<CloudCategoryBranch> CategoryBranches => Set<CloudCategoryBranch>();
     public DbSet<DeveloperUser> DeveloperUsers => Set<DeveloperUser>();
     public DbSet<DeviceSubscription> DeviceSubscriptions => Set<DeviceSubscription>();
     public DbSet<SyncChangeLog> SyncChangeLogs => Set<SyncChangeLog>();
@@ -230,6 +231,22 @@ public class CloudDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Branch)
                 .WithMany(b => b.ProductBranches)
+                .HasForeignKey(x => x.BranchId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<CloudCategoryBranch>(e =>
+        {
+            e.ToTable("CategoryBranches");
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => new { x.TenantId, x.CategoryId, x.BranchId }).IsUnique();
+            e.HasIndex(x => new { x.TenantId, x.BranchId });
+            e.HasOne(x => x.Category)
+                .WithMany(c => c.CategoryBranches)
+                .HasForeignKey(x => x.CategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+            e.HasOne(x => x.Branch)
+                .WithMany(b => b.CategoryBranches)
                 .HasForeignKey(x => x.BranchId)
                 .OnDelete(DeleteBehavior.Restrict);
         });

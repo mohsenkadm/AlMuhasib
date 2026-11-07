@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows.Media.Imaging;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
+using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Models;
@@ -12,12 +13,19 @@ namespace AlMuhasib.UI.ViewModels;
 
 public partial class ProductsViewModel
 {
+    public IReadOnlyList<BarcodeLabelSizeOption> BarcodeLabelSizeOptions { get; } =
+    [
+        new(BarcodeLabelSize.Mm30x15, BarcodeLabelSizeHelper.GetDisplayName(BarcodeLabelSize.Mm30x15)),
+        new(BarcodeLabelSize.Mm38x25, BarcodeLabelSizeHelper.GetDisplayName(BarcodeLabelSize.Mm38x25))
+    ];
+
     [ObservableProperty] private bool _isBarcodePrintDialogOpen;
     [ObservableProperty] private string _barcodePrintCompanyName = string.Empty;
     [ObservableProperty] private string _barcodePrintProductName = string.Empty;
     [ObservableProperty] private string _barcodePrintCode = string.Empty;
     [ObservableProperty] private string _barcodePrintPriceText = "—";
     [ObservableProperty] private int _barcodePrintCopies = 1;
+    [ObservableProperty] private BarcodeLabelSizeOption? _selectedBarcodeLabelSize;
     [ObservableProperty] private BitmapSource? _barcodePreviewImage;
 
     private Product? _barcodePrintProduct;
@@ -74,6 +82,8 @@ public partial class ProductsViewModel
 
         _barcodePrintPrice = price is > 0 ? price : null;
         BarcodePrintPriceText = _barcodePrintPrice is > 0 ? $"{_barcodePrintPrice:N0} د.ع" : "—";
+        SelectedBarcodeLabelSize ??= BarcodeLabelSizeOptions.FirstOrDefault(o => o.Size == BarcodeLabelSize.Mm38x25)
+                                     ?? BarcodeLabelSizeOptions[0];
         RefreshBarcodePreview();
         IsBarcodePrintDialogOpen = true;
     }
@@ -118,7 +128,8 @@ public partial class ProductsViewModel
             })
             .ToList();
 
-        _barcodeLabelService.PrintLabels(items);
+        var size = SelectedBarcodeLabelSize?.Size ?? BarcodeLabelSize.Mm38x25;
+        _barcodeLabelService.PrintLabels(items, size);
         IsBarcodePrintDialogOpen = false;
     }
 

@@ -1393,7 +1393,7 @@ public partial class MainWindowViewModel : ObservableObject
         {
             var perms = await _authService.GetUserPermissionsAsync(userId);
             var (normalized, shouldSave, infoMessage, warningMessage) =
-                PermissionCatalogHelper.NormalizeForLogin(_currentUserService.IsAdmin, perms);
+                PermissionCatalogHelper.NormalizeForLogin(_currentUserService.Role, perms);
 
             if (shouldSave)
             {
@@ -1521,7 +1521,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     public void RefreshLoggedInUserRoleLabel()
     {
-        LoggedInUserRoleLabel = _currentUserService.IsAdmin ? "مدير النظام" : "مستخدم";
+        LoggedInUserRoleLabel = PermissionCatalogHelper.GetRoleHeaderLabel(_currentUserService.Role);
     }
 
     partial void OnSearchTextChanged(string value) => UpdateSearchResults();

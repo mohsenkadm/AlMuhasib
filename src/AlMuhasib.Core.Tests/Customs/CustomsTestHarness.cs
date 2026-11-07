@@ -24,6 +24,7 @@ internal sealed class CustomsFakeUser : ICurrentUserService
     private readonly HashSet<string> _export = new(StringComparer.Ordinal);
 
     public string Username { get; set; } = "tester";
+    public string FullName { get; set; } = "Tester";
     public int? UserId { get; set; } = 1;
     public UserRole Role { get; set; } = UserRole.Admin;
     public bool IsAdmin { get; set; } = true;

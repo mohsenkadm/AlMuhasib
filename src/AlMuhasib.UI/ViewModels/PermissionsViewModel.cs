@@ -55,7 +55,7 @@ public partial class PermissionsViewModel : ViewModelBase
                     Username = u.Username,
                     FullName = u.FullName,
                     Role = u.Role,
-                    RoleDisplay = u.Role == Core.Enums.UserRole.Admin ? "مدير" : "مستخدم",
+                    RoleDisplay = PermissionCatalogHelper.GetRoleDisplayName(u.Role),
                     IsActive = u.IsActive,
                     StatusDisplay = u.IsActive ? "فعال" : "معطّل"
                 });

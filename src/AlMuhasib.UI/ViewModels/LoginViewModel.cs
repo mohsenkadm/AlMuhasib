@@ -204,6 +204,7 @@ public partial class LoginViewModel : ObservableObject
             }
 
             _currentUserService.Username = result.User!.Username;
+            _currentUserService.FullName = result.User.FullName ?? string.Empty;
             _currentUserService.UserId = result.User.Id;
             _currentUserService.Role = result.User.Role;
 
