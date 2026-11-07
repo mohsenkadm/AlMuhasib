@@ -16,6 +16,7 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class ProductFormViewModel : ViewModelBase
 {
     private readonly IProductService _productService;
+    private readonly ICategoryService _categoryService;
     private readonly IProductPriceService _productPriceService;
     private readonly IProductUnitService _productUnitService;
     private readonly IProductSerialService _productSerialService;
@@ -130,6 +131,7 @@ public partial class ProductFormViewModel : ViewModelBase
 
     public ProductFormViewModel(
         IProductService productService,
+        ICategoryService categoryService,
         IProductPriceService productPriceService,
         IProductUnitService productUnitService,
         IProductSerialService productSerialService,
@@ -148,6 +150,7 @@ public partial class ProductFormViewModel : ViewModelBase
         MainWindowViewModel mainWindow)
     {
         _productService = productService;
+        _categoryService = categoryService;
         _productPriceService = productPriceService;
         _productUnitService = productUnitService;
         _productSerialService = productSerialService;
@@ -224,7 +227,7 @@ public partial class ProductFormViewModel : ViewModelBase
     private async Task LoadCategoriesAsync()
     {
         Categories.Clear();
-        foreach (var c in (await _unitOfWork.Categories.GetAllAsync()).OrderBy(c => c.Name))
+        foreach (var c in (await _categoryService.GetVisibleInCurrentBranchAsync()).OrderBy(c => c.Name))
             Categories.Add(c);
     }
 
@@ -548,6 +551,13 @@ public partial class ProductFormViewModel : ViewModelBase
             };
             await _unitOfWork.Categories.AddAsync(category);
             await _unitOfWork.SaveChangesAsync();
+
+            var branchIds = BranchOptions.Where(o => o.IsSelected).Select(o => o.BranchId).ToList();
+            if (branchIds.Count > 0)
+                await _categoryService.SetCategoryBranchesAsync(category.Id, branchIds);
+            else
+                await _categoryService.EnsureDefaultCategoryBranchAsync(category.Id);
+
             await LoadCategoriesAsync();
             SelectedCategory = Categories.FirstOrDefault(c => c.Id == category.Id)
                                ?? Categories.FirstOrDefault(c => c.Name == name);

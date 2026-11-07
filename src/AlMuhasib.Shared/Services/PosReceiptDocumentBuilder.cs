@@ -172,6 +172,8 @@ public static class PosReceiptDocumentBuilder
             : "إيصال بيع";
         doc.Blocks.Add(CenteredParagraph(title, fontSize + 1, FontWeights.SemiBold));
         doc.Blocks.Add(DashedLine());
+        if (!model.IsGoldInvoice && !string.IsNullOrWhiteSpace(model.CashierName))
+            doc.Blocks.Add(MetaParagraph($"الكاشير: {model.CashierName}", fontSize - 0.5, FontWeights.SemiBold));
         doc.Blocks.Add(MetaParagraph($"#{model.InvoiceNumber}", fontSize, FontWeights.SemiBold));
         doc.Blocks.Add(MetaParagraph($"{model.Date:yyyy/MM/dd HH:mm}", fontSize - 0.5));
         doc.Blocks.Add(MetaParagraph($"{model.PartyLabel}: {model.PartyName}", fontSize - 0.5));
@@ -185,24 +187,21 @@ public static class PosReceiptDocumentBuilder
             doc.Blocks.Add(MetaParagraph($"صرف: {model.FxRate:N2}", fontSize - 0.5));
         doc.Blocks.Add(DashedLine());
 
-        if (model.PharmacyUsageReceipt && !model.IsGoldInvoice)
-            doc.Blocks.Add(CenteredParagraph("وصفة / طريقة الاستخدام", fontSize, FontWeights.SemiBold));
-
-        foreach (var item in model.Items)
+        if (model.IsGoldInvoice)
         {
-            var name = item.ItemName;
-            if (model.IsGoldInvoice && !string.IsNullOrWhiteSpace(item.LineDirectionLabel))
-                name = $"{name} ({item.LineDirectionLabel})";
-
-            doc.Blocks.Add(new Paragraph(new Run(name))
+            foreach (var item in model.Items)
             {
-                Margin = new Thickness(0, 2, 0, 0),
-                FontWeight = FontWeights.SemiBold,
-                FontSize = fontSize
-            });
+                var name = item.ItemName;
+                if (!string.IsNullOrWhiteSpace(item.LineDirectionLabel))
+                    name = $"{name} ({item.LineDirectionLabel})";
 
-            if (model.IsGoldInvoice)
-            {
+                doc.Blocks.Add(new Paragraph(new Run(name))
+                {
+                    Margin = new Thickness(0, 2, 0, 0),
+                    FontWeight = FontWeights.SemiBold,
+                    FontSize = fontSize
+                });
+
                 var karat = item.KaratValue ?? 0;
                 var weight = item.WeightGrams ?? item.Quantity;
                 var making = item.MakingCharge ?? 0;
@@ -221,44 +220,24 @@ public static class PosReceiptDocumentBuilder
                     Foreground = MutedBrush
                 });
             }
-            else
+        }
+        else
+        {
+            if (model.PharmacyUsageReceipt)
+                doc.Blocks.Add(CenteredParagraph("وصفة / طريقة الاستخدام", fontSize, FontWeights.SemiBold));
+
+            AppendThermalItemsTable(doc, model, fontSize);
+
+            if (model.PharmacyUsageReceipt)
             {
-                if (!string.IsNullOrWhiteSpace(item.WarehouseName))
+                foreach (var item in model.Items)
                 {
-                    doc.Blocks.Add(new Paragraph(new Run($"المخزن: {item.WarehouseName}"))
+                    var usage = string.IsNullOrWhiteSpace(item.UsageInstructions)
+                        ? "—"
+                        : item.UsageInstructions.Trim();
+                    doc.Blocks.Add(new Paragraph(new Run($"{item.ItemName}: {usage}"))
                     {
-                        Margin = new Thickness(0, 0, 0, 0),
-                        FontSize = fontSize - 0.5,
-                        Foreground = MutedBrush
-                    });
-                }
-
-                var priceLine = $"{FormatQty(item.Quantity)} × {FormatMoney(item.UnitPrice)}";
-                if (model.ShowLineDiscount && item.DiscountPercent > 0)
-                    priceLine += $" (خصم {item.DiscountPercent:0.##}%)";
-                priceLine += $" = {FormatMoney(item.TotalPrice)}";
-
-                doc.Blocks.Add(new Paragraph(new Run(priceLine))
-                {
-                    Margin = new Thickness(0, 0, 0, model.PharmacyUsageReceipt ? 0 : 2),
-                    FontSize = fontSize - 0.5,
-                    Foreground = MutedBrush
-                });
-
-                if (model.PharmacyUsageReceipt && !string.IsNullOrWhiteSpace(item.UsageInstructions))
-                {
-                    doc.Blocks.Add(new Paragraph(new Run($"طريقة الاستخدام: {item.UsageInstructions.Trim()}"))
-                    {
-                        Margin = new Thickness(0, 0, 0, 4),
-                        FontSize = fontSize - 0.5,
-                        FontWeight = FontWeights.Normal
-                    });
-                }
-                else if (model.PharmacyUsageReceipt)
-                {
-                    doc.Blocks.Add(new Paragraph(new Run("طريقة الاستخدام: —"))
-                    {
-                        Margin = new Thickness(0, 0, 0, 4),
+                        Margin = new Thickness(0, 1, 0, 1),
                         FontSize = fontSize - 0.5,
                         Foreground = MutedBrush
                     });
@@ -270,7 +249,15 @@ public static class PosReceiptDocumentBuilder
         if (model.IsGoldInvoice)
             AppendGoldTotals(doc, model, compact: true, fontSize: fontSize);
         else
+        {
+            var subtotal = model.Subtotal > 0 ? model.Subtotal : model.Items.Sum(x => x.TotalPrice);
+            if (model.DiscountAmount > 0)
+            {
+                doc.Blocks.Add(CenteredParagraph($"المجموع: {FormatMoney(subtotal)} د.ع", fontSize, FontWeights.Normal));
+                doc.Blocks.Add(CenteredParagraph($"الخصم: {FormatMoney(model.DiscountAmount)} د.ع", fontSize, FontWeights.SemiBold));
+            }
             doc.Blocks.Add(CenteredParagraph($"الإجمالي: {FormatMoney(model.GrandTotal)} د.ع", fontSize + 2, FontWeights.Bold));
+        }
         doc.Blocks.Add(DashedLine());
 
         var footer = PrintBrandingProvider.Current?.FooterText;
@@ -302,26 +289,61 @@ public static class PosReceiptDocumentBuilder
             size: compact ? fontSize - 0.5 : 12);
     }
 
-    private static TableRow HeaderRow(params string[] cells)
+    private static void AppendThermalItemsTable(FlowDocument doc, InvoicePrintModel model, double fontSize)
+    {
+        var table = new Table
+        {
+            CellSpacing = 0,
+            Margin = new Thickness(0, 2, 0, 4)
+        };
+        table.Columns.Add(new TableColumn { Width = new GridLength(2.4, GridUnitType.Star) });
+        table.Columns.Add(new TableColumn { Width = new GridLength(0.7, GridUnitType.Star) });
+        table.Columns.Add(new TableColumn { Width = new GridLength(1.0, GridUnitType.Star) });
+        table.Columns.Add(new TableColumn { Width = new GridLength(1.1, GridUnitType.Star) });
+        var group = new TableRowGroup();
+        table.RowGroups.Add(group);
+
+        group.Rows.Add(HeaderRow(fontSize - 0.5, "المنتج", "كمية", "سعر", "إجمالي"));
+        foreach (var item in model.Items)
+        {
+            var name = item.ItemName;
+            if (!string.IsNullOrWhiteSpace(item.WarehouseName))
+                name = $"{name}\n{item.WarehouseName}";
+            group.Rows.Add(BodyRow(
+                fontSize - 0.5,
+                name,
+                FormatQty(item.Quantity),
+                FormatMoney(item.UnitPrice),
+                FormatMoney(item.TotalPrice)));
+        }
+
+        doc.Blocks.Add(table);
+    }
+
+    private static TableRow HeaderRow(params string[] cells) => HeaderRow(12, cells);
+
+    private static TableRow HeaderRow(double fontSize, params string[] cells)
     {
         var row = new TableRow { Background = new SolidColorBrush(Color.FromRgb(0xE3, 0xF2, 0xFD)) };
         foreach (var c in cells)
-            row.Cells.Add(Cell(c, FontWeights.Bold, 12));
+            row.Cells.Add(Cell(c, FontWeights.Bold, fontSize));
         return row;
     }
 
-    private static TableRow BodyRow(params string[] cells)
+    private static TableRow BodyRow(params string[] cells) => BodyRow(12, cells);
+
+    private static TableRow BodyRow(double fontSize, params string[] cells)
     {
         var row = new TableRow();
         foreach (var c in cells)
-            row.Cells.Add(Cell(c, FontWeights.Normal, 12));
+            row.Cells.Add(Cell(c, FontWeights.Normal, fontSize));
         return row;
     }
 
     private static TableCell Cell(string text, FontWeight weight, double size) =>
         new(new Paragraph(new Run(text) { FontWeight = weight, FontSize = size })
         {
-            Margin = new Thickness(4, 3, 4, 3)
+            Margin = new Thickness(2, 2, 2, 2)
         })
         {
             BorderBrush = new SolidColorBrush(Color.FromRgb(0xCF, 0xD8, 0xDC)),

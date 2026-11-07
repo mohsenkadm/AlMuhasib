@@ -7,6 +7,7 @@ namespace AlMuhasib.UI.Services;
 public class CurrentUserService : ICurrentUserService
 {
     public string Username { get; set; } = "System";
+    public string FullName { get; set; } = string.Empty;
     public int? UserId { get; set; }
     public UserRole Role { get; set; } = UserRole.User;
     public bool IsAdmin => Role == UserRole.Admin;
@@ -22,6 +23,7 @@ public class CurrentUserService : ICurrentUserService
     public void Clear()
     {
         Username = "System";
+        FullName = string.Empty;
         UserId = null;
         Role = UserRole.User;
         _permissions.Clear();

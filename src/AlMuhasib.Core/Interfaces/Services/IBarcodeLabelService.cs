@@ -1,8 +1,12 @@
+using AlMuhasib.Core.Enums;
+
 namespace AlMuhasib.Core.Interfaces.Services;
 
 public interface IBarcodeLabelService
 {
     void PrintLabels(IEnumerable<BarcodeLabelItem> items);
+
+    void PrintLabels(IEnumerable<BarcodeLabelItem> items, BarcodeLabelSize size);
 
     /// <summary>Creates a scannable Code128 barcode as PNG bytes for preview or printing.</summary>
     byte[]? CreateBarcodePng(string barcode, int width = 280, int height = 90);

@@ -17,6 +17,9 @@ public static class ScreenPermissionRegistry
     public const string BalanceSheet = "BalanceSheet";
     public const string NetworkConnection = "NetworkConnection";
     public const string BarcodePriceCheck = "BarcodePriceCheck";
+    public const string BarcodePrinting = "BarcodePrinting";
+    public const string CashierPos = "CashierPos";
+    public const string DailyOperationsReport = "DailyOperationsReport";
     public const string BulkProductPriceUpdate = "BulkProductPriceUpdate";
     public const string SalesReturn = "SalesReturn";
     public const string PurchaseReturn = "PurchaseReturn";
@@ -147,6 +150,7 @@ public static class ScreenPermissionRegistry
         (Dashboard, "لوحة التحكم"),
         ("Products", "المنتجات"),
         ("Categories", "تصنيفات المنتجات"),
+        (BarcodePrinting, "طباعة الباركودات"),
         ("PackagingTypes", "أنواع التعبئة"),
         ("PricingTypes", "أنواع التسعير"),
         ("ProductPricing", "تسعير منتجات"),
@@ -174,6 +178,7 @@ public static class ScreenPermissionRegistry
         ("PurchaseInvoice", "فاتورة مشتريات"),
         (PurchaseReturn, "مرتجع مشتريات"),
         ("SaleInvoice", "فاتورة مبيعات"),
+        (CashierPos, "بيع سريع (POS)"),
         (SalesReturn, "مرتجع مبيعات"),
         (DamageInvoice, "فاتورة تلف"),
         (Maintenance, "صيانة الأجهزة"),
@@ -195,6 +200,7 @@ public static class ScreenPermissionRegistry
         ("OpeningStock", "الأرصدة الافتتاحية"),
         ("StockAdjustment", "تسوية مخزنية"),
         ("Reports", "التقارير"),
+        (DailyOperationsReport, "التقرير اليومي"),
         (DamageInvoicesReport, "تقرير فواتير التلف"),
         (PackagingStockReport, "كميات المخزون حسب التعبئة"),
         (MinimumQuantityReport, "تقرير كميات الحد الأدنى"),
@@ -281,6 +287,7 @@ public static class ScreenPermissionRegistry
         [typeof(ProductFormViewModel)] = "Products",
         [typeof(BulkProductsEntryViewModel)] = "Products",
         [typeof(CategoriesViewModel)] = "Categories",
+        [typeof(BarcodePrintingViewModel)] = BarcodePrinting,
         [typeof(PackagingTypesViewModel)] = "PackagingTypes",
         [typeof(PricingTypesViewModel)] = "PricingTypes",
         [typeof(ProductPricingViewModel)] = "ProductPricing",
@@ -307,7 +314,7 @@ public static class ScreenPermissionRegistry
         [typeof(ProductOffersViewModel)] = "ProductOffers",
         [typeof(PurchaseInvoiceViewModel)] = "PurchaseInvoice",
         [typeof(SalesInvoiceViewModel)] = "SaleInvoice",
-        [typeof(PosQuickSaleViewModel)] = "SaleInvoice",
+        [typeof(PosQuickSaleViewModel)] = CashierPos,
         [typeof(BarcodePriceCheckViewModel)] = BarcodePriceCheck,
         [typeof(InstallmentInvoiceViewModel)] = "InstallmentInvoice",
         [typeof(CollectionDashboardViewModel)] = "Installments",
@@ -377,7 +384,7 @@ public static class ScreenPermissionRegistry
         [typeof(InstallmentScheduleReportViewModel)] = "Reports",
         [typeof(SalesByPaymentMethodReportViewModel)] = "Reports",
         [typeof(DailySalesReportViewModel)] = "Reports",
-        [typeof(DailyOperationsReportViewModel)] = "Reports",
+        [typeof(DailyOperationsReportViewModel)] = DailyOperationsReport,
         [typeof(WorkSummaryReportViewModel)] = "Reports",
         [typeof(SalesByWarehouseUserReportViewModel)] = "Reports",
         [typeof(GrossProfitMarginReportViewModel)] = "Reports",
@@ -421,6 +428,7 @@ public static class ScreenPermissionRegistry
         [Dashboard] = typeof(DashboardViewModel),
         ["Products"] = typeof(ProductsViewModel),
         ["Categories"] = typeof(CategoriesViewModel),
+        [BarcodePrinting] = typeof(BarcodePrintingViewModel),
         ["PackagingTypes"] = typeof(PackagingTypesViewModel),
         ["PricingTypes"] = typeof(PricingTypesViewModel),
         ["ProductPricing"] = typeof(ProductPricingViewModel),
@@ -447,6 +455,7 @@ public static class ScreenPermissionRegistry
         ["PurchaseInvoice"] = typeof(PurchaseInvoiceViewModel),
         [PurchaseReturn] = typeof(PurchaseInvoiceViewModel),
         ["SaleInvoice"] = typeof(SalesInvoiceViewModel),
+        [CashierPos] = typeof(PosQuickSaleViewModel),
         [SalesReturn] = typeof(SalesInvoiceViewModel),
         [DamageInvoice] = typeof(SalesInvoiceViewModel),
         [Maintenance] = typeof(MaintenanceViewModel),
@@ -469,6 +478,7 @@ public static class ScreenPermissionRegistry
         ["OpeningStock"] = typeof(OpeningStockViewModel),
         ["StockAdjustment"] = typeof(StockAdjustmentViewModel),
         ["Reports"] = typeof(SalesReportViewModel),
+        [DailyOperationsReport] = typeof(DailyOperationsReportViewModel),
         [DamageInvoicesReport] = typeof(DamageInvoicesReportViewModel),
         [PackagingStockReport] = typeof(PackagingStockReportViewModel),
         [MinimumQuantityReport] = typeof(MinimumQuantityReportViewModel),

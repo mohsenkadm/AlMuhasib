@@ -1110,6 +1110,14 @@
                             </StackPanel>
                         </Border>
 
+                        <ComboBox ItemsSource="{Binding BarcodeLabelSizeOptions}"
+                                  SelectedItem="{Binding SelectedBarcodeLabelSize}"
+                                  DisplayMemberPath="DisplayName"
+                                  materialDesign:HintAssist.Hint="قياس الملصق"
+                                  materialDesign:HintAssist.IsFloating="True"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,0,0,12"/>
+
                         <TextBox Text="{Binding BarcodePrintCopies, UpdateSourceTrigger=PropertyChanged}"
                                  materialDesign:HintAssist.Hint="عدد نسخ الطباعة"
                                  materialDesign:HintAssist.IsFloating="True"

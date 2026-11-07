@@ -76,6 +76,7 @@ public class AppDbContext : DbContext
     public DbSet<Branch> Branches => Set<Branch>();
     public DbSet<UserBranch> UserBranches => Set<UserBranch>();
     public DbSet<ProductBranch> ProductBranches => Set<ProductBranch>();
+    public DbSet<CategoryBranch> CategoryBranches => Set<CategoryBranch>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<Category> Categories => Set<Category>();

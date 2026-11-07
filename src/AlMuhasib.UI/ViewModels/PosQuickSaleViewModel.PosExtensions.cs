@@ -358,7 +358,9 @@ public partial class PosQuickSaleViewModel
                     : "—",
             PartyLabel = "العميل",
             WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
+            CashierName = ResolveCashierDisplayName(),
             Subtotal = items.Sum(i => i.TotalPrice),
+            DiscountAmount = inv.DiscountAmount,
             GrandTotal = inv.NetAmount,
             PharmacyUsageReceipt = false,
             CurrencyLabel = AccountingCurrencyHelper.GetLabel(inv.Currency),
@@ -418,7 +420,9 @@ public partial class PosQuickSaleViewModel
                     : "—",
             PartyLabel = "العميل",
             WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
+            CashierName = ResolveCashierDisplayName(),
             Subtotal = items.Sum(i => i.TotalPrice),
+            DiscountAmount = inv.DiscountAmount,
             GrandTotal = inv.NetAmount,
             PharmacyUsageReceipt = true,
             CurrencyLabel = AccountingCurrencyHelper.GetLabel(inv.Currency),
@@ -435,6 +439,11 @@ public partial class PosQuickSaleViewModel
             }).ToList()
         });
     }
+
+    private string ResolveCashierDisplayName() =>
+        !string.IsNullOrWhiteSpace(_currentUserService.FullName)
+            ? _currentUserService.FullName
+            : _currentUserService.Username;
 
     private async Task<Dictionary<int, string?>> LoadUsageInstructionsMapAsync(IEnumerable<int?> productIds)
     {
@@ -458,6 +467,10 @@ public partial class PosQuickSaleViewModel
     {
         using var scope = ((App)System.Windows.Application.Current).Services.CreateScope();
         var export = scope.ServiceProvider.GetRequiredService<IExportService>();
+        var discountTotal = saved.DiscountAmount > 0
+            ? saved.DiscountAmount
+            : Math.Max(0m, InvoiceDiscountAmount + (ShowLoyaltyPanel ? Math.Max(0m, LoyaltyDiscountAmount) : 0m));
+
         export.PrintThermalReceipt(new InvoicePrintModel
         {
             InvoiceNumber = saved.InvoiceNumber,
@@ -467,7 +480,9 @@ public partial class PosQuickSaleViewModel
                 : "—",
             PartyLabel = "العميل",
             WarehouseName = SelectedWarehouse?.Name ?? string.Empty,
+            CashierName = ResolveCashierDisplayName(),
             Subtotal = totalSnapshot,
+            DiscountAmount = discountTotal,
             GrandTotal = saved.NetAmount > 0 ? saved.NetAmount : totalSnapshot,
             PharmacyUsageReceipt = pharmacyUsage && ShowPharmacy,
             CurrencyLabel = AccountingCurrencyHelper.GetLabel(saved.Currency),

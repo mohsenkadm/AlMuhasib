@@ -14,6 +14,11 @@ public sealed class BranchSyncDto : SyncDtoBase
 public sealed class CategorySyncDto : SyncDtoBase
 {
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// فروع ظهور الصنف. قائمة فارغة = ظاهر في كل الفروع (سلوك Desktop عند عدم وجود CategoryBranch).
+    /// </summary>
+    public List<Guid> VisibleBranchSyncIds { get; set; } = [];
 }
 
 public sealed class ProductSyncDto : SyncDtoBase

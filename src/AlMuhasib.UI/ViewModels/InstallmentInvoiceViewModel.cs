@@ -193,6 +193,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
         IInstallmentService installmentService,
         IUnitOfWork unitOfWork,
         IProductService productService,
+        ICategoryService categoryService,
         ICurrentUserService currentUserService,
         INavigationService navigationService,
         IExportService exportService,
@@ -235,7 +236,8 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             _unitOfWork,
             productPriceService,
             userPreferences.Current.FeatureFlags.ProductPricingEnabled,
-            productService);
+            productService,
+            categoryService);
         ProductPicker.Confirmed += OnProductPickerConfirmed;
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
         QuickSearchCatalog = new ProductQuickSearchCatalog(_unitOfWork, productPriceService);

@@ -77,6 +77,7 @@ public partial class ProductPickerViewModel : ObservableObject
 
     private readonly IUnitOfWork _unitOfWork;
     private readonly IProductService? _productService;
+    private readonly ICategoryService? _categoryService;
     private readonly IProductPriceService? _productPriceService;
     private readonly bool _pricingEnabled;
     private readonly Dictionary<int, decimal> _quantities = new();
@@ -140,12 +141,14 @@ public partial class ProductPickerViewModel : ObservableObject
         IUnitOfWork unitOfWork,
         IProductPriceService? productPriceService = null,
         bool pricingEnabled = false,
-        IProductService? productService = null)
+        IProductService? productService = null,
+        ICategoryService? categoryService = null)
     {
         _unitOfWork = unitOfWork;
         _productPriceService = productPriceService;
         _pricingEnabled = pricingEnabled;
         _productService = productService;
+        _categoryService = categoryService;
         IsPricingMode = pricingEnabled;
     }
 
@@ -160,7 +163,9 @@ public partial class ProductPickerViewModel : ObservableObject
         BrowseHint = string.Empty;
         IsAllCategoriesSelected = false;
 
-        _categories = (await _unitOfWork.Categories.GetAllAsync()).OrderBy(c => c.Name).ToList();
+        _categories = _categoryService is not null
+            ? (await _categoryService.GetVisibleInCurrentBranchAsync()).OrderBy(c => c.Name).ToList()
+            : (await _unitOfWork.Categories.GetAllAsync()).OrderBy(c => c.Name).ToList();
         _categoryNames = _categories.ToDictionary(c => c.Id, c => c.Name);
         Categories.Clear();
         foreach (var c in _categories)

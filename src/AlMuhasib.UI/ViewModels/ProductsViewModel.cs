@@ -17,6 +17,7 @@ namespace AlMuhasib.UI.ViewModels;
 public partial class ProductsViewModel : ViewModelBase
 {
     private readonly IProductService _productService;
+    private readonly ICategoryService _categoryService;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuthService _authService;
     private readonly IExportService _exportService;
@@ -206,6 +207,7 @@ public partial class ProductsViewModel : ViewModelBase
 
     public ProductsViewModel(
         IProductService productService,
+        ICategoryService categoryService,
         IUnitOfWork unitOfWork,
         IAuthService authService,
         IExportService exportService,
@@ -225,6 +227,7 @@ public partial class ProductsViewModel : ViewModelBase
         ICustomFieldSettingsService customFieldSettings)
     {
         _productService = productService;
+        _categoryService = categoryService;
         _unitOfWork = unitOfWork;
         _authService = authService;
         _exportService = exportService;
@@ -271,7 +274,7 @@ public partial class ProductsViewModel : ViewModelBase
     // ── Category loading ───────────────────────────────────
     private async Task LoadCategoriesAsync()
     {
-        var categories = await _unitOfWork.Categories.GetAllAsync();
+        var categories = await _categoryService.GetVisibleInCurrentBranchAsync();
         Categories.Clear();
         foreach (var c in categories)
             Categories.Add(c);

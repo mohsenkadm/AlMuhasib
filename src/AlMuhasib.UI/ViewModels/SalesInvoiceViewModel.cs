@@ -272,6 +272,7 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
         IInvoiceService invoiceService,
         IUnitOfWork unitOfWork,
         IProductService productService,
+        ICategoryService categoryService,
         ICurrentUserService currentUserService,
         INavigationService navigationService,
         IExportService exportService,
@@ -326,7 +327,8 @@ public partial class SalesInvoiceViewModel : ViewModelBase, IProductQuickSearchH
             _unitOfWork,
             productPriceService,
             userPreferences.Current.FeatureFlags.ProductPricingEnabled,
-            productService);
+            productService,
+            categoryService);
         ProductPicker.Confirmed += OnProductPickerConfirmed;
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
         QuickSearchCatalog = new ProductQuickSearchCatalog(_unitOfWork, productPriceService);

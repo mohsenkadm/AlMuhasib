@@ -223,6 +223,7 @@
                               Margin="0,0,0,16">
                         <ComboBoxItem Content="مدير" Tag="{x:Static enums:UserRole.Admin}"/>
                         <ComboBoxItem Content="مستخدم" Tag="{x:Static enums:UserRole.User}"/>
+                        <ComboBoxItem Content="كاشير" Tag="{x:Static enums:UserRole.Cashier}"/>
                     </ComboBox>
 
                     <!-- صلاحيات الفروع: ربط المستخدم بفرع أو أكثر -->

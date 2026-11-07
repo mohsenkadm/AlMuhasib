@@ -89,6 +89,8 @@ public class InvoicePrintModel
     public string? SalesRepresentativeName { get; set; }
     public string? SalesRepresentativePhone { get; set; }
     public string? SalesRepresentativeEmail { get; set; }
+    /// <summary>اسم الكاشير / المستخدم الذي أنشأ فاتورة البيع السريع.</summary>
+    public string? CashierName { get; set; }
     /// <summary>نسخة مخزن — بدون أسعار أو مجاميع</summary>
     public bool HideAmounts { get; set; }
     public List<InvoicePrintItem> Items { get; set; } = [];

@@ -13,6 +13,7 @@ public class ProductBranchVisibilityTests
     private sealed class FakeUser : ICurrentUserService
     {
         public string Username => "test";
+        public string FullName => "Test User";
         public int? UserId => 1;
         public UserRole Role => UserRole.Admin;
         public bool IsAdmin => true;

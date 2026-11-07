@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace AlMuhasib.UI.ViewModels;
@@ -46,7 +47,8 @@ public partial class DashboardViewModel
         // ملف العمل (كاشير/محاسب) يخصّص شريط المساعد السريع فقط.
         // لوحة التحكم تعرض كل الإحصائيات والإجراءات؛ الصلاحيات تحدّد الظهور.
         var installmentsEnabled = _featureFlags.Installments;
-        ShowDashboardQuickSales = _currentUserService.CanView("SaleInvoice");
+        ShowDashboardQuickSales = _currentUserService.CanView("SaleInvoice")
+            || _currentUserService.CanView(ScreenPermissionRegistry.CashierPos);
         ShowDashboardQuickPurchase = _currentUserService.CanView("PurchaseInvoice");
         ShowDashboardQuickInstallment = installmentsEnabled && _currentUserService.CanView("InstallmentInvoice");
         ShowDashboardQuickWarehouseReport = _currentUserService.CanView("Reports");
@@ -57,7 +59,8 @@ public partial class DashboardViewModel
         ShowDashboardQuickSuppliers = _currentUserService.CanView("Suppliers");
         ShowDashboardQuickAddSupplier = CanQuickAdd("Suppliers");
         ShowDashboardQuickDailySales = _currentUserService.CanView("Reports");
-        ShowDashboardQuickDailyOperations = _currentUserService.CanView("Reports");
+        ShowDashboardQuickDailyOperations = _currentUserService.CanView(ScreenPermissionRegistry.DailyOperationsReport)
+            || _currentUserService.CanView("Reports");
         ShowCollectionDashboard = installmentsEnabled && _currentUserService.CanView("Installments");
         ShowInstallmentStats = installmentsEnabled;
 

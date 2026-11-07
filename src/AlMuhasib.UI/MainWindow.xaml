@@ -2000,6 +2000,9 @@
                         <DataTemplate DataType="{x:Type vm:CategoriesViewModel}">
                             <views:CategoriesView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:BarcodePrintingViewModel}">
+                            <views:BarcodePrintingView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:PricingTypesViewModel}">
                             <views:PricingTypesView />
                         </DataTemplate>

@@ -3,7 +3,11 @@ using AlMuhasib.Core.Enums.Gold;
 
 namespace AlMuhasib.Cloud.Core.Entities;
 
-public class CloudCategory : CloudBaseEntity { public string Name { get; set; } = string.Empty; }
+public class CloudCategory : CloudBaseEntity
+{
+    public string Name { get; set; } = string.Empty;
+    public ICollection<CloudCategoryBranch> CategoryBranches { get; set; } = [];
+}
 public class CloudProduct : CloudBaseEntity
 {
     public string Name { get; set; } = string.Empty;

@@ -169,6 +169,7 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
         IInvoiceService invoiceService,
         IUnitOfWork unitOfWork,
         IProductService productService,
+        ICategoryService categoryService,
         ICurrentUserService currentUserService,
         IExportService exportService,
         IWhatsAppShareService whatsAppShare,
@@ -214,7 +215,8 @@ public partial class PurchaseInvoiceViewModel : ViewModelBase, IProductQuickSear
             _unitOfWork,
             productPriceService,
             userPreferences.Current.FeatureFlags.ProductPricingEnabled,
-            productService);
+            productService,
+            categoryService);
         ProductPicker.Confirmed += OnProductPickerConfirmed;
         ProductPicker.Cancelled += () => IsProductPickerOpen = false;
         QuickSearchCatalog = new ProductQuickSearchCatalog(_unitOfWork, productPriceService);

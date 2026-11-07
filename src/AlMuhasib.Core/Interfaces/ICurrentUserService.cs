@@ -5,6 +5,7 @@ namespace AlMuhasib.Core.Interfaces;
 public interface ICurrentUserService
 {
     string Username { get; }
+    string FullName { get; }
     int? UserId { get; }
     UserRole Role { get; }
     bool IsAdmin { get; }

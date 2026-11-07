@@ -15,7 +15,7 @@ public static class AccountingMenuBuilder
             // شاشات مباشرة (ليست داخل كروب)
             Item("لوحة التحكم", PackIconKind.ViewDashboard, typeof(DashboardViewModel), ScreenPermissionRegistry.Dashboard),
             Item("فاتورة مبيعات", PackIconKind.CashRegister, typeof(SalesInvoiceViewModel), "SaleInvoice"),
-            Item("بيع سريع (POS)", PackIconKind.PointOfSale, typeof(PosQuickSaleViewModel), "SaleInvoice"),
+            Item("بيع سريع (POS)", PackIconKind.PointOfSale, typeof(PosQuickSaleViewModel), ScreenPermissionRegistry.CashierPos),
             Item("صيانة الأجهزة", PackIconKind.CellphoneCog, typeof(MaintenanceViewModel), ScreenPermissionRegistry.Maintenance),
 
             // كروبات تفتح نافذة جانبية مثل التقارير
@@ -41,6 +41,7 @@ public static class AccountingMenuBuilder
                 [
                     ("المنتجات", PackIconKind.PackageVariantClosed, typeof(ProductsViewModel), "Products"),
                     ("تصنيفات المنتجات", PackIconKind.TagMultiple, typeof(CategoriesViewModel), "Categories"),
+                    ("طباعة الباركودات", PackIconKind.Barcode, typeof(BarcodePrintingViewModel), ScreenPermissionRegistry.BarcodePrinting),
                     ("أنواع التعبئة", PackIconKind.PackageVariant, typeof(PackagingTypesViewModel), "PackagingTypes"),
                     ("أنواع التسعير", PackIconKind.CashMultiple, typeof(PricingTypesViewModel), "PricingTypes"),
                     ("تسعير منتجات", PackIconKind.TagTextOutline, typeof(ProductPricingViewModel), "ProductPricing"),
