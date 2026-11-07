@@ -67,9 +67,6 @@ public partial class CategoriesViewModel : ViewModelBase
     [ObservableProperty]
     private string _selectedBranchesSummary = string.Empty;
 
-    [ObservableProperty]
-    private bool _isBranchPickerOpen;
-
     // Delete confirmation
     [ObservableProperty]
     private bool _isDeleteDialogOpen;
@@ -294,23 +291,10 @@ public partial class CategoriesViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void OpenBranchPicker() => IsBranchPickerOpen = true;
-
-    [RelayCommand]
-    private void CloseBranchPicker()
-    {
-        if (!BranchOptions.Any(o => o.IsSelected))
-        {
-            DialogError = "يجب اختيار فرع واحد على الأقل";
-            return;
-        }
-        DialogError = string.Empty;
-        IsBranchPickerOpen = false;
-    }
-
-    [RelayCommand]
     private async Task SaveCategory()
     {
+        if (IsBusy) return;
+
         if (string.IsNullOrWhiteSpace(EditName))
         {
             DialogError = "اسم التصنيف مطلوب";
@@ -320,48 +304,64 @@ public partial class CategoriesViewModel : ViewModelBase
         var selectedBranchIds = BranchOptions.Where(o => o.IsSelected).Select(o => o.BranchId).ToList();
         if (selectedBranchIds.Count == 0)
         {
-            DialogError = "يجب اختيار فرع واحد على الأقل";
-            return;
+            ResetBranchSelectionForNew();
+            selectedBranchIds = BranchOptions.Where(o => o.IsSelected).Select(o => o.BranchId).ToList();
+            if (selectedBranchIds.Count == 0)
+            {
+                DialogError = "يجب اختيار فرع واحد على الأقل";
+                return;
+            }
         }
 
         DialogError = string.Empty;
-
+        IsBusy = true;
+        var committed = false;
         try
         {
+            // فتح سياق نشط يمنع Repository.Update من الحفظ المتزامن الذي يجمّد واجهة WPF
+            await _unitOfWork.BeginTransactionAsync();
+
+            int categoryId;
+            var name = EditName.Trim();
+            var username = _currentUserService.Username ?? "System";
+
             if (IsEditMode && _editingCategoryId.HasValue)
             {
                 var category = await _unitOfWork.Categories.GetByIdAsync(_editingCategoryId.Value);
-                if (category is null) return;
+                if (category is null)
+                {
+                    DialogError = "الصنف غير موجود";
+                    await _unitOfWork.RollbackTransactionAsync();
+                    return;
+                }
 
-                var name = EditName.Trim();
                 if (await _unitOfWork.Categories.AnyAsync(c => c.Name == name && c.Id != category.Id))
                 {
                     DialogError = "اسم التصنيف موجود مسبقاً";
+                    await _unitOfWork.RollbackTransactionAsync();
                     return;
                 }
 
                 category.Name = name;
                 category.UpdatedAt = DateTime.UtcNow;
-                category.UpdatedBy = _currentUserService.Username;
-
+                category.UpdatedBy = username;
                 _unitOfWork.Categories.Update(category);
                 await _unitOfWork.SaveChangesAsync();
-                await _categoryService.SetCategoryBranchesAsync(category.Id, selectedBranchIds);
+                categoryId = category.Id;
             }
             else
             {
-                var name = EditName.Trim();
                 if (await _unitOfWork.Categories.AnyAsync(c => c.Name == name))
                 {
                     DialogError = "اسم التصنيف موجود مسبقاً";
+                    await _unitOfWork.RollbackTransactionAsync();
                     return;
                 }
 
-                int categoryId;
                 var softDeleted = await _unitOfWork.Categories.FindSoftDeletedFirstAsync(c => c.Name == name);
                 if (softDeleted is not null)
                 {
-                    softDeleted.RestoreFromSoftDelete(_currentUserService.Username);
+                    softDeleted.RestoreFromSoftDelete(username);
                     softDeleted.Name = name;
                     _unitOfWork.Categories.Update(softDeleted);
                     await _unitOfWork.SaveChangesAsync();
@@ -372,28 +372,45 @@ public partial class CategoriesViewModel : ViewModelBase
                     var category = new Category
                     {
                         Name = name,
-                        CreatedBy = _currentUserService.Username
+                        CreatedBy = username
                     };
-
                     await _unitOfWork.Categories.AddAsync(category);
                     await _unitOfWork.SaveChangesAsync();
                     categoryId = category.Id;
                 }
-
-                await _categoryService.SetCategoryBranchesAsync(categoryId, selectedBranchIds);
             }
 
+            await _unitOfWork.CommitTransactionAsync();
+            committed = true;
+
+            await _categoryService.SetCategoryBranchesAsync(categoryId, selectedBranchIds);
+
             IsDialogOpen = false;
+            await Task.Yield();
             await LoadCategoriesAsync();
         }
         catch (Exception ex)
         {
-            DialogError = $"حدث خطأ: {ex.Message}";
+            if (!committed)
+            {
+                try { await _unitOfWork.RollbackTransactionAsync(); }
+                catch { /* ignore */ }
+            }
+
+            DialogError = $"حدث خطأ: {ex.InnerException?.Message ?? ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 
     [RelayCommand]
-    private void CancelDialog() => IsDialogOpen = false;
+    private void CancelDialog()
+    {
+        DialogError = string.Empty;
+        IsDialogOpen = false;
+    }
 
     [RelayCommand]
     private void ConfirmDelete(Category category)
@@ -406,18 +423,43 @@ public partial class CategoriesViewModel : ViewModelBase
     [RelayCommand]
     private async Task ExecuteDelete()
     {
-        if (CategoryToDelete is null) return;
+        if (CategoryToDelete is null || IsBusy) return;
+        IsBusy = true;
+        var committed = false;
         try
         {
-            _unitOfWork.Categories.SoftDelete(CategoryToDelete, _currentUserService.Username);
+            await _unitOfWork.BeginTransactionAsync();
+            var category = await _unitOfWork.Categories.GetByIdAsync(CategoryToDelete.Id);
+            if (category is null)
+            {
+                await _unitOfWork.RollbackTransactionAsync();
+                BeautifulMessageDialog.ShowError("الصنف غير موجود");
+                return;
+            }
+
+            _unitOfWork.Categories.SoftDelete(category, _currentUserService.Username ?? "System");
             await _unitOfWork.SaveChangesAsync();
+            await _unitOfWork.CommitTransactionAsync();
+            committed = true;
+
             IsDeleteDialogOpen = false;
             CategoryToDelete = null;
+            await Task.Yield();
             await LoadCategoriesAsync();
         }
         catch (Exception ex)
         {
-            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الحذف: {ex.Message}");
+            if (!committed)
+            {
+                try { await _unitOfWork.RollbackTransactionAsync(); }
+                catch { /* ignore */ }
+            }
+
+            BeautifulMessageDialog.ShowError($"حدث خطأ أثناء الحذف: {ex.InnerException?.Message ?? ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 

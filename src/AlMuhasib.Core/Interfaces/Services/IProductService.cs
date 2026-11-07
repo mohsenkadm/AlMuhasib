@@ -14,7 +14,13 @@ public interface IProductService
         string? searchTerm = null,
         string? sizeName = null,
         string? colorName = null,
-        bool? hasBatches = null);
+        bool? hasBatches = null,
+        bool? hasBarcode = null);
+
+    /// <summary>إحصاءات سريعة لشاشة طباعة الباركود دون تحميل كل المنتجات.</summary>
+    Task<(int Total, int WithBarcode, int WithoutBarcode)> GetBarcodePrintingStatsAsync(
+        int? categoryId = null,
+        CancellationToken ct = default);
     Task UpdateAsync(Product product);
 
     /// <summary>تبديل إظهار المنتج في شاشة الكاشير دون فتح نموذج التعديل.</summary>

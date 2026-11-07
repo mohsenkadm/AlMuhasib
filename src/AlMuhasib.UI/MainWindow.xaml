@@ -132,29 +132,29 @@
                                Margin="0,0,10,0"
                                Foreground="{DynamicResource TitleBarIconBrush}" />
                     <Border VerticalAlignment="Center"
-                            CornerRadius="14"
+                        CornerRadius="14"
                             Padding="10,5"
-                            Background="{DynamicResource TitleBarBranchBadgeBackground}"
-                            BorderBrush="{DynamicResource TitleBarBranchBadgeBorder}"
-                            BorderThickness="1"
-                            Visibility="{Binding HasCurrentBranch, Converter={StaticResource BooleanToVisibilityConverter}}"
-                            ToolTip="{Binding CurrentBranchName, StringFormat=الفرع الحالي: {0}}"
-                            WindowChrome.IsHitTestVisibleInChrome="False">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="StoreMarkerOutline"
+                        Background="{DynamicResource TitleBarBranchBadgeBackground}"
+                        BorderBrush="{DynamicResource TitleBarBranchBadgeBorder}"
+                        BorderThickness="1"
+                        Visibility="{Binding HasCurrentBranch, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        ToolTip="{Binding CurrentBranchName, StringFormat=الفرع الحالي: {0}}"
+                        WindowChrome.IsHitTestVisibleInChrome="False">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="StoreMarkerOutline"
                                                      Width="14" Height="14"
-                                                     Foreground="{DynamicResource TitleBarBranchBadgeIcon}"
-                                                     VerticalAlignment="Center"
-                                                     Margin="0,0,6,0" />
-                            <TextBlock Text="{Binding CurrentBranchName}"
-                                       FontSize="12"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource TitleBarBranchBadgeForeground}"
-                                       VerticalAlignment="Center"
-                                       TextTrimming="CharacterEllipsis"
+                                                 Foreground="{DynamicResource TitleBarBranchBadgeIcon}"
+                                                 VerticalAlignment="Center"
+                                                 Margin="0,0,6,0" />
+                        <TextBlock Text="{Binding CurrentBranchName}"
+                                   FontSize="12"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TitleBarBranchBadgeForeground}"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"
                                        MaxWidth="160" />
-                        </StackPanel>
-                    </Border>
+                    </StackPanel>
+                </Border>
                 </StackPanel>
 
                 <!-- Center: modern interface search + options (search shrinks; options always visible) -->
@@ -1051,11 +1051,11 @@
                                         ToolTip="عرض ملف المستخدم"
                                         Width="44" Height="44" Padding="0"
                                         Background="Transparent" BorderThickness="0" Cursor="Hand">
-                                    <Button.Template>
-                                        <ControlTemplate TargetType="Button">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
                                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </ControlTemplate>
-                                    </Button.Template>
+                                    </ControlTemplate>
+                                </Button.Template>
                                     <Border Width="42" Height="42" CornerRadius="21">
                                         <Border.Background>
                                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -1079,7 +1079,7 @@
 
                             <!-- Expanded: roomy profile card -->
                             <Grid Grid.Row="0"
-                                  Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
@@ -1096,21 +1096,21 @@
                                                              Foreground="White"/>
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding LoggedInUsername}"
+                                        <TextBlock Text="{Binding LoggedInUsername}"
                                                FontSize="14" FontWeight="Bold"
-                                               Foreground="White"
-                                               TextTrimming="CharacterEllipsis"/>
+                                                   Foreground="White"
+                                                   TextTrimming="CharacterEllipsis"/>
                                     <Border Background="#28FFFFFF" CornerRadius="8" Padding="8,2"
                                             HorizontalAlignment="Right" Margin="0,6,0,0">
                                         <TextBlock Text="{Binding LoggedInUserRoleLabel}"
                                                    FontSize="11" FontWeight="Medium"
                                                    Foreground="#E3F2FD"/>
                                     </Border>
-                                </StackPanel>
-                            </Grid>
+                                    </StackPanel>
+                                </Grid>
 
                             <UniformGrid Grid.Row="1" Columns="2" Margin="0,12,0,0"
-                                         Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    Visibility="{Binding IsSidebarExpanded, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <Button Command="{Binding OpenUserActivityProfileCommand}"
                                         ToolTip="عرض ملف المستخدم وسجل نشاطه"
                                         Margin="0,0,4,0" Height="36" Cursor="Hand"
@@ -1139,7 +1139,7 @@
                                                                  VerticalAlignment="Center" Margin="0,0,6,0"/>
                                         <TextBlock Text="عرض الملف" VerticalAlignment="Center"/>
                                     </StackPanel>
-                                </Button>
+                            </Button>
                                 <Button Command="{Binding LogoutCommand}"
                                         ToolTip="تسجيل الخروج"
                                         Margin="4,0,0,0" Height="36" Cursor="Hand"
@@ -1732,7 +1732,7 @@
                     <TransformGroup>
                         <ScaleTransform ScaleX="{Binding MainContentZoom}"
                                         ScaleY="{Binding MainContentZoom}"/>
-                        <TranslateTransform Y="0"/>
+                    <TranslateTransform Y="0"/>
                     </TransformGroup>
                 </Border.RenderTransform>
                 <Grid x:Name="SplitContentGrid">

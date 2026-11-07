@@ -346,8 +346,9 @@ public static class PosReceiptDocumentBuilder
             Margin = new Thickness(2, 2, 2, 2)
         })
         {
-            BorderBrush = new SolidColorBrush(Color.FromRgb(0xCF, 0xD8, 0xDC)),
-            BorderThickness = new Thickness(0, 0, 0, 1)
+            BorderBrush = new SolidColorBrush(Color.FromRgb(0x90, 0xA4, 0xAE)),
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(1)
         };
 
     private static Paragraph CenteredParagraph(string text, double size, FontWeight? weight = null) =>

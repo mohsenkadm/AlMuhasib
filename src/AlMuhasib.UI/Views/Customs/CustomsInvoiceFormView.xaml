@@ -15,8 +15,8 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="/Styles/CustomsUiStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-            <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
             <helpers:BindingProxy x:Key="FormProxy" Data="{Binding}"/>
         </ResourceDictionary>
     </UserControl.Resources>
@@ -556,11 +556,11 @@
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Border Style="{StaticResource CustomsGridFieldBorder}">
-                                                <ComboBox ItemsSource="{Binding DataContext.VehicleStatusOptions, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                          SelectedValue="{Binding Status, UpdateSourceTrigger=PropertyChanged}"
-                                                          SelectedValuePath="Value"
-                                                          DisplayMemberPath="Label"
-                                                          IsEnabled="{Binding DataContext.CanAddVehicle, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            <ComboBox ItemsSource="{Binding DataContext.VehicleStatusOptions, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      SelectedValue="{Binding Status, UpdateSourceTrigger=PropertyChanged}"
+                                                      SelectedValuePath="Value"
+                                                      DisplayMemberPath="Label"
+                                                      IsEnabled="{Binding DataContext.CanAddVehicle, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                           Style="{StaticResource CustomsVehicleComboBox}"/>
                                             </Border>
                                         </DataTemplate>

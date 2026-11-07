@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.47",
-  "releaseDate": "2026-11-07",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.47/AlMuhasib-1.14.47.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.47/Qayd-Setup-1.14.47.exe",
-  "sha256": "0BFE23D6A24EB8DDCB8AC0A5D432A787268863AE2E1528944FBD1B8385D2A66C",
-  "sizeBytes": 162855501,
-  "releaseNotes": "تحسينات المخزون الافتتاحي والفواتير والكاشير وميزات الأعمال — تحديث اختياري آمن بدون تغيير قاعدة البيانات",
+  "version": "1.14.48",
+  "releaseDate": "2026-11-08",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.48/AlMuhasib-1.14.48.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.48/Qayd-Setup-1.14.48.exe",
+  "sha256": "140A48A47447BE2E1B66EBA45D174C9BD9F452D2FA5982C68B59ED4063BC5E71",
+  "sizeBytes": 162905859,
+  "releaseNotes": "ظهور التصنيفات حسب الفرع، طباعة باركود، دور كاشير، وإيصال حراري — تحديث اختياري آمن (جدول إضافي مع تعبئة)",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

@@ -203,10 +203,11 @@ public class ProductPriceService : IProductPriceService
 
         await using var context = await _contextFactory.CreateDbContextAsync();
         return await context.ProductPrices
+            .AsNoTracking()
             .Include(p => p.PricingType)
             .Where(p => ids.Contains(p.ProductId))
-            .OrderByDescending(p => p.PricingType.IsDefault)
-            .ThenBy(p => p.PricingType.Name)
+            .OrderByDescending(p => p.PricingType != null && p.PricingType.IsDefault)
+            .ThenBy(p => p.PricingType != null ? p.PricingType.Name : string.Empty)
             .ToListAsync();
     }
 

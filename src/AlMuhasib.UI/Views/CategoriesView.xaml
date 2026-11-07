@@ -154,75 +154,65 @@
         <!-- ═══ Add/Edit Dialog ═══ -->
         <md:DialogHost IsOpen="{Binding IsDialogOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
             <md:DialogHost.DialogContent>
-                <md:Card Padding="24" MinWidth="420" MaxWidth="520">
-                    <StackPanel>
-                        <TextBlock Text="{Binding DialogTitle}" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"/>
+                <md:Card Padding="24" MinWidth="420" MaxWidth="520" MaxHeight="640">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="{Binding DialogTitle}" FontSize="18" FontWeight="Bold" Margin="0,0,0,16"/>
 
-                        <TextBox md:HintAssist.Hint="اسم التصنيف *"
-                                 Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
-                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
-
-                        <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="10" Padding="12" Margin="0,0,0,12">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                                    <md:PackIcon Kind="SourceBranch" Width="20" Height="20" Foreground="#00695C" VerticalAlignment="Center"/>
-                                    <TextBlock Text="الفروع التي يظهر فيها الصنف" FontWeight="SemiBold" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                </StackPanel>
-                                <TextBlock Text="{Binding SelectedBranchesSummary}" FontSize="13" FontWeight="SemiBold"
-                                           Foreground="#00695C" TextWrapping="Wrap" Margin="0,0,0,6"/>
-                                <TextBlock Text="يظهر الصنف في الكاشير والقوائم فقط للفروع المختارة. الفرع الرئيسي مفعّل افتراضياً."
-                                           FontSize="11" Opacity="0.7" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                                <Button Content="اختيار الفروع" Command="{Binding OpenBranchPickerCommand}"
-                                        Style="{StaticResource FlatButton}" HorizontalAlignment="Left"
-                                        Padding="12,4"/>
-                            </StackPanel>
-                        </Border>
-
-                        <TextBlock Text="{Binding DialogError}" Foreground="#D32F2F" Margin="0,0,0,8"
-                                   Visibility="{Binding DialogError, Converter={StaticResource NullToCollapsedConverter}}"/>
-
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,8,0,0">
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,12,0,0">
                             <Button Content="حفظ" Command="{Binding SaveCategoryCommand}"
                                     Style="{StaticResource MaterialDesignRaisedButton}"
-                                    md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"/>
+                                    md:ButtonAssist.CornerRadius="8" Padding="24,8" Margin="0,0,8,0"
+                                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"/>
                             <Button Content="إلغاء" Command="{Binding CancelDialogCommand}"
-                                    Style="{StaticResource FlatButton}"/>
+                                    Style="{StaticResource FlatButton}"
+                                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBooleanConverter}}"/>
                         </StackPanel>
-                    </StackPanel>
-                </md:Card>
-            </md:DialogHost.DialogContent>
-        </md:DialogHost>
 
-        <!-- ═══ Branch Picker Dialog ═══ -->
-        <md:DialogHost IsOpen="{Binding IsBranchPickerOpen}" CloseOnClickAway="False" Grid.RowSpan="2">
-            <md:DialogHost.DialogContent>
-                <md:Card Padding="24" MinWidth="360" MaxWidth="440" MaxHeight="480">
-                    <DockPanel>
-                        <TextBlock DockPanel.Dock="Top" Text="اختيار فروع الظهور" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
-                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,12,0,0">
-                            <Button Content="تم" Command="{Binding CloseBranchPickerCommand}"
-                                    Style="{StaticResource MaterialDesignRaisedButton}"
-                                    Height="40" Padding="24,0" md:ButtonAssist.CornerRadius="10"/>
+                        <TextBlock DockPanel.Dock="Bottom" Text="{Binding DialogError}" Foreground="#D32F2F" Margin="0,0,0,8"
+                                   Visibility="{Binding DialogError, Converter={StaticResource NullToCollapsedConverter}}"/>
+
+                        <StackPanel>
+                            <TextBox md:HintAssist.Hint="اسم التصنيف *"
+                                     Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}"
+                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,12"/>
+
+                            <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="10" Padding="12">
+                                <DockPanel>
+                                    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                            <md:PackIcon Kind="SourceBranch" Width="20" Height="20" Foreground="#00695C" VerticalAlignment="Center"/>
+                                            <TextBlock Text="الفروع التي يظهر فيها الصنف" FontWeight="SemiBold" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding SelectedBranchesSummary}" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="#00695C" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                                        <TextBlock Text="يظهر الصنف في الكاشير والقوائم فقط للفروع المختارة. الفرع الرئيسي مفعّل افتراضياً."
+                                                   FontSize="11" Opacity="0.7" TextWrapping="Wrap"/>
+                                    </StackPanel>
+
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="260">
+                                        <ItemsControl ItemsSource="{Binding BranchOptions}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Padding="10,8" Margin="0,0,0,6" CornerRadius="10"
+                                                            Background="{DynamicResource CardBrush}">
+                                                        <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                                  VerticalAlignment="Center">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="{Binding DisplayName}" FontSize="14" VerticalAlignment="Center"/>
+                                                                <Border Background="#E0F2F1" CornerRadius="6" Padding="6,2" Margin="10,0,0,0"
+                                                                        VerticalAlignment="Center">
+                                                                    <TextBlock Text="{Binding TypeLabel}" FontSize="11" Foreground="#00695C"/>
+                                                                </Border>
+                                                            </StackPanel>
+                                                        </CheckBox>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </DockPanel>
+                            </Border>
                         </StackPanel>
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <ItemsControl ItemsSource="{Binding BranchOptions}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <Border Padding="10,8" Margin="0,0,0,6" CornerRadius="10"
-                                                Background="{DynamicResource BackgroundBrush}">
-                                            <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                                      VerticalAlignment="Center">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <TextBlock Text="{Binding DisplayName}" FontSize="14" VerticalAlignment="Center"/>
-                                                    <TextBlock Text="{Binding TypeLabel}" FontSize="11" Opacity="0.6"
-                                                               Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                                </StackPanel>
-                                            </CheckBox>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
                     </DockPanel>
                 </md:Card>
             </md:DialogHost.DialogContent>

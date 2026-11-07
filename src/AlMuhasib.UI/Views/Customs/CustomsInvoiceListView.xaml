@@ -17,7 +17,7 @@
             <BooleanToVisibilityConverter x:Key="BoolToVisRes"/>
             <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
             <helpers:BindingProxy x:Key="ListProxy" Data="{Binding}"/>
-<ContextMenu x:Key="PageActionsMenu">
+        <ContextMenu x:Key="PageActionsMenu">
             <MenuItem Header="تحديث" Command="{Binding RefreshCommand}">
                 <MenuItem.Icon><md:PackIcon Kind="Refresh" Width="16" Height="16"/></MenuItem.Icon>
             </MenuItem>
@@ -124,12 +124,12 @@
                     </Border.Background>
                     <DockPanel>
                         <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                            <Button Command="{Binding OpenNewInvoiceCommand}"
-                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                    <Button Command="{Binding OpenNewInvoiceCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
                                     Background="White" Foreground="#1565C0"
                                     md:ButtonAssist.CornerRadius="10" Padding="18,8" Margin="0,0,8,0"
-                                    IsEnabled="{Binding CanAdd}">
-                                <StackPanel Orientation="Horizontal">
+                            IsEnabled="{Binding CanAdd}">
+                        <StackPanel Orientation="Horizontal">
                                     <md:PackIcon Kind="FileDocumentPlus" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                     <TextBlock Text="فاتورة جديدة" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 </StackPanel>
@@ -327,7 +327,7 @@
                                                 Style="{StaticResource TableDeleteIconButton}"
                                                 ToolTip="حذف مسودة"
                                                 IsEnabled="{Binding CanSoftDelete}"/>
-                                    </StackPanel>
+                                            </StackPanel>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -743,23 +743,23 @@
             <md:DialogHost.DialogContent>
                 <Border Style="{StaticResource DialogContentWrapper}" MinWidth="400" Padding="0">
                     <md:Card Padding="24" UniformCornerRadius="16">
-                        <StackPanel>
-                            <TextBlock Text="تأكيد الإلغاء" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
-                            <TextBlock Margin="0,0,0,12">
-                                <Run Text="إلغاء الفاتورة "/>
-                                <Run Text="{Binding InvoiceToCancel.InvoiceNumber, Mode=OneWay}" FontWeight="Bold"/>
-                                <Run Text="؟"/>
-                            </TextBlock>
-                            <TextBox Text="{Binding CancelReason, UpdateSourceTrigger=PropertyChanged}"
-                                     md:HintAssist.Hint="سبب الإلغاء (اختياري)"
-                                     Style="{StaticResource FilledTextBox}" Margin="0,0,0,16"/>
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="إلغاء الفاتورة" Command="{Binding ExecuteCancelCommand}"
+                    <StackPanel>
+                        <TextBlock Text="تأكيد الإلغاء" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
+                        <TextBlock Margin="0,0,0,12">
+                            <Run Text="إلغاء الفاتورة "/>
+                            <Run Text="{Binding InvoiceToCancel.InvoiceNumber, Mode=OneWay}" FontWeight="Bold"/>
+                            <Run Text="؟"/>
+                        </TextBlock>
+                        <TextBox Text="{Binding CancelReason, UpdateSourceTrigger=PropertyChanged}"
+                                 md:HintAssist.Hint="سبب الإلغاء (اختياري)"
+                                 Style="{StaticResource FilledTextBox}" Margin="0,0,0,16"/>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="إلغاء الفاتورة" Command="{Binding ExecuteCancelCommand}"
                                         Style="{StaticResource CustomsDialogDangerButton}"/>
                                 <Button Content="رجوع" Command="{Binding CloseCancelDialogCommand}" Style="{StaticResource CustomsDialogSecondaryButton}"/>
-                            </StackPanel>
                         </StackPanel>
-                    </md:Card>
+                    </StackPanel>
+                </md:Card>
                 </Border>
             </md:DialogHost.DialogContent>
         </md:DialogHost>
@@ -768,20 +768,20 @@
             <md:DialogHost.DialogContent>
                 <Border Style="{StaticResource DialogContentWrapper}" MinWidth="360" Padding="0">
                     <md:Card Padding="24" UniformCornerRadius="16">
-                        <StackPanel>
-                            <TextBlock Text="حذف المسودة" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
-                            <TextBlock Margin="0,0,0,16">
-                                <Run Text="حذف المسودة "/>
-                                <Run Text="{Binding InvoiceToDelete.InvoiceNumber, Mode=OneWay}" FontWeight="Bold"/>
-                                <Run Text="؟"/>
-                            </TextBlock>
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="حذف" Command="{Binding ExecuteDeleteCommand}"
+                    <StackPanel>
+                        <TextBlock Text="حذف المسودة" FontSize="18" FontWeight="Bold" Margin="0,0,0,12"/>
+                        <TextBlock Margin="0,0,0,16">
+                            <Run Text="حذف المسودة "/>
+                            <Run Text="{Binding InvoiceToDelete.InvoiceNumber, Mode=OneWay}" FontWeight="Bold"/>
+                            <Run Text="؟"/>
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="حذف" Command="{Binding ExecuteDeleteCommand}"
                                         Style="{StaticResource CustomsDialogDangerButton}"/>
                                 <Button Content="إلغاء" Command="{Binding CancelDeleteCommand}" Style="{StaticResource CustomsDialogSecondaryButton}"/>
-                            </StackPanel>
                         </StackPanel>
-                    </md:Card>
+                    </StackPanel>
+                </md:Card>
                 </Border>
             </md:DialogHost.DialogContent>
         </md:DialogHost>

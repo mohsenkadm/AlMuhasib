@@ -146,10 +146,12 @@ public class ProductService : IProductService
         string? searchTerm = null,
         string? sizeName = null,
         string? colorName = null,
-        bool? hasBatches = null)
+        bool? hasBatches = null,
+        bool? hasBarcode = null)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var query = context.Products
+            .AsNoTracking()
             .Include(p => p.Category)
             .AsQueryable();
 
@@ -196,6 +198,11 @@ public class ProductService : IProductService
             query = query.Where(p => context.ProductBatches.Any(b => b.ProductId == p.Id));
         }
 
+        if (hasBarcode == true)
+            query = query.Where(p => p.Barcode != null && p.Barcode != "");
+        else if (hasBarcode == false)
+            query = query.Where(p => p.Barcode == null || p.Barcode == "");
+
         var totalCount = await query.CountAsync();
 
         var items = await query
@@ -205,6 +212,24 @@ public class ProductService : IProductService
             .ToListAsync();
 
         return (items, totalCount);
+    }
+
+    public async Task<(int Total, int WithBarcode, int WithoutBarcode)> GetBarcodePrintingStatsAsync(
+        int? categoryId = null,
+        CancellationToken ct = default)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync(ct);
+        var query = context.Products.AsNoTracking().AsQueryable();
+
+        if (_branchContext.CurrentBranchId is int currentBranchId && !_branchContext.IsAllBranchesMode)
+            query = ApplyVisibleInBranchFilter(query, context, currentBranchId);
+
+        if (categoryId.HasValue)
+            query = query.Where(p => p.CategoryId == categoryId.Value);
+
+        var total = await query.CountAsync(ct);
+        var withBarcode = await query.CountAsync(p => p.Barcode != null && p.Barcode != "", ct);
+        return (total, withBarcode, total - withBarcode);
     }
 
     public async Task UpdateAsync(Product product)

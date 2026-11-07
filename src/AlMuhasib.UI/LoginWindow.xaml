@@ -343,7 +343,53 @@
                     <BackEase EasingMode="EaseOut" Amplitude="0.28"/>
                 </DoubleAnimation.EasingFunction>
             </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="BrandBottomCards"
+                             Storyboard.TargetProperty="Opacity"
+                             From="0" To="1" Duration="0:0:0.55" BeginTime="0:0:0.2">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation Storyboard.TargetName="BrandBottomCards"
+                             Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                             From="22" To="0" Duration="0:0:0.55" BeginTime="0:0:0.2">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
         </Storyboard>
+
+        <Style x:Key="LoginBrandActionButton" TargetType="Button">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="12"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.92"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.82"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
     <Border x:Name="RootCard" Opacity="0" CornerRadius="24" Background="Transparent">
@@ -363,53 +409,415 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- ═══ Brand panel ═══ -->
+                    <!-- ═══ Brand panel (logo + support) — theme aware ═══ -->
                     <Grid Grid.Column="0" ClipToBounds="True">
-                        <Border CornerRadius="0,24,24,0">
-                            <Border.Background>
-                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                    <GradientStop Color="#0A1628" Offset="0"/>
-                                    <GradientStop Color="#0D2847" Offset="0.45"/>
-                                    <GradientStop Color="#1565C0" Offset="1"/>
-                                </LinearGradientBrush>
-                            </Border.Background>
+                        <Border x:Name="BrandPanelChrome" CornerRadius="0,24,24,0">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background">
+                                        <Setter.Value>
+                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                <GradientStop Color="#EEF3FA" Offset="0"/>
+                                                <GradientStop Color="#D9E7F7" Offset="0.5"/>
+                                                <GradientStop Color="#BFD6F0" Offset="1"/>
+                                            </LinearGradientBrush>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                            <Setter Property="Background">
+                                                <Setter.Value>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                        <GradientStop Color="#0B1A33" Offset="0"/>
+                                                        <GradientStop Color="#123A6B" Offset="0.55"/>
+                                                        <GradientStop Color="#1E88E5" Offset="1"/>
+                                                    </LinearGradientBrush>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
                         </Border>
 
-                        <Ellipse Width="220" Height="220" Fill="#304DD0E1" Opacity="0.18"
-                                 HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-80,-70,0,0"/>
-                        <Ellipse Width="180" Height="180" Fill="#403F51B5" Opacity="0.22"
-                                 HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-60,-50"/>
+                        <Ellipse Width="240" Height="240" Opacity="0.35"
+                                 HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-100,-90,0,0"
+                                 RenderTransformOrigin="0.5,0.5">
+                            <Ellipse.Fill>
+                                <RadialGradientBrush>
+                                    <GradientStop Color="#6642A5F5" Offset="0"/>
+                                    <GradientStop Color="#0042A5F5" Offset="1"/>
+                                </RadialGradientBrush>
+                            </Ellipse.Fill>
+                            <Ellipse.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Ellipse.RenderTransform>
+                            <Ellipse.Triggers>
+                                <EventTrigger RoutedEvent="Loaded">
+                                    <BeginStoryboard>
+                                        <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.2" To="0.38" Duration="0:0:4"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="1" To="1.05" Duration="0:0:4"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="1" To="1.05" Duration="0:0:4"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </EventTrigger>
+                            </Ellipse.Triggers>
+                        </Ellipse>
 
-                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="28">
-                            <Grid Width="92" Height="92" Margin="0,0,0,18">
-                                <Ellipse Width="92" Height="92" Stroke="#55FFFFFF" StrokeThickness="1.5"
-                                         StrokeDashArray="4 6" Opacity="0.55"/>
-                                <Border Width="68" Height="68" CornerRadius="34"
-                                        Background="Transparent"
-                                        HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <Image Source="{DynamicResource BrandMarkImage}"
-                                           Width="68" Height="68"
-                                           Stretch="Uniform"
-                                           RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <DockPanel Margin="20,26,20,18">
+                            <StackPanel x:Name="BrandBottomCards" DockPanel.Dock="Bottom" Opacity="0">
+                                <StackPanel.RenderTransform>
+                                    <TranslateTransform Y="22"/>
+                                </StackPanel.RenderTransform>
+
+                                <!-- Support card -->
+                                <Border x:Name="SupportCard" CornerRadius="18" Padding="14" Margin="0,0,0,10" BorderThickness="1">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#F7FBFF"/>
+                                            <Setter Property="BorderBrush" Value="#C7D8EC"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                    <Setter Property="Background" Value="#28FFFFFF"/>
+                                                    <Setter Property="BorderBrush" Value="#3DFFFFFF"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <StackPanel>
+                                        <DockPanel Margin="0,0,0,12" LastChildFill="False">
+                                            <Border DockPanel.Dock="Right" Width="38" Height="38" CornerRadius="12">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#E4F0EA"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                                <Setter Property="Background" Value="#33A5D6A7"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <materialDesign:PackIcon Kind="Headset" Width="18" Height="18"
+                                                                         HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <materialDesign:PackIcon.Style>
+                                                        <Style TargetType="materialDesign:PackIcon">
+                                                            <Setter Property="Foreground" Value="#4F7D6A"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                                    <Setter Property="Foreground" Value="#A5D6A7"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </materialDesign:PackIcon.Style>
+                                                </materialDesign:PackIcon>
+                                            </Border>
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                                                <TextBlock Text="الدعم الفني" FontSize="14" FontWeight="Bold">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="#163A5C"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                                    <Setter Property="Foreground" Value="White"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock Text="نحن هنا لمساعدتك" FontSize="11.5" Margin="0,2,0,0">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="#5E7B9A"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                                    <Setter Property="Foreground" Value="#C5D8EE"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </DockPanel>
+
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="8"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0"
+                                                    Command="{Binding OpenWhatsAppSupportCommand}"
+                                                    Style="{StaticResource LoginBrandActionButton}"
+                                                    Background="#4A7A68"
+                                                    BorderBrush="#6B9A87" BorderThickness="1"
+                                                    ToolTip="فتح واتساب الدعم">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="Whatsapp" Width="17" Height="17"
+                                                                             Foreground="#EAF6F0" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="واتساب" Margin="7,0,0,0" Foreground="#F4FAF7" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Grid.Column="2"
+                                                    Command="{Binding ToggleSupportPhoneCommand}"
+                                                    ToolTip="عرض رقم هاتف الدعم">
+                                                <Button.Style>
+                                                    <Style TargetType="Button" BasedOn="{StaticResource LoginBrandActionButton}">
+                                                        <Setter Property="Background" Value="#EAF1F8"/>
+                                                        <Setter Property="BorderBrush" Value="#B7CBE0"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                        <Setter Property="Foreground" Value="#1E4A73"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                                <Setter Property="Background" Value="#1FFFFFFF"/>
+                                                                <Setter Property="BorderBrush" Value="#55FFFFFF"/>
+                                                                <Setter Property="Foreground" Value="White"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Button.Style>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="PhoneOutline" Width="16" Height="16"
+                                                                             VerticalAlignment="Center"
+                                                                             Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                                                    <TextBlock Text="الهاتف" Margin="7,0,0,0" VerticalAlignment="Center"
+                                                               Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+
+                                        <Border Margin="0,10,0,0" CornerRadius="12" Padding="10,9" BorderThickness="1"
+                                                Visibility="{Binding IsSupportPhoneVisible, Converter={StaticResource BoolToVis}}">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#E8F2FB"/>
+                                                    <Setter Property="BorderBrush" Value="#A9C5DF"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                            <Setter Property="Background" Value="#22000000"/>
+                                                            <Setter Property="BorderBrush" Value="#40B3E5FC"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                <materialDesign:PackIcon Kind="PhoneInTalk" Width="15" Height="15" VerticalAlignment="Center">
+                                                    <materialDesign:PackIcon.Style>
+                                                        <Style TargetType="materialDesign:PackIcon">
+                                                            <Setter Property="Foreground" Value="#1565C0"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                                    <Setter Property="Foreground" Value="#81D4FA"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </materialDesign:PackIcon.Style>
+                                                </materialDesign:PackIcon>
+                                                <TextBlock Text="{Binding SupportPhoneDisplay}"
+                                                           FontSize="14" FontWeight="SemiBold" Margin="8,0,0,0"
+                                                           VerticalAlignment="Center" FontFamily="Consolas">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="#0D47A1"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                                    <Setter Property="Foreground" Value="#E3F2FD"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
                                 </Border>
-                            </Grid>
 
-                            <TextBlock Text="{x:Static helpers:AppInfo.AppNameAr}"
-                                       FontSize="26" FontWeight="Bold" Foreground="White"
-                                       HorizontalAlignment="Center" TextAlignment="Center"/>
-                            <TextBlock Text="{x:Static helpers:AppInfo.AppNameEn}"
-                                       FontSize="13" Foreground="#B3E5FC" Opacity="0.92"
-                                       HorizontalAlignment="Center" Margin="0,6,0,0"/>
-                            <Border Background="#1FFFFFFF" CornerRadius="14" Padding="12,5" Margin="0,14,0,0"
-                                    HorizontalAlignment="Center">
-                                <TextBlock Text="{x:Static helpers:AppInfo.VersionLabel}"
-                                           FontSize="11" Foreground="#E1F5FE"/>
-                            </Border>
+                                <!-- Trial card -->
+                                <Border CornerRadius="18" Padding="14" BorderThickness="1"
+                                        Visibility="{Binding ShowTrialCard, Converter={StaticResource BoolToVis}}">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#F7F1E6"/>
+                                            <Setter Property="BorderBrush" Value="#D2C2A4"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                    <Setter Property="Background" Value="#3A7A6540"/>
+                                                    <Setter Property="BorderBrush" Value="#559C8563"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Margin="0,0,10,0">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                <Border Width="28" Height="28" CornerRadius="8">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#EADFCB"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                                    <Setter Property="Background" Value="#559C8563"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <materialDesign:PackIcon Kind="KeyVariant" Width="15" Height="15"
+                                                                             HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                        <materialDesign:PackIcon.Style>
+                                                            <Style TargetType="materialDesign:PackIcon">
+                                                                <Setter Property="Foreground" Value="#7A6548"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                                        <Setter Property="Foreground" Value="#F0E6D2"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </materialDesign:PackIcon.Style>
+                                                    </materialDesign:PackIcon>
+                                                </Border>
+                                                <TextBlock Text="تفعيل النظام" FontSize="13.5" FontWeight="Bold"
+                                                           Margin="8,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Foreground" Value="#5C4A30"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                                    <Setter Property="Foreground" Value="#F0E6D2"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding TrialDaysText}" FontSize="11.5" TextWrapping="Wrap" Margin="0,2,0,0">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#7A6A50"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                                <Setter Property="Foreground" Value="#D9CBB0"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <Button Grid.Column="1"
+                                                Command="{Binding OpenDesktopActivationCommand}"
+                                                Style="{StaticResource LoginBrandActionButton}"
+                                                Background="#7A6548"
+                                                BorderBrush="#A08A66" BorderThickness="1"
+                                                MinWidth="78" VerticalAlignment="Center"
+                                                ToolTip="فتح نافذة التفعيل">
+                                            <TextBlock Text="تفعيل" Foreground="#F7F1E6" VerticalAlignment="Center"/>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
 
-                            <TextBlock Text="اختر المستخدم ثم أكمل تسجيل الدخول بكلمة المرور"
-                                       FontSize="12.5" Foreground="#B0BEC5" TextWrapping="Wrap"
-                                       TextAlignment="Center" Margin="0,28,0,0" MaxWidth="260" LineHeight="20"/>
-                        </StackPanel>
+                            <!-- Brand identity -->
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Margin="4,4,4,18">
+                                <!-- White Qayd mark needs a solid dark plate in light mode -->
+                                <Border Width="88" Height="88" CornerRadius="28" Margin="0,0,0,18"
+                                        HorizontalAlignment="Center" BorderThickness="1">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#0F3A6B"/>
+                                            <Setter Property="BorderBrush" Value="#1A5A9C"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                    <Setter Property="Background" Value="#1AFFFFFF"/>
+                                                    <Setter Property="BorderBrush" Value="#55FFFFFF"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.22" Color="#0D47A1"/>
+                                    </Border.Effect>
+                                    <Image Source="{DynamicResource BrandMarkImage}"
+                                           Width="58" Height="58" Stretch="Uniform"
+                                           RenderOptions.BitmapScalingMode="HighQuality"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+
+                                <TextBlock Text="{x:Static helpers:AppInfo.AppNameAr}"
+                                           FontSize="27" FontWeight="Bold"
+                                           HorizontalAlignment="Center" TextAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#123A63"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                    <Setter Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Text="{x:Static helpers:AppInfo.AppNameEn}"
+                                           FontSize="12.5" HorizontalAlignment="Center" Margin="0,5,0,0">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#4D74A3"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                    <Setter Property="Foreground" Value="#B3E5FC"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <Border HorizontalAlignment="Center" Margin="0,14,0,0"
+                                        CornerRadius="20" Padding="14,6" BorderThickness="1">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="#FFFFFF"/>
+                                            <Setter Property="BorderBrush" Value="#C5D6EA"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                    <Setter Property="Background" Value="#24FFFFFF"/>
+                                                    <Setter Property="BorderBrush" Value="#40FFFFFF"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <TextBlock Text="{x:Static helpers:AppInfo.VersionLabel}"
+                                               FontSize="11" FontWeight="SemiBold">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Foreground" Value="#1E4E7A"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                        <Setter Property="Foreground" Value="#E1F5FE"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </Border>
+
+                                <TextBlock Text="اختر المستخدم ثم أكمل تسجيل الدخول"
+                                           FontSize="12.5" TextWrapping="Wrap"
+                                           TextAlignment="Center" Margin="0,20,0,0" MaxWidth="230" LineHeight="19">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#5B7899"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                    <Setter Property="Foreground" Value="#C5D8EE"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </DockPanel>
                     </Grid>
 
                     <!-- ═══ Login content ═══ -->
@@ -421,6 +829,30 @@
                             <Border Background="{DynamicResource MutedIconBackgroundBrush}" CornerRadius="18" Width="36" Height="36">
                                 <materialDesign:PackIcon Kind="Close" Width="18" Height="18"
                                                          HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Button>
+
+                        <Button Command="{Binding ToggleThemeCommand}"
+                                HorizontalAlignment="Right" VerticalAlignment="Top"
+                                Margin="0,16,16,0" Style="{StaticResource IconButton}"
+                                Width="40" Height="40"
+                                ToolTip="{Binding ThemeToggleToolTip}">
+                            <Border Background="{DynamicResource MutedIconBackgroundBrush}" CornerRadius="20" Width="40" Height="40"
+                                    BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                                <materialDesign:PackIcon Width="20" Height="20"
+                                                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                         Foreground="{DynamicResource TextPrimaryBrush}">
+                                    <materialDesign:PackIcon.Style>
+                                        <Style TargetType="materialDesign:PackIcon">
+                                            <Setter Property="Kind" Value="WeatherNight"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
+                                                    <Setter Property="Kind" Value="WhiteBalanceSunny"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </materialDesign:PackIcon.Style>
+                                </materialDesign:PackIcon>
                             </Border>
                         </Button>
 
@@ -450,14 +882,27 @@
                                 </Grid.RenderTransform>
 
                                 <StackPanel VerticalAlignment="Center">
-                                    <TextBlock Text="من يقوم بتسجيل الدخول؟"
-                                               FontSize="24" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
-                                    <TextBlock Text="اختر المستخدم للمتابعة"
-                                               FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,6,0,24"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                        <Border Width="40" Height="40" CornerRadius="12" Margin="0,0,12,0"
+                                                Background="{DynamicResource PrimaryHueLightBrush}">
+                                            <materialDesign:PackIcon Kind="AccountGroupOutline" Width="22" Height="22"
+                                                                     Foreground="{DynamicResource HighlightBrush}"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="من يقوم بتسجيل الدخول؟"
+                                                       FontSize="23" FontWeight="Bold" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                            <TextBlock Text="اختر بطاقة المستخدم للمتابعة إلى كلمة المرور"
+                                                       FontSize="13" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
 
-                                    <Border CornerRadius="16" Background="{DynamicResource CardBrush}" Padding="10,12"
+                                    <Border CornerRadius="18" Background="{DynamicResource CardBrush}" Padding="12,14" Margin="0,18,0,0"
                                             BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
-                                            MinHeight="400" MaxHeight="520" Height="420">
+                                            MinHeight="390" MaxHeight="520" Height="410">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="20" ShadowDepth="2" Opacity="0.08" Color="#1565C0"/>
+                                        </Border.Effect>
                                         <Grid>
                                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
                                                         Visibility="{Binding IsLoadingAdmins, Converter={StaticResource BoolToVis}}">
@@ -547,6 +992,8 @@
                                                      materialDesign:TextFieldAssist.LeadingIcon="Lock"
                                                      materialDesign:HintAssist.IsFloating="True"
                                                      Style="{StaticResource OutlinedPasswordBox}"
+                                                     Foreground="{DynamicResource TextPrimaryBrush}"
+                                                     CaretBrush="{DynamicResource TextPrimaryBrush}"
                                                      FontSize="14" FlowDirection="RightToLeft"
                                                      Padding="48,10,48,10"
                                                      PasswordChanged="PasswordBox_PasswordChanged"/>
@@ -559,6 +1006,8 @@
                                                  materialDesign:TextFieldAssist.LeadingIcon="Lock"
                                                  materialDesign:HintAssist.IsFloating="True"
                                                  Style="{StaticResource OutlinedTextBox}"
+                                                 Foreground="{DynamicResource TextPrimaryBrush}"
+                                                 CaretBrush="{DynamicResource TextPrimaryBrush}"
                                                  FontSize="14" FlowDirection="RightToLeft"
                                                  Padding="48,10,48,10" Visibility="Collapsed"/>
 

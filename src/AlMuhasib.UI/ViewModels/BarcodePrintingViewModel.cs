@@ -6,6 +6,7 @@ using AlMuhasib.Core;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Helpers;
+using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Models;
@@ -17,27 +18,28 @@ namespace AlMuhasib.UI.ViewModels;
 
 public sealed class BarcodePrintingRow
 {
-    public required Product Product { get; init; }
-    public string Name => Product.Name;
-    public string Barcode => ProductBarcodeHelper.Primary(Product.Barcode) ?? Product.Barcode ?? string.Empty;
+    public required int ProductId { get; init; }
+    public required string Name { get; init; }
+    public required string Barcode { get; init; }
     public string CategoryName { get; init; } = "—";
     public string PriceText { get; init; } = "—";
     public decimal? Price { get; init; }
-    public bool HasBarcode => !string.IsNullOrWhiteSpace(Barcode);
+    public bool HasBarcode { get; init; }
 }
 
-public partial class BarcodePrintingViewModel : ViewModelBase
+public partial class BarcodePrintingViewModel : PagedViewModelBase
 {
     private readonly IProductService _productService;
     private readonly ICategoryService _categoryService;
     private readonly IProductPriceService _productPriceService;
     private readonly IBarcodeLabelService _barcodeLabelService;
     private readonly ICurrentUserService _currentUserService;
-    private readonly IUserPreferencesService _userPreferences;
+    private readonly bool _pricingEnabled;
 
-    private List<BarcodePrintingRow> _allRows = [];
     private System.Timers.Timer? _debounceTimer;
     private BarcodePrintingRow? _printRow;
+    private bool _suppressReload;
+    private int _loadRequestId;
 
     public ObservableCollection<BarcodePrintingRow> Rows { get; } = [];
     public ObservableCollection<Category> Categories { get; } = [];
@@ -65,8 +67,6 @@ public partial class BarcodePrintingViewModel : ViewModelBase
     [ObservableProperty] private BarcodeLabelSizeOption? _selectedLabelSize;
     [ObservableProperty] private BitmapSource? _previewImage;
 
-    private readonly bool _pricingEnabled;
-
     public BarcodePrintingViewModel(
         IProductService productService,
         ICategoryService categoryService,
@@ -80,21 +80,29 @@ public partial class BarcodePrintingViewModel : ViewModelBase
         _productPriceService = productPriceService;
         _barcodeLabelService = barcodeLabelService;
         _currentUserService = currentUserService;
-        _userPreferences = userPreferences;
         _pricingEnabled = userPreferences.Current.FeatureFlags.ProductPricingEnabled;
         PageTitle = "طباعة الباركودات";
-        SelectedLabelSize = LabelSizeOptions.FirstOrDefault(o => o.Size == BarcodeLabelSize.Mm38x25)
-                            ?? LabelSizeOptions[0];
+        PageSize = 50;
+        _selectedLabelSize = LabelSizeOptions.FirstOrDefault(o => o.Size == BarcodeLabelSize.Mm38x25)
+                             ?? LabelSizeOptions[0];
     }
 
     public override async Task InitializeAsync()
     {
         if (IsBusy) return;
         IsBusy = true;
+        StatusMessage = "جاري التحميل...";
         try
         {
             LoadPermissions(_currentUserService, ScreenPermissionRegistry.BarcodePrinting);
-            await LoadAsync();
+            await LoadCategoriesAsync();
+            await LoadPageAsync(resetPage: true, refreshStats: true);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "تعذّر تحميل المنتجات";
+            BeautifulMessageDialog.ShowError(
+                $"خطأ في تحميل طباعة الباركودات:\n\n{ex.InnerException?.Message ?? ex.Message}");
         }
         finally
         {
@@ -102,19 +110,53 @@ public partial class BarcodePrintingViewModel : ViewModelBase
         }
     }
 
-    private async Task LoadAsync()
+    private async Task LoadCategoriesAsync()
     {
+        var categories = await _categoryService.GetVisibleInCurrentBranchAsync();
         Categories.Clear();
-        foreach (var c in (await _categoryService.GetVisibleInCurrentBranchAsync()).OrderBy(x => x.Name))
+        foreach (var c in categories.OrderBy(x => x.Name))
             Categories.Add(c);
+    }
 
-        var products = (await _productService.GetVisibleInCurrentBranchAsync()).OrderBy(p => p.Name).ToList();
-        var categoryNames = Categories.ToDictionary(c => c.Id, c => c.Name);
+    private async Task LoadPageAsync(bool resetPage, bool refreshStats)
+    {
+        var requestId = ++_loadRequestId;
+        if (resetPage)
+            CurrentPage = 1;
 
-        Dictionary<int, decimal?> prices = [];
-        if (_pricingEnabled && products.Count > 0)
+        var categoryId = SelectedCategory?.Id;
+        var search = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim();
+        bool? hasBarcode = OnlyWithBarcode ? true : null;
+
+        Task<(int Total, int WithBarcode, int WithoutBarcode)>? statsTask = null;
+        if (refreshStats)
+            statsTask = _productService.GetBarcodePrintingStatsAsync(categoryId);
+
+        var pageTask = _productService.GetPagedAsync(
+            CurrentPage,
+            PageSize,
+            categoryId,
+            search,
+            hasBarcode: hasBarcode);
+
+        if (statsTask is not null)
         {
-            var priceRows = await _productPriceService.GetByProductIdsAsync(products.Select(p => p.Id));
+            var stats = await statsTask;
+            if (requestId != _loadRequestId) return;
+            TotalProducts = stats.Total;
+            WithBarcodeCount = stats.WithBarcode;
+            WithoutBarcodeCount = stats.WithoutBarcode;
+        }
+
+        var (items, totalCount) = await pageTask;
+        if (requestId != _loadRequestId) return;
+
+        var pageItems = items as IList<Product> ?? items.ToList();
+        Dictionary<int, decimal?> prices = [];
+        if (_pricingEnabled && pageItems.Count > 0)
+        {
+            var priceRows = await _productPriceService.GetByProductIdsAsync(pageItems.Select(p => p.Id));
+            if (requestId != _loadRequestId) return;
             prices = priceRows
                 .GroupBy(p => p.ProductId)
                 .ToDictionary(
@@ -123,83 +165,100 @@ public partial class BarcodePrintingViewModel : ViewModelBase
                                     ?? g.FirstOrDefault()?.SalePrice));
         }
 
-        _allRows = products.Select(p =>
+        var rows = new List<BarcodePrintingRow>(pageItems.Count);
+        foreach (var p in pageItems)
         {
             prices.TryGetValue(p.Id, out var price);
-            categoryNames.TryGetValue(p.CategoryId, out var catName);
-            return new BarcodePrintingRow
+            var barcode = ProductBarcodeHelper.Primary(p.Barcode) ?? p.Barcode?.Trim() ?? string.Empty;
+            rows.Add(new BarcodePrintingRow
             {
-                Product = p,
-                CategoryName = string.IsNullOrWhiteSpace(catName) ? (p.Category?.Name ?? "—") : catName!,
+                ProductId = p.Id,
+                Name = p.Name,
+                Barcode = barcode,
+                CategoryName = p.Category?.Name ?? "—",
                 Price = price is > 0 ? price : null,
-                PriceText = price is > 0 ? $"{price:N0} د.ع" : "—"
-            };
-        }).ToList();
-
-        TotalProducts = _allRows.Count;
-        WithBarcodeCount = _allRows.Count(r => r.HasBarcode);
-        WithoutBarcodeCount = TotalProducts - WithBarcodeCount;
-        ApplyFilters();
-        StatusMessage = $"منتجات الفرع الحالي: {TotalProducts:N0}";
-    }
-
-    private void ApplyFilters()
-    {
-        IEnumerable<BarcodePrintingRow> query = _allRows;
-
-        if (OnlyWithBarcode)
-            query = query.Where(r => r.HasBarcode);
-
-        if (SelectedCategory is not null)
-            query = query.Where(r => r.Product.CategoryId == SelectedCategory.Id);
-
-        if (!string.IsNullOrWhiteSpace(SearchText))
-        {
-            var term = SearchText.Trim();
-            query = query.Where(r =>
-                r.Name.Contains(term, StringComparison.OrdinalIgnoreCase)
-                || r.Barcode.Contains(term, StringComparison.OrdinalIgnoreCase));
+                PriceText = price is > 0 ? $"{price:N0} د.ع" : "—",
+                HasBarcode = !string.IsNullOrWhiteSpace(barcode)
+            });
         }
 
-        var list = query.ToList();
-        FilteredCount = list.Count;
+        ApplyPaginationStats(totalCount);
+        FilteredCount = totalCount;
+
         Rows.Clear();
-        foreach (var row in list)
+        foreach (var row in rows)
             Rows.Add(row);
+
+        StatusMessage = $"صفحة {CurrentPage} من {TotalPages} — المعروض {Rows.Count:N0} / الإجمالي {TotalProducts:N0}";
     }
 
-    partial void OnSearchTextChanged(string value)
-    {
-        _debounceTimer?.Stop();
-        _debounceTimer?.Dispose();
-        _debounceTimer = new System.Timers.Timer(250);
-        _debounceTimer.Elapsed += (_, _) =>
-        {
-            _debounceTimer?.Stop();
-            Application.Current.Dispatcher.Invoke(ApplyFilters);
-        };
-        _debounceTimer.AutoReset = false;
-        _debounceTimer.Start();
-    }
+    protected override Task OnPageChangedAsync() => ReloadQuietAsync(resetPage: false, refreshStats: false);
 
-    partial void OnSelectedCategoryChanged(Category? value) => ApplyFilters();
-    partial void OnOnlyWithBarcodeChanged(bool value) => ApplyFilters();
-
-    [RelayCommand]
-    private async Task RefreshAsync()
+    private async Task ReloadQuietAsync(bool resetPage, bool refreshStats)
     {
+        if (IsBusy) return;
         IsBusy = true;
         try
         {
-            SearchText = string.Empty;
-            SelectedCategory = null;
-            OnlyWithBarcode = true;
-            await LoadAsync();
+            await LoadPageAsync(resetPage, refreshStats);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = "تعذّر التحميل";
+            BeautifulMessageDialog.ShowError(
+                $"خطأ في تحميل طباعة الباركودات:\n\n{ex.InnerException?.Message ?? ex.Message}");
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private void ScheduleReload()
+    {
+        if (_suppressReload) return;
+        _debounceTimer?.Stop();
+        _debounceTimer?.Dispose();
+        _debounceTimer = new System.Timers.Timer(280);
+        _debounceTimer.AutoReset = false;
+        _debounceTimer.Elapsed += async (_, _) =>
+        {
+            _debounceTimer?.Stop();
+            await Application.Current.Dispatcher.InvokeAsync(async () =>
+                await ReloadQuietAsync(resetPage: true, refreshStats: false));
+        };
+        _debounceTimer.Start();
+    }
+
+    partial void OnSearchTextChanged(string value) => ScheduleReload();
+    partial void OnSelectedCategoryChanged(Category? value)
+    {
+        if (_suppressReload) return;
+        _ = ReloadQuietAsync(resetPage: true, refreshStats: true);
+    }
+
+    partial void OnOnlyWithBarcodeChanged(bool value)
+    {
+        if (_suppressReload) return;
+        _ = ReloadQuietAsync(resetPage: true, refreshStats: false);
+    }
+
+    [RelayCommand]
+    private async Task RefreshAsync()
+    {
+        _suppressReload = true;
+        try
+        {
+            SearchText = string.Empty;
+            SelectedCategory = null;
+            OnlyWithBarcode = true;
+        }
+        finally
+        {
+            _suppressReload = false;
+        }
+
+        await ReloadQuietAsync(resetPage: true, refreshStats: true);
     }
 
     [RelayCommand]

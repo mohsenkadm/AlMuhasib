@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows;
 using AlMuhasib.Core.Entities;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
@@ -7,6 +8,7 @@ using System.IO;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
+using AlMuhasib.UI.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -19,6 +21,10 @@ public partial class LoginViewModel : ObservableObject
     private readonly IBranchService _branchService;
     private readonly IBranchContext _branchContext;
     private readonly ISoundService _sound;
+    private readonly IHelpSupportService _helpSupport;
+    private readonly IDesktopLicenseService _desktopLicense;
+    private readonly ThemeService _themeService;
+    private readonly IUserPreferencesService _preferences;
 
     public ObservableCollection<LoginAdminOption> AdminUsers { get; } = [];
 
@@ -63,6 +69,18 @@ public partial class LoginViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsSelectingBranch))]
     private bool _showBranchPicker;
 
+    [ObservableProperty] private bool _showTrialCard;
+    [ObservableProperty] private string _trialDaysText = string.Empty;
+    [ObservableProperty] private string _supportPhoneDisplay = string.Empty;
+    [ObservableProperty] private bool _isSupportPhoneVisible;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ThemeToggleIconKind))]
+    [NotifyPropertyChangedFor(nameof(ThemeToggleToolTip))]
+    private bool _isDarkTheme;
+
+    public string ThemeToggleIconKind => IsDarkTheme ? "WhiteBalanceSunny" : "WeatherNight";
+    public string ThemeToggleToolTip => IsDarkTheme ? "الوضع الفاتح" : "الوضع الداكن";
+
     public bool IsSelectingAdmin => CurrentStep == LoginStep.SelectAdmin && !ShowBranchPicker;
     public bool IsEnteringPassword => CurrentStep == LoginStep.EnterPassword && !ShowBranchPicker;
     public bool IsSelectingBranch => ShowBranchPicker;
@@ -75,13 +93,30 @@ public partial class LoginViewModel : ObservableObject
         CurrentUserService currentUserService,
         IBranchService branchService,
         IBranchContext branchContext,
-        ISoundService sound)
+        ISoundService sound,
+        IHelpSupportService helpSupport,
+        IDesktopLicenseService desktopLicense,
+        ThemeService themeService,
+        IUserPreferencesService preferences)
     {
         _authService = authService;
         _currentUserService = currentUserService;
         _branchService = branchService;
         _branchContext = branchContext;
         _sound = sound;
+        _helpSupport = helpSupport;
+        _desktopLicense = desktopLicense;
+        _themeService = themeService;
+        _preferences = preferences;
+        IsDarkTheme = _preferences.Current.IsDarkTheme;
+        RefreshSupportAndLicense();
+    }
+
+    [RelayCommand]
+    private void ToggleTheme()
+    {
+        _themeService.ToggleTheme();
+        IsDarkTheme = _preferences.Current.IsDarkTheme;
     }
 
     public async Task LoadAdminsAsync()
@@ -90,6 +125,7 @@ public partial class LoginViewModel : ObservableObject
         HasError = false;
         ErrorMessage = string.Empty;
         ResetBranchPickerState();
+        RefreshSupportAndLicense();
 
         try
         {
@@ -119,6 +155,46 @@ public partial class LoginViewModel : ObservableObject
         {
             IsLoadingAdmins = false;
         }
+    }
+
+    private void RefreshSupportAndLicense()
+    {
+        try
+        {
+            var phone = _helpSupport.GetManifest().SupportWhatsApp?.Trim() ?? string.Empty;
+            SupportPhoneDisplay = string.IsNullOrWhiteSpace(phone) ? "—" : phone;
+
+            var status = _desktopLicense.GetStatus();
+            ShowTrialCard = status.ShowsTrialBanner;
+            var days = status.DaysRemaining ?? 0;
+            TrialDaysText = days == 1 ? "متبقي يوم واحد للفترة المجانية" : $"متبقي {days} يوماً للفترة المجانية";
+        }
+        catch
+        {
+            SupportPhoneDisplay = "—";
+            ShowTrialCard = false;
+            TrialDaysText = string.Empty;
+        }
+    }
+
+    [RelayCommand]
+    private void OpenWhatsAppSupport() => _helpSupport.OpenWhatsAppSupport();
+
+    [RelayCommand]
+    private void ToggleSupportPhone() => IsSupportPhoneVisible = !IsSupportPhoneVisible;
+
+    [RelayCommand]
+    private void OpenDesktopActivation()
+    {
+        var status = _desktopLicense.GetStatus();
+        var owner = Application.Current.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive)
+                    ?? Application.Current.MainWindow;
+        var window = new DesktopActivationWindow(_desktopLicense, status, allowDismissWhileValid: true)
+        {
+            Owner = owner
+        };
+        window.ShowDialog();
+        RefreshSupportAndLicense();
     }
 
     [RelayCommand]
