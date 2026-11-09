@@ -502,6 +502,8 @@ internal static class SyncMapper
         d.HeaderImageData = p.HeaderImageData; d.HeaderImageContentType = p.HeaderImageContentType;
         d.ShowFooterText = p.ShowFooterText; d.FooterText = p.FooterText; d.ShowFooterImage = p.ShowFooterImage;
         d.FooterImageData = p.FooterImageData; d.FooterImageContentType = p.FooterImageContentType;
+        d.ShowThermalLogo = p.ShowThermalLogo; d.ThermalLogoData = p.ThermalLogoData;
+        d.ThermalLogoContentType = p.ThermalLogoContentType; d.ThermalNotes = p.ThermalNotes;
         return d;
     }
     private static WarehouseStockSyncDto MapWarehouseStock(WarehouseStock s, Dictionary<int, Guid> wh, Dictionary<int, Guid> pr) { var d = new WarehouseStockSyncDto(); CopyBase(s, d); d.WarehouseSyncId = wh[s.WarehouseId]; d.ProductSyncId = pr[s.ProductId]; d.Quantity = s.Quantity; d.OpeningQuantity = s.OpeningQuantity; d.UnitCost = s.UnitCost; d.MinQuantity = s.MinQuantity; return d; }
@@ -1006,6 +1008,8 @@ internal static class SyncMapper
             entity.ShowFooterText = dto.ShowFooterText; entity.FooterText = dto.FooterText;
             entity.ShowFooterImage = dto.ShowFooterImage; entity.FooterImageData = dto.FooterImageData;
             entity.FooterImageContentType = dto.FooterImageContentType;
+            entity.ShowThermalLogo = dto.ShowThermalLogo; entity.ThermalLogoData = dto.ThermalLogoData;
+            entity.ThermalLogoContentType = dto.ThermalLogoContentType; entity.ThermalNotes = dto.ThermalNotes;
         }
         await db.SaveChangesAsync(ct);
     }

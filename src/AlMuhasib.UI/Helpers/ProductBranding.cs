@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using AlMuhasib.Core;
 
 namespace AlMuhasib.UI.Helpers;
 
@@ -43,6 +44,7 @@ public static class ProductBranding
     public static void Apply(bool isDuhokBranch)
     {
         IsDuhokBranch = isDuhokBranch;
+        ProductEditionProvider.Update(isDuhokBranch);
         MarkImage = LoadBitmap(MarkPackUri);
         IconPngImage = LoadBitmap(IconPngPackUri);
         IconIcoImage = LoadBitmap(IconIcoPackUri);

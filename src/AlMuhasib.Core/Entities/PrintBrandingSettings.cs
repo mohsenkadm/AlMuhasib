@@ -28,4 +28,12 @@ public class PrintBrandingSettings : BranchScopedEntity
     public bool ShowFooterImage { get; set; }
     public byte[]? FooterImageData { get; set; }
     public string? FooterImageContentType { get; set; }
+
+    /// <summary>شعار الشركة/المكتب على إيصال الثيرمال الحراري.</summary>
+    public bool ShowThermalLogo { get; set; } = true;
+    public byte[]? ThermalLogoData { get; set; }
+    public string? ThermalLogoContentType { get; set; }
+
+    /// <summary>ملاحظات أسفل إيصال الثيرمال الحراري.</summary>
+    public string ThermalNotes { get; set; } = string.Empty;
 }

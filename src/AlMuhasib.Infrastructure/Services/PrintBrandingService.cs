@@ -127,6 +127,10 @@ public class PrintBrandingService : IPrintBrandingService
         target.ShowFooterImage = source.ShowFooterImage;
         target.FooterImageData = source.FooterImageData;
         target.FooterImageContentType = source.FooterImageContentType;
+        target.ShowThermalLogo = source.ShowThermalLogo;
+        target.ThermalLogoData = source.ThermalLogoData;
+        target.ThermalLogoContentType = source.ThermalLogoContentType;
+        target.ThermalNotes = source.ThermalNotes;
     }
 
     internal static PrintBrandingSnapshot ToSnapshot(PrintBrandingSettings s) => new()
@@ -145,6 +149,9 @@ public class PrintBrandingService : IPrintBrandingService
         ShowFooterText = s.ShowFooterText,
         FooterText = s.FooterText ?? string.Empty,
         ShowFooterImage = s.ShowFooterImage,
-        FooterImageData = s.FooterImageData
+        FooterImageData = s.FooterImageData,
+        ShowThermalLogo = s.ShowThermalLogo,
+        ThermalLogoData = s.ThermalLogoData,
+        ThermalNotes = s.ThermalNotes ?? string.Empty
     };
 }

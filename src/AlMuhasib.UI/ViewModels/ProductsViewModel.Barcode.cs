@@ -27,6 +27,7 @@ public partial class ProductsViewModel
     [ObservableProperty] private int _barcodePrintCopies = 1;
     [ObservableProperty] private BarcodeLabelSizeOption? _selectedBarcodeLabelSize;
     [ObservableProperty] private BitmapSource? _barcodePreviewImage;
+    [ObservableProperty] private bool _showBarcodeLabelTextDetails = true;
 
     private Product? _barcodePrintProduct;
     private decimal? _barcodePrintPrice;
@@ -156,6 +157,12 @@ public partial class ProductsViewModel
 
     partial void OnBarcodePrintCopiesChanged(int value) => RefreshBarcodePreview();
 
+    partial void OnSelectedBarcodeLabelSizeChanged(BarcodeLabelSizeOption? value)
+    {
+        ShowBarcodeLabelTextDetails = BarcodeLabelSizeHelper.ShowProductDetails(value?.Size ?? BarcodeLabelSize.Mm38x25);
+        RefreshBarcodePreview();
+    }
+
     private void RefreshBarcodePreview()
     {
         if (string.IsNullOrWhiteSpace(BarcodePrintCode))
@@ -164,7 +171,24 @@ public partial class ProductsViewModel
             return;
         }
 
-        var png = _barcodeLabelService.CreateBarcodePng(BarcodePrintCode, 320, 100);
+        var size = SelectedBarcodeLabelSize?.Size ?? BarcodeLabelSize.Mm38x25;
+        ShowBarcodeLabelTextDetails = BarcodeLabelSizeHelper.ShowProductDetails(size);
+
+        var companyName = string.IsNullOrWhiteSpace(BarcodePrintCompanyName)
+            ? PrintBrandingProvider.Current.CompanyName
+            : BarcodePrintCompanyName;
+
+        var png = _barcodeLabelService.CreateLabelPreviewPng(
+            new BarcodeLabelItem
+            {
+                CompanyName = companyName ?? string.Empty,
+                ProductName = BarcodePrintProductName,
+                Barcode = BarcodePrintCode,
+                Price = _barcodePrintPrice
+            },
+            size,
+            scale: 3.0);
+
         if (png is null || png.Length == 0)
         {
             BarcodePreviewImage = null;

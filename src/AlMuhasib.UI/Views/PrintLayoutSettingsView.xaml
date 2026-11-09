@@ -193,6 +193,29 @@
                                 </StackPanel>
                             </Border>
 
+                            <TextBlock Text="إعدادات الطباعة الحرارية" FontWeight="Bold" FontSize="14" Foreground="#1565C0" Margin="16,16,0,8"/>
+                            <TextBlock Text="شعار الشركة/المكتب وملاحظات تظهر على إيصال الثيرمال (أعلى الشعار — أسفل الملاحظات)"
+                                       FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,10" TextWrapping="Wrap"/>
+                            <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="10" MinHeight="90" Margin="0,0,0,10" ClipToBounds="True">
+                                <Image Source="{Binding ThermalLogoPreview}" Stretch="Uniform"
+                                       MaxHeight="120" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8"/>
+                            </Border>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <Button Command="{Binding PickThermalLogoCommand}" Style="{StaticResource OutlinedButton}"
+                                        Height="36" Padding="14,0" Margin="0,0,8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="ImagePlus" Width="16" Height="16" VerticalAlignment="Center"/>
+                                        <TextBlock Text="اختيار الشعار" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding ClearThermalLogoCommand}" Style="{StaticResource FlatButton}" Height="36" Content="إزالة"/>
+                            </StackPanel>
+                            <CheckBox Content="إظهار الشعار في إيصال الثيرمال" IsChecked="{Binding ShowThermalLogo}" Margin="0,0,0,12"/>
+                            <TextBox Text="{Binding ThermalNotes, UpdateSourceTrigger=PropertyChanged}"
+                                     materialDesign:HintAssist.Hint="ملاحظات الإيصال الحراري (تظهر أسفل الإجمالي)"
+                                     Style="{StaticResource FilledTextBox}"
+                                     AcceptsReturn="True" MinHeight="72" TextWrapping="Wrap" Margin="0,0,0,8"/>
+
                             <TextBlock Text="ورق فواتير الذهب" FontWeight="Bold" FontSize="14" Foreground="#B8860B" Margin="0,16,0,8"/>
                             <TextBlock Text="حجم الورق عند طباعة فواتير بيع/شراء/مبادلة الذهب (A4 أو حراري)"
                                        FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}" Margin="0,0,0,8" TextWrapping="Wrap"/>

@@ -3,10 +3,10 @@ namespace AlMuhasib.Core.Enums;
 /// <summary>مقاسات ملصق طباعة الباركود بالمليمتر.</summary>
 public enum BarcodeLabelSize
 {
-    /// <summary>30 × 15 مم</summary>
+    /// <summary>صغير 30 × 15 مم — باركود فقط</summary>
     Mm30x15 = 0,
 
-    /// <summary>38 × 25 مم</summary>
+    /// <summary>كبير 38 × 25 مم — باركود مع الاسم والسعر</summary>
     Mm38x25 = 1
 }
 
@@ -32,10 +32,13 @@ public static class BarcodeLabelSizeHelper
 
     public static string GetDisplayName(BarcodeLabelSize size) => size switch
     {
-        BarcodeLabelSize.Mm30x15 => "30 × 15 مم",
-        BarcodeLabelSize.Mm38x25 => "38 × 25 مم",
+        BarcodeLabelSize.Mm30x15 => "صغير 30×15 مم — باركود فقط",
+        BarcodeLabelSize.Mm38x25 => "كبير 38×25 مم — مع الاسم والسعر",
         _ => size.ToString()
     };
+
+    /// <summary>الملصق الصغير: باركود فقط بدون نصوص.</summary>
+    public static bool ShowProductDetails(BarcodeLabelSize size) => size != BarcodeLabelSize.Mm30x15;
 
     public static BarcodeLabelLayoutMetrics GetLayout(BarcodeLabelSize size)
     {
@@ -45,26 +48,26 @@ public static class BarcodeLabelSizeHelper
             BarcodeLabelSize.Mm30x15 => new BarcodeLabelLayoutMetrics(
                 PageWidth: w,
                 PageHeight: h,
-                Padding: 2,
-                CompanyFontSize: 6,
-                ProductFontSize: 7,
-                CodeFontSize: 6,
-                PriceFontSize: 7,
-                GoldFontSize: 6,
-                BarcodeWidth: Math.Max(40, w - 8),
-                BarcodeHeight: Math.Max(18, h * 0.35),
+                Padding: 1.5,
+                CompanyFontSize: 0,
+                ProductFontSize: 0,
+                CodeFontSize: 0,
+                PriceFontSize: 0,
+                GoldFontSize: 0,
+                BarcodeWidth: Math.Max(48, w - 4),
+                BarcodeHeight: Math.Max(22, h - 4),
                 SectionBottomMargin: 0),
             _ => new BarcodeLabelLayoutMetrics(
                 PageWidth: w,
                 PageHeight: h,
-                Padding: 3,
-                CompanyFontSize: 7.5,
-                ProductFontSize: 9,
-                CodeFontSize: 7.5,
-                PriceFontSize: 9,
-                GoldFontSize: 7.5,
-                BarcodeWidth: Math.Max(50, w - 10),
-                BarcodeHeight: Math.Max(24, h * 0.38),
+                Padding: 2.5,
+                CompanyFontSize: 7,
+                ProductFontSize: 8.5,
+                CodeFontSize: 7,
+                PriceFontSize: 11.5,
+                GoldFontSize: 7,
+                BarcodeWidth: Math.Max(52, w - 8),
+                BarcodeHeight: Math.Max(22, h * 0.34),
                 SectionBottomMargin: 0)
         };
     }

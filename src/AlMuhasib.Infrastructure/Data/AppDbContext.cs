@@ -347,7 +347,8 @@ public class AppDbContext : DbContext
             nameof(BaseEntity.DeletedAt), nameof(BaseEntity.DeletedBy),
             nameof(BaseEntity.IsDeleted),
             "HeaderImageData",
-            "FooterImageData"
+            "FooterImageData",
+            "ThermalLogoData"
         ];
 
         private static bool ShouldSkipProperty(Microsoft.EntityFrameworkCore.ChangeTracking.PropertyEntry prop)

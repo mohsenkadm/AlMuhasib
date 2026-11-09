@@ -43,11 +43,15 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
     [ObservableProperty] private bool _showHeaderImage;
     [ObservableProperty] private bool _showFooterText = true;
     [ObservableProperty] private bool _showFooterImage;
+    [ObservableProperty] private bool _showThermalLogo = true;
 
     [ObservableProperty] private byte[]? _headerImageData;
     [ObservableProperty] private byte[]? _footerImageData;
+    [ObservableProperty] private byte[]? _thermalLogoData;
     [ObservableProperty] private ImageSource? _headerImagePreview;
     [ObservableProperty] private ImageSource? _footerImagePreview;
+    [ObservableProperty] private ImageSource? _thermalLogoPreview;
+    [ObservableProperty] private string _thermalNotes = string.Empty;
 
     [ObservableProperty] private string? _selectedPrinter;
     [ObservableProperty] private string _paperSize = "A4";
@@ -106,10 +110,14 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
             ShowHeaderImage = settings.ShowHeaderImage;
             ShowFooterText = settings.ShowFooterText;
             ShowFooterImage = settings.ShowFooterImage;
+            ShowThermalLogo = settings.ShowThermalLogo;
             HeaderImageData = settings.HeaderImageData;
             FooterImageData = settings.FooterImageData;
+            ThermalLogoData = settings.ThermalLogoData;
+            ThermalNotes = settings.ThermalNotes ?? string.Empty;
             HeaderImagePreview = CreateImageSource(HeaderImageData);
             FooterImagePreview = CreateImageSource(FooterImageData);
+            ThermalLogoPreview = CreateImageSource(ThermalLogoData);
 
             LoadPrinterPreferences();
             RefreshPreview();
@@ -159,6 +167,9 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
                 ShowFooterImage = ShowFooterImage && FooterImageData is { Length: > 0 },
                 HeaderImageData = ShowHeaderImage ? HeaderImageData : null,
                 FooterImageData = ShowFooterImage ? FooterImageData : null,
+                ShowThermalLogo = ShowThermalLogo,
+                ThermalLogoData = ThermalLogoData,
+                ThermalNotes = ThermalNotes.Trim(),
                 UpdatedBy = _currentUserService.Username
             };
 
@@ -220,6 +231,24 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void PickThermalLogo()
+    {
+        var data = PickImageBytes();
+        if (data is null) return;
+        ThermalLogoData = data;
+        ThermalLogoPreview = CreateImageSource(data);
+        ShowThermalLogo = true;
+    }
+
+    [RelayCommand]
+    private void ClearThermalLogo()
+    {
+        ThermalLogoData = null;
+        ThermalLogoPreview = null;
+        ShowThermalLogo = false;
+    }
+
+    [RelayCommand]
     private void RefreshPreview() => PreviewDocument = PrintBrandingFlowDocumentHelper.BuildPreviewDocument(BuildSnapshot());
 
     partial void OnCompanyNameChanged(string value) => RefreshPreview();
@@ -250,7 +279,10 @@ public partial class PrintLayoutSettingsViewModel : ViewModelBase
         HeaderImageData = HeaderImageData,
         ShowFooterText = ShowFooterText,
         ShowFooterImage = ShowFooterImage && FooterImageData is { Length: > 0 },
-        FooterImageData = FooterImageData
+        FooterImageData = FooterImageData,
+        ShowThermalLogo = ShowThermalLogo && ThermalLogoData is { Length: > 0 },
+        ThermalLogoData = ThermalLogoData,
+        ThermalNotes = ThermalNotes
     };
 
     private void LoadPrinterPreferences()

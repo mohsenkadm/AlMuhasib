@@ -13,6 +13,16 @@ public static class ModulePrintBrandingSchemaRepair
             IF COL_LENGTH(N'dbo.PrintBrandingSettings', N'CompanyIdIssuer') IS NULL
                 ALTER TABLE [dbo].[PrintBrandingSettings] ADD [CompanyIdIssuer] nvarchar(200) NOT NULL
                     CONSTRAINT [DF_ModulePrintBranding_CompanyIdIssuer] DEFAULT (N'');
+            IF COL_LENGTH(N'dbo.PrintBrandingSettings', N'ShowThermalLogo') IS NULL
+                ALTER TABLE [dbo].[PrintBrandingSettings] ADD [ShowThermalLogo] bit NOT NULL
+                    CONSTRAINT [DF_ModulePrintBranding_ShowThermalLogo] DEFAULT (1);
+            IF COL_LENGTH(N'dbo.PrintBrandingSettings', N'ThermalLogoData') IS NULL
+                ALTER TABLE [dbo].[PrintBrandingSettings] ADD [ThermalLogoData] varbinary(max) NULL;
+            IF COL_LENGTH(N'dbo.PrintBrandingSettings', N'ThermalLogoContentType') IS NULL
+                ALTER TABLE [dbo].[PrintBrandingSettings] ADD [ThermalLogoContentType] nvarchar(50) NULL;
+            IF COL_LENGTH(N'dbo.PrintBrandingSettings', N'ThermalNotes') IS NULL
+                ALTER TABLE [dbo].[PrintBrandingSettings] ADD [ThermalNotes] nvarchar(2000) NOT NULL
+                    CONSTRAINT [DF_ModulePrintBranding_ThermalNotes] DEFAULT (N'');
             """, cancellationToken);
 
     private static async Task TryExecAsync(DbContext db, string sql, CancellationToken cancellationToken)

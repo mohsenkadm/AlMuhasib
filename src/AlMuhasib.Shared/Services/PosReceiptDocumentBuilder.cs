@@ -1,7 +1,10 @@
 using System.Globalization;
+using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using AlMuhasib.Core;
 using AlMuhasib.Core.Interfaces.Services;
 
@@ -163,8 +166,22 @@ public static class PosReceiptDocumentBuilder
             ColumnWidth = pageSize.Width
         };
 
-        var company = PrintBrandingProvider.Current?.CompanyName;
-        if (!string.IsNullOrWhiteSpace(company) && (PrintBrandingProvider.Current?.ShowHeaderText ?? true))
+        var branding = PrintBrandingProvider.Current;
+        if (branding?.HasThermalLogo == true)
+        {
+            var maxLogoHeight = sizeKey switch
+            {
+                PosReceiptPaperSizes.Mm50 => 48.0,
+                PosReceiptPaperSizes.Mm58 => 56.0,
+                _ => 72.0
+            };
+            var logoBlock = CreateThermalLogoBlock(branding.ThermalLogoData!, pageSize.Width - (pad * 2), maxLogoHeight);
+            if (logoBlock is not null)
+                doc.Blocks.Add(logoBlock);
+        }
+
+        var company = branding?.CompanyName;
+        if (!string.IsNullOrWhiteSpace(company) && (branding?.ShowHeaderText ?? true))
             doc.Blocks.Add(CenteredParagraph(company!, fontSize + 2, FontWeights.Bold));
 
         var title = model.IsGoldInvoice
@@ -189,8 +206,9 @@ public static class PosReceiptDocumentBuilder
 
         if (model.IsGoldInvoice)
         {
-            foreach (var item in model.Items)
+            for (var i = 0; i < model.Items.Count; i++)
             {
+                var item = model.Items[i];
                 var name = item.ItemName;
                 if (!string.IsNullOrWhiteSpace(item.LineDirectionLabel))
                     name = $"{name} ({item.LineDirectionLabel})";
@@ -219,6 +237,9 @@ public static class PosReceiptDocumentBuilder
                     FontSize = fontSize - 0.5,
                     Foreground = MutedBrush
                 });
+
+                if (i < model.Items.Count - 1)
+                    doc.Blocks.Add(DashedLine());
             }
         }
         else
@@ -226,7 +247,7 @@ public static class PosReceiptDocumentBuilder
             if (model.PharmacyUsageReceipt)
                 doc.Blocks.Add(CenteredParagraph("وصفة / طريقة الاستخدام", fontSize, FontWeights.SemiBold));
 
-            AppendThermalItemsTable(doc, model, fontSize);
+            AppendThermalItemLines(doc, model, fontSize);
 
             if (model.PharmacyUsageReceipt)
             {
@@ -260,13 +281,33 @@ public static class PosReceiptDocumentBuilder
         }
         doc.Blocks.Add(DashedLine());
 
-        var footer = PrintBrandingProvider.Current?.FooterText;
-        if (!string.IsNullOrWhiteSpace(footer) && (PrintBrandingProvider.Current?.ShowFooterText ?? true))
+        AppendThermalNotes(doc, branding?.ThermalNotes, fontSize);
+
+        var footer = branding?.FooterText;
+        if (!string.IsNullOrWhiteSpace(footer) && (branding?.ShowFooterText ?? true))
             doc.Blocks.Add(CenteredParagraph(footer!, fontSize - 1));
-        else
-            doc.Blocks.Add(CenteredParagraph("شكراً لتعاملكم", fontSize - 1));
+
+        AppendThermalEditionLabel(doc, fontSize);
 
         return doc;
+    }
+
+    private static void AppendThermalEditionLabel(FlowDocument doc, double fontSize)
+    {
+        var label = ProductEditionProvider.ThermalSupportLabel;
+        if (string.IsNullOrWhiteSpace(label))
+            return;
+
+        doc.Blocks.Add(new Paragraph(new Run(label)
+        {
+            FontSize = Math.Max(6.5, fontSize - 3.5),
+            FontWeight = FontWeights.Normal,
+            Foreground = MutedBrush
+        })
+        {
+            TextAlignment = TextAlignment.Center,
+            Margin = new Thickness(0, 6, 0, 0)
+        });
     }
 
     private static void AppendGoldTotals(FlowDocument doc, InvoicePrintModel model, bool compact, double fontSize = 12)
@@ -289,35 +330,96 @@ public static class PosReceiptDocumentBuilder
             size: compact ? fontSize - 0.5 : 12);
     }
 
-    private static void AppendThermalItemsTable(FlowDocument doc, InvoicePrintModel model, double fontSize)
+    private static void AppendThermalItemLines(FlowDocument doc, InvoicePrintModel model, double fontSize)
     {
-        var table = new Table
+        for (var i = 0; i < model.Items.Count; i++)
         {
-            CellSpacing = 0,
-            Margin = new Thickness(0, 2, 0, 4)
-        };
-        table.Columns.Add(new TableColumn { Width = new GridLength(2.4, GridUnitType.Star) });
-        table.Columns.Add(new TableColumn { Width = new GridLength(0.7, GridUnitType.Star) });
-        table.Columns.Add(new TableColumn { Width = new GridLength(1.0, GridUnitType.Star) });
-        table.Columns.Add(new TableColumn { Width = new GridLength(1.1, GridUnitType.Star) });
-        var group = new TableRowGroup();
-        table.RowGroups.Add(group);
+            var item = model.Items[i];
+            doc.Blocks.Add(new Paragraph(new Run(item.ItemName))
+            {
+                Margin = new Thickness(0, 3, 0, 0),
+                FontWeight = FontWeights.SemiBold,
+                FontSize = fontSize
+            });
 
-        group.Rows.Add(HeaderRow(fontSize - 0.5, "المنتج", "كمية", "سعر", "إجمالي"));
-        foreach (var item in model.Items)
-        {
-            var name = item.ItemName;
             if (!string.IsNullOrWhiteSpace(item.WarehouseName))
-                name = $"{name}\n{item.WarehouseName}";
-            group.Rows.Add(BodyRow(
-                fontSize - 0.5,
-                name,
-                FormatQty(item.Quantity),
-                FormatMoney(item.UnitPrice),
-                FormatMoney(item.TotalPrice)));
-        }
+            {
+                doc.Blocks.Add(new Paragraph(new Run(item.WarehouseName))
+                {
+                    Margin = new Thickness(0, 0, 0, 0),
+                    FontSize = fontSize - 0.5,
+                    Foreground = MutedBrush
+                });
+            }
 
-        doc.Blocks.Add(table);
+            doc.Blocks.Add(new Paragraph(new Run(
+                $"{FormatQty(item.Quantity)} × {FormatMoney(item.UnitPrice)} = {FormatMoney(item.TotalPrice)}"))
+            {
+                Margin = new Thickness(0, 0, 0, 2),
+                FontSize = fontSize - 0.5,
+                Foreground = MutedBrush
+            });
+
+            if (i < model.Items.Count - 1)
+                doc.Blocks.Add(DashedLine());
+        }
+    }
+
+    private static void AppendThermalNotes(FlowDocument doc, string? notes, double fontSize)
+    {
+        if (string.IsNullOrWhiteSpace(notes))
+            return;
+
+        foreach (var line in notes.Replace("\r\n", "\n", StringComparison.Ordinal)
+                     .Split('\n', StringSplitOptions.None))
+        {
+            var text = line.TrimEnd();
+            if (text.Length == 0)
+            {
+                doc.Blocks.Add(Spacer(4));
+                continue;
+            }
+
+            doc.Blocks.Add(CenteredParagraph(text, fontSize - 0.5));
+        }
+    }
+
+    private static Block? CreateThermalLogoBlock(byte[] data, double maxWidth, double maxHeight)
+    {
+        try
+        {
+            var bmp = new BitmapImage();
+            using var ms = new MemoryStream(data);
+            bmp.BeginInit();
+            bmp.CacheOption = BitmapCacheOption.OnLoad;
+            bmp.StreamSource = ms;
+            bmp.EndInit();
+            bmp.Freeze();
+
+            var aspect = bmp.PixelHeight / (double)Math.Max(1, bmp.PixelWidth);
+            var width = Math.Min(maxWidth, Math.Max(40, maxWidth * 0.85));
+            var height = Math.Min(maxHeight, Math.Max(28, width * aspect));
+
+            var image = new Image
+            {
+                Source = bmp,
+                Width = width,
+                Height = height,
+                Stretch = Stretch.Uniform,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                SnapsToDevicePixels = true
+            };
+
+            return new BlockUIContainer(image)
+            {
+                Margin = new Thickness(0, 0, 0, 6),
+                TextAlignment = TextAlignment.Center
+            };
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static TableRow HeaderRow(params string[] cells) => HeaderRow(12, cells);

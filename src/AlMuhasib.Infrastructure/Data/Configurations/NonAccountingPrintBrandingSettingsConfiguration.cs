@@ -28,6 +28,9 @@ public sealed class NonAccountingPrintBrandingSettingsConfiguration
         builder.Property(x => x.FooterText).HasMaxLength(1000);
         builder.Property(x => x.HeaderImageContentType).HasMaxLength(50);
         builder.Property(x => x.FooterImageContentType).HasMaxLength(50);
+        builder.Property(x => x.ThermalLogoContentType).HasMaxLength(50);
+        builder.Property(x => x.ThermalNotes).HasMaxLength(2000);
+        builder.Property(x => x.ShowThermalLogo).HasDefaultValue(true);
 
         builder.Ignore(x => x.BranchId);
         builder.Ignore(x => x.Branch);

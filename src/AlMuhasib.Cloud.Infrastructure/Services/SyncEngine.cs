@@ -1183,6 +1183,10 @@ public sealed partial class SyncEngine : ISyncEngine
         existing.ShowFooterImage = dto.ShowFooterImage;
         existing.FooterImageData = dto.FooterImageData;
         existing.FooterImageContentType = dto.FooterImageContentType;
+        existing.ShowThermalLogo = dto.ShowThermalLogo;
+        existing.ThermalLogoData = dto.ThermalLogoData;
+        existing.ThermalLogoContentType = dto.ThermalLogoContentType;
+        existing.ThermalNotes = dto.ThermalNotes;
         return 1;
     }
 
@@ -2035,7 +2039,9 @@ public sealed partial class SyncEngine : ISyncEngine
         ShowHeaderText = e.ShowHeaderText, ShowHeaderImage = e.ShowHeaderImage,
         HeaderImageData = e.HeaderImageData, HeaderImageContentType = e.HeaderImageContentType,
         ShowFooterText = e.ShowFooterText, FooterText = e.FooterText, ShowFooterImage = e.ShowFooterImage,
-        FooterImageData = e.FooterImageData, FooterImageContentType = e.FooterImageContentType
+        FooterImageData = e.FooterImageData, FooterImageContentType = e.FooterImageContentType,
+        ShowThermalLogo = e.ShowThermalLogo, ThermalLogoData = e.ThermalLogoData,
+        ThermalLogoContentType = e.ThermalLogoContentType, ThermalNotes = e.ThermalNotes
     };
 
     private ProfitDistributionSyncDto MapProfitDistribution(CloudProfitDistribution e, Dictionary<int, Guid> _) => new()

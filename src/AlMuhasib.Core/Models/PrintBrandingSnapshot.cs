@@ -23,6 +23,10 @@ public sealed class PrintBrandingSnapshot
     public bool ShowFooterImage { get; init; }
     public byte[]? FooterImageData { get; init; }
 
+    public bool ShowThermalLogo { get; init; } = true;
+    public byte[]? ThermalLogoData { get; init; }
+    public string ThermalNotes { get; init; } = string.Empty;
+
     public bool HasHeaderContent =>
         (ShowHeaderText && HasHeaderTextContent) || (ShowHeaderImage && HeaderImageData is { Length: > 0 });
 
@@ -30,6 +34,9 @@ public sealed class PrintBrandingSnapshot
         HasFooterContactLines
         || (ShowFooterText && !string.IsNullOrWhiteSpace(FooterText))
         || (ShowFooterImage && FooterImageData is { Length: > 0 });
+
+    public bool HasThermalLogo =>
+        ShowThermalLogo && ThermalLogoData is { Length: > 0 };
 
     private bool HasHeaderTextContent =>
         !string.IsNullOrWhiteSpace(CompanyName)

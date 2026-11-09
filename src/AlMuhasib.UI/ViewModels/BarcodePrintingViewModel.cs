@@ -66,6 +66,7 @@ public partial class BarcodePrintingViewModel : PagedViewModelBase
     [ObservableProperty] private int _printCopies = 1;
     [ObservableProperty] private BarcodeLabelSizeOption? _selectedLabelSize;
     [ObservableProperty] private BitmapSource? _previewImage;
+    [ObservableProperty] private bool _showLabelTextDetails = true;
 
     public BarcodePrintingViewModel(
         IProductService productService,
@@ -319,7 +320,12 @@ public partial class BarcodePrintingViewModel : PagedViewModelBase
         StatusMessage = $"تمت طباعة {PrintCopies} ملصق — {PrintProductName}";
     }
 
-    partial void OnSelectedLabelSizeChanged(BarcodeLabelSizeOption? value) => RefreshPreview();
+    partial void OnSelectedLabelSizeChanged(BarcodeLabelSizeOption? value)
+    {
+        ShowLabelTextDetails = BarcodeLabelSizeHelper.ShowProductDetails(value?.Size ?? BarcodeLabelSize.Mm38x25);
+        RefreshPreview();
+    }
+
     partial void OnPrintCopiesChanged(int value) => RefreshPreview();
 
     private void RefreshPreview()
@@ -331,11 +337,19 @@ public partial class BarcodePrintingViewModel : PagedViewModelBase
         }
 
         var size = SelectedLabelSize?.Size ?? BarcodeLabelSize.Mm38x25;
-        var layout = BarcodeLabelSizeHelper.GetLayout(size);
-        var png = _barcodeLabelService.CreateBarcodePng(
-            PrintBarcode,
-            (int)Math.Ceiling(layout.BarcodeWidth * 1.4),
-            (int)Math.Ceiling(layout.BarcodeHeight * 1.4));
+        ShowLabelTextDetails = BarcodeLabelSizeHelper.ShowProductDetails(size);
+
+        var png = _barcodeLabelService.CreateLabelPreviewPng(
+            new BarcodeLabelItem
+            {
+                CompanyName = PrintBrandingProvider.Current.CompanyName ?? string.Empty,
+                ProductName = PrintProductName,
+                Barcode = PrintBarcode,
+                Price = _printRow?.Price
+            },
+            size,
+            scale: 3.0);
+
         if (png is null || png.Length == 0)
         {
             PreviewImage = null;

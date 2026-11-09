@@ -129,6 +129,10 @@ public class CloudPrintBrandingSettings : CloudBaseEntity
     public bool ShowFooterImage { get; set; }
     public byte[]? FooterImageData { get; set; }
     public string? FooterImageContentType { get; set; }
+    public bool ShowThermalLogo { get; set; } = true;
+    public byte[]? ThermalLogoData { get; set; }
+    public string? ThermalLogoContentType { get; set; }
+    public string ThermalNotes { get; set; } = string.Empty;
 }
 public class CloudWarehouseStock : CloudBaseEntity
 {

@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.48",
-  "releaseDate": "2026-11-08",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.48/AlMuhasib-1.14.48.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.48/Qayd-Setup-1.14.48.exe",
-  "sha256": "140A48A47447BE2E1B66EBA45D174C9BD9F452D2FA5982C68B59ED4063BC5E71",
-  "sizeBytes": 162905859,
-  "releaseNotes": "ظهور التصنيفات حسب الفرع، طباعة باركود، دور كاشير، وإيصال حراري — تحديث اختياري آمن (جدول إضافي مع تعبئة)",
+  "version": "1.14.49",
+  "releaseDate": "2026-11-09",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.49/AlMuhasib-1.14.49.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.49/Qayd-Setup-1.14.49.exe",
+  "sha256": "CAACA8E54BB8638403C933F5F9717C0DDE7E61270FC0456D96A7EE90E72C5290",
+  "sizeBytes": 162913306,
+  "releaseNotes": "شعار وملاحظات إيصال الثيرمال وتحسين طباعة الباركود — تحديث اختياري آمن (أعمدة إضافية فقط)",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

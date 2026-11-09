@@ -1,7 +1,9 @@
 using System.IO;
+using System.Printing;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using AlMuhasib.Core;
@@ -26,6 +28,33 @@ public class BarcodeLabelService : IBarcodeLabelService
         return ms.ToArray();
     }
 
+    public byte[]? CreateLabelPreviewPng(BarcodeLabelItem item, BarcodeLabelSize size, double scale = 2.0)
+    {
+        if (string.IsNullOrWhiteSpace(item.Barcode))
+            return null;
+
+        var layout = BarcodeLabelSizeHelper.GetLayout(size);
+        var visual = BuildLabelElement(item, size, layout);
+        var pixelScale = Math.Clamp(scale, 1.0, 4.0);
+        var dpi = 96.0 * pixelScale;
+        var pxW = Math.Max(1, (int)Math.Ceiling(layout.PageWidth * pixelScale));
+        var pxH = Math.Max(1, (int)Math.Ceiling(layout.PageHeight * pixelScale));
+
+        visual.Measure(new Size(layout.PageWidth, layout.PageHeight));
+        visual.Arrange(new Rect(0, 0, layout.PageWidth, layout.PageHeight));
+        visual.UpdateLayout();
+
+        var rtb = new RenderTargetBitmap(pxW, pxH, dpi, dpi, PixelFormats.Pbgra32);
+        rtb.Render(visual);
+        rtb.Freeze();
+
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(rtb));
+        using var ms = new MemoryStream();
+        encoder.Save(ms);
+        return ms.ToArray();
+    }
+
     public void PrintLabels(IEnumerable<BarcodeLabelItem> items) =>
         PrintLabels(items, BarcodeLabelSize.Mm38x25);
 
@@ -35,126 +64,154 @@ public class BarcodeLabelService : IBarcodeLabelService
         if (list.Count == 0) return;
 
         var layout = BarcodeLabelSizeHelper.GetLayout(size);
-        var doc = new FlowDocument
-        {
-            PageWidth = layout.PageWidth,
-            PageHeight = layout.PageHeight,
-            PagePadding = new Thickness(layout.Padding),
-            FontFamily = new FontFamily("Segoe UI"),
-            FlowDirection = FlowDirection.RightToLeft,
-            ColumnWidth = layout.PageWidth
-        };
+        var pageSize = new Size(layout.PageWidth, layout.PageHeight);
+
+        var fixedDoc = new FixedDocument();
+        fixedDoc.DocumentPaginator.PageSize = pageSize;
 
         foreach (var item in list)
         {
-            var section = new Section
+            var page = new FixedPage
             {
-                Margin = new Thickness(0, 0, 0, layout.SectionBottomMargin),
-                BreakPageBefore = doc.Blocks.Count > 0
+                Width = layout.PageWidth,
+                Height = layout.PageHeight,
+                Background = Brushes.White,
+                FlowDirection = FlowDirection.RightToLeft
             };
 
+            var label = BuildLabelElement(item, size, layout);
+            FixedPage.SetLeft(label, 0);
+            FixedPage.SetTop(label, 0);
+            page.Children.Add(label);
+
+            var pageContent = new PageContent();
+            ((IAddChild)pageContent).AddChild(page);
+            fixedDoc.Pages.Add(pageContent);
+        }
+
+        var pd = new PrintDialog();
+        if (pd.ShowDialog() != true) return;
+
+        pd.PrintTicket.PageMediaSize = new PageMediaSize(layout.PageWidth, layout.PageHeight);
+        pd.PrintDocument(fixedDoc.DocumentPaginator, "ملصقات باركود");
+    }
+
+    private static FrameworkElement BuildLabelElement(
+        BarcodeLabelItem item,
+        BarcodeLabelSize size,
+        BarcodeLabelLayoutMetrics layout)
+    {
+        var root = new Grid
+        {
+            Width = layout.PageWidth,
+            Height = layout.PageHeight,
+            Background = Brushes.White,
+            ClipToBounds = true,
+            FlowDirection = FlowDirection.RightToLeft,
+            SnapsToDevicePixels = true
+        };
+
+        var content = new StackPanel
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(layout.Padding)
+        };
+
+        var showDetails = BarcodeLabelSizeHelper.ShowProductDetails(size);
+
+        if (showDetails)
+        {
             var companyName = ResolveCompanyName(item);
             if (!string.IsNullOrWhiteSpace(companyName))
             {
-                var companyLine = new Paragraph
+                content.Children.Add(new TextBlock
                 {
-                    Margin = new Thickness(0, 0, 0, 1),
-                    TextAlignment = TextAlignment.Center
-                };
-                companyLine.Inlines.Add(new Run(Truncate(companyName.Trim(), size == BarcodeLabelSize.Mm30x15 ? 22 : 28))
-                {
+                    Text = Truncate(companyName.Trim(), 28),
                     FontWeight = FontWeights.SemiBold,
-                    FontSize = layout.CompanyFontSize
+                    FontSize = layout.CompanyFontSize,
+                    TextAlignment = TextAlignment.Center,
+                    Margin = new Thickness(0, 0, 0, 1),
+                    TextTrimming = TextTrimming.CharacterEllipsis
                 });
-                section.Blocks.Add(companyLine);
             }
 
             if (!string.IsNullOrWhiteSpace(item.ProductName))
             {
-                var productLine = new Paragraph
+                content.Children.Add(new TextBlock
                 {
-                    Margin = new Thickness(0, 0, 0, 1),
-                    TextAlignment = TextAlignment.Center
-                };
-                productLine.Inlines.Add(new Run(Truncate(item.ProductName.Trim(), size == BarcodeLabelSize.Mm30x15 ? 24 : 32))
-                {
+                    Text = Truncate(item.ProductName.Trim(), 32),
                     FontWeight = FontWeights.Bold,
-                    FontSize = layout.ProductFontSize
+                    FontSize = layout.ProductFontSize,
+                    TextAlignment = TextAlignment.Center,
+                    Margin = new Thickness(0, 0, 0, 1),
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                    TextWrapping = TextWrapping.NoWrap
                 });
-                section.Blocks.Add(productLine);
             }
+        }
 
-            var barcodePxW = (int)Math.Ceiling(layout.BarcodeWidth);
-            var barcodePxH = (int)Math.Ceiling(layout.BarcodeHeight);
-            var barcodeImage = CreateBarcodeBitmap(item.Barcode, barcodePxW, barcodePxH);
-            if (barcodeImage is not null)
+        var barcodePxW = (int)Math.Ceiling(layout.BarcodeWidth * 2);
+        var barcodePxH = (int)Math.Ceiling(layout.BarcodeHeight * 2);
+        var barcodeImage = CreateBarcodeBitmap(item.Barcode, barcodePxW, barcodePxH);
+        if (barcodeImage is not null)
+        {
+            content.Children.Add(new Image
             {
-                section.Blocks.Add(new BlockUIContainer(new Image
-                {
-                    Source = barcodeImage,
-                    Width = layout.BarcodeWidth,
-                    Height = layout.BarcodeHeight,
-                    Stretch = Stretch.Uniform,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, 1, 0, 1)
-                }));
-            }
-
-            var codeLine = new Paragraph
-            {
-                Margin = new Thickness(0, 0, 0, 1),
-                TextAlignment = TextAlignment.Center
-            };
-            codeLine.Inlines.Add(new Run(item.Barcode)
-            {
-                FontSize = layout.CodeFontSize,
-                FontFamily = new FontFamily("Consolas")
+                Source = barcodeImage,
+                Width = layout.BarcodeWidth,
+                Height = layout.BarcodeHeight,
+                Stretch = Stretch.Fill,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                SnapsToDevicePixels = true,
+                Margin = showDetails ? new Thickness(0, 1, 0, 1) : new Thickness(0)
             });
-            section.Blocks.Add(codeLine);
+        }
+
+        if (showDetails)
+        {
+            content.Children.Add(new TextBlock
+            {
+                Text = item.Barcode,
+                FontSize = layout.CodeFontSize,
+                FontFamily = new FontFamily("Consolas"),
+                TextAlignment = TextAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 1)
+            });
 
             if (item.KaratValue is > 0 || item.WeightGrams is > 0)
             {
-                var goldMeta = new Paragraph
-                {
-                    Margin = new Thickness(0),
-                    TextAlignment = TextAlignment.Center
-                };
                 var parts = new List<string>();
                 if (item.KaratValue is > 0)
                     parts.Add($"عيار {item.KaratValue}");
                 if (item.WeightGrams is > 0)
                     parts.Add($"وزن {item.WeightGrams.Value:0.###} غ");
-                goldMeta.Inlines.Add(new Run(string.Join(" — ", parts))
+
+                content.Children.Add(new TextBlock
                 {
+                    Text = string.Join(" — ", parts),
                     FontSize = layout.GoldFontSize,
-                    FontWeight = FontWeights.SemiBold
+                    FontWeight = FontWeights.SemiBold,
+                    TextAlignment = TextAlignment.Center,
+                    Margin = new Thickness(0, 0, 0, 1)
                 });
-                section.Blocks.Add(goldMeta);
             }
 
             if (item.Price is > 0)
             {
-                var priceLine = new Paragraph
+                content.Children.Add(new TextBlock
                 {
-                    Margin = new Thickness(0),
-                    TextAlignment = TextAlignment.Center
-                };
-                priceLine.Inlines.Add(new Run($"{item.Price:N0} د.ع")
-                {
+                    Text = $"{item.Price:N0} د.ع",
                     FontSize = layout.PriceFontSize,
-                    FontWeight = FontWeights.SemiBold
+                    FontWeight = FontWeights.Bold,
+                    TextAlignment = TextAlignment.Center,
+                    Margin = new Thickness(0)
                 });
-                section.Blocks.Add(priceLine);
             }
-
-            doc.Blocks.Add(section);
         }
 
-        var pd = new PrintDialog();
-        if (pd.ShowDialog() != true) return;
-        pd.PrintTicket.PageMediaSize = new System.Printing.PageMediaSize(
-            layout.PageWidth, layout.PageHeight);
-        pd.PrintDocument(((IDocumentPaginatorSource)doc).DocumentPaginator, "ملصقات باركود");
+        root.Children.Add(content);
+        return root;
     }
 
     private static string Truncate(string value, int maxChars)
@@ -186,7 +243,7 @@ public class BarcodeLabelService : IBarcodeLabelService
                 {
                     Width = Math.Max(width, 80),
                     Height = Math.Max(height, 20),
-                    Margin = 1,
+                    Margin = 2,
                     PureBarcode = true
                 }
             };

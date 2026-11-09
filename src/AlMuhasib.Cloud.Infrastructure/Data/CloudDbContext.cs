@@ -262,6 +262,9 @@ public class CloudDbContext : DbContext
         {
             e.Property(x => x.CompanyIdNumber).HasMaxLength(100);
             e.Property(x => x.CompanyIdIssuer).HasMaxLength(200);
+            e.Property(x => x.ThermalLogoContentType).HasMaxLength(50);
+            e.Property(x => x.ThermalNotes).HasMaxLength(2000);
+            e.Property(x => x.ShowThermalLogo).HasDefaultValue(true);
         });
 
         modelBuilder.Entity<CloudProductPrice>(e =>

@@ -10,6 +10,9 @@ public interface IBarcodeLabelService
 
     /// <summary>Creates a scannable Code128 barcode as PNG bytes for preview or printing.</summary>
     byte[]? CreateBarcodePng(string barcode, int width = 280, int height = 90);
+
+    /// <summary>معاينة ملصق كاملة مطابقة للطباعة (مقاس الملصق الفعلي).</summary>
+    byte[]? CreateLabelPreviewPng(BarcodeLabelItem item, BarcodeLabelSize size, double scale = 2.0);
 }
 
 public class BarcodeLabelItem
