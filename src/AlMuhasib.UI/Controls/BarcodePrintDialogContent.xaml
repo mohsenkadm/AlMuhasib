@@ -1,0 +1,237 @@
+<UserControl x:Class="AlMuhasib.UI.Controls.BarcodePrintDialogContent"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             FlowDirection="RightToLeft"
+             FontFamily="{DynamicResource AppFont}">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolVis"/>
+    </UserControl.Resources>
+
+    <Border MinWidth="760" MaxWidth="920" MaxHeight="640"
+            Background="{DynamicResource CardBrush}"
+            CornerRadius="18"
+            BorderBrush="{DynamicResource SubtleBorderBrush}"
+            BorderThickness="1"
+            Padding="22,18">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="28" ShadowDepth="4" Opacity="0.18" Color="#000000"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <Grid Grid.Row="0" Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Width="42" Height="42" CornerRadius="12" Margin="0,0,12,0"
+                            Background="{DynamicResource DashboardKpiOrangeLightBrush}">
+                        <md:PackIcon Kind="Barcode" Width="22" Height="22"
+                                     Foreground="#EF6C00"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="طباعة ملصق الباركود" FontSize="20" FontWeight="Bold"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <TextBlock Text="معاينة الملصق وضبط المحتوى قبل الطباعة" FontSize="12"
+                                   Foreground="{DynamicResource HintForegroundBrush}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Command="{Binding RestorePrintDefaultsCommand}"
+                        Style="{StaticResource OutlinedButton}"
+                        Height="32" Padding="12,0"
+                        md:ButtonAssist.CornerRadius="8"
+                        ToolTip="استرجاع الإعدادات الافتراضية"
+                        VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Kind="Restore" Width="15" Height="15" VerticalAlignment="Center"/>
+                        <TextBlock Text="افتراضي" Margin="6,0,0,0" FontSize="12" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <!-- Body: RTL → Column0 يمين (اختيار) ، Column1 يسار (معاينة وإعدادات) -->
+            <Grid Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="0.95*"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="1.15*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Right: product / barcode / price / qty -->
+                <Border Grid.Column="0"
+                        Background="{DynamicResource BackgroundBrush}"
+                        BorderBrush="{DynamicResource SubtleBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="14"
+                        Padding="14">
+                    <StackPanel>
+                        <TextBlock Text="المنتج" FontSize="11"
+                                   Foreground="{DynamicResource HintForegroundBrush}" Margin="0,0,0,6"/>
+                        <Border Background="{DynamicResource CardBrush}"
+                                BorderBrush="{DynamicResource CardBorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="10"
+                                Padding="12,10"
+                                Margin="0,0,0,12">
+                            <TextBlock Text="{Binding PrintProductName}"
+                                       FontSize="15" FontWeight="SemiBold"
+                                       TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        </Border>
+
+                        <ComboBox ItemsSource="{Binding AvailableBarcodes}"
+                                  SelectedItem="{Binding SelectedBarcode}"
+                                  md:HintAssist.Hint="الباركود"
+                                  md:HintAssist.IsFloating="True"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,0,0,10"
+                                  Visibility="{Binding HasMultipleBarcodes, Converter={StaticResource BoolVis}}"/>
+
+                        <TextBlock Text="{Binding SelectedBarcode}"
+                                   FontFamily="Consolas"
+                                   FontSize="13"
+                                   Margin="0,0,0,10"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Visibility="{Binding HasSingleBarcode, Converter={StaticResource BoolVis}}"/>
+
+                        <ComboBox ItemsSource="{Binding PriceOptions}"
+                                  SelectedItem="{Binding SelectedPriceOption}"
+                                  DisplayMemberPath="DisplayText"
+                                  md:HintAssist.Hint="السعر (مفرد / جملة)"
+                                  md:HintAssist.IsFloating="True"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,0,0,10"
+                                  Visibility="{Binding HasPriceOptions, Converter={StaticResource BoolVis}}"/>
+
+                        <TextBlock Text="{Binding PrintPriceText}"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   Margin="0,0,0,10"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Visibility="{Binding HasNoPriceOptions, Converter={StaticResource BoolVis}}"/>
+
+                        <TextBox Text="{Binding PrintCopies, UpdateSourceTrigger=PropertyChanged}"
+                                 md:HintAssist.Hint="العدد"
+                                 md:HintAssist.IsFloating="True"
+                                 Style="{StaticResource FilledTextBox}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Left: preview + size + content toggles -->
+                <ScrollViewer Grid.Column="2"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <TextBlock Text="معاينة الملصق" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="0,0,0,8"/>
+
+                        <Border Background="White"
+                                BorderBrush="#CFD8DC"
+                                BorderThickness="1"
+                                CornerRadius="8"
+                                Padding="10"
+                                HorizontalAlignment="Stretch"
+                                Margin="0,0,0,12">
+                            <Image Source="{Binding PreviewImage}"
+                                   MaxHeight="180"
+                                   Stretch="Uniform"
+                                   HorizontalAlignment="Center"
+                                   SnapsToDevicePixels="True"/>
+                        </Border>
+
+                        <ComboBox ItemsSource="{Binding LabelSizeOptions}"
+                                  SelectedItem="{Binding SelectedLabelSize}"
+                                  DisplayMemberPath="DisplayName"
+                                  md:HintAssist.Hint="مقاس الملصق"
+                                  md:HintAssist.IsFloating="True"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,0,0,8"/>
+
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="8"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0"
+                                     Text="{Binding CustomWidthMm, UpdateSourceTrigger=LostFocus}"
+                                     md:HintAssist.Hint="العرض (مم)"
+                                     md:HintAssist.IsFloating="True"
+                                     Style="{StaticResource FilledTextBox}"/>
+                            <TextBox Grid.Column="2"
+                                     Text="{Binding CustomHeightMm, UpdateSourceTrigger=LostFocus}"
+                                     md:HintAssist.Hint="الارتفاع (مم)"
+                                     md:HintAssist.IsFloating="True"
+                                     Style="{StaticResource FilledTextBox}"/>
+                        </Grid>
+                        <TextBlock Text="عند تعديل العرض أو الارتفاع يُختار «مخصص» تلقائياً"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource HintForegroundBrush}"
+                                   Margin="0,0,0,8"
+                                   Visibility="{Binding IsCustomSizeSelected, Converter={StaticResource BoolVis}}"/>
+
+                        <TextBox Text="{Binding GapMm, UpdateSourceTrigger=PropertyChanged}"
+                                 md:HintAssist.Hint="المسافة بين الملصقات (مم)"
+                                 md:HintAssist.IsFloating="True"
+                                 Style="{StaticResource FilledTextBox}"
+                                 Margin="0,0,0,12"/>
+
+                        <TextBlock Text="ما يظهر على الملصق" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Margin="0,0,0,8"/>
+
+                        <UniformGrid Columns="2" Margin="0,0,0,4">
+                            <CheckBox Content="اسم المنتج"
+                                      IsChecked="{Binding ShowProductNameOnLabel}"
+                                      Margin="0,0,8,8"/>
+                            <CheckBox Content="اسم الفرع"
+                                      IsChecked="{Binding ShowBranchNameOnLabel}"
+                                      Margin="0,0,0,8"/>
+                            <CheckBox Content="اسم الشركة"
+                                      IsChecked="{Binding ShowCompanyNameOnLabel}"
+                                      Margin="0,0,8,8"/>
+                            <CheckBox Content="سعر المنتج"
+                                      IsChecked="{Binding ShowPriceOnLabel}"
+                                      Margin="0,0,0,8"/>
+                            <CheckBox Content="رقم الباركود"
+                                      IsChecked="{Binding ShowBarcodeNumberOnLabel}"
+                                      Margin="0,0,8,0"/>
+                        </UniformGrid>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- Footer buttons -->
+            <StackPanel Grid.Row="2"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Left"
+                        Margin="0,16,0,0">
+                <Button Command="{Binding ConfirmPrintCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        Height="42" Padding="22,0" Margin="0,0,8,0"
+                        md:ButtonAssist.CornerRadius="10">
+                    <StackPanel Orientation="Horizontal">
+                        <md:PackIcon Kind="Printer" Width="18" Height="18" VerticalAlignment="Center"/>
+                        <TextBlock Text="طباعة" Margin="8,0,0,0" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding ClosePrintDialogCommand}"
+                        Content="إلغاء"
+                        Style="{StaticResource OutlinedButton}"
+                        Height="42" Padding="20,0"
+                        md:ButtonAssist.CornerRadius="10"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>
