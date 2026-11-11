@@ -31,7 +31,12 @@ public sealed class MockAssistantService : IAssistantService
         {
             Role = AssistantMessageRole.Assistant,
             Content = reply,
+            DisplayContent = reply,
             Timestamp = DateTime.Now
         };
+    }
+
+    public void ResetSession()
+    {
     }
 }

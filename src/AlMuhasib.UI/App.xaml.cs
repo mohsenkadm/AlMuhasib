@@ -21,6 +21,8 @@ using AlMuhasib.UI.ViewModels.Gold;
 using AlMuhasib.UI.ViewModels.Customs;
 using AlMuhasib.UI.Modules;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Intelligence;
+using AlMuhasib.Infrastructure.Intelligence;
 using AlMuhasib.UI.Windows;
 using MaterialDesignThemes.Wpf;
 using Microsoft.EntityFrameworkCore;
@@ -499,8 +501,11 @@ public partial class App : Application
 
         services.AddSingleton<MainWindowViewModel>();
 
-        // AI Assistant (UI stage — MockAssistantService is swappable for a live provider)
-        services.AddSingleton<IAssistantService, MockAssistantService>();
+        services.AddSingleton<ConversationContextService>();
+        services.AddSingleton<IAssistantAccessGuard, AssistantAccessGuard>();
+        services.AddSingleton<IQaidIntelligenceEngine, QaidIntelligenceEngine>();
+        services.AddSingleton<AssistantHistoryStore>();
+        services.AddSingleton<IAssistantService, QaidAssistantService>();
         services.AddSingleton<AiChatViewModel>();
         services.AddSingleton<AiChatWindow>();
 

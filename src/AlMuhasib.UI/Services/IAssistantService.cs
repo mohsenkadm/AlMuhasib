@@ -17,4 +17,6 @@ public interface IAssistantService
         string userMessage,
         IReadOnlyList<AssistantMessage> conversationHistory,
         CancellationToken cancellationToken = default);
+
+    void ResetSession();
 }

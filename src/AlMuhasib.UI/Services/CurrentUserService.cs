@@ -29,6 +29,9 @@ public class CurrentUserService : ICurrentUserService
         _permissions.Clear();
     }
 
+    public bool IsPermissionRecorded(string screenName) =>
+        _permissions.Any(p => p.ScreenName == screenName);
+
     private Permission? Get(string screenName) =>
         _permissions.FirstOrDefault(p => p.ScreenName == screenName);
 

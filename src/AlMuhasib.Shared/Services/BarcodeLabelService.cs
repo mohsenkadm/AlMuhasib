@@ -43,7 +43,8 @@ public class BarcodeLabelService : IBarcodeLabelService
 
         var layout = BarcodeLabelSizeHelper.GetLayout(size, customWidthMm, customHeightMm);
         var visual = BuildLabelElement(item, layout);
-        var pixelScale = Math.Clamp(scale, 1.0, 4.0);
+        var shortSide = Math.Max(1, Math.Min(layout.PageWidth, layout.PageHeight));
+        var pixelScale = Math.Clamp(Math.Max(scale, 260.0 / shortSide), 2.0, 8.0);
         var dpi = 96.0 * pixelScale;
         var pxW = Math.Max(1, (int)Math.Ceiling(layout.PageWidth * pixelScale));
         var pxH = Math.Max(1, (int)Math.Ceiling(layout.PageHeight * pixelScale));
@@ -129,6 +130,7 @@ public class BarcodeLabelService : IBarcodeLabelService
             SnapsToDevicePixels = true
         };
 
+        var availW = Math.Max(8, layout.PageWidth - layout.Padding * 2);
         var content = new StackPanel
         {
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -143,10 +145,12 @@ public class BarcodeLabelService : IBarcodeLabelService
             {
                 content.Children.Add(new TextBlock
                 {
-                    Text = Truncate(companyName.Trim(), 28),
+                    Text = companyName.Trim(),
                     FontWeight = FontWeights.SemiBold,
                     FontSize = layout.CompanyFontSize,
                     TextAlignment = TextAlignment.Center,
+                    TextWrapping = TextWrapping.Wrap,
+                    MaxWidth = availW,
                     Margin = new Thickness(0, 0, 0, 1),
                     TextTrimming = TextTrimming.CharacterEllipsis
                 });
@@ -157,10 +161,12 @@ public class BarcodeLabelService : IBarcodeLabelService
         {
             content.Children.Add(new TextBlock
             {
-                Text = Truncate(item.BranchName.Trim(), 28),
+                Text = item.BranchName.Trim(),
                 FontWeight = FontWeights.SemiBold,
                 FontSize = layout.CompanyFontSize,
                 TextAlignment = TextAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = availW,
                 Margin = new Thickness(0, 0, 0, 1),
                 TextTrimming = TextTrimming.CharacterEllipsis
             });
@@ -170,13 +176,14 @@ public class BarcodeLabelService : IBarcodeLabelService
         {
             content.Children.Add(new TextBlock
             {
-                Text = Truncate(item.ProductName.Trim(), 32),
+                Text = item.ProductName.Trim(),
                 FontWeight = FontWeights.Bold,
                 FontSize = layout.ProductFontSize,
                 TextAlignment = TextAlignment.Center,
                 Margin = new Thickness(0, 0, 0, 1),
                 TextTrimming = TextTrimming.CharacterEllipsis,
-                TextWrapping = TextWrapping.NoWrap
+                TextWrapping = TextWrapping.Wrap,
+                MaxWidth = availW
             });
         }
 
@@ -239,15 +246,25 @@ public class BarcodeLabelService : IBarcodeLabelService
             });
         }
 
+        FitContent(content, layout.PageWidth, layout.PageHeight);
         root.Children.Add(content);
         return root;
     }
 
-    private static string Truncate(string value, int maxChars)
+    /// <summary>
+    /// يضبط المحتوى ليملأ الملصق دون أن يخرج عن حدوده، مهما صغر القياس بالمليمتر.
+    /// </summary>
+    private static void FitContent(FrameworkElement content, double pageWidth, double pageHeight)
     {
-        if (string.IsNullOrEmpty(value) || value.Length <= maxChars)
-            return value;
-        return value[..Math.Max(0, maxChars - 1)] + "…";
+        content.Measure(new Size(pageWidth, double.PositiveInfinity));
+        var desired = content.DesiredSize;
+        if (desired.Width < 1 || desired.Height < 1)
+            return;
+
+        var fit = Math.Min(pageWidth / desired.Width, pageHeight / desired.Height) * 0.96;
+        var scale = Math.Clamp(fit, 0.18, 2.4);
+        if (Math.Abs(scale - 1) > 0.03)
+            content.LayoutTransform = new ScaleTransform(scale, scale);
     }
 
     private static string ResolveCompanyName(BarcodeLabelItem item)

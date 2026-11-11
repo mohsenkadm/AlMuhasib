@@ -4,10 +4,10 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
         xmlns:models="clr-namespace:AlMuhasib.UI.Models"
+        xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
         Title="المساعد الذكي"
-        Width="420" Height="620"
-        MinWidth="360" MinHeight="480"
-        MaxWidth="560" MaxHeight="820"
+        Width="520" Height="700"
+        MinWidth="400" MinHeight="520"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -159,24 +159,117 @@
         <DataTemplate DataType="{x:Type models:AssistantMessage}">
             <Grid Margin="0,0,0,10">
                 <Border x:Name="Bubble"
-                        MaxWidth="300"
+                        MaxWidth="1100"
                         CornerRadius="16"
                         Padding="12,10"
                         HorizontalAlignment="Right">
                     <StackPanel>
                         <TextBlock x:Name="ContentText"
-                                   Text="{Binding Content}"
+                                   Text="{Binding DisplayContent}"
                                    TextWrapping="Wrap"
                                    FontSize="13.5"
-                                   LineHeight="20"
+                                   LineHeight="22"
                                    Foreground="{DynamicResource AiAssistantBubbleForegroundBrush}"/>
-                        <TextBlock x:Name="TimeText"
-                                   Text="{Binding Timestamp, StringFormat={}{0:HH:mm}}"
-                                   FontSize="10"
-                                   Opacity="0.65"
-                                   Margin="0,6,0,0"
-                                   HorizontalAlignment="Left"
-                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        <ItemsControl ItemsSource="{Binding Metrics}" Margin="0,8,0,0"
+                                      Visibility="{Binding HasMetrics, Converter={StaticResource BoolToVis}}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,8,8" Padding="10,8" MinWidth="120" CornerRadius="12"
+                                            Background="{DynamicResource AiChatBodyBrush}"
+                                            BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Label}" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                            <TextBlock Text="{Binding Value}" FontSize="15" FontWeight="Bold" Margin="0,2,0,0"
+                                                       FlowDirection="LeftToRight" HorizontalAlignment="Right"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Border Margin="0,4,0,0" Padding="8" CornerRadius="12"
+                                Background="{DynamicResource AiChatBodyBrush}"
+                                BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1"
+                                Visibility="{Binding HasTable, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,6">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Header1}" FontWeight="Bold" FontSize="11"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Header2}" FontWeight="Bold" FontSize="11" Margin="10,0,0,0"
+                                               Visibility="{Binding ShowHeader2, Converter={StaticResource BoolToVis}}"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding Header3}" FontWeight="Bold" FontSize="11" Margin="10,0,0,0"
+                                               Visibility="{Binding ShowHeader3, Converter={StaticResource BoolToVis}}"/>
+                                    <TextBlock Grid.Column="3" Text="{Binding Header4}" FontWeight="Bold" FontSize="11" Margin="10,0,0,0"
+                                               Visibility="{Binding ShowHeader4, Converter={StaticResource BoolToVis}}"/>
+                                </Grid>
+                                <ItemsControl ItemsSource="{Binding Rows}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,3">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="{Binding Col1}" FontSize="12" TextWrapping="Wrap"/>
+                                                <TextBlock Grid.Column="1" Text="{Binding Col2}" FontSize="12" Margin="10,0,0,0" FlowDirection="LeftToRight"
+                                                           Visibility="{Binding Show2, Converter={StaticResource BoolToVis}}"/>
+                                                <TextBlock Grid.Column="2" Text="{Binding Col3}" FontSize="12" Margin="10,0,0,0" FlowDirection="LeftToRight"
+                                                           Visibility="{Binding Show3, Converter={StaticResource BoolToVis}}"/>
+                                                <TextBlock Grid.Column="3" Text="{Binding Col4}" FontSize="12" Margin="10,0,0,0" FlowDirection="LeftToRight"
+                                                           Visibility="{Binding Show4, Converter={StaticResource BoolToVis}}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                        <lvc:CartesianChart Height="160" Margin="0,8,0,0"
+                                            Series="{Binding ChartSeries}"
+                                            XAxes="{Binding ChartXAxes}"
+                                            YAxes="{Binding ChartYAxes}"
+                                            Visibility="{Binding HasChart, Converter={StaticResource BoolToVis}}"/>
+                        <TextBlock Text="{Binding SourceLine}" FontSize="10.5" TextWrapping="Wrap" Margin="0,8,0,0"
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   Visibility="{Binding HasSource, Converter={StaticResource BoolToVis}}"/>
+                        <DockPanel Margin="0,6,0,0" LastChildFill="False">
+                            <TextBlock x:Name="TimeText"
+                                       DockPanel.Dock="Right"
+                                       Text="{Binding Timestamp, StringFormat={}{0:HH:mm}}"
+                                       FontSize="10" Opacity="0.7" VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            <Button DockPanel.Dock="Left" Margin="0,0,6,0" Padding="6,2" Cursor="Hand"
+                                    Command="{Binding DataContext.CopyMessageCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    CommandParameter="{Binding}"
+                                    Visibility="{Binding IsFromAssistant, Converter={StaticResource BoolToVis}}"
+                                    ToolTip="نسخ الإجابة" Background="Transparent" BorderThickness="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ContentCopy" Width="13" Height="13" VerticalAlignment="Center"/>
+                                    <TextBlock Text="نسخ" Margin="4,0,0,0" FontSize="11" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button DockPanel.Dock="Left" Padding="6,2" Cursor="Hand"
+                                    Command="{Binding DataContext.RetryMessageCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                    CommandParameter="{Binding}"
+                                    Visibility="{Binding HasRetry, Converter={StaticResource BoolToVis}}"
+                                    ToolTip="إعادة تنفيذ السؤال" Background="Transparent" BorderThickness="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Refresh" Width="13" Height="13" VerticalAlignment="Center"/>
+                                    <TextBlock Text="إعادة" Margin="4,0,0,0" FontSize="11" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </DockPanel>
                     </StackPanel>
                 </Border>
             </Grid>
@@ -248,7 +341,11 @@
                     </Grid.ColumnDefinitions>
 
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Border Width="42" Height="42" CornerRadius="21" Margin="0,0,12,0">
+                        <Border x:Name="HeaderOrb" Width="42" Height="42" CornerRadius="21" Margin="0,0,12,0"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Border.RenderTransform>
                             <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                                     <GradientStop Color="#80FFFFFF" Offset="0"/>
@@ -281,7 +378,7 @@
 
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
                         <Button Style="{StaticResource AiHeaderIconButton}"
-                                ToolTip="محادثة جديدة"
+                                ToolTip="حذف المحادثة"
                                 Command="{Binding NewChatCommand}"
                                 Margin="0,0,6,0">
                             <materialDesign:PackIcon Kind="ChatPlus" Width="16" Height="16" Foreground="White"/>
@@ -291,6 +388,13 @@
                                 Click="MinimizeButton_Click"
                                 Margin="0,0,6,0">
                             <materialDesign:PackIcon Kind="WindowMinimize" Width="16" Height="16" Foreground="White"/>
+                        </Button>
+                        <Button x:Name="MaximizeButton"
+                                Style="{StaticResource AiHeaderIconButton}"
+                                ToolTip="تكبير إلى حجم الشاشة"
+                                Click="MaximizeButton_Click"
+                                Margin="0,0,6,0">
+                            <materialDesign:PackIcon x:Name="MaximizeIcon" Kind="WindowMaximize" Width="16" Height="16" Foreground="White"/>
                         </Button>
                         <Button Style="{StaticResource AiHeaderIconButton}"
                                 ToolTip="إغلاق"
@@ -307,11 +411,7 @@
                               Padding="16,14"
                               Visibility="{Binding ShowWelcome, Converter={StaticResource BoolToVis}}">
                     <StackPanel>
-                        <TextBlock Text="مرحباً بك 👋"
-                                   FontSize="22" FontWeight="Bold"
-                                   Foreground="{DynamicResource TextPrimaryBrush}"
-                                   Margin="0,4,0,6"/>
-                        <TextBlock Text="كيف يمكنني مساعدتك في إدارة أعمالك اليوم؟"
+                        <TextBlock Text="مرحباً بك في مساعد قيد الذكي، كيف يمكنني مساعدتك في إدارة وتحليل أعمالك اليوم؟"
                                    FontSize="13.5"
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextSecondaryBrush}"
@@ -335,7 +435,8 @@
                                             <TextBlock Text="{Binding Title}"
                                                        VerticalAlignment="Center"
                                                        FontWeight="SemiBold"
-                                                       FontSize="13.5"
+                                                       FontSize="13"
+                                                       TextWrapping="Wrap"
                                                        Foreground="{DynamicResource TextPrimaryBrush}"/>
                                         </StackPanel>
                                     </Button>
@@ -448,6 +549,25 @@
                     </Button>
                 </Grid>
             </Border>
+
+            <Grid Grid.RowSpan="3" FlowDirection="LeftToRight" Panel.ZIndex="30">
+                <Border Width="8" HorizontalAlignment="Left" Background="Transparent" Cursor="SizeWE"
+                        Tag="Left" MouseLeftButtonDown="ResizeEdge_MouseDown" MouseMove="ResizeEdge_MouseMove" MouseLeftButtonUp="ResizeEdge_MouseUp"/>
+                <Border Width="8" HorizontalAlignment="Right" Background="Transparent" Cursor="SizeWE"
+                        Tag="Right" MouseLeftButtonDown="ResizeEdge_MouseDown" MouseMove="ResizeEdge_MouseMove" MouseLeftButtonUp="ResizeEdge_MouseUp"/>
+                <Border Height="8" VerticalAlignment="Top" Background="Transparent" Cursor="SizeNS"
+                        Tag="Top" MouseLeftButtonDown="ResizeEdge_MouseDown" MouseMove="ResizeEdge_MouseMove" MouseLeftButtonUp="ResizeEdge_MouseUp"/>
+                <Border Height="8" VerticalAlignment="Bottom" Background="Transparent" Cursor="SizeNS"
+                        Tag="Bottom" MouseLeftButtonDown="ResizeEdge_MouseDown" MouseMove="ResizeEdge_MouseMove" MouseLeftButtonUp="ResizeEdge_MouseUp"/>
+                <Border Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Top" Background="Transparent" Cursor="SizeNWSE"
+                        Tag="TopLeft" MouseLeftButtonDown="ResizeEdge_MouseDown" MouseMove="ResizeEdge_MouseMove" MouseLeftButtonUp="ResizeEdge_MouseUp"/>
+                <Border Width="14" Height="14" HorizontalAlignment="Right" VerticalAlignment="Top" Background="Transparent" Cursor="SizeNESW"
+                        Tag="TopRight" MouseLeftButtonDown="ResizeEdge_MouseDown" MouseMove="ResizeEdge_MouseMove" MouseLeftButtonUp="ResizeEdge_MouseUp"/>
+                <Border Width="14" Height="14" HorizontalAlignment="Left" VerticalAlignment="Bottom" Background="Transparent" Cursor="SizeNESW"
+                        Tag="BottomLeft" MouseLeftButtonDown="ResizeEdge_MouseDown" MouseMove="ResizeEdge_MouseMove" MouseLeftButtonUp="ResizeEdge_MouseUp"/>
+                <Border Width="18" Height="18" HorizontalAlignment="Right" VerticalAlignment="Bottom" Background="Transparent" Cursor="SizeNWSE"
+                        Tag="BottomRight" MouseLeftButtonDown="ResizeEdge_MouseDown" MouseMove="ResizeEdge_MouseMove" MouseLeftButtonUp="ResizeEdge_MouseUp"/>
+            </Grid>
         </Grid>
     </Border>
 </Window>

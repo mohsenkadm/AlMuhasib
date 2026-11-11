@@ -5,6 +5,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Intelligence;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.ViewModels.Hotel;
@@ -71,6 +72,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private string _loggedInUsername = "المسؤول";
+
+    [ObservableProperty]
+    private bool _canUseAiAssistant;
 
     [ObservableProperty]
     private string _loggedInUserRoleLabel = "مستخدم";
@@ -889,6 +893,7 @@ public partial class MainWindowViewModel : ObservableObject
             group.IsVisible = group.Children.Any(c => c.IsVisible);
 
         ApplyWorkspaceProfile();
+        CanUseAiAssistant = _serviceProvider.GetService<IAssistantAccessGuard>()?.CanOpen == true;
     }
 
     private void ResetMenuVisibilityOnLogout()
@@ -921,6 +926,8 @@ public partial class MainWindowViewModel : ObservableObject
         var dashboard = MenuItems.FirstOrDefault(m => m.ViewModelType == ActiveDashboardType);
         if (dashboard is not null)
             dashboard.IsVisible = true;
+
+        CanUseAiAssistant = false;
     }
 
     /// <summary>Opens a tab for startup, wizard, or external callers.</summary>
@@ -1641,6 +1648,12 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try
         {
+            if (_serviceProvider.GetService<IAssistantAccessGuard>()?.CanOpen != true)
+            {
+                BeautifulMessageDialog.ShowError("عذراً، لا تمتلك الصلاحية اللازمة لاستخدام المساعد الذكي.");
+                return;
+            }
+
             IsQuickAssistOpen = false;
 
             _aiChatWindow ??= _serviceProvider.GetRequiredService<AiChatWindow>();
@@ -1652,7 +1665,8 @@ public partial class MainWindowViewModel : ObservableObject
                 owner.Closed += OnOwnerClosedForAiChat;
             }
 
-            PositionAiChatWindow(_aiChatWindow);
+            if (!_aiChatWindow.IsVisible && !_aiChatWindow.IsExpanded)
+                PositionAiChatWindow(_aiChatWindow);
             _aiChatWindow.Reveal();
         }
         catch (Exception ex)
@@ -1953,6 +1967,8 @@ public partial class MainWindowViewModel : ObservableObject
         CloseAllTabs();
         ResetPersonalWorkspaceSession();
         ResetMenuVisibilityOnLogout();
+        _serviceProvider.GetService<AiChatViewModel>()?.ResetForLogout();
+        _aiChatWindow?.RequestClose();
         _currentUserService.Clear();
         LogoutRequested?.Invoke();
     }

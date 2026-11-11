@@ -136,18 +136,20 @@
                                    Foreground="{DynamicResource TextSecondaryBrush}"
                                    Margin="0,0,0,8"/>
 
-                        <Border Background="White"
+                        <Border Background="#F4F7FB"
                                 BorderBrush="#CFD8DC"
                                 BorderThickness="1"
                                 CornerRadius="8"
-                                Padding="10"
+                                Padding="12"
+                                Height="220"
                                 HorizontalAlignment="Stretch"
                                 Margin="0,0,0,12">
-                            <Image Source="{Binding PreviewImage}"
-                                   MaxHeight="180"
-                                   Stretch="Uniform"
-                                   HorizontalAlignment="Center"
-                                   SnapsToDevicePixels="True"/>
+                            <Viewbox Stretch="Uniform" StretchDirection="Both">
+                                <Image Source="{Binding PreviewImage}"
+                                       Stretch="None"
+                                       SnapsToDevicePixels="True"
+                                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                            </Viewbox>
                         </Border>
 
                         <ComboBox ItemsSource="{Binding LabelSizeOptions}"

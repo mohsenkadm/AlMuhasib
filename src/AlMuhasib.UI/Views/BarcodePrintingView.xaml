@@ -141,47 +141,70 @@
                                             CommandParameter="{Binding}"
                                             ToolTip="طباعة ملصق الباركود"
                                             IsEnabled="{Binding HasBarcode}"
-                                            Height="34" MinWidth="108" Padding="12,0"
+                                            Height="32" MinWidth="102"
                                             HorizontalAlignment="Center" VerticalAlignment="Center"
                                             Cursor="Hand"
-                                            md:ButtonAssist.CornerRadius="10"
-                                            BorderThickness="0"
-                                            FontWeight="SemiBold"
-                                            Foreground="White">
-                                        <Button.Style>
-                                            <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
-                                                <Setter Property="Background">
-                                                    <Setter.Value>
+                                            FocusVisualStyle="{x:Null}">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border x:Name="Shell"
+                                                        CornerRadius="16"
+                                                        Padding="8,0"
+                                                        BorderThickness="1"
+                                                        BorderBrush="#33FFFFFF"
+                                                        RenderTransformOrigin="0.5,0.5">
+                                                    <Border.Background>
                                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                            <GradientStop Color="#EF6C00" Offset="0"/>
-                                                            <GradientStop Color="#F57C00" Offset="1"/>
+                                                            <GradientStop Color="#FF6D00" Offset="0"/>
+                                                            <GradientStop Color="#FF9100" Offset="0.55"/>
+                                                            <GradientStop Color="#FFB74D" Offset="1"/>
                                                         </LinearGradientBrush>
-                                                    </Setter.Value>
-                                                </Setter>
-                                                <Setter Property="BorderBrush" Value="#E65100"/>
-                                                <Style.Triggers>
+                                                    </Border.Background>
+                                                    <Border.Effect>
+                                                        <DropShadowEffect Color="#EF6C00" BlurRadius="10" ShadowDepth="1" Opacity="0.35"/>
+                                                    </Border.Effect>
+                                                    <Border.RenderTransform>
+                                                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                                                    </Border.RenderTransform>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <Border Width="22" Height="22" CornerRadius="11" Background="#2EFFFFFF">
+                                                            <md:PackIcon Kind="Printer" Width="13" Height="13"
+                                                                         Foreground="White"
+                                                                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                        </Border>
+                                                        <TextBlock Text="طباعة" Margin="7,0,6,0"
+                                                                   Foreground="White" FontSize="12.5" FontWeight="SemiBold"
+                                                                   VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
+                                                <ControlTemplate.Triggers>
                                                     <Trigger Property="IsMouseOver" Value="True">
-                                                        <Setter Property="Background">
+                                                        <Setter TargetName="Shell" Property="RenderTransform">
                                                             <Setter.Value>
-                                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                                    <GradientStop Color="#FB8C00" Offset="0"/>
-                                                                    <GradientStop Color="#EF6C00" Offset="1"/>
-                                                                </LinearGradientBrush>
+                                                                <ScaleTransform ScaleX="1.04" ScaleY="1.04"/>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                        <Setter TargetName="Shell" Property="Effect">
+                                                            <Setter.Value>
+                                                                <DropShadowEffect Color="#E65100" BlurRadius="16" ShadowDepth="2" Opacity="0.45"/>
                                                             </Setter.Value>
                                                         </Setter>
                                                     </Trigger>
-                                                    <Trigger Property="IsEnabled" Value="False">
-                                                        <Setter Property="Background" Value="#BDBDBD"/>
-                                                        <Setter Property="Foreground" Value="#F5F5F5"/>
-                                                        <Setter Property="Opacity" Value="0.7"/>
+                                                    <Trigger Property="IsPressed" Value="True">
+                                                        <Setter TargetName="Shell" Property="RenderTransform">
+                                                            <Setter.Value>
+                                                                <ScaleTransform ScaleX="0.96" ScaleY="0.96"/>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                        <Setter TargetName="Shell" Property="Opacity" Value="0.92"/>
                                                     </Trigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                        <StackPanel Orientation="Horizontal">
-                                            <md:PackIcon Kind="Printer" Width="16" Height="16" VerticalAlignment="Center"/>
-                                            <TextBlock Text="طباعة" Margin="8,0,0,0" VerticalAlignment="Center" FontWeight="Bold"/>
-                                        </StackPanel>
+                                                    <Trigger Property="IsEnabled" Value="False">
+                                                        <Setter TargetName="Shell" Property="Opacity" Value="0.45"/>
+                                                        <Setter TargetName="Shell" Property="Effect" Value="{x:Null}"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Button.Template>
                                     </Button>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>

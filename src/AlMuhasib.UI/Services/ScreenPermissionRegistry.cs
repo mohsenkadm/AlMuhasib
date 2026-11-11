@@ -31,6 +31,16 @@ public static class ScreenPermissionRegistry
     public const string PriceQuotesReport = "PriceQuotesReport";
     public const string PackagingStockReport = "PackagingStockReport";
     public const string MinimumQuantityReport = "MinimumQuantityReport";
+    public const string AiAssistant = "AiAssistant";
+    public const string AiSales = "AiSales";
+    public const string AiPurchases = "AiPurchases";
+    public const string AiExpenses = "AiExpenses";
+    public const string AiProfit = "AiProfit";
+    public const string AiCustomerBalances = "AiCustomerBalances";
+    public const string AiSuppliers = "AiSuppliers";
+    public const string AiCash = "AiCash";
+    public const string AiInventory = "AiInventory";
+    public const string AiFinancialReports = "AiFinancialReports";
 
     private static SystemModuleRegistry? _registry;
 
@@ -148,6 +158,16 @@ public static class ScreenPermissionRegistry
     public static IReadOnlyList<(string Name, string Label)> AccountingScreens { get; } =
     [
         (Dashboard, "لوحة التحكم"),
+        (AiAssistant, "المساعد الذكي"),
+        (AiSales, "المساعد: المبيعات"),
+        (AiPurchases, "المساعد: المشتريات"),
+        (AiExpenses, "المساعد: المصروفات"),
+        (AiProfit, "المساعد: الأرباح"),
+        (AiCustomerBalances, "المساعد: أرصدة العملاء"),
+        (AiSuppliers, "المساعد: الموردون"),
+        (AiCash, "المساعد: الصندوق"),
+        (AiInventory, "المساعد: المخزون"),
+        (AiFinancialReports, "المساعد: التقارير المالية"),
         ("Products", "المنتجات"),
         ("Categories", "تصنيفات المنتجات"),
         (BarcodePrinting, "طباعة الباركودات"),

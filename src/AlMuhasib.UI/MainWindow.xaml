@@ -2545,12 +2545,20 @@
                 </Border.Style>
             </Border>
 
-            <!-- FAB stack: equal 56px icons, 60px vertical step, shared right margin 16 -->
+            <!-- FAB stack: scales with the window so the four buttons stay proportional -->
+            <Grid x:Name="FabCluster"
+                  HorizontalAlignment="Right"
+                  VerticalAlignment="Bottom"
+                  Panel.ZIndex="200">
+                <Grid.LayoutTransform>
+                    <ScaleTransform x:Name="FabScaleTransform" ScaleX="1" ScaleY="1"/>
+                </Grid.LayoutTransform>
             <!-- AI Assistant FAB -->
             <Grid HorizontalAlignment="Right"
                   VerticalAlignment="Bottom"
                   Margin="0,0,16,248"
-                  Panel.ZIndex="103">
+                  Panel.ZIndex="103"
+                  Visibility="{Binding CanUseAiAssistant, Converter={StaticResource BooleanToVisibilityConverter}}">
                 <Button Style="{StaticResource AiAssistantFab}"
                         Command="{Binding OpenAiAssistantCommand}"
                         ToolTip="المساعد الذكي"/>
@@ -2801,6 +2809,7 @@
                                                  Foreground="White"/>
                     </Button>
                 </StackPanel>
+            </Grid>
             </Grid>
             </Grid><!-- end content row -->
 

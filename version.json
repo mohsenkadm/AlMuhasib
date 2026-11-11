@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.49",
-  "releaseDate": "2026-11-09",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.49/AlMuhasib-1.14.49.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.49/Qayd-Setup-1.14.49.exe",
-  "sha256": "CAACA8E54BB8638403C933F5F9717C0DDE7E61270FC0456D96A7EE90E72C5290",
-  "sizeBytes": 162913306,
-  "releaseNotes": "شعار وملاحظات إيصال الثيرمال وتحسين طباعة الباركود — تحديث اختياري آمن (أعمدة إضافية فقط)",
+  "version": "1.14.50",
+  "releaseDate": "2026-11-11",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.50/AlMuhasib-1.14.50.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.50/Qayd-Setup-1.14.50.exe",
+  "sha256": "CE9A8AA8F245310708EF95BB421D25560B115865F08484ACDAD031A7D7B229FA",
+  "sizeBytes": 162997068,
+  "releaseNotes": "حوار طباعة باركود محسّن ومساعد قيد — تحديث اختياري آمن بدون تغيير قاعدة البيانات أو كونكشن العملاء الحاليين",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

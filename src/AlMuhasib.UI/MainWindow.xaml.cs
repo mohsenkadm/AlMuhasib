@@ -272,10 +272,29 @@ public partial class MainWindow : Window
         }
 
         ScheduleSyncTabViews();
+        SizeChanged += (_, _) => UpdateFabScale();
+        UpdateFabScale();
+    }
+
+    private void UpdateFabScale()
+    {
+        if (ActualWidth <= 1 || ActualHeight <= 1)
+            return;
+
+        var byHeight = ActualHeight / 980.0;
+        var byWidth = ActualWidth / 1366.0;
+        var visual = Math.Clamp(Math.Min(byHeight, byWidth), 0.56, 1.05);
+        var zoom = Math.Max(0.5, _viewModel.MainContentZoom);
+        var scale = visual / zoom;
+        FabScaleTransform.ScaleX = scale;
+        FabScaleTransform.ScaleY = scale;
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName is nameof(MainWindowViewModel.MainContentZoom))
+            UpdateFabScale();
+
         if (e.PropertyName is nameof(MainWindowViewModel.SelectedTab)
             or nameof(MainWindowViewModel.SecondaryTab)
             or nameof(MainWindowViewModel.CurrentViewModel)

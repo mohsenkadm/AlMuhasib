@@ -121,16 +121,17 @@ public static class BarcodeLabelSizeHelper
         var padding = isTiny ? 1.5 : isCompact ? 2.0 : 2.5;
         var horizontalInset = isTiny ? 3.0 : 6.0;
 
-        var companyFs = ScaleFont(6.5, hMm, min: 5, max: 9);
-        var productFs = ScaleFont(8.0, hMm, min: 6, max: 11);
-        var codeFs = ScaleFont(6.5, hMm, min: 5, max: 9);
-        var priceFs = ScaleFont(11.0, hMm, min: 8, max: 14);
-        var goldFs = ScaleFont(6.5, hMm, min: 5, max: 9);
+        var companyFs = ScaleFont(6.5, hMm, min: 4, max: 10);
+        var productFs = ScaleFont(8.0, hMm, min: 5, max: 13);
+        var codeFs = ScaleFont(6.5, hMm, min: 4, max: 10);
+        var priceFs = ScaleFont(11.0, hMm, min: 6, max: 16);
+        var goldFs = ScaleFont(6.5, hMm, min: 4, max: 10);
 
-        var barcodeWidth = Math.Max(40, w - horizontalInset * 2);
-        var barcodeHeight = isTiny
-            ? Math.Max(14, h - 4)
-            : Math.Max(18, Math.Min(h * 0.38, MmToDip(Math.Min(18, hMm * 0.45))));
+        var barcodeWidth = Math.Max(24, w - horizontalInset * 2);
+        var barcodeHeight = Math.Clamp(
+            h * 0.36,
+            MmToDip(4),
+            MmToDip(Math.Min(22, hMm * 0.42)));
 
         return new BarcodeLabelLayoutMetrics(
             PageWidth: w,
