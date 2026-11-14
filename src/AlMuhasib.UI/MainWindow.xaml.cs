@@ -22,6 +22,9 @@ public partial class MainWindow : Window
     private readonly IUserPreferencesService _preferences;
     private readonly ISessionActivityService _sessionActivity;
     private readonly List<Guid> _tabViewLru = [];
+
+    /// <summary>طبقة تغطي النافذة كاملة، بما فيها شريط العنوان.</summary>
+    public Grid FullScreenHost { get; private set; } = null!;
     private DispatcherTimer? _idleTimer;
     private bool _isSessionLocked;
     private bool _isSyncingTabViews;
@@ -38,6 +41,10 @@ public partial class MainWindow : Window
         _preferences = preferences;
         _sessionActivity = sessionActivity;
         DataContext = viewModel;
+        FullScreenHost = new Grid { Visibility = Visibility.Collapsed };
+        Panel.SetZIndex(FullScreenHost, 4000);
+        Grid.SetRowSpan(FullScreenHost, 2);
+        RootLayoutGrid.Children.Add(FullScreenHost);
         WindowWorkAreaHelper.Enable(this);
         StateChanged += (_, _) => UpdateMaximizeIcon();
         Loaded += OnFirstLoaded;

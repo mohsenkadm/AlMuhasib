@@ -15,7 +15,8 @@ public interface IProductService
         string? sizeName = null,
         string? colorName = null,
         bool? hasBatches = null,
-        bool? hasBarcode = null);
+        bool? hasBarcode = null,
+        bool matchProductId = false);
 
     /// <summary>إحصاءات سريعة لشاشة طباعة الباركود دون تحميل كل المنتجات.</summary>
     Task<(int Total, int WithBarcode, int WithoutBarcode)> GetBarcodePrintingStatsAsync(

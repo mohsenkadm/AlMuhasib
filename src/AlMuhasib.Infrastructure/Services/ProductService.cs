@@ -147,7 +147,8 @@ public class ProductService : IProductService
         string? sizeName = null,
         string? colorName = null,
         bool? hasBatches = null,
-        bool? hasBarcode = null)
+        bool? hasBarcode = null,
+        bool matchProductId = false)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var query = context.Products
@@ -166,6 +167,7 @@ public class ProductService : IProductService
         {
             var term = searchTerm.Trim();
             var plateType = AlMuhasib.Core.Helpers.VehiclePlateTypeHelper.Parse(term);
+            int? productId = matchProductId && int.TryParse(term, out var parsedId) ? parsedId : null;
             query = query.Where(p =>
                 p.Name.Contains(term) ||
                 (p.Barcode != null && p.Barcode.Contains(term)) ||
@@ -176,7 +178,8 @@ public class ProductService : IProductService
                 (p.VehicleColor != null && p.VehicleColor.Contains(term)) ||
                 (p.PlateNumber != null && p.PlateNumber.Contains(term)) ||
                 (p.PassengerCount != null && p.PassengerCount.ToString()!.Contains(term)) ||
-                (plateType != AlMuhasib.Core.Enums.VehiclePlateType.None && p.PlateType == plateType));
+                (plateType != AlMuhasib.Core.Enums.VehiclePlateType.None && p.PlateType == plateType) ||
+                (productId != null && p.Id == productId));
         }
 
         if (!string.IsNullOrWhiteSpace(sizeName))

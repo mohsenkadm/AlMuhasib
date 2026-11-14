@@ -1,4 +1,6 @@
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
+using AlMuhasib.Core.Models;
 
 namespace AlMuhasib.Core.Interfaces.Services;
 
@@ -27,6 +29,12 @@ public interface IBarcodeLabelService
         double? customWidthMm,
         double? customHeightMm,
         double scale = 2.0);
+
+    /// <summary>معاينة بطاقة واحدة بالحجم الفعلي، والهوامش داخلها.</summary>
+    byte[]? CreateSingleLabelPreviewPng(BarcodeLabelItem item, PriceLabelDesign design);
+
+    /// <summary>طباعة نسخ المنتج نفسه. تُرجع false إذا ألغى المستخدم مربع الطابعة.</summary>
+    bool PrintSheet(BarcodeLabelItem item, PriceLabelDesign design, int copies);
 }
 
 public class BarcodeLabelItem
@@ -45,4 +53,14 @@ public class BarcodeLabelItem
     public bool ShowProductName { get; set; } = true;
     public bool ShowPrice { get; set; } = true;
     public bool ShowBarcodeNumber { get; set; } = true;
+    public string Sku { get; set; } = string.Empty;
+    public bool ShowSku { get; set; }
+    public bool ShowBarcodeGraphic { get; set; } = true;
+    public bool ShowTaxInclusivePrice { get; set; }
+    public bool ShowBorder { get; set; }
+    public double TaxPercent { get; set; }
+    public double ProductNameFontSize { get; set; } = 12;
+    public double PriceFontSize { get; set; } = 16;
+    public double BarcodeHeightMm { get; set; } = 12;
+    public PriceLabelSymbology Symbology { get; set; } = PriceLabelSymbology.Ean13;
 }

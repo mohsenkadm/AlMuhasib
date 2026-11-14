@@ -1,3 +1,5 @@
+using AlMuhasib.Core.Models;
+
 namespace AlMuhasib.Core.Models.Ux;
 
 public class UserAppPreferences
@@ -59,4 +61,7 @@ public class UserAppPreferences
 
     /// <summary>آخر كلمات البحث عن واجهات النظام من شريط العنوان.</summary>
     public List<string> RecentMenuSearches { get; set; } = [];
+
+    /// <summary>آخر تصميم محفوظ لبطاقات الأسعار.</summary>
+    public PriceLabelDesign PriceLabelDesign { get; set; } = new();
 }

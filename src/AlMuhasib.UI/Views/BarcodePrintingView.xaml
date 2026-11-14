@@ -12,14 +12,9 @@
              FlowDirection="RightToLeft">
 
     <!-- DialogHost يجب أن يلف المحتوى — DialogHost فارغ فوق الصفحة يظهر شاشة بيضاء -->
-    <md:DialogHost IsOpen="{Binding IsPrintDialogOpen}"
-                   CloseOnClickAway="False"
+    <md:DialogHost CloseOnClickAway="False"
                    DialogTheme="Inherit"
                    OverlayBackground="#80000000">
-        <md:DialogHost.DialogContent>
-            <controls:BarcodePrintDialogContent/>
-        </md:DialogHost.DialogContent>
-
         <Grid Margin="0,0,8,0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -96,7 +91,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBox Grid.Column="0" Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                                 md:HintAssist.Hint="بحث بالاسم أو الباركود"
+                                 md:HintAssist.Hint="بحث بالاسم أو الباركود أو رقم المنتج"
                                  Style="{StaticResource FilledTextBox}" Margin="0,0,8,0"/>
                         <ComboBox Grid.Column="1" ItemsSource="{Binding Categories}"
                                   SelectedItem="{Binding SelectedCategory}"

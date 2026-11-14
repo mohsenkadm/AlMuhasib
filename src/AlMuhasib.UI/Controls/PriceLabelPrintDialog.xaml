@@ -1,0 +1,383 @@
+<UserControl x:Class="AlMuhasib.UI.Controls.PriceLabelPrintDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch"
+             FlowDirection="RightToLeft"
+             FontFamily="{DynamicResource AppFont}">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolVis"/>
+        <Style x:Key="SectionCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="14"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+        </Style>
+        <Style x:Key="CompactField" TargetType="TextBox" BasedOn="{StaticResource FilledTextBox}">
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="md:HintAssist.IsFloating" Value="True"/>
+        </Style>
+        <Style x:Key="CompactCombo" TargetType="ComboBox" BasedOn="{StaticResource FilledComboBox}">
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Margin" Value="0,0,0,8"/>
+            <Setter Property="md:HintAssist.IsFloating" Value="True"/>
+        </Style>
+        <Style x:Key="ChoiceChip" TargetType="ToggleButton">
+            <Setter Property="Margin" Value="0,0,8,8"/>
+            <Setter Property="Padding" Value="12,7"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource BackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Chip"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                CornerRadius="18"
+                                Padding="{TemplateBinding Padding}">
+                            <StackPanel Orientation="Horizontal">
+                                <md:PackIcon x:Name="Mark" Kind="CheckCircle" Width="15" Height="15"
+                                             Margin="0,0,6,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                <ContentPresenter VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Chip" Property="Background" Value="{DynamicResource PrimaryHueLightBrush}"/>
+                                <Setter TargetName="Chip" Property="BorderBrush" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryHueMidBrush}"/>
+                                <Setter TargetName="Mark" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Border Margin="22,18"
+            Background="{DynamicResource BackgroundBrush}"
+            BorderBrush="{DynamicResource SubtleBorderBrush}"
+            BorderThickness="1"
+            CornerRadius="18"
+            Padding="18,14"
+            Opacity="0"
+            RenderTransformOrigin="0.5,0.5">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="28" ShadowDepth="0" Opacity="0.28" Color="#000000"/>
+        </Border.Effect>
+        <Border.RenderTransform>
+            <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
+        </Border.RenderTransform>
+        <Border.Triggers>
+            <EventTrigger RoutedEvent="Loaded">
+                <BeginStoryboard>
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.22"/>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.26"/>
+                        <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.26"/>
+                    </Storyboard>
+                </BeginStoryboard>
+            </EventTrigger>
+        </Border.Triggers>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="0,0,0,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Border Width="4" CornerRadius="2" Margin="0,2,10,2" Background="{DynamicResource PrimaryHueMidBrush}"/>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="طباعة الملصق" FontSize="20" FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                    <TextBlock Text="عدّل الحقول وشاهد البطاقة في الوسط" FontSize="12"
+                               Foreground="{DynamicResource HintForegroundBrush}" Margin="0,2,0,0"/>
+                </StackPanel>
+                <WrapPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Command="{Binding ConfirmPrintCommand}"
+                            Style="{StaticResource PrimaryButton}"
+                            IsEnabled="{Binding CanPrintSheet}"
+                            Height="40" MinWidth="108" Padding="18,0" Margin="0,0,8,0"
+                            md:ButtonAssist.CornerRadius="10"
+                            Content="طباعة"/>
+                    <Button Command="{Binding SaveLabelDesignCommand}"
+                            Style="{StaticResource OutlinedButton}"
+                            Height="40" MinWidth="88" Padding="16,0" Margin="0,0,8,0"
+                            md:ButtonAssist.CornerRadius="10"
+                            Content="حفظ"/>
+                    <Button Command="{Binding RestorePrintDefaultsCommand}"
+                            Style="{StaticResource OutlinedButton}"
+                            Height="40" Padding="14,0" Margin="0,0,8,0"
+                            md:ButtonAssist.CornerRadius="10"
+                            Content="افتراضي"/>
+                    <Button Command="{Binding ClosePrintDialogCommand}"
+                            Style="{StaticResource IconButton}"
+                            Width="40" Height="40"
+                            ToolTip="إغلاق"
+                            md:ButtonAssist.CornerRadius="20">
+                        <md:PackIcon Kind="Close" Width="20" Height="20"/>
+                    </Button>
+                </WrapPanel>
+            </Grid>
+
+            <Grid x:Name="Stage" Grid.Row="1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition x:Name="C0" Width="*"/>
+                    <ColumnDefinition x:Name="C1" Width="14"/>
+                    <ColumnDefinition x:Name="C2" Width="1.45*"/>
+                    <ColumnDefinition x:Name="C3" Width="14"/>
+                    <ColumnDefinition x:Name="C4" Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition x:Name="R0" Height="*"/>
+                    <RowDefinition x:Name="R1" Height="0"/>
+                    <RowDefinition x:Name="R2" Height="0"/>
+                </Grid.RowDefinitions>
+
+                <ScrollViewer x:Name="LeftCards" Grid.Column="0" Grid.Row="0"
+                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <Border Style="{StaticResource SectionCard}">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="المنتج" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center"/>
+                                    <Button Grid.Column="1" Command="{Binding ChangePrintProductCommand}"
+                                            Style="{StaticResource FlatButton}" Padding="8,2" Height="28" Content="تغيير"/>
+                                </Grid>
+                                <TextBlock Text="{Binding PrintProductName}" FontWeight="SemiBold" FontSize="16"
+                                           TextWrapping="Wrap" MaxHeight="46" TextTrimming="CharacterEllipsis"
+                                           Margin="0,0,0,6" Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                <ComboBox ItemsSource="{Binding AvailableBarcodes}"
+                                          SelectedItem="{Binding SelectedBarcode}"
+                                          md:HintAssist.Hint="الباركود"
+                                          Style="{StaticResource CompactCombo}"
+                                          Visibility="{Binding HasMultipleBarcodes, Converter={StaticResource BoolVis}}"/>
+                                <TextBlock Text="{Binding SelectedBarcode}" FontFamily="Consolas" Margin="0,0,0,8"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"
+                                           Visibility="{Binding HasSingleBarcode, Converter={StaticResource BoolVis}}"/>
+                                <ComboBox ItemsSource="{Binding PriceOptions}"
+                                          SelectedItem="{Binding SelectedPriceOption}"
+                                          DisplayMemberPath="DisplayText"
+                                          md:HintAssist.Hint="السعر"
+                                          Style="{StaticResource CompactCombo}"
+                                          Visibility="{Binding HasPriceOptions, Converter={StaticResource BoolVis}}"/>
+                                <Grid Height="42">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="40"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="40"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button Grid.Column="0" Command="{Binding DecreaseCopiesCommand}"
+                                            Style="{StaticResource OutlinedButton}" Height="40" Content="−"/>
+                                    <TextBox Grid.Column="1"
+                                             Text="{Binding PrintCopies, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="عدد النسخ"
+                                             Style="{StaticResource CompactField}" Margin="8,0"
+                                             HorizontalContentAlignment="Center"/>
+                                    <Button Grid.Column="2" Command="{Binding IncreaseCopiesCommand}"
+                                            Style="{StaticResource OutlinedButton}" Height="40" Content="+"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SectionCard}" Margin="0">
+                            <StackPanel>
+                                <TextBlock Text="مقاس الملصق" Style="{StaticResource SectionTitle}"/>
+                                <ComboBox ItemsSource="{Binding LabelSizeOptions}"
+                                          SelectedItem="{Binding SelectedLabelSize}"
+                                          DisplayMemberPath="DisplayName"
+                                          md:HintAssist.Hint="مقاس جاهز"
+                                          Style="{StaticResource CompactCombo}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Grid.Column="0"
+                                             Text="{Binding CustomWidthMm, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="العرض (مم)"
+                                             Style="{StaticResource CompactField}"/>
+                                    <TextBox Grid.Column="2"
+                                             Text="{Binding CustomHeightMm, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="الارتفاع (مم)"
+                                             Style="{StaticResource CompactField}"/>
+                                </Grid>
+                                <TextBlock Text="تعديل العرض أو الارتفاع يختار مقاس «مخصص»"
+                                           FontSize="11" Margin="0,-2,0,8"
+                                           Foreground="{DynamicResource HintForegroundBrush}"
+                                           Visibility="{Binding IsCustomSizeSelected, Converter={StaticResource BoolVis}}"/>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox Grid.Column="0"
+                                              ItemsSource="{Binding PaperOptions}"
+                                              SelectedItem="{Binding SelectedPaper}"
+                                              DisplayMemberPath="DisplayName"
+                                              md:HintAssist.Hint="الورق"
+                                              Style="{StaticResource CompactCombo}" Margin="0"/>
+                                    <ComboBox Grid.Column="2"
+                                              ItemsSource="{Binding SymbologyOptions}"
+                                              SelectedItem="{Binding SelectedSymbology}"
+                                              DisplayMemberPath="DisplayName"
+                                              md:HintAssist.Hint="نوع الباركود"
+                                              Style="{StaticResource CompactCombo}" Margin="0"/>
+                                </Grid>
+                                <TextBlock Text="{Binding BarcodeValidationMessage}"
+                                           Foreground="{DynamicResource DangerBrush}"
+                                           TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <Border x:Name="PreviewPane" Grid.Column="2" Grid.Row="0"
+                        Background="{DynamicResource CardBrush}"
+                        BorderBrush="{DynamicResource SubtleBorderBrush}"
+                        BorderThickness="1" CornerRadius="16" Padding="18">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="المعاينة" Style="{StaticResource SectionTitle}" HorizontalAlignment="Center"/>
+                        <Viewbox Grid.Row="1" Stretch="Uniform"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <Border Background="{DynamicResource CardBrush}"
+                                    BorderBrush="{DynamicResource SubtleBorderBrush}"
+                                    BorderThickness="1" CornerRadius="4" Padding="2">
+                                <Image Source="{Binding PreviewImage}" Stretch="None"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       RenderOptions.BitmapScalingMode="HighQuality"/>
+                            </Border>
+                        </Viewbox>
+                    </Grid>
+                </Border>
+
+                <ScrollViewer x:Name="RightCards" Grid.Column="4" Grid.Row="0"
+                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <Border Style="{StaticResource SectionCard}">
+                            <StackPanel>
+                                <TextBlock Text="الهوامش داخل الملصق" Style="{StaticResource SectionTitle}"/>
+                                <Grid FlowDirection="LeftToRight" HorizontalAlignment="Center" MaxWidth="420">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="1.15*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="6"/>
+                                        <RowDefinition Height="64"/>
+                                        <RowDefinition Height="6"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBox Grid.Row="0" Grid.Column="2"
+                                             Text="{Binding MarginTopMm, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="أعلى"
+                                             Style="{StaticResource CompactField}" Margin="0"
+                                             HorizontalContentAlignment="Center"/>
+                                    <TextBox Grid.Row="2" Grid.Column="0" VerticalAlignment="Center"
+                                             Text="{Binding MarginLeftMm, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="يسار"
+                                             Style="{StaticResource CompactField}" Margin="0"
+                                             HorizontalContentAlignment="Center"/>
+                                    <Border Grid.Row="2" Grid.Column="2" CornerRadius="10"
+                                            BorderBrush="{DynamicResource PrimaryHueMidBrush}" BorderThickness="1.5"
+                                            Background="{DynamicResource BackgroundBrush}">
+                                        <TextBlock Text="الملصق" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   FontSize="12" FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                    </Border>
+                                    <TextBox Grid.Row="2" Grid.Column="4" VerticalAlignment="Center"
+                                             Text="{Binding MarginRightMm, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="يمين"
+                                             Style="{StaticResource CompactField}" Margin="0"
+                                             HorizontalContentAlignment="Center"/>
+                                    <TextBox Grid.Row="4" Grid.Column="2"
+                                             Text="{Binding MarginBottomMm, UpdateSourceTrigger=PropertyChanged}"
+                                             md:HintAssist.Hint="أسفل"
+                                             Style="{StaticResource CompactField}" Margin="0"
+                                             HorizontalContentAlignment="Center"/>
+                                </Grid>
+                                <TextBlock Text="{Binding FitWarning}" Foreground="{DynamicResource DangerBrush}"
+                                           TextWrapping="Wrap" FontSize="12" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource SectionCard}" Margin="0">
+                            <StackPanel>
+                                <TextBlock Text="ما يظهر على الملصق" Style="{StaticResource SectionTitle}"/>
+                                <WrapPanel>
+                                    <ToggleButton Content="اسم المنتج" Style="{StaticResource ChoiceChip}"
+                                                  IsChecked="{Binding ShowProductNameOnLabel}"/>
+                                    <ToggleButton Content="السعر" Style="{StaticResource ChoiceChip}"
+                                                  IsChecked="{Binding ShowPriceOnLabel}"/>
+                                    <ToggleButton Content="كود المنتج" Style="{StaticResource ChoiceChip}"
+                                                  IsChecked="{Binding ShowSkuOnLabel}"/>
+                                    <ToggleButton Content="الباركود" Style="{StaticResource ChoiceChip}"
+                                                  IsChecked="{Binding ShowBarcodeGraphic}"/>
+                                    <ToggleButton Content="حدود الملصق" Style="{StaticResource ChoiceChip}"
+                                                  IsChecked="{Binding ShowBorder}"/>
+                                </WrapPanel>
+                                <TextBlock Text="{Binding ProductNameFontSize, StringFormat=حجم الاسم  {0:0}}"
+                                           FontSize="12" Margin="0,6,0,0" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <Slider Minimum="8" Maximum="28" Value="{Binding ProductNameFontSize}" Height="22" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding PriceFontSize, StringFormat=حجم السعر  {0:0}}"
+                                           FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <Slider Minimum="10" Maximum="36" Value="{Binding PriceFontSize}" Height="22" Margin="0,0,0,4"/>
+                                <TextBlock Text="{Binding BarcodeHeightMm, StringFormat=ارتفاع الباركود  {0:0} مم}"
+                                           FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                <Slider Minimum="6" Maximum="25" Value="{Binding BarcodeHeightMm}" Height="22"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <ScrollViewer x:Name="CardsScroll" Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="5"
+                              Visibility="Collapsed"
+                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="CardsHost"/>
+                </ScrollViewer>
+            </Grid>
+
+        </Grid>
+    </Border>
+</UserControl>

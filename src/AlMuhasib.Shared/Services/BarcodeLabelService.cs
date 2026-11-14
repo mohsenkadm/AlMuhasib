@@ -14,7 +14,7 @@ using ZXing.Common;
 
 namespace AlMuhasib.Shared.Services;
 
-public class BarcodeLabelService : IBarcodeLabelService
+public partial class BarcodeLabelService : IBarcodeLabelService
 {
     public byte[]? CreateBarcodePng(string barcode, int width = 280, int height = 90)
     {
