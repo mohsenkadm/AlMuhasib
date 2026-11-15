@@ -2,6 +2,7 @@
 @layout EmptyLayout
 @using AlMuhasib.Admin.Services
 @inject DeveloperAuthState Auth
+@inject CloudDatabaseStatus Database
 @inject NavigationManager Nav
 
 <PageTitle>تسجيل دخول — لوحة المطور</PageTitle>
@@ -27,6 +28,13 @@
                 <div class="alert alert-error">بيانات الدخول غير صحيحة</div>
             }
 
+            @if (_databaseUnavailable)
+            {
+                <div class="alert alert-info">
+                    قاعدة البيانات غير متصلة. إدارة العملاء تحتاجها، ويمكنك متابعة تفعيل النظام بدونها.
+                </div>
+            }
+
             <form method="post" action="/auth/login">
                 <div class="form-group">
                     <label for="username">اسم المستخدم</label>
@@ -38,18 +46,28 @@
                 </div>
                 <button type="submit" class="btn btn-primary btn-block">دخول</button>
             </form>
+
+            @if (_databaseUnavailable)
+            {
+                <form method="post" action="/auth/offline" style="margin-top:1rem">
+                    <button type="submit" class="btn btn-secondary btn-block">متابعة تفعيل النظام بدون قاعدة البيانات</button>
+                </form>
+            }
         </div>
     </div>
 </div>
 
 @code {
     private bool _showError;
+    private bool _databaseUnavailable;
 
     protected override void OnInitialized()
     {
         if (Auth.IsAuthenticated)
-            Nav.NavigateTo("/dashboard", forceLoad: true);
+            Nav.NavigateTo(Auth.IsOffline ? "/desktop-license" : "/dashboard", forceLoad: true);
 
+        _databaseUnavailable = !Database.IsAvailable
+            || Nav.Uri.Contains("error=database", StringComparison.OrdinalIgnoreCase);
         _showError = Nav.Uri.Contains("error=invalid", StringComparison.OrdinalIgnoreCase);
     }
 }

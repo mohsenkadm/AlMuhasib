@@ -5,11 +5,16 @@
 @inject INotificationService NotificationService
 @inject ITenantService TenantService
 @inject DeveloperAuthState Auth
+@inject CloudDatabaseStatus Database
 @inject NavigationManager Nav
 
 <PageTitle>الإشعارات — لوحة المطور</PageTitle>
 
-@if (_ready)
+@if (_databaseUnavailable)
+{
+    <DatabaseUnavailableNotice />
+}
+else if (_ready)
 {
     <div class="page-header">
         <h1>إرسال إشعار</h1>
@@ -58,6 +63,7 @@
     private bool _isError;
     private bool _busy;
     private bool _ready;
+    private bool _databaseUnavailable;
 
     protected override async Task OnInitializedAsync()
     {
@@ -66,8 +72,23 @@
             Nav.NavigateTo("/login", forceLoad: true);
             return;
         }
-        _tenants = await TenantService.GetAllAsync();
-        _ready = true;
+
+        if (!Database.IsAvailable)
+        {
+            _databaseUnavailable = true;
+            return;
+        }
+
+        try
+        {
+            _tenants = await TenantService.GetAllAsync();
+            _ready = true;
+        }
+        catch (Exception)
+        {
+            Database.MarkUnavailable();
+            _databaseUnavailable = true;
+        }
     }
 
     private async Task SendAsync()

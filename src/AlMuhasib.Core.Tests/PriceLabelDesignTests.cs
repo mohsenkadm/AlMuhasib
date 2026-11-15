@@ -39,6 +39,41 @@ public class EanBarcodeTests
     }
 
     [Fact]
+    public void Ean8_symbol_places_four_digits_on_each_side()
+    {
+        var layout = EanSymbol.Encode("55123457", PriceLabelSymbology.Ean8);
+
+        Assert.Equal(67, layout.Modules.Length);
+        Assert.False(layout.OutsideDigit);
+        Assert.Equal(4, layout.LeftDigitCount);
+        Assert.Equal(4, layout.RightDigitCount);
+        Assert.StartsWith("101", layout.Modules);
+        Assert.EndsWith("101", layout.Modules);
+        Assert.Equal("01010", layout.Modules.Substring(layout.CenterGuardIndex, 5));
+        Assert.Equal(
+            "1010110001011000100110010010011010101000010101110010011101000100101",
+            layout.Modules);
+    }
+
+    [Fact]
+    public void Ean13_symbol_keeps_the_first_digit_outside_and_uses_its_parity()
+    {
+        var layout = EanSymbol.Encode("4006381333931", PriceLabelSymbology.Ean13);
+
+        Assert.Equal(95, layout.Modules.Length);
+        Assert.True(layout.OutsideDigit);
+        Assert.Equal(6, layout.LeftDigitCount);
+        Assert.Equal(6, layout.RightDigitCount);
+        Assert.Equal(11, layout.LeftQuiet);
+        Assert.StartsWith("10100011010100111", layout.Modules);
+        Assert.Equal("01010", layout.Modules.Substring(layout.CenterGuardIndex, 5));
+        Assert.EndsWith("101", layout.Modules);
+        Assert.True(EanSymbol.IsGuard(layout, 0));
+        Assert.True(EanSymbol.IsGuard(layout, layout.CenterGuardIndex));
+        Assert.False(EanSymbol.IsGuard(layout, 3));
+    }
+
+    [Fact]
     public void Ean8_rejects_letters()
     {
         var result = EanBarcode.Normalize("55A2345", PriceLabelSymbology.Ean8);

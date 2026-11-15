@@ -5,11 +5,16 @@
 @using AlMuhasib.Admin.Services
 @inject ITenantService TenantService
 @inject DeveloperAuthState Auth
+@inject CloudDatabaseStatus Database
 @inject NavigationManager Nav
 
 <PageTitle>الرئيسية — لوحة المطور</PageTitle>
 
-@if (_ready)
+@if (_databaseUnavailable)
+{
+    <DatabaseUnavailableNotice />
+}
+else if (_ready)
 {
     <div class="stats-grid">
         <div class="stat-card">
@@ -85,6 +90,7 @@
 @code {
     private List<Tenant> _tenants = [];
     private bool _ready;
+    private bool _databaseUnavailable;
 
     protected override async Task OnInitializedAsync()
     {
@@ -93,7 +99,22 @@
             Nav.NavigateTo("/login", forceLoad: true);
             return;
         }
-        _tenants = await TenantService.GetAllAsync();
-        _ready = true;
+
+        if (!Database.IsAvailable)
+        {
+            _databaseUnavailable = true;
+            return;
+        }
+
+        try
+        {
+            _tenants = await TenantService.GetAllAsync();
+            _ready = true;
+        }
+        catch (Exception)
+        {
+            Database.MarkUnavailable();
+            _databaseUnavailable = true;
+        }
     }
 }

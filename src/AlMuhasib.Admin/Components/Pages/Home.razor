@@ -5,5 +5,7 @@
 
 @code {
     protected override void OnInitialized() =>
-        Nav.NavigateTo(Auth.IsAuthenticated ? "/dashboard" : "/login");
+        Nav.NavigateTo(Auth.IsAuthenticated
+            ? (Auth.IsOffline ? "/desktop-license" : "/dashboard")
+            : "/login");
 }

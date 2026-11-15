@@ -251,7 +251,8 @@ public partial class SuppliersViewModel : ViewModelBase
                 supplier.UpdatedAt = DateTime.UtcNow;
                 supplier.UpdatedBy = _currentUserService.Username;
 
-                _unitOfWork.Suppliers.Update(supplier);
+                // Update يحفظ بشكل متزامن — خارج خيط الواجهة لتفادي التجمد
+                await Task.Run(() => _unitOfWork.Suppliers.Update(supplier));
                 await _unitOfWork.SaveChangesAsync();
             }
             else
@@ -276,7 +277,8 @@ public partial class SuppliersViewModel : ViewModelBase
                     softDeleted.Address = address;
                     softDeleted.Notes = notes;
                     softDeleted.CustomFieldsJson = customFields;
-                    _unitOfWork.Suppliers.Update(softDeleted);
+                    // Update يحفظ بشكل متزامن — خارج خيط الواجهة لتفادي التجمد
+                    await Task.Run(() => _unitOfWork.Suppliers.Update(softDeleted));
                     await _unitOfWork.SaveChangesAsync();
                 }
                 else
@@ -322,7 +324,9 @@ public partial class SuppliersViewModel : ViewModelBase
         if (SupplierToDelete is null) return;
         try
         {
-            _unitOfWork.Suppliers.SoftDelete(SupplierToDelete, _currentUserService.Username);
+            // SoftDelete يحفظ بشكل متزامن — خارج خيط الواجهة لتفادي التجمد
+            var toDelete = SupplierToDelete;
+            await Task.Run(() => _unitOfWork.Suppliers.SoftDelete(toDelete, _currentUserService.Username));
             await _unitOfWork.SaveChangesAsync();
             IsDeleteDialogOpen = false;
             SupplierToDelete = null;

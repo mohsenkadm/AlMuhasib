@@ -13,11 +13,31 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddCloudInfrastructure(builder.Configuration);
+builder.Services.AddSingleton<CloudDatabaseStatus>();
 builder.Services.AddScoped<DeveloperAuthState>();
 
 var app = builder.Build();
 
-await CloudDbSeeder.SeedAsync(app.Services);
+var databaseStatus = app.Services.GetRequiredService<CloudDatabaseStatus>();
+var connectionString = app.Configuration.GetConnectionString("CloudConnection");
+if (await CloudDatabaseStatus.CanReachServerAsync(connectionString, app.Logger))
+{
+    try
+    {
+        await CloudDbSeeder.SeedAsync(app.Services);
+        databaseStatus.MarkAvailable();
+    }
+    catch (Exception ex)
+    {
+        databaseStatus.MarkUnavailable();
+        app.Logger.LogWarning(ex,
+            "Cloud database is unavailable. Admin will keep running so desktop activation can be used without it.");
+    }
+}
+else
+{
+    databaseStatus.MarkUnavailable();
+}
 
 //if (!app.Environment.IsDevelopment())
 //{

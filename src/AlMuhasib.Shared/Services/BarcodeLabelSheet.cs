@@ -10,8 +10,6 @@ using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
-using ZXing;
-using ZXing.Common;
 
 namespace AlMuhasib.Shared.Services;
 
@@ -35,17 +33,11 @@ public partial class BarcodeLabelService
         var ean = design.ShowBarcode
             ? EanBarcode.Normalize(item.Barcode, design.Symbology)
             : new EanBarcode.Result(false, string.Empty, null);
-        BitmapSource? barcodeImage = null;
+        EanSymbolElement? symbol = null;
         if (ean.IsValid)
-        {
-            barcodeImage = CreateEanBitmap(
-                ean.Code,
-                design.Symbology,
-                Math.Max(80, (int)Math.Ceiling(innerW * 4)),
-                Math.Max(40, (int)Math.Ceiling(barcodeHeight * 4)));
-        }
+            symbol = EanSymbolElement.Create(ean.Code, design.Symbology, innerW, barcodeHeight);
 
-        return BuildSheetLabel(item, design, labelW, labelH, innerW, barcodeHeight, ean, barcodeImage);
+        return BuildSheetLabel(item, design, labelW, labelH, ean, symbol);
     }
 
     public IReadOnlyList<byte[]> CreateSheetPreviewPngs(BarcodeLabelItem item, PriceLabelDesign design, int copies)
@@ -141,10 +133,8 @@ public partial class BarcodeLabelService
         PriceLabelDesign design,
         double labelW,
         double labelH,
-        double barcodeWidth,
-        double barcodeHeight,
         EanBarcode.Result ean,
-        BitmapSource? barcodeImage)
+        EanSymbolElement? symbol)
     {
         var root = new Border
         {
@@ -198,24 +188,11 @@ public partial class BarcodeLabelService
 
         if (design.ShowBarcode)
         {
-            if (ean.IsValid && barcodeImage is not null)
+            if (ean.IsValid && symbol is not null)
             {
-                content.Children.Add(new Image
-                {
-                    Source = barcodeImage,
-                    Width = barcodeWidth,
-                    Height = barcodeHeight,
-                    Stretch = Stretch.Fill,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Margin = new Thickness(0, 1, 0, 0)
-                });
-                content.Children.Add(new TextBlock
-                {
-                    Text = ean.Code,
-                    FontFamily = new FontFamily("Consolas"),
-                    FontSize = 9,
-                    TextAlignment = TextAlignment.Center
-                });
+                symbol.HorizontalAlignment = HorizontalAlignment.Center;
+                symbol.Margin = new Thickness(0, 1, 0, 0);
+                content.Children.Add(symbol);
             }
             else
             {
@@ -246,37 +223,6 @@ public partial class BarcodeLabelService
 
         root.Child = content;
         return root;
-    }
-
-    private static BitmapSource? CreateEanBitmap(string code, PriceLabelSymbology symbology, int width, int height)
-    {
-        try
-        {
-            var writer = new BarcodeWriterPixelData
-            {
-                Format = symbology == PriceLabelSymbology.Ean8 ? BarcodeFormat.EAN_8 : BarcodeFormat.EAN_13,
-                Options = new EncodingOptions
-                {
-                    Width = width,
-                    Height = height,
-                    Margin = 0,
-                    PureBarcode = true
-                }
-            };
-            var pixelData = writer.Write(code);
-            var bitmap = new WriteableBitmap(pixelData.Width, pixelData.Height, 96, 96, PixelFormats.Bgra32, null);
-            bitmap.WritePixels(
-                new Int32Rect(0, 0, pixelData.Width, pixelData.Height),
-                pixelData.Pixels,
-                pixelData.Width * 4,
-                0);
-            bitmap.Freeze();
-            return bitmap;
-        }
-        catch
-        {
-            return null;
-        }
     }
 
     private static byte[] RenderElementPng(FrameworkElement visual, double width, double height, double pixelScale)

@@ -242,6 +242,12 @@ public partial class ProductsViewModel : ViewModelBase
         ShowMultiCurrency = featureFlags.MultiCurrency && _pricingEnabled;
         IsCardView = ListViewModeHelper.LoadIsCardView(_userPreferences, ListViewModeKeys.Products);
 
+        AttachLabelPrint(new PriceLabelPrintEditor(
+            barcodeLabelService,
+            productPriceService,
+            userPreferences,
+            _pricingEnabled));
+
         PageTitle = "المنتجات";
         ConfigureFeatureServices(
             featureFlags, productUnitService, packagingTypeService, productBatchService,

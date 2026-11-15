@@ -2,6 +2,7 @@
 @implements IDisposable
 @using AlMuhasib.Admin.Services
 @inject DeveloperAuthState Auth
+@inject CloudDatabaseStatus Database
 @inject NavigationManager Nav
 
 <div class="admin-shell">
@@ -45,13 +46,19 @@
             <div class="admin-topbar-actions">
                 @if (Auth.IsAuthenticated)
                 {
-                    <span class="admin-user-badge">👤 @Auth.Username</span>
+                    <span class="admin-user-badge">👤 @(Auth.IsOffline ? "بدون قاعدة بيانات" : Auth.Username)</span>
                     <button class="btn btn-danger btn-sm" @onclick="Logout">خروج</button>
                 }
             </div>
         </header>
 
         <main class="admin-content">
+            @if (!Database.IsAvailable)
+            {
+                <div class="alert alert-info">
+                    وضع العمل بدون قاعدة بيانات. شاشات العملاء والإشعارات تبقى متوقفة حتى يعود الاتصال، وتفعيل سطح المكتب يعمل.
+                </div>
+            }
             @Body
         </main>
     </div>

@@ -1056,18 +1056,6 @@
             </materialDesign:DialogHost.DialogContent>
         </materialDesign:DialogHost>
 
-        <!-- ═══════════════════════════════════════════ -->
-        <!-- BARCODE PRINT DIALOG                        -->
-        <!-- ═══════════════════════════════════════════ -->
-        <materialDesign:DialogHost IsOpen="{Binding IsBarcodePrintDialogOpen}"
-                                   CloseOnClickAway="False"
-                                   DialogTheme="Inherit"
-                                   OverlayBackground="#80000000">
-            <materialDesign:DialogHost.DialogContent>
-                <controls:BarcodePrintDialogContent/>
-            </materialDesign:DialogHost.DialogContent>
-        </materialDesign:DialogHost>
-
         <!-- Clothing sizes/colors dialog -->
         <materialDesign:DialogHost IsOpen="{Binding IsClothingDialogOpen}"
                                    CloseOnClickAway="False"

@@ -6,12 +6,18 @@ public sealed class DeveloperAuthState
 {
     public const string CookieName = "AlMuhasib.DevAuth";
 
+    /// <summary>جلسة محلية عند غياب قاعدة البيانات؛ لا تمنح وصولاً لبيانات العملاء.</summary>
+    public const string OfflineUsername = "offline";
+
     private readonly IHttpContextAccessor _httpContextAccessor;
 
     public DeveloperAuthState(IHttpContextAccessor httpContextAccessor) =>
         _httpContextAccessor = httpContextAccessor;
 
     public bool IsAuthenticated => !string.IsNullOrEmpty(Username);
+
+    public bool IsOffline =>
+        string.Equals(Username, OfflineUsername, StringComparison.Ordinal);
 
     public string Username =>
         _httpContextAccessor.HttpContext?.Request.Cookies[CookieName] ?? string.Empty;

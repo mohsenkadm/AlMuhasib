@@ -6,11 +6,16 @@
 @using AlMuhasib.Admin.Services
 @inject ITenantService TenantService
 @inject DeveloperAuthState Auth
+@inject CloudDatabaseStatus Database
 @inject NavigationManager Nav
 
 <PageTitle>العملاء — لوحة المطور</PageTitle>
 
-@if (_ready)
+@if (_databaseUnavailable)
+{
+    <DatabaseUnavailableNotice />
+}
+else if (_ready)
 {
     <div class="page-header">
         <h1>عملاء النظام</h1>
@@ -117,6 +122,7 @@
 @code {
     private List<Tenant> _tenants = [];
     private bool _ready;
+    private bool _databaseUnavailable;
     private string? _message;
     private bool _isError;
     private Tenant? _deleteTarget;
@@ -129,8 +135,23 @@
             Nav.NavigateTo("/login", forceLoad: true);
             return;
         }
-        await ReloadAsync();
-        _ready = true;
+
+        if (!Database.IsAvailable)
+        {
+            _databaseUnavailable = true;
+            return;
+        }
+
+        try
+        {
+            await ReloadAsync();
+            _ready = true;
+        }
+        catch (Exception)
+        {
+            Database.MarkUnavailable();
+            _databaseUnavailable = true;
+        }
     }
 
     private async Task ReloadAsync() =>

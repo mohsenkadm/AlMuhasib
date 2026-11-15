@@ -7,11 +7,16 @@
 @using AlMuhasib.Admin.Services
 @inject ITenantService TenantService
 @inject DeveloperAuthState Auth
+@inject CloudDatabaseStatus Database
 @inject NavigationManager Nav
 
 <PageTitle>@(Id == 0 ? "عميل جديد" : "إدارة عميل")</PageTitle>
 
-@if (_ready)
+@if (_databaseUnavailable)
+{
+    <DatabaseUnavailableNotice />
+}
+else if (_ready)
 {
     <div class="page-header">
         <h1>@(Id == 0 ? "إنشاء عميل جديد" : $"تعديل: {_companyName}")</h1>
@@ -226,6 +231,7 @@
     private bool _isError;
     private Tenant? _tenant;
     private bool _ready;
+    private bool _databaseUnavailable;
 
     private TenantAccount? _editAccount;
     private string _editPassword = "";
@@ -244,6 +250,25 @@
             return;
         }
 
+        if (!Database.IsAvailable)
+        {
+            _databaseUnavailable = true;
+            return;
+        }
+
+        try
+        {
+            await LoadAsync();
+        }
+        catch (Exception)
+        {
+            Database.MarkUnavailable();
+            _databaseUnavailable = true;
+        }
+    }
+
+    private async Task LoadAsync()
+    {
         if (Id > 0)
         {
             _tenant = await TenantService.GetByIdAsync(Id);
