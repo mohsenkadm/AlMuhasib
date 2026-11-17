@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using AlMuhasib.Core.Enums;
+using AlMuhasib.Core.Helpers;
 using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.UI.Charts;
@@ -19,6 +20,7 @@ public partial class ProfitReportViewModel : ReportViewModelBase
     [ObservableProperty] private bool _showTotalSalesUsd;
     [ObservableProperty] private string _costOfSales = "0";
     [ObservableProperty] private string _grossProfit = "0";
+    [ObservableProperty] private string _otherIncome = "0";
     [ObservableProperty] private string _totalExpenses = "0";
     [ObservableProperty] private string _totalExpensesUsd = "0";
     [ObservableProperty] private bool _showTotalExpensesUsd;
@@ -65,7 +67,7 @@ public partial class ProfitReportViewModel : ReportViewModelBase
             var result = await _reportService.GetProfitReportAsync(DateFrom, DateTo);
             _lastResult = result;
 
-            var periodNet = result.GrossProfit - result.TotalExpenses;
+            var periodNet = CompanyProfitMath.CardNet(result.GrossProfit, result.OtherIncome, result.TotalExpenses);
 
             TotalSales = FormatCurrency(result.TotalSales);
             ShowTotalSalesUsd = result.TotalSalesUsd != 0;
@@ -74,6 +76,7 @@ public partial class ProfitReportViewModel : ReportViewModelBase
                 : "0";
             CostOfSales = FormatCurrency(result.TotalPurchases);
             GrossProfit = FormatCurrency(result.GrossProfit);
+            OtherIncome = FormatCurrency(result.OtherIncome);
             TotalExpenses = FormatCurrency(result.TotalExpenses);
             ShowTotalExpensesUsd = result.TotalExpensesUsd != 0;
             TotalExpensesUsd = ShowTotalExpensesUsd
@@ -86,6 +89,7 @@ public partial class ProfitReportViewModel : ReportViewModelBase
                 ChartThemeConfig.Column([result.TotalSales], "إجمالي المبيعات", 0),
                 ChartThemeConfig.Column([result.TotalPurchases], "تكلفة المبيعات", 3),
                 ChartThemeConfig.Column([result.GrossProfit], "إجمالي الربح", 2),
+                ChartThemeConfig.Column([result.OtherIncome], "إيرادات أخرى", 4),
                 ChartThemeConfig.Column([result.TotalExpenses], "المصاريف", 1),
                 ChartThemeConfig.Column([periodNet], "صافي الأرباح", 4)
             ];
@@ -106,7 +110,7 @@ public partial class ProfitReportViewModel : ReportViewModelBase
             return;
 
         var r = _lastResult;
-        var periodNet = r.GrossProfit - r.TotalExpenses;
+        var periodNet = CompanyProfitMath.CardNet(r.GrossProfit, r.OtherIncome, r.TotalExpenses);
         AmountBreakdownModel model = key switch
         {
             "sales" => new AmountBreakdownModel
@@ -187,12 +191,13 @@ public partial class ProfitReportViewModel : ReportViewModelBase
             {
                 Title = "تفاصيل صافي الأرباح",
                 Subtitle = "الصافي الظاهر في البطاقة، مع المكونات الكاملة للإيضاح",
-                Formula = "الصافي الظاهر = إجمالي الربح − المصاريف",
+                Formula = "الصافي الظاهر = إجمالي الربح + إيرادات أخرى − المصاريف",
                 ResultLabel = "صافي الأرباح (البطاقة)",
                 ResultAmount = periodNet,
                 Lines =
                 [
                     new AmountBreakdownLine { Operator = "+", Label = "إجمالي الربح", Amount = r.GrossProfit },
+                    new AmountBreakdownLine { Operator = "+", Label = "إيرادات أخرى", Amount = r.OtherIncome, Description = "لا تدخل في إجمالي المبيعات" },
                     new AmountBreakdownLine { Operator = "−", Label = "إجمالي المصاريف", Amount = r.TotalExpenses },
                     new AmountBreakdownLine { Operator = "=", Label = "صافي الأرباح الظاهر", Amount = periodNet, IsResult = true },
                     new AmountBreakdownLine
@@ -220,7 +225,7 @@ public partial class ProfitReportViewModel : ReportViewModelBase
                         Label = "الصافي الكامل",
                         Amount = r.NetProfit,
                         IsResult = true,
-                        Description = "المبيعات − التكلفة − المصاريف − الرسوم − التوزيعات + الافتتاحي"
+                        Description = "المبيعات − التكلفة + إيرادات أخرى − المصاريف − الرسوم − التوزيعات + الافتتاحي"
                     }
                 ],
                 Note = periodNet < 0 || r.NetProfit < 0
@@ -274,7 +279,7 @@ public partial class ProfitReportViewModel : ReportViewModelBase
         if (dlg.ShowDialog() != true) return;
 
         var summaryCols = new[] { "البند", "المبلغ" };
-        var periodNet = (_lastResult?.GrossProfit ?? 0) - (_lastResult?.TotalExpenses ?? 0);
+        var periodNet = CompanyProfitMath.CardNet(_lastResult?.GrossProfit ?? 0, _lastResult?.OtherIncome ?? 0, _lastResult?.TotalExpenses ?? 0);
         var summaryRows = BuildSummaryRows(periodNet);
 
         _exportService.ExportToExcel(dlg.FileName, "الأرباح", summaryCols, summaryRows);
@@ -285,7 +290,7 @@ public partial class ProfitReportViewModel : ReportViewModelBase
     private void Print()
     {
         var cols = new[] { "البند", "المبلغ" };
-        var periodNet = (_lastResult?.GrossProfit ?? 0) - (_lastResult?.TotalExpenses ?? 0);
+        var periodNet = CompanyProfitMath.CardNet(_lastResult?.GrossProfit ?? 0, _lastResult?.OtherIncome ?? 0, _lastResult?.TotalExpenses ?? 0);
         var rows = BuildSummaryRows(periodNet);
         _exportService.PrintTable("تقرير الأرباح", cols, rows);
     }
@@ -299,6 +304,7 @@ public partial class ProfitReportViewModel : ReportViewModelBase
             new object[] { "إجمالي المبيعات", _lastResult?.TotalSales ?? 0 },
             new object[] { "تكلفة المبيعات", _lastResult?.TotalPurchases ?? 0 },
             new object[] { "إجمالي الربح", _lastResult?.GrossProfit ?? 0 },
+            new object[] { "إيرادات أخرى", _lastResult?.OtherIncome ?? 0 },
             new object[] { "إجمالي المصاريف", _lastResult?.TotalExpenses ?? 0 },
             new object[] { "صافي الأرباح", periodNet }
         };

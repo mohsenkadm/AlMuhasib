@@ -11,6 +11,7 @@ using AlMuhasib.Shared.Services;
 using AlMuhasib.UI.Controls;
 using AlMuhasib.UI.Models;
 using AlMuhasib.UI.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AlMuhasib.UI.ViewModels;
 
@@ -246,7 +247,8 @@ public partial class ProductsViewModel : ViewModelBase
             barcodeLabelService,
             productPriceService,
             userPreferences,
-            _pricingEnabled));
+            _pricingEnabled,
+            services.GetService<IBranchContext>()));
 
         PageTitle = "المنتجات";
         ConfigureFeatureServices(

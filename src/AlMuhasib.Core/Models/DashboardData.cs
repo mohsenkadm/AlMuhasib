@@ -24,12 +24,14 @@ public class DashboardData
     /// <summary>قيمة أرصدة المنتجات الافتتاحية (كمية افتتاحية × تكلفة الوحدة).</summary>
     public decimal NetProfitOpeningStock { get; set; }
     public decimal NetProfitExpenses { get; set; }
+    public decimal NetProfitOtherIncome { get; set; }
     public decimal NetProfitDistributions { get; set; }
     public decimal NetProfitOpening { get; set; }
 
     public decimal NetProfitSalesUsd { get; set; }
     public decimal NetProfitPurchasesUsd { get; set; }
     public decimal NetProfitExpensesUsd { get; set; }
+    public decimal NetProfitOtherIncomeUsd { get; set; }
 
     // Charts
     public List<DailySalesPoint> SalesLast30Days { get; set; } = [];

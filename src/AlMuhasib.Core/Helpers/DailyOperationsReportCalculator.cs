@@ -7,15 +7,16 @@ public static class DailyOperationsReportCalculator
 {
     /// <summary>
     /// الصافي التشغيلي اليومي =
-    /// مبيعات نقدية − مرتجعات − مصاريف − مدفوعات الموردين + وصولات القبض
+    /// مبيعات نقدية − مرتجعات − مصاريف − مدفوعات الموردين + وصولات القبض + إيرادات أخرى
     /// </summary>
     public static decimal ComputeNet(
         decimal cashSales,
         decimal salesReturns,
         decimal expenses,
         decimal supplierPayments,
-        decimal receipts)
-        => cashSales - salesReturns - expenses - supplierPayments + receipts;
+        decimal receipts,
+        decimal otherIncome = 0m)
+        => cashSales - salesReturns - expenses - supplierPayments + receipts + otherIncome;
 
     /// <summary>نسبة الحصة من الإجمالي (مقربة لمنزلة عشرية واحدة).</summary>
     public static decimal SharePercent(decimal part, decimal total)

@@ -62,13 +62,14 @@ public class DistributableProfitBreakdown
     public decimal Sales { get; set; }
     public decimal CostOfGoodsSold { get; set; }
     public decimal Expenses { get; set; }
+    public decimal OtherIncome { get; set; }
     public decimal AlreadyDistributedInPeriod { get; set; }
 
     /// <summary>مبيعات − تكلفة البضاعة = إجمالي الربح</summary>
     public decimal GrossProfit => Sales - CostOfGoodsSold;
 
-    /// <summary>إجمالي الربح − المصاريف = الربح الحقيقي</summary>
-    public decimal NetProfit => GrossProfit - Expenses;
+    /// <summary>إجمالي الربح + إيرادات أخرى − المصاريف = الربح الحقيقي</summary>
+    public decimal NetProfit => GrossProfit + OtherIncome - Expenses;
 
     /// <summary>الربح المتاح للتوزيع بعد خصم ما وُزّع في نفس الشهر</summary>
     public decimal DistributableAmount => Math.Max(0, NetProfit - AlreadyDistributedInPeriod);

@@ -313,6 +313,10 @@ public class ProfitReportResult
     public decimal TotalSalesUsd { get; set; }
     public decimal TotalPurchases { get; set; }
     public decimal GrossProfit { get; set; }
+    /// <summary>إيرادات أخرى نقدية — لا تدخل في إجمالي المبيعات.</summary>
+    public decimal OtherIncome { get; set; }
+    /// <summary>إيرادات أخرى بالدولار — إفصاح فقط عند عدم طي العملة.</summary>
+    public decimal OtherIncomeUsd { get; set; }
     public decimal TotalExpenses { get; set; }
     /// <summary>مصروفات الدولار للفترة — إفصاح فقط.</summary>
     public decimal TotalExpensesUsd { get; set; }
@@ -329,6 +333,7 @@ public class MonthlyProfitRow
     public decimal Sales { get; set; }
     public decimal Purchases { get; set; }
     public decimal GrossProfit { get; set; }
+    public decimal OtherIncome { get; set; }
     public decimal Expenses { get; set; }
     public decimal NetProfit { get; set; }
     public decimal ProfitMargin { get; set; }
@@ -1332,6 +1337,7 @@ public class OperatingProfitReportResult
     public decimal TotalSales { get; set; }
     public decimal CostOfGoodsSold { get; set; }
     public decimal GrossProfit { get; set; }
+    public decimal OtherIncome { get; set; }
     public decimal TotalExpenses { get; set; }
     public decimal TotalBankFees { get; set; }
     public decimal OperatingProfit { get; set; }
@@ -1740,6 +1746,7 @@ public class ProfitAndLossReportResult
     public decimal TotalSalesUsd { get; set; }
     public decimal CostOfGoodsSold { get; set; }
     public decimal GrossProfit { get; set; }
+    public decimal OtherIncome { get; set; }
     public decimal TotalExpenses { get; set; }
     public decimal TotalExpensesUsd { get; set; }
     public decimal TotalBankFees { get; set; }
@@ -2051,7 +2058,10 @@ public class DailyOperationsReportResult
     public decimal SalesReturns { get; set; }
     public decimal SupplierPayments { get; set; }
     public decimal Receipts { get; set; }
-    /// <summary>CashSales − SalesReturns − Expenses − SupplierPayments + Receipts</summary>
+    /// <summary>إيرادات أخرى نقدية — ليست سند قبض وليست مبيعات.</summary>
+    public decimal OtherIncome { get; set; }
+    public int OtherIncomeCount { get; set; }
+    /// <summary>CashSales − SalesReturns − Expenses − SupplierPayments + Receipts + OtherIncome</summary>
     public decimal NetAmount { get; set; }
 
     public int CashSalesInvoiceCount { get; set; }
@@ -2082,6 +2092,7 @@ public class DailyOperationsBranchRow
     public decimal SalesReturns { get; set; }
     public decimal SupplierPayments { get; set; }
     public decimal Receipts { get; set; }
+    public decimal OtherIncome { get; set; }
     public decimal NetAmount { get; set; }
 }
 

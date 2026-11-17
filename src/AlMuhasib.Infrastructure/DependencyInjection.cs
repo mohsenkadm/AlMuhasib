@@ -110,6 +110,7 @@ public static class DependencyInjection
         services.AddScoped<ICashBankService, CashBankService>();
         services.AddScoped<ICurrencyExchangeService, CurrencyExchangeService>();
         services.AddScoped<IExpenseService, ExpenseService>();
+        services.AddScoped<IOtherIncomeService, OtherIncomeService>();
         services.AddScoped<IMaintenanceService, MaintenanceService>();
         services.AddScoped<IInvestorService, InvestorService>();
         services.AddScoped<IReportService, ReportService>();

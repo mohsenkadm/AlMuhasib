@@ -2108,6 +2108,9 @@
                         <DataTemplate DataType="{x:Type vm:ExpenseViewModel}">
                             <views:ExpenseView />
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type vm:OtherIncomeViewModel}">
+                            <views:OtherIncomeView />
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type vm:InvestorsViewModel}">
                             <views:InvestorsView />
                         </DataTemplate>

@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.52",
-  "releaseDate": "2026-11-15",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.52/AlMuhasib-1.14.52.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.52/Qayd-Setup-1.14.52.exe",
-  "sha256": "532244801DE8E1E4D3ADC3EE853C68E32305048705CD996B9980AA90AD363795",
-  "sizeBytes": 163020394,
-  "releaseNotes": "تحسين طباعة ملصقات الأسعار ورمز EAN — تحديث اختياري آمن بدون تغيير قاعدة البيانات أو كونكشن العملاء الحاليين",
+  "version": "1.14.53",
+  "releaseDate": "2026-11-17",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.53/AlMuhasib-1.14.53.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.53/Qayd-Setup-1.14.53.exe",
+  "sha256": "1A84DE934C3A9283674DFAD459E5D83763F08F5F197FCC9AD932B21F758ED0DD",
+  "sizeBytes": 163079959,
+  "releaseNotes": "إيرادات أخرى وتحسين التقارير والأرباح — تحديث اختياري آمن (جداول إضافية فقط) بدون تأثير على كونكشن العملاء الحاليين",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

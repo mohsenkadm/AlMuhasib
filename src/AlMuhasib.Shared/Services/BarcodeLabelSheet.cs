@@ -153,12 +153,34 @@ public partial class BarcodeLabelService
             SnapsToDevicePixels = true
         };
 
+        var textWidth = Math.Max(8, labelW - root.Padding.Left - root.Padding.Right);
+        var grid = new Grid();
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+        if (design.ShowBranchName && !string.IsNullOrWhiteSpace(item.BranchName))
+        {
+            var branch = new TextBlock
+            {
+                Text = item.BranchName.Trim(),
+                FontSize = Math.Max(7, design.ProductNameFontSize - 2),
+                FontWeight = FontWeights.SemiBold,
+                TextAlignment = TextAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+                TextTrimming = TextTrimming.CharacterEllipsis,
+                MaxWidth = textWidth,
+                MaxHeight = labelH * 0.28,
+                Margin = new Thickness(0, 0, 0, 1)
+            };
+            Grid.SetRow(branch, 0);
+            grid.Children.Add(branch);
+        }
+
         var content = new StackPanel
         {
             VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Stretch
         };
-        var textWidth = Math.Max(8, labelW - root.Padding.Left - root.Padding.Right);
 
         if (design.ShowProductName && !string.IsNullOrWhiteSpace(item.ProductName))
         {
@@ -221,7 +243,9 @@ public partial class BarcodeLabelService
             });
         }
 
-        root.Child = content;
+        Grid.SetRow(content, 1);
+        grid.Children.Add(content);
+        root.Child = grid;
         return root;
     }
 

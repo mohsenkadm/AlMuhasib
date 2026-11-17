@@ -405,6 +405,9 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
     private decimal _periodGrossProfit;
 
     [ObservableProperty]
+    private decimal _periodOtherIncome;
+
+    [ObservableProperty]
     private decimal _periodNetProfit;
 
     [ObservableProperty]
@@ -432,6 +435,7 @@ public partial class InvestorsViewModel : ViewModelBase, IInvestorLookupHost
         PeriodCogs = breakdown.CostOfGoodsSold;
         PeriodExpenses = breakdown.Expenses;
         PeriodGrossProfit = breakdown.GrossProfit;
+        PeriodOtherIncome = breakdown.OtherIncome;
         PeriodNetProfit = breakdown.NetProfit;
         PeriodAlreadyDistributed = breakdown.AlreadyDistributedInPeriod;
         DistributableProfits = breakdown.DistributableAmount;

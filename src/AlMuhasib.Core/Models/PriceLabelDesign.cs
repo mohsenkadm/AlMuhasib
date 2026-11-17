@@ -21,6 +21,7 @@ public sealed class PriceLabelDesign
     public double RowSpacingMm { get; set; } = 2;
     public double ColumnSpacingMm { get; set; } = 2;
     public PriceLabelPaper Paper { get; set; } = PriceLabelPaper.A4;
+    public bool ShowBranchName { get; set; }
     public bool ShowProductName { get; set; } = true;
     public bool ShowPrice { get; set; } = true;
     public bool ShowSku { get; set; } = true;
@@ -45,6 +46,7 @@ public sealed class PriceLabelDesign
         RowSpacingMm = RowSpacingMm,
         ColumnSpacingMm = ColumnSpacingMm,
         Paper = Paper,
+        ShowBranchName = ShowBranchName,
         ShowProductName = ShowProductName,
         ShowPrice = ShowPrice,
         ShowSku = ShowSku,
@@ -66,12 +68,13 @@ public sealed class PriceLabelDesign
         MarginBottomMm = Clamp(MarginBottomMm, 0, 40);
         Columns = (int)Clamp(Columns, 1, 8);
         LabelWidthMm = Clamp(LabelWidthMm, 15, 120);
-        LabelHeightMm = Clamp(LabelHeightMm, 12, 80);
+        LabelHeightMm = Clamp(LabelHeightMm, 10, 80);
         RowSpacingMm = Clamp(RowSpacingMm, 0, 20);
         ColumnSpacingMm = Clamp(ColumnSpacingMm, 0, 20);
         ProductNameFontSize = Clamp(ProductNameFontSize, 8, 28);
         PriceFontSize = Clamp(PriceFontSize, 10, 36);
-        BarcodeHeightMm = Clamp(BarcodeHeightMm, 6, 25);
+        var maxBarcodeMm = Math.Min(25, Math.Max(6, LabelHeightMm - 2));
+        BarcodeHeightMm = Clamp(BarcodeHeightMm, 6, maxBarcodeMm);
         TaxPercent = Clamp(TaxPercent, 0, 100);
         if (!Enum.IsDefined(Paper))
             Paper = PriceLabelPaper.A4;

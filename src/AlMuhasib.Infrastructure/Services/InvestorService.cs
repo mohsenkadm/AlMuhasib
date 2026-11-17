@@ -253,6 +253,14 @@ public class InvestorService : IInvestorService
         var totalExpenses = FinancialReportIqdFoldIn.SumAmountsInBaseIqd(
             expenseRows.Select(r => (r.Amount, r.Currency, r.FxRate)), foldInUsd);
 
+        var otherQ = foldInUsd
+            ? context.OtherIncomes.AsQueryable()
+            : context.OtherIncomes.Where(i => i.Currency == AccountingCurrency.IQD);
+        otherQ = otherQ.Where(i => i.Date >= monthStart && i.Date < monthEndExclusive);
+        var otherRows = await otherQ.Select(i => new { i.Amount, i.Currency, i.FxRate }).ToListAsync();
+        var otherIncome = FinancialReportIqdFoldIn.SumAmountsInBaseIqd(
+            otherRows.Select(r => (r.Amount, r.Currency, r.FxRate)), foldInUsd);
+
         var alreadyDistributed = await context.ProfitDistributions
             .Where(pd => pd.Date >= monthStart && pd.Date < monthEndExclusive)
             .SumAsync(pd => (decimal?)pd.DistributedAmount ?? 0);
@@ -264,6 +272,7 @@ public class InvestorService : IInvestorService
             Sales = totalSales,
             CostOfGoodsSold = cogs,
             Expenses = totalExpenses,
+            OtherIncome = otherIncome,
             AlreadyDistributedInPeriod = alreadyDistributed
         };
     }

@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Media.Imaging;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Helpers;
+using AlMuhasib.Core.Interfaces;
 using AlMuhasib.Core.Interfaces.Services;
 using AlMuhasib.Core.Models;
 using AlMuhasib.UI.Controls;
@@ -21,6 +22,7 @@ public partial class PriceLabelPrintEditor : ObservableObject
     private readonly IProductPriceService _productPriceService;
     private readonly IBarcodeLabelService _barcodeLabelService;
     private readonly IUserPreferencesService _userPreferences;
+    private readonly IBranchContext? _branchContext;
     private readonly bool _pricingEnabled;
 
     private System.Timers.Timer? _previewTimer;
@@ -84,12 +86,14 @@ public partial class PriceLabelPrintEditor : ObservableObject
         IBarcodeLabelService barcodeLabelService,
         IProductPriceService productPriceService,
         IUserPreferencesService userPreferences,
-        bool pricingEnabled)
+        bool pricingEnabled,
+        IBranchContext? branchContext = null)
     {
         _barcodeLabelService = barcodeLabelService;
         _productPriceService = productPriceService;
         _userPreferences = userPreferences;
         _pricingEnabled = pricingEnabled;
+        _branchContext = branchContext;
         _selectedLabelSize = LabelSizeOptions.FirstOrDefault(o => o.Size == BarcodeLabelSizeHelper.DefaultSize)
                              ?? LabelSizeOptions[0];
         _isCustomSizeSelected = _selectedLabelSize.IsCustom;
@@ -258,6 +262,7 @@ public partial class PriceLabelPrintEditor : ObservableObject
         {
             if (CustomWidthMm <= 0) CustomWidthMm = BarcodeLabelSizeHelper.DefaultCustomWidthMm;
             if (CustomHeightMm <= 0) CustomHeightMm = BarcodeLabelSizeHelper.DefaultCustomHeightMm;
+            FitBarcodeToLabel(CustomHeightMm);
         }
         else if (value is not null)
         {
@@ -272,6 +277,8 @@ public partial class PriceLabelPrintEditor : ObservableObject
             {
                 _suppressCustomSizeSync = false;
             }
+
+            FitBarcodeToLabel(h);
         }
 
         RequestPreview();
@@ -288,6 +295,7 @@ public partial class PriceLabelPrintEditor : ObservableObject
     {
         if (_suppressCustomSizeSync || _suppressDesign) return;
         EnsureCustomSizeSelected();
+        FitBarcodeToLabel(value);
         RequestPreview();
     }
 
@@ -322,6 +330,13 @@ public partial class PriceLabelPrintEditor : ObservableObject
     partial void OnPriceFontSizeChanged(double value) => RequestPreview();
     partial void OnBarcodeHeightMmChanged(double value) => RequestPreview();
     partial void OnTaxPercentChanged(double value) => RequestPreview();
+
+    private void FitBarcodeToLabel(double labelHeightMm)
+    {
+        var maxBarcode = Math.Min(25, Math.Max(6, labelHeightMm - 2));
+        if (BarcodeHeightMm > maxBarcode)
+            BarcodeHeightMm = maxBarcode;
+    }
 
     private void EnsureCustomSizeSelected()
     {
@@ -434,6 +449,7 @@ public partial class PriceLabelPrintEditor : ObservableObject
         ColumnSpacingMm = design.ColumnSpacingMm;
         SelectedPaper = PaperOptions.FirstOrDefault(o => o.Paper == design.Paper) ?? PaperOptions[0];
         SelectedSymbology = SymbologyOptions.FirstOrDefault(o => o.Symbology == design.Symbology) ?? SymbologyOptions[0];
+        ShowBranchNameOnLabel = design.ShowBranchName;
         ShowProductNameOnLabel = design.ShowProductName;
         ShowPriceOnLabel = design.ShowPrice;
         ShowSkuOnLabel = design.ShowSku;
@@ -443,6 +459,7 @@ public partial class PriceLabelPrintEditor : ObservableObject
         ProductNameFontSize = design.ProductNameFontSize;
         PriceFontSize = design.PriceFontSize;
         BarcodeHeightMm = design.BarcodeHeightMm;
+        FitBarcodeToLabel(CustomHeightMm);
         TaxPercent = design.TaxPercent;
         ShowBarcodeNumberOnLabel = true;
     }
@@ -462,6 +479,7 @@ public partial class PriceLabelPrintEditor : ObservableObject
             ColumnSpacingMm = ColumnSpacingMm,
             Paper = SelectedPaper?.Paper ?? PriceLabelPaper.A4,
             Symbology = SelectedSymbology?.Symbology ?? PriceLabelSymbology.Ean13,
+            ShowBranchName = ShowBranchNameOnLabel,
             ShowProductName = ShowProductNameOnLabel,
             ShowPrice = ShowPriceOnLabel,
             ShowSku = ShowSkuOnLabel,
@@ -480,6 +498,8 @@ public partial class PriceLabelPrintEditor : ObservableObject
     private BarcodeLabelItem BuildLabelItem(PriceLabelDesign design) => new()
     {
         ProductName = PrintProductName,
+        BranchName = ResolveBranchName(),
+        ShowBranchName = design.ShowBranchName,
         Barcode = SelectedBarcode ?? string.Empty,
         Sku = _productId > 0 ? _productId.ToString() : string.Empty,
         Price = SelectedPriceOption?.SalePrice,
@@ -496,4 +516,16 @@ public partial class PriceLabelPrintEditor : ObservableObject
         Symbology = design.Symbology,
         ShowBarcodeNumber = true
     };
+
+    private string ResolveBranchName()
+    {
+        if (_branchContext is null || _branchContext.IsAllBranchesMode)
+            return string.Empty;
+
+        var name = _branchContext.CurrentBranchName?.Trim();
+        if (string.IsNullOrWhiteSpace(name) || name == "كل الفروع")
+            return string.Empty;
+
+        return name;
+    }
 }

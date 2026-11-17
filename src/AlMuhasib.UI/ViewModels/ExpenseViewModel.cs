@@ -165,6 +165,32 @@ public partial class ExpenseViewModel : PagedViewModelBase
     [ObservableProperty]
     private string _formNotes = string.Empty;
 
+    public bool ShowCashImpact => FormCashBox is not null;
+
+    public string CashImpactCurrency => FormCashBox?.Currency == AccountingCurrency.USD ? "$" : "د.ع";
+
+    public decimal SelectedCashBalance => FormCashBox?.Balance ?? 0;
+
+    public decimal CashMovementAmount => FormAmount > 0 ? FormAmount : 0;
+
+    public decimal CashBalanceAfter => SelectedCashBalance - CashMovementAmount;
+
+    public bool CashImpactShortfall => FormCashBox is not null && CashBalanceAfter < 0;
+
+    partial void OnFormCashBoxChanged(CashBox? value) => NotifyCashImpact();
+
+    partial void OnFormAmountChanged(decimal value) => NotifyCashImpact();
+
+    private void NotifyCashImpact()
+    {
+        OnPropertyChanged(nameof(ShowCashImpact));
+        OnPropertyChanged(nameof(CashImpactCurrency));
+        OnPropertyChanged(nameof(SelectedCashBalance));
+        OnPropertyChanged(nameof(CashMovementAmount));
+        OnPropertyChanged(nameof(CashBalanceAfter));
+        OnPropertyChanged(nameof(CashImpactShortfall));
+    }
+
     [RelayCommand]
     private async Task AddExpenseAsync()
     {
@@ -408,9 +434,14 @@ public partial class ExpenseViewModel : PagedViewModelBase
 
     private async Task LoadCashBoxesAsync()
     {
+        var selectedId = FormCashBox?.Id;
+        var filterId = FilterCashBox?.Id;
         var cashBoxes = await _unitOfWork.CashBoxes.GetAllAsync();
         CashBoxes.Clear();
         foreach (var cb in cashBoxes)
             CashBoxes.Add(cb);
+        FormCashBox = CashBoxes.FirstOrDefault(c => c.Id == selectedId);
+        FilterCashBox = CashBoxes.FirstOrDefault(c => c.Id == filterId);
+        NotifyCashImpact();
     }
 }

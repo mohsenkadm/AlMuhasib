@@ -70,7 +70,8 @@ public partial class BarcodePrintingViewModel : PagedViewModelBase
             barcodeLabelService,
             productPriceService,
             userPreferences,
-            _pricingEnabled);
+            _pricingEnabled,
+            branchContext);
         LabelPrint.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(PriceLabelPrintEditor.IsOpen))

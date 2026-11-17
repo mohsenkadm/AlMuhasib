@@ -649,14 +649,19 @@ public partial class ReportService
             .ToListAsync();
         var bankFees = FinancialReportIqdFoldIn.SumAmountsInBaseIqd(
             bankRows.Select(r => (r.BankFees, r.Currency, r.FxRate)), foldInUsd);
+        var otherQ = OtherIncomesForProfit(context, foldInUsd);
+        if (from.HasValue) otherQ = otherQ.Where(i => i.Date >= from.Value);
+        if (to.HasValue) otherQ = otherQ.Where(i => i.Date < EndOfDay(to));
+        var otherIncome = await SumOtherIncomeAsync(otherQ, foldInUsd);
         var gross = sales - cogs;
-        var operating = gross - expenses - bankFees;
+        var operating = CompanyProfitMath.Operating(gross, otherIncome, expenses, bankFees);
 
         var lines = new List<OperatingProfitLineRow>
         {
             new() { LineName = "صافي المبيعات", Amount = sales },
             new() { LineName = "تكلفة البضاعة المباعة", Amount = -cogs },
             new() { LineName = "إجمالي الربح", Amount = gross, IsSubtotal = true },
+            new() { LineName = "إيرادات أخرى", Amount = otherIncome },
             new() { LineName = "المصاريف التشغيلية", Amount = -expenses },
             new() { LineName = "الرسوم البنكية", Amount = -bankFees },
             new() { LineName = "صافي الربح التشغيلي", Amount = operating, IsSubtotal = true }
@@ -680,12 +685,13 @@ public partial class ReportService
                 new NameAmountPoint { Name = "مصاريف", Amount = expenses },
                 new NameAmountPoint { Name = "رسوم بنكية", Amount = bankFees }
             ],
+            OtherIncome = otherIncome,
             DailyChart = monthly.Select(m =>
             {
                 var parts = m.Month.Split('/');
                 var year = int.Parse(parts[0]);
                 var month = int.Parse(parts[1]);
-                return new DailyAmountPoint { Date = new DateTime(year, month, 1), Amount = m.GrossProfit - m.Expenses };
+                return new DailyAmountPoint { Date = new DateTime(year, month, 1), Amount = m.NetProfit };
             }).ToList()
         };
     }
@@ -1973,6 +1979,14 @@ public partial class ReportService
         var bankFees = FinancialReportIqdFoldIn.SumAmountsInBaseIqd(
             bankRows.Select(r => (r.BankFees, r.Currency, r.FxRate)), foldInUsd);
         var distributed = await distQ.SumAsync(d => (decimal?)d.DistributedAmount) ?? 0;
+        var otherQ = OtherIncomesForProfit(context, foldInUsd);
+        if (from.HasValue) otherQ = otherQ.Where(i => i.Date >= from.Value);
+        if (to.HasValue) otherQ = otherQ.Where(i => i.Date < EndOfDay(to));
+        var otherIncome = await SumOtherIncomeAsync(otherQ, foldInUsd);
+        var otherUsdQ = context.OtherIncomes.Where(i => i.Currency == AccountingCurrency.USD);
+        if (from.HasValue) otherUsdQ = otherUsdQ.Where(i => i.Date >= from.Value);
+        if (to.HasValue) otherUsdQ = otherUsdQ.Where(i => i.Date < EndOfDay(to));
+        var otherIncomeUsd = foldInUsd ? 0m : await otherUsdQ.SumAsync(i => (decimal?)i.Amount) ?? 0;
 
         // عند Usd: لا نخلط مع COGS بالدينار — نعرض الإفصاح فقط بصافي مبيعات/مصاريف دولار
         if (currencyScope == ReportCurrencyScope.Usd)
@@ -1993,8 +2007,9 @@ public partial class ReportService
                 Lines =
                 [
                     new() { LineName = "صافي المبيعات ($)", Amount = salesUsd },
+                    new() { LineName = "إيرادات أخرى ($)", Amount = otherIncomeUsd },
                     new() { LineName = "المصاريف ($)", Amount = -expensesUsd },
-                    new() { LineName = "إفصاح دولار (بدون دمج مع تكلفة/ربح دينار)", Amount = salesUsd - expensesUsd, IsTotal = true }
+                    new() { LineName = "إفصاح دولار (بدون دمج مع تكلفة/ربح دينار)", Amount = salesUsd + otherIncomeUsd - expensesUsd, IsTotal = true }
                 ],
                 CompositionChart =
                 [
@@ -2006,7 +2021,7 @@ public partial class ReportService
         }
 
         var gross = sales - cogs;
-        var operating = gross - expenses - bankFees;
+        var operating = CompanyProfitMath.Operating(gross, otherIncome, expenses, bankFees);
         var net = operating - distributed;
 
         var lines = new List<ProfitAndLossLineRow>
@@ -2014,6 +2029,7 @@ public partial class ReportService
             new() { LineName = "صافي المبيعات", Amount = sales },
             new() { LineName = "تكلفة البضاعة المباعة", Amount = -cogs },
             new() { LineName = "إجمالي الربح", Amount = gross, IsSubtotal = true },
+            new() { LineName = "إيرادات أخرى", Amount = otherIncome },
             new() { LineName = "المصاريف", Amount = -expenses },
             new() { LineName = "الرسوم البنكية", Amount = -bankFees },
             new() { LineName = "صافي الربح التشغيلي", Amount = operating, IsSubtotal = true },
@@ -2034,6 +2050,7 @@ public partial class ReportService
             TotalSalesUsd = salesUsd,
             CostOfGoodsSold = cogs,
             GrossProfit = gross,
+            OtherIncome = otherIncome,
             TotalExpenses = expenses,
             TotalExpensesUsd = expensesUsd,
             TotalBankFees = bankFees,
@@ -2096,9 +2113,11 @@ public partial class ReportService
         var expenseRows = await expenseQ.Select(e => new { e.Amount, e.Currency, e.FxRate }).ToListAsync();
         var expenses = FinancialReportIqdFoldIn.SumAmountsInBaseIqd(
             expenseRows.Select(r => (r.Amount, r.Currency, r.FxRate)), foldInUsd);
+        var otherIncome = await SumOtherIncomeAsync(
+            OtherIncomesForProfit(context, foldInUsd).Where(i => i.Date <= endOfDay), foldInUsd);
         var distributed = await context.ProfitDistributions
             .Where(d => d.Date <= endOfDay).SumAsync(d => (decimal?)d.DistributedAmount) ?? 0;
-        var accumulated = profitOpening + (sales - cogs) - expenses - distributed;
+        var accumulated = profitOpening + (sales - cogs) + otherIncome - expenses - distributed;
         var equity = capital + adjustments + accumulated;
 
         var cashBoxes = await context.CashBoxes
@@ -2933,7 +2952,8 @@ public partial class ReportService
         var belowMinimum = await context.WarehouseStocks.AsNoTracking()
             .CountAsync(ws => ws.MinQuantity > 0 && ws.Quantity < ws.MinQuantity);
 
-        var operating = profit.GrossProfit - profit.TotalExpenses - profit.TotalBankFees;
+        var operating = CompanyProfitMath.Operating(
+            profit.GrossProfit, profit.OtherIncome, profit.TotalExpenses, profit.TotalBankFees);
         var netMargin = profit.TotalSales > 0
             ? Math.Round(profit.NetProfit / profit.TotalSales * 100, 1)
             : 0;
@@ -3387,8 +3407,18 @@ public partial class ReportService
         var receipts = receiptRows.Sum(r => Amt(r.Amount, r.Currency, r.FxRate));
         var receiptCount = receiptRows.Count;
 
+        var otherQ = context.OtherIncomes.AsQueryable();
+        otherQ = ApplyOtherIncomeCurrencyScope(otherQ, effectiveScope, foldInUsd);
+        if (fromDate.HasValue) otherQ = otherQ.Where(i => i.Date >= fromDate.Value);
+        if (toExclusive.HasValue) otherQ = otherQ.Where(i => i.Date < toExclusive.Value);
+        var otherRows = await otherQ
+            .Select(i => new { i.BranchId, i.Amount, i.Currency, i.FxRate })
+            .ToListAsync();
+        var otherIncome = otherRows.Sum(r => Amt(r.Amount, r.Currency, r.FxRate));
+        var otherIncomeCount = otherRows.Count;
+
         var net = DailyOperationsReportCalculator.ComputeNet(
-            cashSales, salesReturns, expenses, supplierPayments, receipts);
+            cashSales, salesReturns, expenses, supplierPayments, receipts, otherIncome);
 
         // ── Per-branch summary (useful in All-Branches mode) ──
         var branchIds = cashSalesRows.Select(r => r.BranchId)
@@ -3397,6 +3427,7 @@ public partial class ReportService
             .Concat(payVouchRows.Select(r => r.BranchId))
             .Concat(cashPurchRows.Select(r => r.BranchId))
             .Concat(receiptRows.Select(r => r.BranchId))
+            .Concat(otherRows.Select(r => r.BranchId))
             .Distinct()
             .ToList();
         var branchNames = branchIds.Count == 0
@@ -3414,6 +3445,7 @@ public partial class ReportService
                 var bPay = payVouchRows.Where(r => r.BranchId == id).Sum(r => Amt(r.Amount, r.Currency, r.FxRate))
                            + cashPurchRows.Where(r => r.BranchId == id).Sum(r => Amt(r.NetAmount, r.Currency, r.FxRate));
                 var bRec = receiptRows.Where(r => r.BranchId == id).Sum(r => Amt(r.Amount, r.Currency, r.FxRate));
+                var bOther = otherRows.Where(r => r.BranchId == id).Sum(r => Amt(r.Amount, r.Currency, r.FxRate));
                 return new DailyOperationsBranchRow
                 {
                     BranchId = id,
@@ -3423,7 +3455,8 @@ public partial class ReportService
                     SalesReturns = bRet,
                     SupplierPayments = bPay,
                     Receipts = bRec,
-                    NetAmount = DailyOperationsReportCalculator.ComputeNet(bCash, bRet, bExp, bPay, bRec)
+                    OtherIncome = bOther,
+                    NetAmount = DailyOperationsReportCalculator.ComputeNet(bCash, bRet, bExp, bPay, bRec, bOther)
                 };
             })
             .OrderByDescending(r => r.CashSales)
@@ -3565,6 +3598,8 @@ public partial class ReportService
             SalesReturns = salesReturns,
             SupplierPayments = supplierPayments,
             Receipts = receipts,
+            OtherIncome = otherIncome,
+            OtherIncomeCount = otherIncomeCount,
             NetAmount = net,
             CashSalesInvoiceCount = cashSalesCount,
             SalesReturnInvoiceCount = salesReturnCount,
@@ -3588,6 +3623,7 @@ public partial class ReportService
             [
                 new NameAmountPoint { Name = "مبيعات نقدية", Amount = cashSales },
                 new NameAmountPoint { Name = "وصولات قبض", Amount = receipts },
+                new NameAmountPoint { Name = "إيرادات أخرى", Amount = otherIncome },
                 new NameAmountPoint { Name = "مصاريف", Amount = expenses },
                 new NameAmountPoint { Name = "مرتجعات", Amount = salesReturns },
                 new NameAmountPoint { Name = "مدفوعات موردين", Amount = supplierPayments }
@@ -3611,6 +3647,15 @@ public partial class ReportService
             return query;
         var strict = ReportCurrencyScopeHelper.ToStrictFilter(scope);
         return strict is null ? query : query.Where(e => e.Currency == strict.Value);
+    }
+
+    private static IQueryable<OtherIncome> ApplyOtherIncomeCurrencyScope(
+        IQueryable<OtherIncome> query, ReportCurrencyScope scope, bool foldInUsd)
+    {
+        if (foldInUsd || scope == ReportCurrencyScope.All)
+            return query;
+        var strict = ReportCurrencyScopeHelper.ToStrictFilter(scope);
+        return strict is null ? query : query.Where(i => i.Currency == strict.Value);
     }
 
     private static IQueryable<Voucher> ApplyVoucherCurrencyScope(

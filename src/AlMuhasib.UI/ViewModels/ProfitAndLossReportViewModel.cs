@@ -112,12 +112,13 @@ public partial class ProfitAndLossReportViewModel : ReportViewModelBase
             "operating" => new AmountBreakdownModel
             {
                 Title = "تفاصيل الربح التشغيلي",
-                Formula = "تشغيلي = إجمالي الربح − المصاريف − الرسوم البنكية",
+                Formula = "تشغيلي = إجمالي الربح + إيرادات أخرى − المصاريف − الرسوم البنكية",
                 ResultLabel = "تشغيلي",
                 ResultAmount = r.OperatingProfit,
                 Lines =
                 [
                     new AmountBreakdownLine { Operator = "+", Label = "إجمالي الربح", Amount = r.GrossProfit },
+                    new AmountBreakdownLine { Operator = "+", Label = "إيرادات أخرى", Amount = r.OtherIncome, Description = "لا تدخل في إجمالي المبيعات" },
                     new AmountBreakdownLine { Operator = "−", Label = "المصاريف", Amount = r.TotalExpenses },
                     new AmountBreakdownLine { Operator = "−", Label = "رسوم بنكية", Amount = r.TotalBankFees },
                     new AmountBreakdownLine { Operator = "=", Label = "تشغيلي", Amount = r.OperatingProfit, IsResult = true }
@@ -134,6 +135,7 @@ public partial class ProfitAndLossReportViewModel : ReportViewModelBase
                 [
                     new AmountBreakdownLine { Operator = "+", Label = "المبيعات", Amount = r.TotalSales },
                     new AmountBreakdownLine { Operator = "−", Label = "تكلفة البضاعة", Amount = r.CostOfGoodsSold },
+                    new AmountBreakdownLine { Operator = "+", Label = "إيرادات أخرى", Amount = r.OtherIncome, Description = "لا تدخل في إجمالي المبيعات" },
                     new AmountBreakdownLine { Operator = "−", Label = "المصاريف", Amount = r.TotalExpenses },
                     new AmountBreakdownLine { Operator = "−", Label = "رسوم بنكية", Amount = r.TotalBankFees },
                     new AmountBreakdownLine { Operator = "−", Label = "توزيعات الأرباح", Amount = r.DistributedProfits },

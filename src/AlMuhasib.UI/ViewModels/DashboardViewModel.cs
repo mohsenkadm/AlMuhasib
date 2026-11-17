@@ -99,6 +99,9 @@ public partial class DashboardViewModel : ViewModelBase
     private decimal _netProfitOpeningStock;
 
     [ObservableProperty]
+    private decimal _netProfitOtherIncome;
+
+    [ObservableProperty]
     private decimal _netProfitExpenses;
 
     [ObservableProperty]
@@ -112,6 +115,9 @@ public partial class DashboardViewModel : ViewModelBase
 
     [ObservableProperty]
     private decimal _netProfitPurchasesUsd;
+
+    [ObservableProperty]
+    private decimal _netProfitOtherIncomeUsd;
 
     [ObservableProperty]
     private decimal _netProfitExpensesUsd;
@@ -453,6 +459,13 @@ public partial class DashboardViewModel : ViewModelBase
             },
             new()
             {
+                Operator = "+",
+                Label = "إيرادات أخرى (د.ع)",
+                Amount = NetProfitOtherIncome,
+                Description = "لا تدخل في إجمالي المبيعات"
+            },
+            new()
+            {
                 Operator = "−",
                 Label = "إجمالي المصاريف (د.ع)",
                 Amount = NetProfitExpenses
@@ -499,6 +512,14 @@ public partial class DashboardViewModel : ViewModelBase
                 },
                 new AmountBreakdownLine
                 {
+                    Operator = "+",
+                    Label = "إيرادات أخرى ($)",
+                    Amount = NetProfitOtherIncomeUsd,
+                    Currency = AccountingCurrency.USD,
+                    Description = "لا تدخل في إجمالي المبيعات"
+                },
+                new AmountBreakdownLine
+                {
                     Operator = "−",
                     Label = "المصاريف ($)",
                     Amount = NetProfitExpensesUsd,
@@ -520,7 +541,7 @@ public partial class DashboardViewModel : ViewModelBase
         {
             Title = "تفاصيل الأرباح الصافية",
             Subtitle = "معادلة لوحة التحكم (من بداية النشاط حتى الآن)",
-            Formula = "الصافي د.ع = مبيعات − مشتريات − مخزون افتتاحي − مصاريف − توزيعات + افتتاحي أرباح",
+            Formula = "الصافي د.ع = مبيعات − مشتريات − مخزون افتتاحي + إيرادات أخرى − مصاريف − توزيعات + افتتاحي أرباح",
             ResultLabel = "الأرباح الصافية (د.ع)",
             ResultAmount = NetProfit,
             ResultAmountUsd = ShowUsdStats ? NetProfitUsd : null,
@@ -955,11 +976,13 @@ public partial class DashboardViewModel : ViewModelBase
         NetProfitSales = data.NetProfitSales;
         NetProfitPurchases = data.NetProfitPurchases;
         NetProfitOpeningStock = data.NetProfitOpeningStock;
+        NetProfitOtherIncome = data.NetProfitOtherIncome;
         NetProfitExpenses = data.NetProfitExpenses;
         NetProfitDistributions = data.NetProfitDistributions;
         NetProfitOpening = data.NetProfitOpening;
         NetProfitSalesUsd = data.NetProfitSalesUsd;
         NetProfitPurchasesUsd = data.NetProfitPurchasesUsd;
+        NetProfitOtherIncomeUsd = data.NetProfitOtherIncomeUsd;
         NetProfitExpensesUsd = data.NetProfitExpensesUsd;
         OnPropertyChanged(nameof(NetProfitPurchasesWithOpeningStock));
         OnPropertyChanged(nameof(ShowOpeningStockPurchasesHint));

@@ -1,6 +1,7 @@
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Windows.Media.Imaging;
 
 namespace AlMuhasib.UI.Services;
 
@@ -10,7 +11,6 @@ namespace AlMuhasib.UI.Services;
 public static class WiaScannerHelper
 {
     private const string WiaFormatJpeg = "{B96B3CAE-0728-11D3-9D7B-0000F81EF32E}";
-    private const int WiaConversionError = unchecked((int)0x8021000E);
 
     public sealed class ScanResult
     {
@@ -49,14 +49,7 @@ public static class WiaScannerHelper
             if (dialog is null)
                 return Fail("تعذر فتح حوار المسح الضوئي");
 
-            // ShowAcquireImage(DeviceType=1 Scanner, Intent=0 Color, FormatID=JPEG, …)
-            image = dialogType.InvokeMember(
-                "ShowAcquireImage",
-                System.Reflection.BindingFlags.InvokeMethod,
-                binder: null,
-                target: dialog,
-                args: [1, 0, WiaFormatJpeg, false, true, false]);
-
+            image = ShowAcquireImage(dialog);
             if (image is null)
                 return Cancelled();
 
@@ -68,21 +61,13 @@ public static class WiaScannerHelper
 
             return new ScanResult { Success = true, FilePath = destinationPath };
         }
-        catch (COMException ex) when (IsCancelOrNoDevice(ex))
+        catch (Exception ex) when (TryGetCancel(ex, out var cancelMessage))
         {
-            return Cancelled("لم يتم العثور على ماسح ضوئي متصل أو تم إلغاء العملية");
-        }
-        catch (COMException ex)
-        {
-            return Fail($"فشل المسح الضوئي: {ex.Message}");
-        }
-        catch (TargetInvocationException ex) when (ex.InnerException is COMException com && IsCancelOrNoDevice(com))
-        {
-            return Cancelled("لم يتم العثور على ماسح ضوئي متصل أو تم إلغاء العملية");
+            return Cancelled(cancelMessage);
         }
         catch (Exception ex)
         {
-            return Fail($"خطأ أثناء المسح الضوئي: {ex.Message}");
+            return Fail($"خطأ أثناء المسح الضوئي: {RootMessage(ex)}");
         }
         finally
         {
@@ -91,61 +76,180 @@ public static class WiaScannerHelper
         }
     }
 
+    /// <summary>
+    /// حوار WIA الافتراضي بدون فرض صيغة.
+    /// الاستدعاء السابق كان يمرّر 6 معاملات بينما التوقيع يتطلب Bias قبل FormatID،
+    /// فيُرفض فوراً. وفرض JPEG أثناء النقل يفشل أيضاً على كثير من الماسحات.
+    /// التحويل إلى JPEG يتم بعد وصول الصورة.
+    /// </summary>
+    private static object? ShowAcquireImage(object dialog)
+    {
+        dynamic wia = dialog;
+        return wia.ShowAcquireImage();
+    }
+
     private static void SaveAsJpeg(object image, string destinationPath)
     {
-        var imageType = image.GetType();
+        var folder = Path.GetDirectoryName(destinationPath);
+        var rawPath = Path.Combine(
+            string.IsNullOrEmpty(folder) ? Path.GetTempPath() : folder,
+            Path.GetFileNameWithoutExtension(destinationPath) + ".wia-raw" + GuessExtension(image));
+
         try
         {
-            // Prefer Convert to JPEG when available (avoids BMP/TIFF save quirks).
-            var converted = imageType.InvokeMember(
+            if (TryConvertAndSaveJpeg(image, destinationPath) && IsJpeg(destinationPath))
+                return;
+
+            if (File.Exists(destinationPath))
+                File.Delete(destinationPath);
+
+            SaveFile(image, rawPath);
+            if (IsJpeg(rawPath))
+            {
+                File.Move(rawPath, destinationPath, overwrite: true);
+                return;
+            }
+
+            TranscodeToJpeg(rawPath, destinationPath);
+        }
+        finally
+        {
+            if (!string.Equals(rawPath, destinationPath, StringComparison.OrdinalIgnoreCase) && File.Exists(rawPath))
+            {
+                try { File.Delete(rawPath); }
+                catch { /* ignore */ }
+            }
+        }
+    }
+
+    private static bool TryConvertAndSaveJpeg(object image, string destinationPath)
+    {
+        object? converted = null;
+        try
+        {
+            converted = image.GetType().InvokeMember(
                 "Convert",
-                System.Reflection.BindingFlags.InvokeMethod,
+                BindingFlags.InvokeMethod,
                 binder: null,
                 target: image,
                 args: [WiaFormatJpeg]);
 
-            if (converted is not null)
-            {
-                try
-                {
-                    converted.GetType().InvokeMember(
-                        "SaveFile",
-                        System.Reflection.BindingFlags.InvokeMethod,
-                        binder: null,
-                        target: converted,
-                        args: [destinationPath]);
-                    return;
-                }
-                finally
-                {
-                    ReleaseCom(converted);
-                }
-            }
-        }
-        catch (COMException ex) when (ex.ErrorCode == WiaConversionError)
-        {
-            // Fall through to direct SaveFile.
-        }
-        catch (TargetInvocationException)
-        {
-            // Fall through to direct SaveFile.
-        }
+            if (converted is null)
+                return false;
 
-        imageType.InvokeMember(
+            SaveFile(converted, destinationPath);
+            return true;
+        }
+        catch
+        {
+            if (File.Exists(destinationPath))
+            {
+                try { File.Delete(destinationPath); }
+                catch { /* ignore */ }
+            }
+
+            return false;
+        }
+        finally
+        {
+            ReleaseCom(converted);
+        }
+    }
+
+    private static void SaveFile(object image, string path)
+    {
+        image.GetType().InvokeMember(
             "SaveFile",
-            System.Reflection.BindingFlags.InvokeMethod,
+            BindingFlags.InvokeMethod,
             binder: null,
             target: image,
-            args: [destinationPath]);
+            args: [path]);
+    }
+
+    private static string GuessExtension(object image)
+    {
+        try
+        {
+            var ext = image.GetType().InvokeMember(
+                "FileExtension",
+                BindingFlags.GetProperty,
+                binder: null,
+                target: image,
+                args: null) as string;
+
+            if (string.IsNullOrWhiteSpace(ext))
+                return ".bmp";
+
+            ext = ext.Trim();
+            return ext.StartsWith('.') ? ext : "." + ext;
+        }
+        catch
+        {
+            return ".bmp";
+        }
+    }
+
+    private static void TranscodeToJpeg(string sourcePath, string destinationPath)
+    {
+        var bitmap = new BitmapImage();
+        bitmap.BeginInit();
+        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+        bitmap.CreateOptions = BitmapCreateOptions.IgnoreColorProfile;
+        bitmap.UriSource = new Uri(sourcePath, UriKind.Absolute);
+        bitmap.EndInit();
+        bitmap.Freeze();
+
+        var encoder = new JpegBitmapEncoder { QualityLevel = 90 };
+        encoder.Frames.Add(BitmapFrame.Create(bitmap));
+        using var stream = File.Create(destinationPath);
+        encoder.Save(stream);
+    }
+
+    private static bool IsJpeg(string path)
+    {
+        if (!File.Exists(path) || new FileInfo(path).Length < 3)
+            return false;
+
+        Span<byte> header = stackalloc byte[3];
+        using var stream = File.OpenRead(path);
+        return stream.Read(header) == 3
+            && header[0] == 0xFF
+            && header[1] == 0xD8
+            && header[2] == 0xFF;
+    }
+
+    private static bool TryGetCancel(Exception ex, out string message)
+    {
+        message = "لم يتم العثور على ماسح ضوئي متصل أو تم إلغاء العملية";
+        return IsCancelOrNoDevice(ex);
+    }
+
+    private static bool IsCancelOrNoDevice(Exception ex)
+    {
+        var root = Unwrap(ex);
+        return root is COMException com && IsCancelOrNoDevice(com);
     }
 
     private static bool IsCancelOrNoDevice(COMException ex) =>
-        // Common WIA cancel / no device HRESULTs
         ex.ErrorCode is unchecked((int)0x80210006)
             or unchecked((int)0x80210015)
             or unchecked((int)0x80210001)
             or unchecked((int)0x80210064)
-            or unchecked((int)0x80004005);
+            or unchecked((int)0x80004005)
+            or unchecked((int)0x800704C7);
+
+    private static string RootMessage(Exception ex) => Unwrap(ex).Message;
+
+    private static Exception Unwrap(Exception ex)
+    {
+        while (ex.InnerException is not null
+               && ex is TargetInvocationException or Microsoft.CSharp.RuntimeBinder.RuntimeBinderException)
+        {
+            ex = ex.InnerException;
+        }
+
+        return ex;
+    }
 
     private static void EnsureDirectory(string path)
     {

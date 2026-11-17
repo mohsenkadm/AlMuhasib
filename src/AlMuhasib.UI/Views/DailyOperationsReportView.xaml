@@ -89,9 +89,18 @@
                         ValueForeground="#6A1B9A"
                         Margin="8,0,8,8"/>
                     <controls:AnimatedStatCard
+                        Title="إيرادات أخرى"
+                        TextValue="{Binding OtherIncome}"
+                        Hint="{Binding OtherIncomeCount, StringFormat=عدد: {0}}"
+                        Icon="CashPlus"
+                        IconBackground="{DynamicResource DashboardKpiGreenLightBrush}"
+                        IconForeground="#2E7D32"
+                        ValueForeground="#2E7D32"
+                        Margin="8,0,8,8"/>
+                    <controls:AnimatedStatCard
                         Title="الصافي"
                         TextValue="{Binding NetAmount}"
-                        Hint="مبيعات − مرتجعات − مصاريف − مدفوعات + قبض"
+                        Hint="مبيعات − مرتجعات − مصاريف − مدفوعات + قبض + إيرادات أخرى"
                         Icon="ChartTimelineVariant"
                         IconBackground="{DynamicResource DashboardKpiTealLightBrush}"
                         IconForeground="#00695C"
@@ -292,6 +301,8 @@
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SupplierPayments"/>
                             <DataGridTextColumn Header="قبض" Binding="{Binding Receipts, StringFormat=N0}" Width="110"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Receipts"/>
+                            <DataGridTextColumn Header="إيرادات أخرى" Binding="{Binding OtherIncome, StringFormat=N0}" Width="120"
+                                                behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="OtherIncome"/>
                             <DataGridTextColumn Header="الصافي" Binding="{Binding NetAmount, StringFormat=N0}" Width="120"
                                                 behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="NetAmount"/>
                         </DataGrid.Columns>

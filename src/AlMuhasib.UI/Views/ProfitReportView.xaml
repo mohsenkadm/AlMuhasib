@@ -64,6 +64,8 @@
                     <controls:AnimatedStatCard Title="إجمالي الربح" TextValue="{Binding GrossProfit}"
                                                 Icon="TrendingUp" IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"
                                                 ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="gross"/>
+                    <controls:AnimatedStatCard Title="إيرادات أخرى" TextValue="{Binding OtherIncome}"
+                                                Icon="CashPlus" IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"/>
                     <controls:AnimatedStatCard Title="إجمالي المصاريف (د.ع)" TextValue="{Binding TotalExpenses}"
                                                 Icon="CashMinus" IconBackground="{DynamicResource DashboardKpiPinkLightBrush}" IconForeground="#C2185B" ValueForeground="#C2185B"
                                                 ShowDetailButton="True" DetailCommand="{Binding ShowAmountDetailsCommand}" DetailCommandParameter="expenses"/>

@@ -96,6 +96,8 @@ public class AppDbContext : DbContext
     public DbSet<BankAccount> BankAccounts => Set<BankAccount>();
     public DbSet<Investor> Investors => Set<Investor>();
     public DbSet<ExpenseType> ExpenseTypes => Set<ExpenseType>();
+    public DbSet<OtherIncomeType> OtherIncomeTypes => Set<OtherIncomeType>();
+    public DbSet<OtherIncome> OtherIncomes => Set<OtherIncome>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
     public DbSet<InstallmentPlan> InstallmentPlans => Set<InstallmentPlan>();

@@ -116,12 +116,13 @@ public partial class OperatingProfitReportViewModel : ReportViewModelBase
             "operating" => new AmountBreakdownModel
             {
                 Title = "تفاصيل صافي الربح التشغيلي",
-                Formula = "تشغيلي = إجمالي الربح − المصاريف − الرسوم البنكية",
+                Formula = "تشغيلي = إجمالي الربح + إيرادات أخرى − المصاريف − الرسوم البنكية",
                 ResultLabel = "صافي تشغيلي",
                 ResultAmount = r.OperatingProfit,
                 Lines =
                 [
                     new AmountBreakdownLine { Operator = "+", Label = "إجمالي الربح", Amount = r.GrossProfit },
+                    new AmountBreakdownLine { Operator = "+", Label = "إيرادات أخرى", Amount = r.OtherIncome, Description = "لا تدخل في إجمالي المبيعات" },
                     new AmountBreakdownLine { Operator = "−", Label = "المصاريف", Amount = r.TotalExpenses },
                     new AmountBreakdownLine { Operator = "−", Label = "رسوم بنكية", Amount = r.TotalBankFees },
                     new AmountBreakdownLine { Operator = "=", Label = "صافي تشغيلي", Amount = r.OperatingProfit, IsResult = true }

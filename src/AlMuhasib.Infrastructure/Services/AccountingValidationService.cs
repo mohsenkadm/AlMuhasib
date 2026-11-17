@@ -118,6 +118,10 @@ public class AccountingValidationService : IAccountingValidationService
             .Where(e => e.CashBoxId == cashBoxId && e.Currency == cashBox.Currency)
             .SumAsync(e => (decimal?)e.Amount) ?? 0;
 
+        var otherIncomes = await context.OtherIncomes
+            .Where(i => i.CashBoxId == cashBoxId && i.Currency == cashBox.Currency)
+            .SumAsync(i => (decimal?)i.Amount) ?? 0;
+
         var transfersIn = await context.Transfers
             .Where(t => t.ToType == TransferAccountType.CashBox &&
                         t.ToId == cashBoxId &&
@@ -139,6 +143,7 @@ public class AccountingValidationService : IAccountingValidationService
                               + bankReceipts
                               + installmentPayments
                               - expenses
+                              + otherIncomes
                               + transfersIn
                               - transfersOut;
         var diff = Math.Abs(expectedBalance - cashBox.Balance);
@@ -471,6 +476,9 @@ public class AccountingValidationService : IAccountingValidationService
         var totalExpenses = await context.Expenses
             .Where(e => e.Currency == AccountingCurrency.IQD && e.Date <= endOfDay)
             .SumAsync(e => (decimal?)e.Amount) ?? 0;
+        var otherIncome = await context.OtherIncomes
+            .Where(i => i.Currency == AccountingCurrency.IQD && i.Date <= endOfDay)
+            .SumAsync(i => (decimal?)i.Amount) ?? 0;
         var bankFees = await context.Vouchers
             .Where(v => v.VoucherType == VoucherType.BankReceipt &&
                         v.Currency == AccountingCurrency.IQD &&
@@ -480,7 +488,7 @@ public class AccountingValidationService : IAccountingValidationService
             .Where(pd => pd.Date <= endOfDay)
             .SumAsync(pd => (decimal?)pd.DistributedAmount) ?? 0;
         var profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context, endOfDay);
-        var accumulatedProfits = totalSales - totalPurchases - totalExpenses - bankFees - distributed + profitOpening;
+        var accumulatedProfits = totalSales - totalPurchases + otherIncome - totalExpenses - bankFees - distributed + profitOpening;
 
         var totalEquity = capital + accumulatedProfits;
 

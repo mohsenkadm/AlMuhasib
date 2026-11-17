@@ -18,6 +18,18 @@ public partial class ReportService : IReportService
     /// <summary>Normalize "to" date to include the entire day (start of next day).</summary>
     private static DateTime? EndOfDay(DateTime? to) => to?.Date.AddDays(1);
 
+    private static IQueryable<OtherIncome> OtherIncomesForProfit(AppDbContext context, bool foldInUsd) =>
+        foldInUsd
+            ? context.OtherIncomes.AsQueryable()
+            : context.OtherIncomes.Where(i => i.Currency == AccountingCurrency.IQD);
+
+    private static async Task<decimal> SumOtherIncomeAsync(IQueryable<OtherIncome> query, bool foldInUsd)
+    {
+        var rows = await query.Select(i => new { i.Amount, i.Currency, i.FxRate }).ToListAsync();
+        return FinancialReportIqdFoldIn.SumAmountsInBaseIqd(
+            rows.Select(r => (r.Amount, r.Currency, r.FxRate)), foldInUsd);
+    }
+
     // ══════════════════════════════════════════════════════════════
     // SALES
     // ══════════════════════════════════════════════════════════════
@@ -333,9 +345,21 @@ public partial class ReportService : IReportService
             .ToListAsync();
         var maintenanceProfit = FinancialReportIqdFoldIn.SumAmountsInBaseIqd(
             maintenanceRows.Select(r => (r.CostAmount, r.Currency, r.FxRate)), foldInUsd);
+        var otherQ = OtherIncomesForProfit(context, foldInUsd);
+        if (from.HasValue) otherQ = otherQ.Where(i => i.Date >= from.Value);
+        if (to.HasValue) otherQ = otherQ.Where(i => i.Date < EndOfDay(to));
+        var otherIncome = await SumOtherIncomeAsync(otherQ, foldInUsd);
+        var otherIncomeUsd = foldInUsd
+            ? 0m
+            : await context.OtherIncomes
+                .Where(i => i.Currency == AccountingCurrency.USD)
+                .Where(i => !from.HasValue || i.Date >= from.Value)
+                .Where(i => !to.HasValue || i.Date < EndOfDay(to))
+                .SumAsync(i => (decimal?)i.Amount) ?? 0;
         var grossProfit = totalSales - cogs + maintenanceProfit;
         var profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context, to);
-        var netProfit = grossProfit - totalExpenses - totalBankFees - distributed + profitOpening;
+        var netProfit = CompanyProfitMath.FullNet(
+            grossProfit, otherIncome, totalExpenses, totalBankFees, distributed, profitOpening);
 
         return new ProfitReportResult
         {
@@ -343,6 +367,8 @@ public partial class ReportService : IReportService
             TotalSalesUsd = totalSalesUsd,
             TotalPurchases = cogs,
             GrossProfit = grossProfit,
+            OtherIncome = otherIncome,
+            OtherIncomeUsd = otherIncomeUsd,
             TotalExpenses = totalExpenses,
             TotalExpensesUsd = totalExpensesUsd,
             TotalBankFees = totalBankFees,
@@ -403,15 +429,20 @@ public partial class ReportService : IReportService
                 .ToListAsync();
             var expenses = FinancialReportIqdFoldIn.SumAmountsInBaseIqd(
                 expenseRows.Select(r => (r.Amount, r.Currency, r.FxRate)), foldInUsd);
+            var otherIncome = await SumOtherIncomeAsync(
+                OtherIncomesForProfit(context, foldInUsd)
+                    .Where(i => i.Date >= effectiveFrom && i.Date < effectiveToExclusive),
+                foldInUsd);
 
             var gross = sales - purchases;
-            var net = gross - expenses;
+            var net = CompanyProfitMath.CardNet(gross, otherIncome, expenses);
             result.Add(new MonthlyProfitRow
             {
                 Month = $"{cursor.Year}/{cursor.Month:D2}",
                 Sales = sales,
                 Purchases = purchases,
                 GrossProfit = gross,
+                OtherIncome = otherIncome,
                 Expenses = expenses,
                 NetProfit = net,
                 ProfitMargin = sales > 0 ? Math.Round(gross / sales * 100, 1) : 0
@@ -1427,11 +1458,16 @@ public partial class ReportService : IReportService
             .ToListAsync();
         var receipts = FinancialReportIqdFoldIn.SumAmountsInBaseIqd(
             receiptRows.Select(r => (r.Amount, r.Currency, r.FxRate)), foldInUsd);
+        var otherIncomeQ = OtherIncomesForProfit(context, foldInUsd);
+        if (from.HasValue) otherIncomeQ = otherIncomeQ.Where(i => i.Date >= from.Value);
+        if (to.HasValue) otherIncomeQ = otherIncomeQ.Where(i => i.Date < EndOfDay(to));
+        var otherIncome = await SumOtherIncomeAsync(otherIncomeQ, foldInUsd);
 
-        var totalIncome = totalSales + instCollections + receipts;
+        var totalIncome = totalSales + instCollections + receipts + otherIncome;
         rows.Add(new IncomeExpenseRow { Section = "\u0627\u0644\u0648\u0627\u0631\u062f\u0627\u062a", Type = "\u0625\u064a\u0631\u0627\u062f", Description = "\u0645\u0628\u064a\u0639\u0627\u062a \u0646\u0642\u062f\u064a\u0629", Amount = totalSales });
         rows.Add(new IncomeExpenseRow { Section = "\u0627\u0644\u0648\u0627\u0631\u062f\u0627\u062a", Type = "\u0625\u064a\u0631\u0627\u062f", Description = "\u062a\u062d\u0635\u064a\u0644 \u0623\u0642\u0633\u0627\u0637", Amount = instCollections });
         rows.Add(new IncomeExpenseRow { Section = "\u0627\u0644\u0648\u0627\u0631\u062f\u0627\u062a", Type = "\u0625\u064a\u0631\u0627\u062f", Description = "\u0633\u0646\u062f\u0627\u062a \u0642\u0628\u0636", Amount = receipts });
+        rows.Add(new IncomeExpenseRow { Section = "\u0627\u0644\u0648\u0627\u0631\u062f\u0627\u062a", Type = "\u0625\u064a\u0631\u0627\u062f \u0622\u062e\u0631", Description = "\u0625\u064a\u0631\u0627\u062f\u0627\u062a \u0623\u062e\u0631\u0649", Amount = otherIncome });
 
         var expenses = await expQ.ToListAsync();
         var grouped = expenses.GroupBy(e => e.ExpenseType?.Name ?? "\u0623\u062e\u0631\u0649");
@@ -1495,6 +1531,19 @@ public partial class ReportService : IReportService
             .Select(v => new { v.Date, v.Amount, v.Currency, v.FxRate })
             .ToListAsync();
         foreach (var g in chartRecRows.GroupBy(v => new { v.Date.Year, v.Date.Month }))
+        {
+            var key = (g.Key.Year, g.Key.Month);
+            var add = FinancialReportIqdFoldIn.SumAmountsInBaseIqd(
+                g.Select(x => (x.Amount, x.Currency, x.FxRate)), foldInUsd);
+            monthlyByMonth[key] = monthlyByMonth.GetValueOrDefault(key) + add;
+        }
+
+        var chartOtherQ = OtherIncomesForProfit(context, foldInUsd)
+            .Where(i => i.Date >= f && i.Date < tExclusive);
+        var chartOtherRows = await chartOtherQ
+            .Select(i => new { i.Date, i.Amount, i.Currency, i.FxRate })
+            .ToListAsync();
+        foreach (var g in chartOtherRows.GroupBy(i => new { i.Date.Year, i.Date.Month }))
         {
             var key = (g.Key.Year, g.Key.Month);
             var add = FinancialReportIqdFoldIn.SumAmountsInBaseIqd(
@@ -1998,6 +2047,21 @@ public partial class ReportService : IReportService
                 AccountName = e.CashBox?.Name ?? "\u2014"
             });
 
+        var otherQ = context.OtherIncomes.Include(i => i.CashBox).Include(i => i.OtherIncomeType).AsQueryable();
+        if (currencyFilter.HasValue) otherQ = otherQ.Where(i => i.Currency == currencyFilter.Value);
+        if (cashBoxId.HasValue) otherQ = otherQ.Where(i => i.CashBoxId == cashBoxId.Value);
+        if (from.HasValue) otherQ = otherQ.Where(i => i.Date >= from.Value);
+        if (to.HasValue) otherQ = otherQ.Where(i => i.Date < EndOfDay(to));
+        foreach (var income in await otherQ.ToListAsync())
+            rows.Add(new CashFlowRow
+            {
+                Date = income.Date,
+                Type = "إيراد آخر",
+                Description = $"{income.IncomeNumber} — {income.OtherIncomeType?.Name}",
+                Incoming = ToIqd(income.Amount, income.Currency, income.FxRate),
+                AccountName = income.CashBox?.Name ?? "—"
+            });
+
         rows = rows.OrderBy(r => r.Date).ToList();
         decimal bal = 0;
         foreach (var r in rows) { bal += r.Incoming - r.Outgoing; r.Balance = bal; }
@@ -2091,9 +2155,11 @@ public partial class ReportService : IReportService
         var expenseRows = await expenseQ.Select(e => new { e.Amount, e.Currency, e.FxRate }).ToListAsync();
         decimal totalExpenses = FinancialReportIqdFoldIn.SumAmountsInBaseIqd(
             expenseRows.Select(r => (r.Amount, r.Currency, r.FxRate)), foldInUsd);
+        var otherIncome = await SumOtherIncomeAsync(
+            OtherIncomesForProfit(context, foldInUsd).Where(i => i.Date <= endOfDay), foldInUsd);
 
         decimal salesProfit = totalSales - costOfSales;
-        decimal accumulatedProfits = profitOpening + salesProfit - totalExpenses;
+        decimal accumulatedProfits = profitOpening + salesProfit + otherIncome - totalExpenses;
         decimal equityTotal = capital + adjustments + accumulatedProfits;
 
         var supplierCreditQ = context.Invoices.Where(i =>

@@ -297,6 +297,7 @@ public partial class App : Application
         services.AddTransient<StockAdjustmentViewModel>();
         services.AddTransient<VouchersViewModel>();
         services.AddTransient<ExpenseViewModel>();
+        services.AddTransient<OtherIncomeViewModel>();
         services.AddTransient<InvestorsViewModel>();
         services.AddTransient<OpeningInvestorsViewModel>();
         services.AddTransient<SalesReportViewModel>();

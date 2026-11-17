@@ -6,6 +6,7 @@ namespace AlMuhasib.Core.Tests;
 public class BarcodeLabelSizeHelperTests
 {
     [Theory]
+    [InlineData(BarcodeLabelSize.Mm30x10, 30, 10)]
     [InlineData(BarcodeLabelSize.Mm30x15, 30, 15)]
     [InlineData(BarcodeLabelSize.Mm30x20, 30, 20)]
     [InlineData(BarcodeLabelSize.Mm38x25, 38, 25)]
@@ -78,6 +79,7 @@ public class BarcodeLabelSizeHelperTests
     {
         Assert.Contains(BarcodeLabelSize.Custom, BarcodeLabelSizeHelper.AllSizes);
         Assert.Contains(BarcodeLabelSizeHelper.DefaultSize, BarcodeLabelSizeHelper.AllSizes);
-        Assert.Equal(13, BarcodeLabelSizeHelper.AllSizes.Count);
+        Assert.Contains(BarcodeLabelSize.Mm30x10, BarcodeLabelSizeHelper.AllSizes);
+        Assert.Equal(14, BarcodeLabelSizeHelper.AllSizes.Count);
     }
 }

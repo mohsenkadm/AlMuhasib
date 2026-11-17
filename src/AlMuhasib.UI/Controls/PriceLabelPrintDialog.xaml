@@ -346,6 +346,8 @@
                             <StackPanel>
                                 <TextBlock Text="ما يظهر على الملصق" Style="{StaticResource SectionTitle}"/>
                                 <WrapPanel>
+                                    <ToggleButton Content="اسم الفرع" Style="{StaticResource ChoiceChip}"
+                                                  IsChecked="{Binding ShowBranchNameOnLabel}"/>
                                     <ToggleButton Content="اسم المنتج" Style="{StaticResource ChoiceChip}"
                                                   IsChecked="{Binding ShowProductNameOnLabel}"/>
                                     <ToggleButton Content="السعر" Style="{StaticResource ChoiceChip}"

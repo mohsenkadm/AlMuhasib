@@ -27,6 +27,8 @@ public partial class DailyOperationsReportViewModel : ReportViewModelBase
     [ObservableProperty] private string _salesReturns = "0";
     [ObservableProperty] private string _supplierPayments = "0";
     [ObservableProperty] private string _receipts = "0";
+    [ObservableProperty] private string _otherIncome = "0";
+    [ObservableProperty] private string _otherIncomeCount = "0";
     [ObservableProperty] private string _netAmount = "0";
 
     [ObservableProperty] private string _cashSalesCount = "0";
@@ -121,6 +123,7 @@ public partial class DailyOperationsReportViewModel : ReportViewModelBase
             SalesReturns = FormatCurrency(result.SalesReturns);
             SupplierPayments = FormatCurrency(result.SupplierPayments);
             Receipts = FormatCurrency(result.Receipts);
+            OtherIncome = FormatCurrency(result.OtherIncome);
             NetAmount = FormatCurrency(result.NetAmount);
 
             CashSalesCount = result.CashSalesInvoiceCount.ToString("N0");
@@ -128,6 +131,7 @@ public partial class DailyOperationsReportViewModel : ReportViewModelBase
             SalesReturnCount = result.SalesReturnInvoiceCount.ToString("N0");
             SupplierPaymentCount = result.SupplierPaymentCount.ToString("N0");
             ReceiptCount = result.ReceiptCount.ToString("N0");
+            OtherIncomeCount = result.OtherIncomeCount.ToString("N0");
 
             SummarySeries = result.SummaryChart.Count > 0
                 ? ChartThemeConfig.PieFromNameAmount(result.SummaryChart)
@@ -243,6 +247,7 @@ public partial class DailyOperationsReportViewModel : ReportViewModelBase
             new object[] { "مرجوعات المبيعات", _lastResult.SalesReturns, _lastResult.SalesReturnInvoiceCount },
             new object[] { "مدفوعات الموردين", _lastResult.SupplierPayments, _lastResult.SupplierPaymentCount },
             new object[] { "وصولات القبض", _lastResult.Receipts, _lastResult.ReceiptCount },
+            new object[] { "إيرادات أخرى", _lastResult.OtherIncome, _lastResult.OtherIncomeCount },
             new object[] { "الصافي", _lastResult.NetAmount, "—" },
         };
 
@@ -271,10 +276,10 @@ public partial class DailyOperationsReportViewModel : ReportViewModelBase
         if (_allBranchRows.Count > 0)
         {
             sheets.Add(("الفروع",
-                ["الفرع", "مبيعات نقدية", "مصاريف", "مرتجعات", "مدفوعات موردين", "وصولات قبض", "الصافي"],
+                ["الفرع", "مبيعات نقدية", "مصاريف", "مرتجعات", "مدفوعات موردين", "وصولات قبض", "إيرادات أخرى", "الصافي"],
                 _allBranchRows.Select(r => new object[]
                 {
-                    r.BranchName, r.CashSales, r.Expenses, r.SalesReturns, r.SupplierPayments, r.Receipts, r.NetAmount
+                    r.BranchName, r.CashSales, r.Expenses, r.SalesReturns, r.SupplierPayments, r.Receipts, r.OtherIncome, r.NetAmount
                 }).ToList()));
         }
 
@@ -299,6 +304,7 @@ public partial class DailyOperationsReportViewModel : ReportViewModelBase
             $"مرجوعات المبيعات: {_lastResult.SalesReturns:N0}",
             $"مدفوعات الموردين: {_lastResult.SupplierPayments:N0}",
             $"وصولات القبض: {_lastResult.Receipts:N0}",
+            $"إيرادات أخرى: {_lastResult.OtherIncome:N0}",
             $"الصافي: {_lastResult.NetAmount:N0}",
         };
 
@@ -331,10 +337,10 @@ public partial class DailyOperationsReportViewModel : ReportViewModelBase
             case 4 when ShowBranchSection:
                 _exportService.PrintTable(
                     "التقرير اليومي — الفروع",
-                    ["الفرع", "مبيعات نقدية", "مصاريف", "مرتجعات", "مدفوعات", "قبض", "الصافي"],
+                    ["الفرع", "مبيعات نقدية", "مصاريف", "مرتجعات", "مدفوعات", "قبض", "إيرادات أخرى", "الصافي"],
                     _allBranchRows.Select(r => new object[]
                     {
-                        r.BranchName, r.CashSales, r.Expenses, r.SalesReturns, r.SupplierPayments, r.Receipts, r.NetAmount
+                        r.BranchName, r.CashSales, r.Expenses, r.SalesReturns, r.SupplierPayments, r.Receipts, r.OtherIncome, r.NetAmount
                     }).ToList(),
                     summaryLines);
                 break;

@@ -136,6 +136,7 @@ public static class AccountingMenuBuilder
                 [
                     ("السندات", PackIconKind.FileDocumentOutline, typeof(VouchersViewModel), "Vouchers"),
                     ("المصاريف", PackIconKind.CashMinus, typeof(ExpenseViewModel), "Expenses"),
+                    ("الإيرادات الأخرى", PackIconKind.CashPlus, typeof(OtherIncomeViewModel), "OtherIncome"),
                     ("القاصات والمصرف", PackIconKind.Bank, typeof(CashBankViewModel), "CashAndBank"),
                     ("صيرفة", PackIconKind.CurrencyUsd, typeof(CurrencyExchangeViewModel), "CurrencyExchange"),
                     ("رأس المال", PackIconKind.Cash, typeof(CapitalAdjustmentViewModel), "Capital"),

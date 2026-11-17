@@ -33,6 +33,16 @@ public class DailyOperationsReportCalculatorTests
     }
 
     [Fact]
+    public void ComputeNet_AddsOtherIncomeOnce()
+    {
+        var without = DailyOperationsReportCalculator.ComputeNet(1000m, 100m, 200m, 150m, 300m);
+        var withIncome = DailyOperationsReportCalculator.ComputeNet(1000m, 100m, 200m, 150m, 300m, otherIncome: 75m);
+
+        Assert.Equal(850m, without);
+        Assert.Equal(925m, withIncome);
+    }
+
+    [Fact]
     public void ComputeNet_ZeroInputs_IsZero()
     {
         Assert.Equal(0m, DailyOperationsReportCalculator.ComputeNet(0, 0, 0, 0, 0));

@@ -15,7 +15,8 @@ public enum BarcodeLabelSize
     Mm60x40 = 9,
     Mm80x50 = 10,
     Mm100x50 = 11,
-    Custom = 12
+    Custom = 12,
+    Mm30x10 = 13
 }
 
 public static class BarcodeLabelSizeHelper
@@ -31,6 +32,7 @@ public static class BarcodeLabelSizeHelper
 
     public static IReadOnlyList<BarcodeLabelSize> AllSizes { get; } =
     [
+        BarcodeLabelSize.Mm30x10,
         BarcodeLabelSize.Mm30x15,
         BarcodeLabelSize.Mm30x20,
         BarcodeLabelSize.Mm38x25,
@@ -60,6 +62,7 @@ public static class BarcodeLabelSizeHelper
 
         return size switch
         {
+            BarcodeLabelSize.Mm30x10 => (30, 10),
             BarcodeLabelSize.Mm30x15 => (30, 15),
             BarcodeLabelSize.Mm30x20 => (30, 20),
             BarcodeLabelSize.Mm38x25 => (38, 25),
@@ -89,6 +92,7 @@ public static class BarcodeLabelSizeHelper
 
     public static string GetDisplayName(BarcodeLabelSize size) => size switch
     {
+        BarcodeLabelSize.Mm30x10 => "30 × 10 مم",
         BarcodeLabelSize.Mm30x15 => "30 × 15 مم",
         BarcodeLabelSize.Mm30x20 => "30 × 20 مم",
         BarcodeLabelSize.Mm38x25 => "38 × 25 مم",
@@ -106,7 +110,8 @@ public static class BarcodeLabelSizeHelper
     };
 
     /// <summary>للتوافق الخلفي — المحتوى يُتحكم به الآن عبر أعلام الملصق.</summary>
-    public static bool ShowProductDetails(BarcodeLabelSize size) => size != BarcodeLabelSize.Mm30x15;
+    public static bool ShowProductDetails(BarcodeLabelSize size) =>
+        size is not (BarcodeLabelSize.Mm30x10 or BarcodeLabelSize.Mm30x15);
 
     public static BarcodeLabelLayoutMetrics GetLayout(
         BarcodeLabelSize size,

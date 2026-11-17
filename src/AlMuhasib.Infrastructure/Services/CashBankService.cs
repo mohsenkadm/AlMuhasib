@@ -125,6 +125,10 @@ public class CashBankService : ICashBankService
         if (hasExpenses)
             throw new InvalidOperationException("لا يمكن حذف الصندوق لوجود مصروفات مرتبطة به");
 
+        var hasOtherIncomes = await context.OtherIncomes.AnyAsync(i => i.CashBoxId == id);
+        if (hasOtherIncomes)
+            throw new InvalidOperationException("لا يمكن حذف الصندوق لوجود إيرادات أخرى مرتبطة به");
+
         var username = _currentUserService.Username ?? "system";
         cashBox.MarkSoftDeleted(username);
         await context.SaveChangesAsync();
@@ -1534,6 +1538,29 @@ public class CashBankService : ICashBankService
                 Reference = $"EXP-{e.Id:D4}",
                 SourceType = "Expense",
                 SourceId = e.Id
+            });
+        }
+
+        var otherIncomes = await context.OtherIncomes.AsNoTracking()
+            .Include(i => i.OtherIncomeType)
+            .Where(i => i.CashBoxId == cashBoxId)
+            .Where(i => !fromDate.HasValue || i.Date >= fromDate.Value)
+            .Where(i => !toExclusive.HasValue || i.Date < toExclusive.Value)
+            .ToListAsync();
+
+        foreach (var income in otherIncomes)
+        {
+            rows.Add(new AccountStatementEntry
+            {
+                Date = income.Date,
+                Type = "إيراد آخر",
+                Description = income.OtherIncomeType?.Name
+                    + (string.IsNullOrWhiteSpace(income.Notes) ? "" : $" — {income.Notes}"),
+                Credit = income.Amount,
+                Debit = 0,
+                Reference = income.IncomeNumber,
+                SourceType = "OtherIncome",
+                SourceId = income.Id
             });
         }
 

@@ -137,6 +137,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!-- Header -->
@@ -194,8 +195,89 @@
                                  Style="{StaticResource FilledTextBox}"/>
                     </Grid>
 
+                    <UniformGrid Grid.Row="3" Columns="3" Margin="0,0,0,14"
+                                 Visibility="{Binding ShowCashImpact, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <Border Margin="0,0,8,0" Padding="12,10" CornerRadius="12" BorderThickness="1"
+                                Background="{DynamicResource DashboardKpiBlueLightBrush}"
+                                BorderBrush="{DynamicResource DashboardKpiBlueBrush}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="Safe" Width="16" Height="16" VerticalAlignment="Center"
+                                                 Foreground="{DynamicResource DashboardKpiBlueBrush}"/>
+                                    <TextBlock Text="رصيد الصندوق" Margin="6,0,0,0" FontSize="11" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                </StackPanel>
+                                <TextBlock Margin="0,6,0,0" FontSize="16" FontWeight="Bold"
+                                           Foreground="{DynamicResource DashboardKpiBlueBrush}">
+                                    <Run Text="{Binding SelectedCashBalance, Mode=OneWay, StringFormat=N0}"/>
+                                    <Run Text=" "/>
+                                    <Run Text="{Binding CashImpactCurrency, Mode=OneWay}" FontSize="12"/>
+                                </TextBlock>
+                                <TextBlock Text="{Binding FormCashBox.Name}" FontSize="11" TextTrimming="CharacterEllipsis"
+                                           Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Margin="4,0" Padding="12,10" CornerRadius="12" BorderThickness="1"
+                                Background="{DynamicResource DashboardKpiRedLightBrush}"
+                                BorderBrush="{DynamicResource DashboardKpiRedBrush}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="CashMinus" Width="16" Height="16" VerticalAlignment="Center"
+                                                 Foreground="{DynamicResource DashboardKpiRedBrush}"/>
+                                    <TextBlock Text="سيُصرف" Margin="6,0,0,0" FontSize="11" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                </StackPanel>
+                                <TextBlock Margin="0,6,0,0" FontSize="16" FontWeight="Bold"
+                                           Foreground="{DynamicResource DashboardKpiRedBrush}">
+                                    <Run Text="{Binding CashMovementAmount, Mode=OneWay, StringFormat=N0}"/>
+                                    <Run Text=" "/>
+                                    <Run Text="{Binding CashImpactCurrency, Mode=OneWay}" FontSize="12"/>
+                                </TextBlock>
+                                <TextBlock Text="من المبلغ المكتوب" FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Margin="8,0,0,0" Padding="12,10" CornerRadius="12" BorderThickness="1">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="Background" Value="{DynamicResource DashboardKpiTealLightBrush}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource DashboardKpiTealBrush}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding CashImpactShortfall}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource DashboardKpiRedLightBrush}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource DashboardKpiRedBrush}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <md:PackIcon Kind="CashRegister" Width="16" Height="16" VerticalAlignment="Center"
+                                                 Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <TextBlock Text="بعد الصرف" Margin="6,0,0,0" FontSize="11" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                </StackPanel>
+                                <TextBlock Margin="0,6,0,0" FontSize="16" FontWeight="Bold"
+                                           Foreground="{DynamicResource TextPrimaryBrush}"
+                                           Text="{Binding CashBalanceAfter, Mode=OneWay, StringFormat=N0}"/>
+                                <TextBlock FontSize="11" Foreground="{DynamicResource TextSecondaryBrush}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Text" Value="الرصيد المتوقع"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding CashImpactShortfall}" Value="True">
+                                                    <Setter Property="Text" Value="الرصيد لا يكفي"/>
+                                                    <Setter Property="Foreground" Value="{DynamicResource DashboardKpiRedBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
                     <!-- Row 3: Add button -->
-                    <Button Grid.Row="3"
+                    <Button Grid.Row="4"
                             HorizontalAlignment="Left"
                             Content="حفظ المصروف"
                             Command="{Binding AddExpenseCommand}"
@@ -375,16 +457,21 @@
                             </DataGridTextColumn.ElementStyle>
                         </DataGridTextColumn>
 
-                        <DataGridTemplateColumn Header="حذف" Width="70"
+                        <DataGridTemplateColumn Header="إجراءات" Width="130" MinWidth="120"
+                                                CellStyle="{StaticResource TableActionsCellStyle}"
                                                 behaviors:DataGridColumnFilterBehavior.IsFilterable="False">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Button Command="{Binding DataContext.DeleteExpenseCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                             CommandParameter="{Binding}"
                                             Style="{StaticResource TableDeleteIconButton}"
+                                            Width="108" Height="36" Margin="0"
                                             IsEnabled="{Binding DataContext.CanDelete, RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                            ToolTip="حذف">
-                                        <md:PackIcon Kind="DeleteOutline" Width="18" Height="18"/>
+                                            ToolTip="حذف المصروف">
+                                        <StackPanel Orientation="Horizontal">
+                                            <md:PackIcon Kind="DeleteOutline" Width="16" Height="16" VerticalAlignment="Center"/>
+                                            <TextBlock Text="حذف" Margin="6,0,0,0" VerticalAlignment="Center" FontSize="12"/>
+                                        </StackPanel>
                                     </Button>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>

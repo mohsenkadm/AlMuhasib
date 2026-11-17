@@ -77,6 +77,9 @@ public class DashboardService : IDashboardService
             var totalExpenses = await context.Expenses
                 .Where(e => e.Currency == AccountingCurrency.IQD)
                 .SumAsync(e => (decimal?)e.Amount) ?? 0;
+            var otherIncome = await context.OtherIncomes
+                .Where(i => i.Currency == AccountingCurrency.IQD)
+                .SumAsync(i => (decimal?)i.Amount) ?? 0;
             var distributedProfits = await context.ProfitDistributions
                 .SumAsync(pd => (decimal?)pd.DistributedAmount) ?? 0;
             var profitOpening = await ProductCostHelper.GetProfitOpeningBalanceAsync(context);
@@ -84,9 +87,10 @@ public class DashboardService : IDashboardService
             data.NetProfitPurchases = totalPurchases;
             data.NetProfitOpeningStock = openingStockValue;
             data.NetProfitExpenses = totalExpenses;
+            data.NetProfitOtherIncome = otherIncome;
             data.NetProfitDistributions = distributedProfits;
             data.NetProfitOpening = profitOpening;
-            data.NetProfit = totalSales - totalPurchases - openingStockValue - totalExpenses - distributedProfits + profitOpening;
+            data.NetProfit = totalSales - totalPurchases - openingStockValue + otherIncome - totalExpenses - distributedProfits + profitOpening;
 
             // أرباح الدولار منفصلة — لا خلط مع الدينار (المخزون الافتتاحي والتوزيعات بالدينار فقط)
             var totalSalesUsd = await InvoiceSignedSums.SumSignedNetAsync(
@@ -97,10 +101,14 @@ public class DashboardService : IDashboardService
             var totalExpensesUsd = await context.Expenses
                 .Where(e => e.Currency == AccountingCurrency.USD)
                 .SumAsync(e => (decimal?)e.Amount) ?? 0;
+            var otherIncomeUsd = await context.OtherIncomes
+                .Where(i => i.Currency == AccountingCurrency.USD)
+                .SumAsync(i => (decimal?)i.Amount) ?? 0;
             data.NetProfitSalesUsd = totalSalesUsd;
             data.NetProfitPurchasesUsd = totalPurchasesUsd;
             data.NetProfitExpensesUsd = totalExpensesUsd;
-            data.NetProfitUsd = totalSalesUsd - totalPurchasesUsd - totalExpensesUsd;
+            data.NetProfitOtherIncomeUsd = otherIncomeUsd;
+            data.NetProfitUsd = totalSalesUsd - totalPurchasesUsd + otherIncomeUsd - totalExpensesUsd;
         }
         catch (Exception ex)
         {
@@ -624,6 +632,13 @@ public class DashboardService : IDashboardService
         var expensesByDay = expenseRaw
             .GroupBy(e => e.Date.Date)
             .ToDictionary(g => g.Key, g => g.Sum(e => e.Amount));
+        var otherRaw = await context.OtherIncomes
+            .Where(i => i.Currency == AccountingCurrency.IQD && i.Date >= from && i.Date < tomorrow)
+            .Select(i => new { i.Date, i.Amount })
+            .ToListAsync();
+        var otherByDay = otherRaw
+            .GroupBy(i => i.Date.Date)
+            .ToDictionary(g => g.Key, g => g.Sum(i => i.Amount));
 
         data.NetProfitLast14Days = Enumerable.Range(0, days)
             .Select(offset =>
@@ -631,16 +646,20 @@ public class DashboardService : IDashboardService
                 var d = from.AddDays(offset);
                 purchasesByDay.TryGetValue(d, out var purch);
                 expensesByDay.TryGetValue(d, out var exp);
+                otherByDay.TryGetValue(d, out var other);
                 var sale = sales14.FirstOrDefault(s => s.Date == d)?.Amount ?? 0;
-                return new DailySalesPoint { Date = d, Amount = sale - purch - exp };
+                return new DailySalesPoint { Date = d, Amount = sale - purch - exp + other };
             })
             .ToList();
 
         var expensesPrev = await context.Expenses
             .Where(e => e.Currency == AccountingCurrency.IQD && e.Date >= prevFrom && e.Date < from)
             .SumAsync(e => (decimal?)e.Amount) ?? 0;
+        var otherPrev = await context.OtherIncomes
+            .Where(i => i.Currency == AccountingCurrency.IQD && i.Date >= prevFrom && i.Date < from)
+            .SumAsync(i => (decimal?)i.Amount) ?? 0;
         var profitCurr = data.NetProfitLast14Days.Sum(p => p.Amount);
-        var profitPrev = salesPrev - purchasesPrev - expensesPrev;
+        var profitPrev = salesPrev - purchasesPrev - expensesPrev + otherPrev;
         data.NetProfitTrendPercent = TrendPercent(profitCurr, profitPrev);
 
         // Overdue installment counts by due date (snapshot of currently unpaid) — دينار فقط
