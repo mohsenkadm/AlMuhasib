@@ -926,6 +926,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             ShowLineDiscount = ShowProductDiscount,
             ShowCarShowroomFields = _featureFlags.CarShowroom,
             CurrencyLabel = AccountingCurrencyHelper.GetLabel(_savedInvoice.Currency),
+            UseSalesCardLayout = true,
             Items = _savedItems.Select((item, i) =>
             {
                 var warehouseName = item.WarehouseId is int wid
@@ -987,6 +988,7 @@ public partial class InstallmentInvoiceViewModel : ViewModelBase, IProductQuickS
             Notes = source.Notes,
             FileNumber = source.FileNumber,
             CurrencyLabel = source.CurrencyLabel,
+            UseSalesCardLayout = true,
             HideAmounts = true,
             Items = source.Items.Select(i => new InvoicePrintItem
             {

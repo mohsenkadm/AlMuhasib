@@ -9,13 +9,19 @@ namespace AlMuhasib.UI.Helpers;
 /// </summary>
 public static class TabViewCache
 {
+    /// <summary>
+    /// Templates live on the main window content grid. Detached windows use this lookup
+    /// so a tab that was never shown can still be built once and then moved as the same visual.
+    /// </summary>
+    public static Func<Type, DataTemplate?>? ExternalTemplateLookup { get; set; }
+
     public static FrameworkElement? EnsureView(DocumentTab tab, FrameworkElement resourceHost)
     {
         if (tab.CachedView is not null)
             return tab.CachedView;
 
-        var key = new DataTemplateKey(tab.ViewModel.GetType());
-        if (resourceHost.TryFindResource(key) is not DataTemplate template)
+        var template = FindTemplate(resourceHost, tab.ViewModel.GetType());
+        if (template is null)
             return null;
 
         if (template.LoadContent() is not FrameworkElement view)
@@ -24,6 +30,15 @@ public static class TabViewCache
         view.DataContext = tab.ViewModel;
         tab.CachedView = view;
         return view;
+    }
+
+    private static DataTemplate? FindTemplate(FrameworkElement resourceHost, Type viewModelType)
+    {
+        var key = new DataTemplateKey(viewModelType);
+        if (resourceHost.TryFindResource(key) is DataTemplate local)
+            return local;
+
+        return ExternalTemplateLookup?.Invoke(viewModelType);
     }
 
     public static void TouchLru(IList<Guid> lruOrder, Guid tabId)

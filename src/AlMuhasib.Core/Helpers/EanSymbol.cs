@@ -38,8 +38,12 @@ public static class EanSymbol
         "LGGLLG", "LGGGLL", "LGLGLG", "LGLGGL", "LGGLGL"
     ];
 
-    public static Layout Encode(string code, PriceLabelSymbology symbology) =>
-        symbology == PriceLabelSymbology.Ean8 ? EncodeEan8(code) : EncodeEan13(code);
+    public static Layout Encode(string code, PriceLabelSymbology symbology) => symbology switch
+    {
+        PriceLabelSymbology.Ean8 => EncodeEan8(code),
+        PriceLabelSymbology.Ean13 => EncodeEan13(code),
+        _ => throw new ArgumentOutOfRangeException(nameof(symbology), symbology, "هذا النوع لا يُرسم كرمز EAN.")
+    };
 
     public static bool IsGuard(Layout layout, int moduleIndex)
     {

@@ -54,6 +54,36 @@
         </ContextMenu>
 
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- كمية فاتورة المبيعات فقط: الحقل أعرض 10٪ حتى لا يُقص مع زري النقصان والزيادة -->
+        <DataTemplate x:Key="SalesInvoiceQuantityCellTemplate">
+            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Content="−" Style="{StaticResource InvoiceQtyMinusButton}"
+                        Command="{Binding DataContext.DecreaseRowQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}" ToolTip="نقصان"
+                        IsEnabled="{Binding IsPriceEditable}"/>
+                <Border Grid.Column="1" MinWidth="79.2" Width="79.2" Margin="6,0" CornerRadius="8"
+                        Background="{DynamicResource MutedIconBackgroundBrush}" Padding="4,2" VerticalAlignment="Center">
+                    <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"
+                             Style="{StaticResource NumericCellTextBox}"
+                             MinWidth="61.6" MinHeight="28"
+                             HorizontalContentAlignment="Center"
+                             VerticalContentAlignment="Center"
+                             FontWeight="SemiBold" FontSize="14"
+                             Foreground="{DynamicResource TextPrimaryBrush}" Padding="6,4"
+                             IsReadOnly="{Binding IsOfferGift}"/>
+                </Border>
+                <Button Grid.Column="2" Content="+" Style="{StaticResource InvoiceQtyPlusButton}"
+                        Command="{Binding DataContext.IncreaseRowQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}" ToolTip="زيادة"
+                        IsEnabled="{Binding IsPriceEditable}"/>
+            </Grid>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Grid behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
@@ -149,6 +179,7 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -281,69 +312,66 @@
                                   Style="{StaticResource FilledComboBox}"
                                   Margin="0,0,12,0"
                                   FontSize="14"
+                                  VerticalAlignment="Top"
                                   Visibility="{Binding ShowWarehouse, Converter={StaticResource BoolToVis}}" />
 
-                        <!-- Payment + currency (currency stays visible in quote mode when multi-currency is on) -->
+                        <!-- Payment method keeps its original single-line height -->
                         <StackPanel Grid.Row="1" Grid.Column="1"
                                     Orientation="Horizontal"
                                     VerticalAlignment="Center"
-                                    Margin="0,0,12,0">
-                            <StackPanel Orientation="Horizontal"
-                                        VerticalAlignment="Center"
-                                        Visibility="{Binding ShowPaymentMethod, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Text="طريقة الدفع:"
-                                           FontSize="13"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                           VerticalAlignment="Center"
-                                           Margin="0,0,12,0" />
+                                    Margin="0,0,12,0"
+                                    Visibility="{Binding ShowPaymentMethod, Converter={StaticResource BoolToVis}}">
+                            <TextBlock Text="طريقة الدفع:"
+                                       FontSize="13"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,12,0" />
 
-                                <RadioButton Content="نقدي"
-                                             IsChecked="{Binding SelectedPaymentMethod, Converter={StaticResource PaymentMethodConverter}, ConverterParameter=Cash}"
-                                             GroupName="PaymentMethod"
-                                             Style="{StaticResource MaterialDesignTabRadioButtonBottom}"
-                                             Padding="12,8"
-                                             FontSize="13"
-                                             Margin="0,0,6,0" />
-
-                                <RadioButton Content="آجل"
-                                             IsChecked="{Binding SelectedPaymentMethod, Converter={StaticResource PaymentMethodConverter}, ConverterParameter=Credit}"
-                                             GroupName="PaymentMethod"
-                                             Style="{StaticResource MaterialDesignTabRadioButtonBottom}"
-                                             Padding="12,8"
-                                             FontSize="13"
-                                             Margin="0,0,6,0" />
-                            </StackPanel>
-
-                            <StackPanel Orientation="Horizontal"
-                                        VerticalAlignment="Center"
-                                        Margin="12,0,0,0"
-                                        Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolToVis}}">
-                                <TextBlock Text="العملة:"
-                                           FontSize="13"
-                                           Foreground="{DynamicResource TextSecondaryBrush}"
-                                           VerticalAlignment="Center"
-                                           Margin="0,0,8,0"/>
-                                <ComboBox ItemsSource="{Binding CurrencyOptions}"
-                                          SelectedItem="{Binding SelectedCurrencyOption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                          DisplayMemberPath="DisplayName"
-                                          Width="110"
-                                          IsEnabled="{Binding CanSave}"
-                                          materialDesign:HintAssist.Hint="العملة"
-                                          Style="{StaticResource FilledComboBox}"
-                                          FontSize="13"
-                                          Margin="0,0,8,0"/>
-                                <TextBox Text="{Binding FxRate, UpdateSourceTrigger=PropertyChanged}"
-                                         materialDesign:HintAssist.Hint="سعر الصرف"
-                                         Style="{StaticResource FilledTextBox}"
-                                         Width="110"
+                            <RadioButton Content="نقدي"
+                                         IsChecked="{Binding SelectedPaymentMethod, Converter={StaticResource PaymentMethodConverter}, ConverterParameter=Cash}"
+                                         GroupName="PaymentMethod"
+                                         Style="{StaticResource MaterialDesignTabRadioButtonBottom}"
+                                         Padding="12,8"
                                          FontSize="13"
-                                         IsEnabled="{Binding CanSave}"
-                                         Visibility="{Binding ShowFxRateInput, Converter={StaticResource BoolToVis}}"/>
-                            </StackPanel>
+                                         Margin="0,0,6,0" />
+
+                            <RadioButton Content="آجل"
+                                         IsChecked="{Binding SelectedPaymentMethod, Converter={StaticResource PaymentMethodConverter}, ConverterParameter=Credit}"
+                                         GroupName="PaymentMethod"
+                                         Style="{StaticResource MaterialDesignTabRadioButtonBottom}"
+                                         Padding="12,8"
+                                         FontSize="13"
+                                         Margin="0,0,6,0" />
                         </StackPanel>
 
+                        <!-- Currency on its own row so side fields stay their normal height and still shrink with the screen -->
+                        <ComboBox Grid.Row="2" Grid.Column="0"
+                                  ItemsSource="{Binding CurrencyOptions}"
+                                  SelectedItem="{Binding SelectedCurrencyOption, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  DisplayMemberPath="DisplayName"
+                                  IsEnabled="{Binding CanSave}"
+                                  materialDesign:HintAssist.Hint="العملة"
+                                  materialDesign:HintAssist.IsFloating="True"
+                                  materialDesign:ComboBoxAssist.ShowSelectedItem="True"
+                                  Style="{StaticResource FilledComboBox}"
+                                  Margin="0,12,12,0"
+                                  FontSize="14"
+                                  VerticalAlignment="Top"
+                                  Visibility="{Binding ShowMultiCurrency, Converter={StaticResource BoolToVis}}" />
+
+                        <TextBox Grid.Row="2" Grid.Column="1"
+                                 Text="{Binding FxRate, UpdateSourceTrigger=PropertyChanged}"
+                                 materialDesign:HintAssist.Hint="سعر الصرف"
+                                 materialDesign:HintAssist.IsFloating="True"
+                                 Style="{StaticResource FilledTextBox}"
+                                 Margin="0,12,12,0"
+                                 FontSize="14"
+                                 IsEnabled="{Binding CanSave}"
+                                 VerticalAlignment="Top"
+                                 Visibility="{Binding ShowFxRateInput, Converter={StaticResource BoolToVis}}" />
+
                         <!-- الصندوق + تاريخ الاستحقاق (الآجل): لا يُستبدل الصندوق بتاريخ الاستحقاق -->
-                        <Grid Grid.Row="1" Grid.Column="2">
+                        <Grid Grid.Row="1" Grid.Column="2" VerticalAlignment="Top">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -371,7 +399,7 @@
                         </Grid>
 
                         <!-- Driver (feature-gated) -->
-                        <ComboBox Grid.Row="2" Grid.Column="0"
+                        <ComboBox Grid.Row="3" Grid.Column="0"
                                   ItemsSource="{Binding Drivers}"
                                   SelectedItem="{Binding SelectedDriver}"
                                   DisplayMemberPath="Name"
@@ -384,7 +412,7 @@
                                   Visibility="{Binding ShowDriverSelection, Converter={StaticResource BoolToVis}}" />
 
                         <!-- Sales representative (feature-gated): column 0 under المخزن when driver is hidden -->
-                        <ComboBox Grid.Row="2"
+                        <ComboBox Grid.Row="3"
                                   ItemsSource="{Binding SalesRepresentatives}"
                                   SelectedItem="{Binding SelectedSalesRepresentative}"
                                   DisplayMemberPath="Name"
@@ -711,8 +739,8 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="الكمية" Width="140"
-                                                        CellTemplate="{StaticResource InvoiceQuantityCellTemplate}"/>
+                                <DataGridTemplateColumn Header="الكمية" Width="182" MinWidth="182"
+                                                        CellTemplate="{StaticResource SalesInvoiceQuantityCellTemplate}"/>
 
                                 <DataGridTemplateColumn Header="سعر الوحدة" Width="115">
                                     <DataGridTemplateColumn.CellTemplate>

@@ -104,6 +104,8 @@
     <SolidColorBrush x:Key="DashboardSuccessPanelBorderBrush" Color="#C8E6C9"/>
     <SolidColorBrush x:Key="DashboardSuccessForegroundBrush" Color="#2E7D32"/>
     <SolidColorBrush x:Key="DashboardQuickActionBrush" Color="#F5FFFFFF"/>
+    <SolidColorBrush x:Key="DashboardHeroActionForegroundBrush" Color="#FFFFFFFF"/>
+    <SolidColorBrush x:Key="DashboardHeroActionIconWellBrush" Color="#30FFFFFF"/>
     <SolidColorBrush x:Key="DashboardQuickActionTitleBrush" Color="#212121"/>
     <SolidColorBrush x:Key="DashboardQuickActionSubtitleBrush" Color="#616161"/>
     <LinearGradientBrush x:Key="InvoiceSalesHeaderBrush" StartPoint="0,0" EndPoint="1,0">
@@ -240,6 +242,28 @@
     <SolidColorBrush x:Key="ChromeTabSelectedBorderBrush" Color="#90CAF9"/>
     <SolidColorBrush x:Key="ChromeTabForegroundBrush" Color="#37474F"/>
     <SolidColorBrush x:Key="ChromeTabSelectedForegroundBrush" Color="#1565C0"/>
+
+    <!-- الزجاج السائل: مادة الأسطح الثلاثة يرسمها controls:LiquidGlassChrome، وألوانها في LiquidGlassPalettes
+         وينشرها ThemeService.ApplyLiquidGlassPalette. هنا ألوان المحتوى فوق الزجاج فقط. -->
+    <SolidColorBrush x:Key="QuickDockForegroundBrush" Color="#1C2B40"/>
+    <SolidColorBrush x:Key="QuickDockSeparatorBrush" Color="#335C7590"/>
+
+    <!-- إشعار التذكير السفلي: ألوان المحتوى فقط (مادة الزجاج من LiquidGlassNotificationPalette) -->
+    <SolidColorBrush x:Key="NotificationIconFillBrush" Color="#33D4A056"/>
+    <SolidColorBrush x:Key="NotificationIconForegroundBrush" Color="#B8742A"/>
+    <SolidColorBrush x:Key="NotificationActionForegroundBrush" Color="#1E5A96"/>
+    <SolidColorBrush x:Key="NotificationCloseForegroundBrush" Color="#5C6B7A"/>
+    <SolidColorBrush x:Key="NotificationCloseHoverBrush" Color="#14000000"/>
+
+    <!-- جو أزرق رمادي تحت زجاج رأس الجداول (ThemeService يبدّله فاتح/داكن/ذهبي) -->
+    <LinearGradientBrush x:Key="ListHeaderGlassAtmosphereBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#E6C5D8EE" Offset="0"/>
+        <GradientStop Color="#D4A8C4E0" Offset="0.48"/>
+        <GradientStop Color="#C8B0D0EC" Offset="1"/>
+    </LinearGradientBrush>
+    <SolidColorBrush x:Key="ListHeaderGlassOrbPrimaryBrush" Color="#402196F3"/>
+    <SolidColorBrush x:Key="ListHeaderGlassOrbSecondaryBrush" Color="#3226A69A"/>
+
     <SolidColorBrush x:Key="DataGridBackgroundBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="DataGridRowBrush" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="DataGridRowAltBrush" Color="#F7F9FC"/>
@@ -2854,6 +2878,231 @@
         <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
         <Setter Property="BorderThickness" Value="0,0,0,1"/>
         <Setter Property="Padding" Value="8,6,8,2"/>
+    </Style>
+
+    <!-- أزرار الشريط تحت التبويبات: مادة الزجاج كلها من LiquidGlassChrome (نفس مادة أزرار الكارد الأزرق وإشعار الأسفل).
+         الخلفية هنا لون الصفحة الثابت، فلا حاجة لتمويه خلفية حقيقي. -->
+    <Style x:Key="GlassQuickActionButton" TargetType="controls:GlassActionButton">
+        <Setter Property="Foreground" Value="{DynamicResource QuickDockForegroundBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="MinWidth" Value="40"/>
+        <Setter Property="MinHeight" Value="40"/>
+        <Setter Property="Padding" Value="8,0,12,0"/>
+        <Setter Property="Margin" Value="0,4,10,8"/>
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="UseLayoutRounding" Value="True"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="controls:GlassActionButton">
+                    <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <TransformGroup>
+                                <ScaleTransform x:Name="Scale" ScaleX="1" ScaleY="1"/>
+                                <TranslateTransform x:Name="Lift" Y="0"/>
+                            </TransformGroup>
+                        </Grid.RenderTransform>
+                        <!-- الزجاج: ظل خارجي، جسم صافٍ، تظليل داخلي، حلقة لامعة، خط خارجي. المحتوى فوقه حتى يبقى النص حاداً. -->
+                        <controls:LiquidGlassChrome x:Name="Glass"
+                                                    IsHovered="{TemplateBinding IsMouseOver}"
+                                                    IsPressed="{TemplateBinding IsPressed}"
+                                                    IsActive="{TemplateBinding IsActive}"
+                                                    IsFocusedGlass="{TemplateBinding IsKeyboardFocused}"/>
+                        <StackPanel Orientation="Horizontal"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Center"
+                                    Margin="{TemplateBinding Padding}">
+                            <Grid Width="22" Height="22" VerticalAlignment="Center">
+                                <Ellipse Fill="{TemplateBinding AccentBrush}" Opacity="0.08"/>
+                                <materialDesign:PackIcon x:Name="Glyph"
+                                                         Kind="{TemplateBinding Icon}"
+                                                         Width="16"
+                                                         Height="16"
+                                                         Visibility="Collapsed"
+                                                         HorizontalAlignment="Center"
+                                                         VerticalAlignment="Center"
+                                                         Foreground="{TemplateBinding AccentBrush}"/>
+                                <ContentPresenter x:Name="CustomGlyph"
+                                                  Content="{TemplateBinding IconContent}"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"/>
+                            </Grid>
+                            <TextBlock x:Name="Caption"
+                                       Text="{TemplateBinding Label}"
+                                       Margin="8,0,0,0"
+                                       VerticalAlignment="Center"
+                                       FontSize="{TemplateBinding FontSize}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{TemplateBinding Foreground}"/>
+                        </StackPanel>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IconContent" Value="{x:Null}">
+                            <Setter TargetName="CustomGlyph" Property="Visibility" Value="Collapsed"/>
+                            <Setter TargetName="Glyph" Property="Visibility" Value="Visible"/>
+                        </Trigger>
+                        <Trigger Property="Label" Value="{x:Null}">
+                            <Setter TargetName="Caption" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="Label" Value="">
+                            <Setter TargetName="Caption" Property="Visibility" Value="Collapsed"/>
+                            <Setter Property="Padding" Value="8,0"/>
+                        </Trigger>
+                        <!-- ألوان الحالات يرسمها LiquidGlassChrome؛ هنا حركة رفع/ضغط ناعمة فقط. -->
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Lift"
+                                                         Storyboard.TargetProperty="Y"
+                                                         To="-0.5"
+                                                         Duration="0:0:0.18">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Lift"
+                                                         Storyboard.TargetProperty="Y"
+                                                         To="0"
+                                                         Duration="0:0:0.20">
+                                            <DoubleAnimation.EasingFunction>
+                                                <CubicEase EasingMode="EaseOut"/>
+                                            </DoubleAnimation.EasingFunction>
+                                        </DoubleAnimation>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Trigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="0.988" Duration="0:0:0.09"/>
+                                        <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="0.988" Duration="0:0:0.09"/>
+                                        <DoubleAnimation Storyboard.TargetName="Lift" Storyboard.TargetProperty="Y" To="0.25" Duration="0:0:0.09"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.EnterActions>
+                            <Trigger.ExitActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.14"/>
+                                        <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.14"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </Trigger.ExitActions>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.42"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="NotificationGlassActionButton" TargetType="Button">
+        <Setter Property="Foreground" Value="{DynamicResource NotificationActionForegroundBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Height" Value="32"/>
+        <Setter Property="MinWidth" Value="64"/>
+        <Setter Property="Padding" Value="14,0"/>
+        <Setter Property="FontSize" Value="12.5"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <!-- نفس مادة الزجاج بحجم صغير: ملوّن (IsActive) ليبرز كإجراء أساسي، وظل أخف لأنه داخل سطح زجاجي. -->
+                    <Grid x:Name="Bd" RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        </Grid.RenderTransform>
+                        <controls:LiquidGlassChrome IsActive="True"
+                                                    ShadowStrength="0.35"
+                                                    IsHovered="{TemplateBinding IsMouseOver}"
+                                                    IsPressed="{TemplateBinding IsPressed}"
+                                                    IsFocusedGlass="{TemplateBinding IsKeyboardFocused}"/>
+                        <ContentPresenter Margin="{TemplateBinding Padding}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="NotificationGlassCloseButton" TargetType="Button">
+        <Setter Property="Width" Value="32"/>
+        <Setter Property="Height" Value="32"/>
+        <Setter Property="MinWidth" Value="32"/>
+        <Setter Property="MinHeight" Value="32"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource NotificationCloseForegroundBrush}"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="ToolTip" Value="إغلاق"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <!-- دائرة زجاجية هادئة متناسقة مع مادة الإشعار، بدون ظل ثقيل. -->
+                    <Grid x:Name="Bd" Width="32" Height="32" RenderTransformOrigin="0.5,0.5">
+                        <Grid.RenderTransform>
+                            <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        </Grid.RenderTransform>
+                        <controls:LiquidGlassChrome ShadowStrength="0.2"
+                                                    IsHovered="{TemplateBinding IsMouseOver}"
+                                                    IsPressed="{TemplateBinding IsPressed}"
+                                                    IsFocusedGlass="{TemplateBinding IsKeyboardFocused}"/>
+                        <materialDesign:PackIcon Kind="Close" Width="16" Height="16"
+                                                 HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                 Foreground="{TemplateBinding Foreground}"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="RenderTransform">
+                                <Setter.Value>
+                                    <ScaleTransform ScaleX="0.96" ScaleY="0.96"/>
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style x:Key="ChromeTabListBox" TargetType="ListBox">

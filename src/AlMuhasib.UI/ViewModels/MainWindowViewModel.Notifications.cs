@@ -22,6 +22,8 @@ public partial class MainWindowViewModel
     [ObservableProperty] private bool _isNotificationReminderVisible;
     [ObservableProperty] private string _notificationReminderTitle = string.Empty;
     [ObservableProperty] private string _notificationReminderMessage = string.Empty;
+    /// <summary>شدة تنبيه إشعار الأسفل فقط (واجهة): Info / Warning / Critical.</summary>
+    [ObservableProperty] private SmartAlertSeverity _notificationReminderSeverity = SmartAlertSeverity.Info;
 
     public ObservableCollection<AppNotificationItem> UnreadNotifications { get; } = [];
     public ObservableCollection<AppNotificationItem> ReadNotifications { get; } = [];
@@ -149,6 +151,7 @@ public partial class MainWindowViewModel
 
         NotificationReminderTitle = e.Title;
         NotificationReminderMessage = e.Message;
+        NotificationReminderSeverity = e.IsOverdue ? SmartAlertSeverity.Critical : SmartAlertSeverity.Warning;
         IsNotificationReminderVisible = true;
 
         if (_userPreferences.Current.Reminders.PlaySound)
@@ -223,6 +226,7 @@ public partial class MainWindowViewModel
             ? "اضغط لعرض التفاصيل"
             : $"{top.Title} — {top.Message}";
 
+        NotificationReminderSeverity = top?.Severity ?? SmartAlertSeverity.Info;
         IsNotificationReminderVisible = true;
 
         if (isStartup)

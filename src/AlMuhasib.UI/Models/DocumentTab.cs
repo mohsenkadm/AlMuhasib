@@ -38,10 +38,20 @@ public partial class DocumentTab : ObservableObject, IDisposable
     /// <summary>Cached visual for this tab (null when trimmed or never shown).</summary>
     public FrameworkElement? CachedView { get; set; }
 
+    /// <summary>
+    /// True while the tab is moving between windows. Collection removal must keep the view and DI scope.
+    /// </summary>
+    public bool IsTransferring { get; set; }
+
+    /// <summary>Header-only flag while the user drags this tab.</summary>
+    [ObservableProperty]
+    private bool _isBeingDragged;
+
     /// <summary>اسم شاشة الصلاحية إن وُجد — يُستخدم لإعادة الفتح.</summary>
     public string? PermissionScreenName { get; init; }
 
-    public void ReleaseCachedView()
+    /// <summary>Unhooks the cached visual from its current parent without dropping the instance.</summary>
+    public void DetachVisualFromParent()
     {
         if (CachedView is null)
             return;
@@ -58,7 +68,14 @@ public partial class DocumentTab : ObservableObject, IDisposable
                 panel.Children.Remove(CachedView);
                 break;
         }
+    }
 
+    public void ReleaseCachedView()
+    {
+        if (CachedView is null)
+            return;
+
+        DetachVisualFromParent();
         CachedView = null;
     }
 

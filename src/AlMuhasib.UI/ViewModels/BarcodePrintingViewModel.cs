@@ -291,6 +291,7 @@ public sealed record PriceLabelSymbologyOption(PriceLabelSymbology Symbology, st
     public static IReadOnlyList<PriceLabelSymbologyOption> CreateAll() =>
     [
         new(PriceLabelSymbology.Ean13, "EAN-13"),
-        new(PriceLabelSymbology.Ean8, "EAN-8")
+        new(PriceLabelSymbology.Ean8, "EAN-8"),
+        new(PriceLabelSymbology.Code128, "Code 128 — أكثر من 13 رقم")
     ];
 }

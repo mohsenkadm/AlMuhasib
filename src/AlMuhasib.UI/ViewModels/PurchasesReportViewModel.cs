@@ -247,6 +247,7 @@ public partial class PurchasesReportViewModel : ReportViewModelBase
             RoundingAmount = invoice.RoundingAmount,
             GrandTotal = invoice.NetAmount,
             CurrencyLabel = AccountingCurrencyHelper.GetLabel(invoice.Currency),
+            UseSalesCardLayout = true,
             Items = invoice.Items.Select((item, i) => new InvoicePrintItem
             {
                 Number = i + 1,

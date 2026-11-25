@@ -1,11 +1,11 @@
 ﻿{
-  "version": "1.14.53",
-  "releaseDate": "2026-11-17",
-  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.53/AlMuhasib-1.14.53.zip",
-  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.53/Qayd-Setup-1.14.53.exe",
-  "sha256": "1A84DE934C3A9283674DFAD459E5D83763F08F5F197FCC9AD932B21F758ED0DD",
-  "sizeBytes": 163079959,
-  "releaseNotes": "إيرادات أخرى وتحسين التقارير والأرباح — تحديث اختياري آمن (جداول إضافية فقط) بدون تأثير على كونكشن العملاء الحاليين",
+  "version": "1.14.54",
+  "releaseDate": "2026-11-25",
+  "downloadUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.54/AlMuhasib-1.14.54.zip",
+  "installerUrl": "https://github.com/mohsenkadm/AlMuhasib/releases/download/v1.14.54/Qayd-Setup-1.14.54.exe",
+  "sha256": "EE0EFD166F6587A486A3D1A3F502B9B27EA03D0C077FBA9497BAF8B76EF44381",
+  "sizeBytes": 189823448,
+  "releaseNotes": "تبويبات Chrome وتقرير تحليل المنتجات وتحسينات الواجهة والباركود — تحديث اختياري آمن بدون تأثير على كونكشن العملاء الحاليين",
   "isMandatory": false,
   "minSupportedVersion": "1.0.0"
 }

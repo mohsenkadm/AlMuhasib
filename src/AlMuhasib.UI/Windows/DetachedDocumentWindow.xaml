@@ -1,0 +1,97 @@
+<Window x:Class="AlMuhasib.UI.Windows.DetachedDocumentWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+        Title="{Binding SelectedTab.Title, TargetNullValue=قيد}"
+        Width="1180"
+        Height="760"
+        MinWidth="880"
+        MinHeight="560"
+        WindowStartupLocation="Manual"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        ShowInTaskbar="True"
+        FlowDirection="RightToLeft"
+        Background="{DynamicResource BackgroundBrush}"
+        FontFamily="{DynamicResource AppFont}"
+        TextElement.Foreground="{DynamicResource TextPrimaryBrush}"
+        TextElement.FontSize="{DynamicResource NormalFontSize}"
+        Icon="{DynamicResource BrandWindowIcon}"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="44"
+                      CornerRadius="0"
+                      GlassFrameThickness="0"
+                      ResizeBorderThickness="6"
+                      UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Style="{StaticResource AppTitleBar}"
+                MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid Margin="8,0,12,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0"
+                            Orientation="Horizontal"
+                            FlowDirection="LeftToRight"
+                            VerticalAlignment="Center"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button Style="{StaticResource TitleBarCaptionButton}"
+                            ToolTip="تصغير"
+                            Click="Minimize_Click"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                        <materialDesign:PackIcon Kind="WindowMinimize" Width="16" Height="16"/>
+                    </Button>
+                    <Button Style="{StaticResource TitleBarCaptionButton}"
+                            ToolTip="تكبير"
+                            Click="Maximize_Click"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                        <materialDesign:PackIcon x:Name="MaximizeIcon" Kind="WindowMaximize" Width="16" Height="16"/>
+                    </Button>
+                    <Button Style="{StaticResource TitleBarCloseButton}"
+                            ToolTip="إغلاق"
+                            Click="Close_Click"
+                            WindowChrome.IsHitTestVisibleInChrome="True">
+                        <materialDesign:PackIcon Kind="Close" Width="16" Height="16"/>
+                    </Button>
+                </StackPanel>
+                <TextBlock Grid.Column="1"
+                           Margin="12,0,0,0"
+                           VerticalAlignment="Center"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           TextTrimming="CharacterEllipsis"
+                           Foreground="{DynamicResource TitleBarIconBrush}"
+                           Text="{Binding SelectedTab.Title, TargetNullValue=صفحة}"/>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Style="{StaticResource ChromeTabStrip}">
+            <controls:ChromeTabStrip x:Name="ChromeTabs"
+                                     ItemsSource="{Binding Tabs}"
+                                     SelectedTab="{Binding SelectedTab, Mode=TwoWay}"/>
+        </Border>
+
+        <Border x:Name="DocumentSurface"
+                Grid.Row="2"
+                Background="{DynamicResource BackgroundBrush}"
+                Padding="16,12,16,16">
+            <ContentControl x:Name="DocumentHost"
+                            HorizontalContentAlignment="Stretch"
+                            VerticalContentAlignment="Stretch"/>
+        </Border>
+    </Grid>
+</Window>

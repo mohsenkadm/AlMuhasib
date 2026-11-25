@@ -101,4 +101,13 @@ public abstract partial class ViewModelBase : ObservableObject
     /// Return true if save succeeded (or there was nothing to save); false to cancel navigation.
     /// </summary>
     public virtual Task<bool> SavePendingChangesAsync() => Task.FromResult(true);
+
+    /// <summary>
+    /// When true, the tab context menu may refresh this screen in place.
+    /// Leave false unless <see cref="RefreshAsync"/> reloads data without discarding an edit the user cannot recover.
+    /// </summary>
+    public virtual bool CanRefresh => false;
+
+    /// <summary>Reloads the screen in place. Only called when <see cref="CanRefresh"/> is true.</summary>
+    public virtual Task RefreshAsync() => Task.CompletedTask;
 }

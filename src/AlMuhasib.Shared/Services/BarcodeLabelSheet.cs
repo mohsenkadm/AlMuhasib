@@ -33,9 +33,13 @@ public partial class BarcodeLabelService
         var ean = design.ShowBarcode
             ? EanBarcode.Normalize(item.Barcode, design.Symbology)
             : new EanBarcode.Result(false, string.Empty, null);
-        EanSymbolElement? symbol = null;
+        FrameworkElement? symbol = null;
         if (ean.IsValid)
-            symbol = EanSymbolElement.Create(ean.Code, design.Symbology, innerW, barcodeHeight);
+        {
+            symbol = design.Symbology == PriceLabelSymbology.Code128
+                ? CreateCode128Element(ean.Code, innerW, barcodeHeight)
+                : EanSymbolElement.Create(ean.Code, design.Symbology, innerW, barcodeHeight);
+        }
 
         return BuildSheetLabel(item, design, labelW, labelH, ean, symbol);
     }
@@ -134,7 +138,7 @@ public partial class BarcodeLabelService
         double labelW,
         double labelH,
         EanBarcode.Result ean,
-        EanSymbolElement? symbol)
+        FrameworkElement? symbol)
     {
         var root = new Border
         {
@@ -247,6 +251,38 @@ public partial class BarcodeLabelService
         grid.Children.Add(content);
         root.Child = grid;
         return root;
+    }
+
+    private static FrameworkElement? CreateCode128Element(string code, double width, double height)
+    {
+        var barHeight = Math.Max(12, height * 0.72);
+        var bitmap = CreateBarcodeBitmap(code, Math.Max(120, (int)Math.Ceiling(width * 3)), Math.Max(24, (int)Math.Ceiling(barHeight * 3)));
+        if (bitmap is null)
+            return null;
+        var image = new Image
+        {
+            Source = bitmap,
+            Width = width,
+            Height = barHeight,
+            Stretch = Stretch.Fill,
+            SnapsToDevicePixels = true
+        };
+        var caption = new TextBlock
+        {
+            Text = code,
+            FontFamily = new FontFamily("Consolas, Arial"),
+            FontSize = Math.Clamp(width / Math.Max(code.Length, 8) * 1.45, 6, 11),
+            TextAlignment = TextAlignment.Center,
+            TextWrapping = TextWrapping.Wrap,
+            FlowDirection = FlowDirection.LeftToRight,
+            Margin = new Thickness(0, 1, 0, 0)
+        };
+        return new StackPanel
+        {
+            Width = width,
+            FlowDirection = FlowDirection.LeftToRight,
+            Children = { image, caption }
+        };
     }
 
     private static byte[] RenderElementPng(FrameworkElement visual, double width, double height, double pixelScale)

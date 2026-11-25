@@ -42,6 +42,36 @@
         </ContextMenu>
 
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- كمية فاتورة الأقساط فقط: الحقل أعرض 10٪ حتى لا يُقص مع زري النقصان والزيادة -->
+        <DataTemplate x:Key="InstallmentInvoiceQuantityCellTemplate">
+            <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Content="−" Style="{StaticResource InvoiceQtyMinusButton}"
+                        Command="{Binding DataContext.DecreaseRowQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}" ToolTip="نقصان"
+                        IsEnabled="{Binding IsPriceEditable}"/>
+                <Border Grid.Column="1" MinWidth="79.2" Width="79.2" Margin="6,0" CornerRadius="8"
+                        Background="{DynamicResource MutedIconBackgroundBrush}" Padding="4,2" VerticalAlignment="Center">
+                    <TextBox Text="{Binding Quantity, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"
+                             Style="{StaticResource NumericCellTextBox}"
+                             MinWidth="61.6" MinHeight="28"
+                             HorizontalContentAlignment="Center"
+                             VerticalContentAlignment="Center"
+                             FontWeight="SemiBold" FontSize="14"
+                             Foreground="{DynamicResource TextPrimaryBrush}" Padding="6,4"
+                             IsReadOnly="{Binding IsOfferGift}"/>
+                </Border>
+                <Button Grid.Column="2" Content="+" Style="{StaticResource InvoiceQtyPlusButton}"
+                        Command="{Binding DataContext.IncreaseRowQuantityCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}" ToolTip="زيادة"
+                        IsEnabled="{Binding IsPriceEditable}"/>
+            </Grid>
+        </DataTemplate>
     </UserControl.Resources>
 
     <Grid behaviors:PageContextMenuBehavior.Menu="{StaticResource PageActionsMenu}">
@@ -331,8 +361,8 @@
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
 
-                                <DataGridTemplateColumn Header="الكمية" Width="140"
-                                                        CellTemplate="{StaticResource InvoiceQuantityCellTemplate}"/>
+                                <DataGridTemplateColumn Header="الكمية" Width="182" MinWidth="182"
+                                                        CellTemplate="{StaticResource InstallmentInvoiceQuantityCellTemplate}"/>
 
                                 <DataGridTemplateColumn x:Name="ColUnit" Header="التعبئة" Width="110"
                                                         Visibility="Collapsed">

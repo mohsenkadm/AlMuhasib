@@ -141,6 +141,7 @@ public partial class InstallmentsViewModel
             NumberOfInstallments = plan.NumberOfInstallments,
             InstallmentAmount = plan.InstallmentAmount,
             CurrencyLabel = AccountingCurrencyHelper.GetLabel(invoice.Currency),
+            UseSalesCardLayout = true,
             Items = invoice.Items.Select((item, i) => new InvoicePrintItem
             {
                 Number = i + 1,

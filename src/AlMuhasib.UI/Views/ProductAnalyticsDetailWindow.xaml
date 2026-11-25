@@ -1,0 +1,165 @@
+<Window x:Class="AlMuhasib.UI.Views.ProductAnalyticsDetailWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+        xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+        Title="تفاصيل المنتج"
+        Height="860" Width="1120"
+        MinHeight="680" MinWidth="920"
+        WindowStartupLocation="CenterOwner"
+        FlowDirection="RightToLeft"
+        Background="{DynamicResource MaterialDesignPaper}">
+    <Window.Resources>
+        <Style TargetType="Border" x:Key="FactChip">
+            <Setter Property="Background" Value="{DynamicResource CardBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="12"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="0,0,8,8"/>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" Background="{DynamicResource CardBrush}"
+                BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="0,0,0,1" Padding="24,18">
+            <DockPanel LastChildFill="True">
+                <Button DockPanel.Dock="Left" Click="Close_Click" Cursor="Hand" Height="36" MinWidth="96" Margin="16,0,0,0">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd" Background="{DynamicResource DashboardKpiBlueLightBrush}"
+                                    BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1"
+                                    CornerRadius="18" Padding="14,0">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <TextBlock Text="إغلاق" FontWeight="SemiBold" VerticalAlignment="Center"
+                                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                    <materialDesign:PackIcon Kind="Close" Width="16" Height="16" Margin="6,0,0,0"
+                                                             VerticalAlignment="Center"
+                                                             Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                </StackPanel>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Opacity" Value="0.82"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{Binding ProductName}" FontSize="26" FontWeight="Bold"
+                               Foreground="{DynamicResource TextPrimaryBrush}" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding CategoryName, StringFormat=التصنيف: {0}}" Margin="0,4,0,8"
+                               Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <WrapPanel>
+                        <Border Style="{StaticResource FactChip}">
+                            <TextBlock Foreground="{DynamicResource TextSecondaryBrush}">
+                                <Run Text="الرمز" FontWeight="SemiBold"/>
+                                <Run Text="{Binding Code, Mode=OneWay}"/>
+                            </TextBlock>
+                        </Border>
+                        <Border Style="{StaticResource FactChip}">
+                            <TextBlock Foreground="{DynamicResource TextSecondaryBrush}">
+                                <Run Text="الباركود" FontWeight="SemiBold"/>
+                                <Run Text="{Binding Barcode, Mode=OneWay}"/>
+                            </TextBlock>
+                        </Border>
+                        <Border Style="{StaticResource FactChip}">
+                            <TextBlock Foreground="{DynamicResource TextSecondaryBrush}">
+                                <Run Text="الوحدة" FontWeight="SemiBold"/>
+                                <Run Text="{Binding UnitName, Mode=OneWay}"/>
+                            </TextBlock>
+                        </Border>
+                    </WrapPanel>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="18,12,18,20">
+                <UniformGrid Columns="4" Margin="-6,0,-6,4">
+                    <controls:AnalyticsMetricCard Title="الكمية المباعة" TextValue="{Binding SoldQuantity, StringFormat=N2}"
+                                                  Icon="Cart" AccentBrush="#00796B"
+                                                  IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="#00796B"
+                                                  ValueForeground="#00796B" Hint="قبل خصم المرتجعات"/>
+                    <controls:AnalyticsMetricCard Title="صافي الكمية" TextValue="{Binding NetQuantitySold, StringFormat=N2}"
+                                                  Icon="ScaleBalance" AccentBrush="#1565C0"
+                                                  IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0"
+                                                  ValueForeground="#1565C0" Hint="المباع ناقص المرتجع"/>
+                    <controls:AnalyticsMetricCard Title="صافي المبيعات" TextValue="{Binding SalesAmount, StringFormat=N0}"
+                                                  Icon="CashRegister" AccentBrush="#2E7D32"
+                                                  IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32"
+                                                  ValueForeground="#2E7D32" Hint="بعد المرتجعات والخصم"/>
+                    <controls:AnalyticsMetricCard Title="المشتريات" TextValue="{Binding PurchaseValue, StringFormat=N0}"
+                                                  Icon="CartArrowDown" AccentBrush="#6A1B9A"
+                                                  IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#6A1B9A"
+                                                  ValueForeground="#6A1B9A" Hint="بعد مرتجع المشتريات"/>
+                    <controls:AnalyticsMetricCard Title="المرتجعات" TextValue="{Binding ReturnValue, StringFormat=N0}"
+                                                  Icon="KeyboardReturn" AccentBrush="#EF6C00"
+                                                  IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00"
+                                                  ValueForeground="#EF6C00" Hint="مرتجعات المبيعات"/>
+                    <controls:AnalyticsMetricCard Title="مجمل الربح" TextValue="{Binding GrossProfit, StringFormat=N0}"
+                                                  Icon="TrendingUp" AccentBrush="#1B5E20"
+                                                  IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#1B5E20"
+                                                  ValueForeground="#1B5E20" Hint="بعد خصم تكلفة البضاعة المباعة"/>
+                    <controls:AnalyticsMetricCard Title="الرصيد الحالي" TextValue="{Binding StockQuantity, StringFormat=N2}"
+                                                  Icon="Warehouse" AccentBrush="#607D8B"
+                                                  IconBackground="{DynamicResource MutedIconBackgroundBrush}"
+                                                  IconForeground="{DynamicResource TextSecondaryBrush}"
+                                                  ValueForeground="{DynamicResource TextPrimaryBrush}" Hint="رصيد المخزن الآن"/>
+                    <controls:AnalyticsMetricCard Title="الهامش" TextValue="{Binding MarginPercent, StringFormat={}{0:N1}%}"
+                                                  Icon="Percent" AccentBrush="#1565C0"
+                                                  IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0"
+                                                  ValueForeground="#1565C0" Hint="على صافي مبيعات هذا المنتج"/>
+                </UniformGrid>
+                <TextBlock Text="{Binding ProfitNote}" TextWrapping="Wrap" Margin="8,0,8,12"
+                           Foreground="{DynamicResource TextSecondaryBrush}"/>
+                <Border x:Name="BalanceNote" Margin="6,0,6,12" Padding="14,10" CornerRadius="14"
+                        Background="{DynamicResource DashboardKpiOrangeLightBrush}"
+                        BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                    <TextBlock Text="{Binding BalanceNote}" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextPrimaryBrush}"/>
+                </Border>
+                <Border Margin="6,0,6,12" Padding="8,12,8,8" CornerRadius="18"
+                        Background="{DynamicResource CardBrush}"
+                        BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                    <StackPanel>
+                        <TextBlock Text="حركة المبيعات خلال الفترة" FontSize="16" FontWeight="SemiBold" Margin="12,4,12,8"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <lvc:CartesianChart x:Name="TrendChart" Height="240" Margin="4,0,4,4"/>
+                    </StackPanel>
+                </Border>
+                <Border Margin="6,0,6,0" Padding="0" CornerRadius="18"
+                        Background="{DynamicResource CardBrush}"
+                        BorderBrush="{DynamicResource CardBorderBrush}" BorderThickness="1">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="360"/>
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Text="حركات المنتج" FontSize="16" FontWeight="SemiBold" Margin="16,14,16,8"
+                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                        <DataGrid Grid.Row="1" ItemsSource="{Binding Movements}" Style="{StaticResource ModernDataGrid}"
+                                  IsReadOnly="True" AutoGenerateColumns="False" RowHeight="40"
+                                  Margin="8,0,8,8">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="التاريخ" Binding="{Binding Date, StringFormat=yyyy/MM/dd}" Width="110"/>
+                                <DataGridTextColumn Header="المستند" Binding="{Binding DocumentNumber}" Width="130"/>
+                                <DataGridTextColumn Header="الحركة" Binding="{Binding MovementType}" Width="130"/>
+                                <DataGridTextColumn Header="داخل" Binding="{Binding QuantityIn, StringFormat=N2}" Width="80"/>
+                                <DataGridTextColumn Header="خارج" Binding="{Binding QuantityOut, StringFormat=N2}" Width="80"/>
+                                <DataGridTextColumn Header="السعر" Binding="{Binding UnitPriceDisplay}" Width="90"/>
+                                <DataGridTextColumn Header="المبلغ" Binding="{Binding AmountDisplay}" Width="110"/>
+                                <DataGridTextColumn Header="المستودع" Binding="{Binding WarehouseName}" Width="130"/>
+                                <DataGridTextColumn Header="الرصيد بعد الحركة" Binding="{Binding BalanceDisplay}" Width="140"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>

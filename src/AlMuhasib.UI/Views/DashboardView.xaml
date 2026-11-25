@@ -261,56 +261,85 @@
             </Setter>
         </Style>
 
-        <!-- ─── Compact quick action button ───────────────── -->
+        <!-- إجراءات الكارد الأزرق: كبسولة زجاج صافية (LiquidGlassChrome) يظهر من خلالها أزرق الكارد الحقيقي مموّهاً.
+             مصدر الخلفية يُضبط مرة واحدة على حاوية الأزرار (BackdropSource خاصية موروثة). -->
         <Style x:Key="DashboardQuickAction" TargetType="Button">
-            <Setter Property="Height" Value="56"/>
-            <Setter Property="MinWidth" Value="148"/>
+            <Setter Property="Height" Value="54"/>
+            <Setter Property="MinWidth" Value="152"/>
             <Setter Property="Margin" Value="0,0,8,8"/>
             <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <materialDesign:Card x:Name="Card" UniformCornerRadius="12" Padding="10,8"
-                                             materialDesign:ElevationAssist.Elevation="Dp0"
-                                             Background="{TemplateBinding Background}"
-                                             BorderBrush="{DynamicResource DashboardQuickActionBorderBrush}" BorderThickness="1"
-                                             RenderTransformOrigin="0.5,0.5">
-                            <materialDesign:Card.RenderTransform>
-                                <ScaleTransform ScaleX="1" ScaleY="1"/>
-                            </materialDesign:Card.RenderTransform>
-                            <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
-                        </materialDesign:Card>
+                        <Grid x:Name="Root" RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <TransformGroup>
+                                    <ScaleTransform x:Name="Scale" ScaleX="1" ScaleY="1"/>
+                                    <TranslateTransform x:Name="Lift" Y="0"/>
+                                </TransformGroup>
+                            </Grid.RenderTransform>
+                            <controls:LiquidGlassChrome Tone="OnBlue"
+                                                        IsHovered="{TemplateBinding IsMouseOver}"
+                                                        IsPressed="{TemplateBinding IsPressed}"
+                                                        IsFocusedGlass="{TemplateBinding IsKeyboardFocused}"/>
+                            <ContentPresenter Margin="12,6" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Card" Property="materialDesign:ElevationAssist.Elevation" Value="Dp2"/>
                                 <Trigger.EnterActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="Card"
-                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                             To="1.02" Duration="0:0:0.14"/>
-                                            <DoubleAnimation Storyboard.TargetName="Card"
-                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                             To="1.02" Duration="0:0:0.14"/>
+                                            <DoubleAnimation Storyboard.TargetName="Lift"
+                                                             Storyboard.TargetProperty="Y"
+                                                             To="-0.5"
+                                                             Duration="0:0:0.18">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </Trigger.EnterActions>
                                 <Trigger.ExitActions>
                                     <BeginStoryboard>
                                         <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="Card"
-                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
-                                                             To="1" Duration="0:0:0.14"/>
-                                            <DoubleAnimation Storyboard.TargetName="Card"
-                                                             Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
-                                                             To="1" Duration="0:0:0.14"/>
+                                            <DoubleAnimation Storyboard.TargetName="Lift"
+                                                             Storyboard.TargetProperty="Y"
+                                                             To="0"
+                                                             Duration="0:0:0.20">
+                                                <DoubleAnimation.EasingFunction>
+                                                    <CubicEase EasingMode="EaseOut"/>
+                                                </DoubleAnimation.EasingFunction>
+                                            </DoubleAnimation>
                                         </Storyboard>
                                     </BeginStoryboard>
                                 </Trigger.ExitActions>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Card" Property="materialDesign:ElevationAssist.Elevation" Value="Dp0"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="0.988" Duration="0:0:0.09"/>
+                                            <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="0.988" Duration="0:0:0.09"/>
+                                            <DoubleAnimation Storyboard.TargetName="Lift" Storyboard.TargetProperty="Y" To="0.25" Duration="0:0:0.09"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleX" To="1" Duration="0:0:0.14"/>
+                                            <DoubleAnimation Storyboard.TargetName="Scale" Storyboard.TargetProperty="ScaleY" To="1" Duration="0:0:0.14"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.45"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -592,18 +621,21 @@
                                      materialDesign:ElevationAssist.Elevation="Dp4"
                                      BorderThickness="0">
                     <Grid MinHeight="210">
-                        <Border CornerRadius="24">
-                            <Border.Background>
-                                <DynamicResource ResourceKey="DashboardHeroBrush" />
-                            </Border.Background>
-                        </Border>
+                        <!-- خلفية الكارد مجمّعة في عنصر واحد: هي ما يُرى مموّهاً من خلال أزرار الزجاج. -->
+                        <Grid x:Name="HeroBackdrop" IsHitTestVisible="False">
+                            <Border CornerRadius="24">
+                                <Border.Background>
+                                    <DynamicResource ResourceKey="DashboardHeroBrush" />
+                                </Border.Background>
+                            </Border>
 
-                        <Ellipse Width="320" Height="320" HorizontalAlignment="Left" VerticalAlignment="Top"
-                                 Margin="-90,-110,0,0" IsHitTestVisible="False" Opacity="0.18" Fill="{DynamicResource CardBrush}" />
-                        <Ellipse Width="220" Height="220" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                 Margin="0,0,-50,-70" IsHitTestVisible="False" Opacity="0.14" Fill="#80DEEA" />
-                        <Ellipse Width="140" Height="140" HorizontalAlignment="Right" VerticalAlignment="Top"
-                                 Margin="0,20,80,0" IsHitTestVisible="False" Opacity="0.1" Fill="{DynamicResource CardBrush}" />
+                            <Ellipse Width="320" Height="320" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                     Margin="-90,-110,0,0" IsHitTestVisible="False" Opacity="0.18" Fill="{DynamicResource CardBrush}" />
+                            <Ellipse Width="220" Height="220" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                     Margin="0,0,-50,-70" IsHitTestVisible="False" Opacity="0.14" Fill="#80DEEA" />
+                            <Ellipse Width="140" Height="140" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                     Margin="0,20,80,0" IsHitTestVisible="False" Opacity="0.1" Fill="{DynamicResource CardBrush}" />
+                        </Grid>
 
                         <Grid Margin="28,26">
                             <Grid.RowDefinitions>
@@ -812,246 +844,199 @@
                             <TextBlock Grid.Row="2" Text="إجراءات سريعة" FontSize="13" FontWeight="SemiBold"
                                        Foreground="#E1F5FE" Margin="0,18,0,8" />
 
-                            <!-- Quick actions (compact wrap) -->
-                            <WrapPanel Grid.Row="3" Orientation="Horizontal">
+                            <!-- Quick actions (compact wrap) — الزجاج يعرض خلفية الكارد الحقيقية مموّهة -->
+                            <WrapPanel Grid.Row="3" Orientation="Horizontal"
+                                       controls:LiquidGlassChrome.BackdropSource="{Binding ElementName=HeroBackdrop}">
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickSales, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenSalesInvoiceCommand}"
-                                        Background="{DynamicResource DashboardQuickActionBrush}">
+>
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                    <GradientStop Color="#43A047" Offset="0" />
-                                                    <GradientStop Color="#2E7D32" Offset="1" />
-                                                </LinearGradientBrush>
-                                            </Border.Background>
+                                        <Grid Width="34" Height="34" Margin="0,0,10,0">
+                                            <Ellipse Fill="{DynamicResource DashboardHeroActionIconWellBrush}"/>
                                             <materialDesign:PackIcon Kind="CashRegister" Width="18" Height="18"
-                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                        <TextBlock Text="فاتورة مبيعات" FontWeight="SemiBold" FontSize="12"
+                                                                     Foreground="{DynamicResource DashboardHeroActionForegroundBrush}"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <TextBlock Text="فاتورة مبيعات" FontWeight="SemiBold" FontSize="13"
                                                    VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource DashboardKpiGreenBrush}" />
+                                                   Foreground="{DynamicResource DashboardHeroActionForegroundBrush}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickPurchase, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenPurchaseInvoiceCommand}"
-                                        Background="{DynamicResource DashboardQuickActionBrush}">
+>
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                    <GradientStop Color="#FB8C00" Offset="0" />
-                                                    <GradientStop Color="#EF6C00" Offset="1" />
-                                                </LinearGradientBrush>
-                                            </Border.Background>
+                                        <Grid Width="34" Height="34" Margin="0,0,10,0">
+                                            <Ellipse Fill="{DynamicResource DashboardHeroActionIconWellBrush}"/>
                                             <materialDesign:PackIcon Kind="CartArrowDown" Width="18" Height="18"
-                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                        <TextBlock Text="فاتورة مشتريات" FontWeight="SemiBold" FontSize="12"
+                                                                     Foreground="{DynamicResource DashboardHeroActionForegroundBrush}"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <TextBlock Text="فاتورة مشتريات" FontWeight="SemiBold" FontSize="13"
                                                    VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource DashboardKpiOrangeBrush}" />
+                                                   Foreground="{DynamicResource DashboardHeroActionForegroundBrush}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickInstallment, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenInstallmentInvoiceCommand}"
-                                        Background="{DynamicResource DashboardQuickActionBrush}">
+>
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                    <GradientStop Color="#42A5F5" Offset="0" />
-                                                    <GradientStop Color="#1565C0" Offset="1" />
-                                                </LinearGradientBrush>
-                                            </Border.Background>
+                                        <Grid Width="34" Height="34" Margin="0,0,10,0">
+                                            <Ellipse Fill="{DynamicResource DashboardHeroActionIconWellBrush}"/>
                                             <materialDesign:PackIcon Kind="CalendarClock" Width="18" Height="18"
-                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                        <TextBlock Text="فاتورة أقساط" FontWeight="SemiBold" FontSize="12"
+                                                                     Foreground="{DynamicResource DashboardHeroActionForegroundBrush}"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <TextBlock Text="فاتورة أقساط" FontWeight="SemiBold" FontSize="13"
                                                    VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource DashboardKpiBlueBrush}" />
+                                                   Foreground="{DynamicResource DashboardHeroActionForegroundBrush}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickWarehouseReport, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenWarehouseReportCommand}"
-                                        Background="{DynamicResource DashboardQuickActionBrush}">
+>
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                    <GradientStop Color="#8E24AA" Offset="0" />
-                                                    <GradientStop Color="#6A1B9A" Offset="1" />
-                                                </LinearGradientBrush>
-                                            </Border.Background>
+                                        <Grid Width="34" Height="34" Margin="0,0,10,0">
+                                            <Ellipse Fill="{DynamicResource DashboardHeroActionIconWellBrush}"/>
                                             <materialDesign:PackIcon Kind="Warehouse" Width="18" Height="18"
-                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                        <TextBlock Text="تقرير المخازن" FontWeight="SemiBold" FontSize="12"
+                                                                     Foreground="{DynamicResource DashboardHeroActionForegroundBrush}"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <TextBlock Text="تقرير المخازن" FontWeight="SemiBold" FontSize="13"
                                                    VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource DashboardKpiPurpleBrush}" />
+                                                   Foreground="{DynamicResource DashboardHeroActionForegroundBrush}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickProducts, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenProductsCommand}"
-                                        Background="{DynamicResource DashboardQuickActionBrush}">
+>
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                    <GradientStop Color="#00897B" Offset="0" />
-                                                    <GradientStop Color="#00695C" Offset="1" />
-                                                </LinearGradientBrush>
-                                            </Border.Background>
+                                        <Grid Width="34" Height="34" Margin="0,0,10,0">
+                                            <Ellipse Fill="{DynamicResource DashboardHeroActionIconWellBrush}"/>
                                             <materialDesign:PackIcon Kind="PackageVariantClosed" Width="18" Height="18"
-                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                        <TextBlock Text="المنتجات" FontWeight="SemiBold" FontSize="12"
+                                                                     Foreground="{DynamicResource DashboardHeroActionForegroundBrush}"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <TextBlock Text="المنتجات" FontWeight="SemiBold" FontSize="13"
                                                    VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource DashboardKpiTealBrush}" />
+                                                   Foreground="{DynamicResource DashboardHeroActionForegroundBrush}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickAddProduct, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenAddProductCommand}"
-                                        Background="{DynamicResource DashboardQuickActionBrush}">
+>
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                    <GradientStop Color="#26A69A" Offset="0" />
-                                                    <GradientStop Color="#00796B" Offset="1" />
-                                                </LinearGradientBrush>
-                                            </Border.Background>
+                                        <Grid Width="34" Height="34" Margin="0,0,10,0">
+                                            <Ellipse Fill="{DynamicResource DashboardHeroActionIconWellBrush}"/>
                                             <materialDesign:PackIcon Kind="PackageVariantPlus" Width="18" Height="18"
-                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                        <TextBlock Text="إضافة منتج" FontWeight="SemiBold" FontSize="12"
+                                                                     Foreground="{DynamicResource DashboardHeroActionForegroundBrush}"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <TextBlock Text="إضافة منتج" FontWeight="SemiBold" FontSize="13"
                                                    VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource DashboardKpiTealBrush}" />
+                                                   Foreground="{DynamicResource DashboardHeroActionForegroundBrush}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickCustomers, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenCustomersCommand}"
-                                        Background="{DynamicResource DashboardQuickActionBrush}">
+>
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                    <GradientStop Color="#5C6BC0" Offset="0" />
-                                                    <GradientStop Color="#3949AB" Offset="1" />
-                                                </LinearGradientBrush>
-                                            </Border.Background>
+                                        <Grid Width="34" Height="34" Margin="0,0,10,0">
+                                            <Ellipse Fill="{DynamicResource DashboardHeroActionIconWellBrush}"/>
                                             <materialDesign:PackIcon Kind="AccountGroup" Width="18" Height="18"
-                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                        <TextBlock Text="العملاء" FontWeight="SemiBold" FontSize="12"
+                                                                     Foreground="{DynamicResource DashboardHeroActionForegroundBrush}"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <TextBlock Text="العملاء" FontWeight="SemiBold" FontSize="13"
                                                    VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource DashboardKpiIndigoBrush}" />
+                                                   Foreground="{DynamicResource DashboardHeroActionForegroundBrush}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickAddCustomer, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenAddCustomerCommand}"
-                                        Background="{DynamicResource DashboardQuickActionBrush}">
+>
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                    <GradientStop Color="#7986CB" Offset="0" />
-                                                    <GradientStop Color="#3F51B5" Offset="1" />
-                                                </LinearGradientBrush>
-                                            </Border.Background>
+                                        <Grid Width="34" Height="34" Margin="0,0,10,0">
+                                            <Ellipse Fill="{DynamicResource DashboardHeroActionIconWellBrush}"/>
                                             <materialDesign:PackIcon Kind="AccountPlus" Width="18" Height="18"
-                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                        <TextBlock Text="إضافة عميل" FontWeight="SemiBold" FontSize="12"
+                                                                     Foreground="{DynamicResource DashboardHeroActionForegroundBrush}"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <TextBlock Text="إضافة عميل" FontWeight="SemiBold" FontSize="13"
                                                    VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource DashboardKpiIndigoBrush}" />
+                                                   Foreground="{DynamicResource DashboardHeroActionForegroundBrush}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickSuppliers, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenSuppliersCommand}"
-                                        Background="{DynamicResource DashboardQuickActionBrush}">
+>
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                    <GradientStop Color="#EC407A" Offset="0" />
-                                                    <GradientStop Color="#AD1457" Offset="1" />
-                                                </LinearGradientBrush>
-                                            </Border.Background>
+                                        <Grid Width="34" Height="34" Margin="0,0,10,0">
+                                            <Ellipse Fill="{DynamicResource DashboardHeroActionIconWellBrush}"/>
                                             <materialDesign:PackIcon Kind="Factory" Width="18" Height="18"
-                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                        <TextBlock Text="الموردون" FontWeight="SemiBold" FontSize="12"
+                                                                     Foreground="{DynamicResource DashboardHeroActionForegroundBrush}"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <TextBlock Text="الموردون" FontWeight="SemiBold" FontSize="13"
                                                    VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource DashboardKpiPinkBrush}" />
+                                                   Foreground="{DynamicResource DashboardHeroActionForegroundBrush}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickAddSupplier, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenAddSupplierCommand}"
-                                        Background="{DynamicResource DashboardQuickActionBrush}">
+>
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                    <GradientStop Color="#F06292" Offset="0" />
-                                                    <GradientStop Color="#C2185B" Offset="1" />
-                                                </LinearGradientBrush>
-                                            </Border.Background>
+                                        <Grid Width="34" Height="34" Margin="0,0,10,0">
+                                            <Ellipse Fill="{DynamicResource DashboardHeroActionIconWellBrush}"/>
                                             <materialDesign:PackIcon Kind="TruckDelivery" Width="18" Height="18"
-                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                        <TextBlock Text="إضافة مورد" FontWeight="SemiBold" FontSize="12"
+                                                                     Foreground="{DynamicResource DashboardHeroActionForegroundBrush}"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <TextBlock Text="إضافة مورد" FontWeight="SemiBold" FontSize="13"
                                                    VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource DashboardKpiPinkBrush}" />
+                                                   Foreground="{DynamicResource DashboardHeroActionForegroundBrush}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickDailySales, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenDailySalesReportCommand}"
-                                        Background="{DynamicResource DashboardQuickActionBrush}">
+>
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                    <GradientStop Color="#EF5350" Offset="0" />
-                                                    <GradientStop Color="#C62828" Offset="1" />
-                                                </LinearGradientBrush>
-                                            </Border.Background>
+                                        <Grid Width="34" Height="34" Margin="0,0,10,0">
+                                            <Ellipse Fill="{DynamicResource DashboardHeroActionIconWellBrush}"/>
                                             <materialDesign:PackIcon Kind="ChartTimelineVariant" Width="18" Height="18"
-                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                        <TextBlock Text="يومية المبيعات" FontWeight="SemiBold" FontSize="12"
+                                                                     Foreground="{DynamicResource DashboardHeroActionForegroundBrush}"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <TextBlock Text="يومية المبيعات" FontWeight="SemiBold" FontSize="13"
                                                    VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource DashboardKpiRedBrush}" />
+                                                   Foreground="{DynamicResource DashboardHeroActionForegroundBrush}" />
                                     </StackPanel>
                                 </Button>
                                 <Button Style="{StaticResource DashboardQuickAction}"
                                         Visibility="{Binding ShowDashboardQuickDailyOperations, Converter={StaticResource BoolToVis}}"
                                         Command="{Binding OpenDailyOperationsReportCommand}"
-                                        Background="{DynamicResource DashboardQuickActionBrush}">
+>
                                     <StackPanel Orientation="Horizontal">
-                                        <Border Width="32" Height="32" CornerRadius="9" Margin="0,0,8,0">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                                                    <GradientStop Color="#78909C" Offset="0" />
-                                                    <GradientStop Color="#455A64" Offset="1" />
-                                                </LinearGradientBrush>
-                                            </Border.Background>
+                                        <Grid Width="34" Height="34" Margin="0,0,10,0">
+                                            <Ellipse Fill="{DynamicResource DashboardHeroActionIconWellBrush}"/>
                                             <materialDesign:PackIcon Kind="ClipboardTextClock" Width="18" Height="18"
-                                                                     Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        </Border>
-                                        <TextBlock Text="التقرير اليومي" FontWeight="SemiBold" FontSize="12"
+                                                                     Foreground="{DynamicResource DashboardHeroActionForegroundBrush}"
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Grid>
+                                        <TextBlock Text="التقرير اليومي" FontWeight="SemiBold" FontSize="13"
                                                    VerticalAlignment="Center"
-                                                   Foreground="{DynamicResource DashboardQuickActionTitleBrush}" />
+                                                   Foreground="{DynamicResource DashboardHeroActionForegroundBrush}" />
                                     </StackPanel>
                                 </Button>
                             </WrapPanel>

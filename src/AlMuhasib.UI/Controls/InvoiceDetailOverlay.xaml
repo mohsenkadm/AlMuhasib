@@ -12,7 +12,9 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolVis"/>
         <Style x:Key="MetaPill" TargetType="Border">
-            <Setter Property="Background" Value="#F5F7FA"/>
+            <Setter Property="Background" Value="{DynamicResource MutedIconBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SubtleBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="10"/>
             <Setter Property="Padding" Value="12,8"/>
             <Setter Property="Margin" Value="0,0,8,8"/>
@@ -49,7 +51,11 @@
                         </LinearGradientBrush>
                     </Border.Background>
                     <Grid>
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                             <Border Width="48" Height="48" CornerRadius="14" Background="#33FFFFFF" Margin="0,0,14,0">
                                 <materialDesign:PackIcon Kind="FileDocumentOutline" Width="26" Height="26"
                                                          Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -62,7 +68,9 @@
                                 </TextBlock>
                             </StackPanel>
                         </StackPanel>
-                        <Button Click="CloseButton_Click" HorizontalAlignment="Left" VerticalAlignment="Top"
+                        <Button Grid.Column="1" Click="CloseButton_Click"
+                                Margin="16,0,0,0"
+                                VerticalAlignment="Center"
                                 Style="{StaticResource MaterialDesignIconButton}" Foreground="White" ToolTip="إغلاق">
                             <materialDesign:PackIcon Kind="Close" Width="22" Height="22"/>
                         </Button>
@@ -94,7 +102,7 @@
                             <Border Style="{StaticResource MetaPill}">
                                 <StackPanel>
                                     <TextBlock Text="طريقة الدفع" FontSize="11" Foreground="{DynamicResource HintForegroundBrush}"/>
-                                    <TextBlock Text="{Binding PaymentMethod}" FontWeight="SemiBold" Foreground="#1565C0"/>
+                                    <TextBlock Text="{Binding PaymentMethod}" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryHueDarkBrush}"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource MetaPill}"
@@ -106,11 +114,11 @@
                             </Border>
                         </WrapPanel>
 
-                        <Border Background="{DynamicResource NotepadPaperBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,0,12"
+                        <Border Background="{DynamicResource TitleBarIconBadgeAmberBg}" CornerRadius="10" Padding="12,10" Margin="0,0,0,12"
                                 Visibility="{Binding HasCreditInfo, Converter={StaticResource BoolVis}}">
                             <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="CreditCardClockOutline" Foreground="#F57C00" VerticalAlignment="Center"/>
-                                <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Foreground="#E65100">
+                                <materialDesign:PackIcon Kind="CreditCardClockOutline" Foreground="{DynamicResource TitleBarIconBadgeAmberFg}" VerticalAlignment="Center"/>
+                                <TextBlock Margin="10,0,0,0" VerticalAlignment="Center" Foreground="{DynamicResource TitleBarIconBadgeAmberFg}">
                                     <Run Text="المدفوع:"/><Run Text="{Binding PaidAmountText, Mode=OneWay}"/>
                                     <Run Text="  |  المتبقي:"/><Run Text="{Binding RemainingAmountText, Mode=OneWay}"/>
                                     <Run Text="  |  "/><Run Text="{Binding CreditStatusText, Mode=OneWay}" FontWeight="SemiBold"/>
@@ -118,21 +126,28 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Background="{DynamicResource DashboardKpiGreenLightBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,0,12"
+                        <Border Background="{DynamicResource TitleBarIconBadgeGreenBg}" CornerRadius="10" Padding="12,10" Margin="0,0,0,12"
                                 Visibility="{Binding HasInstallments, Converter={StaticResource BoolVis}}">
                             <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="CalendarClock" Foreground="#2E7D32" VerticalAlignment="Center"/>
+                                <materialDesign:PackIcon Kind="CalendarClock" Foreground="{DynamicResource TitleBarIconBadgeGreenFg}" VerticalAlignment="Center"/>
                                 <TextBlock Text="{Binding InstallmentSummaryText}" Margin="10,0,0,0"
-                                           VerticalAlignment="Center" Foreground="#1B5E20" FontWeight="SemiBold"/>
+                                           VerticalAlignment="Center" Foreground="{DynamicResource TitleBarIconBadgeGreenFg}" FontWeight="SemiBold"/>
                             </StackPanel>
                         </Border>
 
                         <Grid Margin="0,4,0,10">
-                            <TextBlock Text="بنود الفاتورة" FontSize="15" FontWeight="Bold" Foreground="#1565C0" VerticalAlignment="Center"/>
-                            <controls:ColumnFilterToggle HorizontalAlignment="Left"
-                                                         IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                         ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                         ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="بنود الفاتورة" FontSize="15" FontWeight="Bold"
+                                       Foreground="{DynamicResource PrimaryHueDarkBrush}"
+                                       VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <controls:ColumnFilterToggle Grid.Column="1"
+                                                         VerticalAlignment="Center"
+                                                         Margin="12,0,0,0"
+                                                         IsChecked="{Binding Path=(behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen), ElementName=InvoiceDetailItemsGrid, Mode=TwoWay}"
+                                                         ActiveFilterCount="{Binding Path=(behaviors:DataGridColumnFilterBehavior.ActiveFilterCount), ElementName=InvoiceDetailItemsGrid}"
                                                          TargetDataGrid="{Binding ElementName=InvoiceDetailItemsGrid}"/>
                         </Grid>
                         <DataGrid x:Name="InvoiceDetailItemsGrid"
@@ -140,8 +155,7 @@
                                   AutoGenerateColumns="False" IsReadOnly="True"
                                   CanUserAddRows="False" CanUserDeleteRows="False"
                                   MaxHeight="220" Margin="0,0,0,14"
-                                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
-                                  behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
+                                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="#" Binding="{Binding Number}" Width="40"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Number"/>
@@ -162,11 +176,18 @@
 
                         <Grid Margin="0,0,0,10"
                               Visibility="{Binding HasInstallments, Converter={StaticResource BoolVis}}">
-                            <TextBlock Text="جدول الأقساط" FontSize="15" FontWeight="Bold" Foreground="#1565C0" VerticalAlignment="Center"/>
-                            <controls:ColumnFilterToggle HorizontalAlignment="Left"
-                                                         IsChecked="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
-                                                         ActiveFilterCount="{Binding ActiveColumnFilterCount}"
-                                                         ClearFiltersCommand="{Binding ClearColumnFiltersCommand}"
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="جدول الأقساط" FontSize="15" FontWeight="Bold"
+                                       Foreground="{DynamicResource PrimaryHueDarkBrush}"
+                                       VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <controls:ColumnFilterToggle Grid.Column="1"
+                                                         VerticalAlignment="Center"
+                                                         Margin="12,0,0,0"
+                                                         IsChecked="{Binding Path=(behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen), ElementName=InvoiceDetailInstallmentsGrid, Mode=TwoWay}"
+                                                         ActiveFilterCount="{Binding Path=(behaviors:DataGridColumnFilterBehavior.ActiveFilterCount), ElementName=InvoiceDetailInstallmentsGrid}"
                                                          TargetDataGrid="{Binding ElementName=InvoiceDetailInstallmentsGrid}"/>
                         </Grid>
                         <DataGrid x:Name="InvoiceDetailInstallmentsGrid"
@@ -175,8 +196,7 @@
                                   CanUserAddRows="False" CanUserDeleteRows="False"
                                   MaxHeight="180" Margin="0,0,0,14"
                                   Visibility="{Binding HasInstallments, Converter={StaticResource BoolVis}}"
-                                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
-                                  behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}">
+                                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="#" Binding="{Binding Number}" Width="40"
                                                     behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Number"/>
@@ -189,7 +209,9 @@
                             </DataGrid.Columns>
                         </DataGrid>
 
-                        <Border Background="{DynamicResource BackgroundBrush}" CornerRadius="12" Padding="16,14" Margin="0,0,0,8">
+                        <Border Background="{DynamicResource MutedIconBackgroundBrush}"
+                                BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="1"
+                                CornerRadius="12" Padding="16,14" Margin="0,0,0,8">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
@@ -211,18 +233,18 @@
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6"
                                                 Visibility="{Binding TransportFeeText, Converter={StaticResource NullToCollapsedConverter}}">
                                         <TextBlock Text="أجور النقل:" Width="120" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                        <TextBlock Text="{Binding TransportFeeText}" Foreground="#1565C0" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding TransportFeeText}" Foreground="{DynamicResource PrimaryHueDarkBrush}" FontWeight="SemiBold"/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,6"
                                                 Visibility="{Binding CompanyFeeText, Converter={StaticResource NullToCollapsedConverter}}">
                                         <TextBlock Text="نسبة الشركة:" Width="120" Foreground="{DynamicResource TextSecondaryBrush}"/>
-                                        <TextBlock Text="{Binding CompanyFeeText}" Foreground="#6A1B9A" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{Binding CompanyFeeText}" Foreground="{DynamicResource TextPrimaryBrush}" FontWeight="SemiBold"/>
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Left">
                                     <TextBlock Text="الصافي" FontSize="12" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Left"/>
                                     <TextBlock Text="{Binding GrandTotalText}" FontSize="24" FontWeight="Bold"
-                                               Foreground="#1565C0" HorizontalAlignment="Left"/>
+                                               Foreground="{DynamicResource PrimaryHueDarkBrush}" HorizontalAlignment="Left"/>
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -238,7 +260,7 @@
                 </ScrollViewer>
 
                 <!-- Footer -->
-                <Border Grid.Row="2" Background="{DynamicResource BackgroundBrush}" BorderBrush="#ECEFF1" BorderThickness="0,1,0,0"
+                <Border Grid.Row="2" Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource SubtleBorderBrush}" BorderThickness="0,1,0,0"
                         Padding="22,14" CornerRadius="0,0,18,18">
                     <Button Click="CloseButton_Click" Style="{StaticResource PrimaryButton}"
                             HorizontalAlignment="Left" Height="40" Padding="28,0"

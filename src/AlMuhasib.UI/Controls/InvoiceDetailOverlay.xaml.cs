@@ -10,6 +10,7 @@ public partial class InvoiceDetailOverlay : UserControl
 {
     private Window? _hostWindow;
     private Window? _ownerWindow;
+    private bool _closing;
 
     public InvoiceDetailOverlay()
     {
@@ -18,6 +19,7 @@ public partial class InvoiceDetailOverlay : UserControl
 
     public void ShowCentered()
     {
+        _closing = false;
         _ownerWindow = Window.GetWindow(this) ?? Application.Current.MainWindow;
         if (_ownerWindow is null)
             return;
@@ -112,16 +114,18 @@ public partial class InvoiceDetailOverlay : UserControl
 
     private void Close()
     {
-        if (_hostWindow is null)
+        var host = _hostWindow;
+        if (host is null || _closing)
             return;
 
+        _closing = true;
         var fade = new DoubleAnimation(1, 0, TimeSpan.FromMilliseconds(180))
         {
             EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn }
         };
-        fade.Completed += (_, _) => _hostWindow.Close();
+        fade.Completed += (_, _) => host.Close();
         Backdrop.BeginAnimation(OpacityProperty, fade);
-        DialogCard.BeginAnimation(OpacityProperty, fade);
+        DialogCard.BeginAnimation(OpacityProperty, fade.Clone());
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();

@@ -154,6 +154,9 @@ public class InvoicePrintModel
     /// <summary>A4 layout template id: Classic, Compact, or Modern. Null = Classic.</summary>
     public string? A4TemplateId { get; set; }
 
+    /// <summary>قالب بطاقات فاتورة المبيعات: ملون في المعاينة، ومقروء عند الطباعة بدون ألوان.</summary>
+    public bool UseSalesCardLayout { get; set; }
+
     /// <summary>حجم ورق الفاتورة: A4, A5, أو Letter. Null = A4.</summary>
     public string? PaperSize { get; set; }
 

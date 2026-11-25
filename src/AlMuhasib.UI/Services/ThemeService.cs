@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Media;
 using AlMuhasib.Core.Enums;
 using AlMuhasib.Core.Interfaces.Services;
+using AlMuhasib.UI.Controls;
 using MaterialDesignThemes.Wpf;
 
 namespace AlMuhasib.UI.Services;
@@ -222,6 +223,7 @@ public sealed class ThemeService
         SetBrush(res, "SearchResultSubtitleBrush", isDark ? DarkHint : "#757575");
 
         res["ChromeTabStripBackground"] = CreateChromeTabStripBrush(isDark);
+        ApplyLiquidGlassPalette(res, isDark, isGold);
 
         // Chrome tabs
         SetBrush(res, "ChromeTabInactiveBrush", isDark ? DarkChromeInactive : "#D5E0EC");
@@ -295,6 +297,61 @@ public sealed class ThemeService
         if (brush.CanFreeze)
             brush.Freeze();
         res[key] = brush;
+    }
+
+    /// <summary>
+    /// مادة الزجاج السائل الموحّدة للأسطح الثلاثة: أزرار الشريط تحت التبويبات، أزرار الكارد الأزرق، وإشعار الأسفل.
+    /// ألوان المادة نفسها معرّفة في <see cref="LiquidGlassPalettes"/>؛ هنا تُنشر للوضع الحالي مع ألوان المحتوى فوقها.
+    /// </summary>
+    private static void ApplyLiquidGlassPalette(ResourceDictionary res, bool isDark, bool isGold)
+    {
+        res[LiquidGlassChrome.StandardPaletteKey] = LiquidGlassPalettes.Create(LiquidGlassTone.Standard, isDark, isGold);
+        res[LiquidGlassChrome.OnBluePaletteKey] = LiquidGlassPalettes.Create(LiquidGlassTone.OnBlue, isDark, isGold);
+        res[LiquidGlassChrome.NotificationPaletteKey] = LiquidGlassPalettes.Create(LiquidGlassTone.Notification, isDark, isGold);
+        res[LiquidGlassChrome.HeaderPaletteKey] = LiquidGlassPalettes.Create(LiquidGlassTone.Header, isDark, isGold);
+
+        SetBrush(res, "QuickDockForegroundBrush", isDark ? "#F4F7FC" : isGold ? "#4A3410" : "#1C2B40");
+        SetBrush(res, "QuickDockSeparatorBrush", isDark ? "#33FFFFFF" : isGold ? "#44907848" : "#335C7590");
+
+        SetBrush(res, "NotificationIconFillBrush", isDark ? "#33E2B06A" : isGold ? "#33C9A24A" : "#33D4A056");
+        SetBrush(res, "NotificationIconForegroundBrush", isDark ? "#F0C48A" : isGold ? "#8A6420" : "#B8742A");
+        SetBrush(res, "NotificationActionForegroundBrush", isDark ? "#D6E8FF" : isGold ? "#6D4C00" : "#1E5A96");
+        SetBrush(res, "NotificationCloseForegroundBrush", isDark ? "#D5DEE8" : "#5C6B7A");
+        SetBrush(res, "NotificationCloseHoverBrush", isDark ? "#22FFFFFF" : "#14000000");
+
+        // جو ملوّن خلف زجاج رأس الجداول — في الفاتح لون أزرق رمادي واضح حتى تظهر الشفافية.
+        res["ListHeaderGlassAtmosphereBrush"] = CreateListHeaderAtmosphereBrush(isDark, isGold);
+        SetBrush(res, "ListHeaderGlassOrbPrimaryBrush", isDark ? "#282196F3" : isGold ? "#38C9A24A" : "#402196F3");
+        SetBrush(res, "ListHeaderGlassOrbSecondaryBrush", isDark ? "#2226A69A" : isGold ? "#30E8C878" : "#3226A69A");
+    }
+
+    private static LinearGradientBrush CreateListHeaderAtmosphereBrush(bool isDark, bool isGold)
+    {
+        var brush = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
+        if (isDark)
+        {
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#B0121B42")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#90182038")!, 0.55));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#A01E3A58")!, 1));
+        }
+        else if (isGold)
+        {
+            // شامبانيا دافئ تحت الزجاج — يختلف عن خلفية الصفحة البيضاء.
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#E8F3E4C2")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#D8E8D4A0")!, 0.5));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#C8DCC090")!, 1));
+        }
+        else
+        {
+            // أزرق رمادي صريح تحت الصقيع — الزجاج يُقرأ شفافاً في الوايت مود.
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#E6C5D8EE")!, 0));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#D4A8C4E0")!, 0.48));
+            brush.GradientStops.Add(new GradientStop((Color)ColorConverter.ConvertFromString("#C8B0D0EC")!, 1));
+        }
+
+        if (brush.CanFreeze)
+            brush.Freeze();
+        return brush;
     }
 
     private static void ApplyGoldInvoiceTotalsBrushes(ResourceDictionary res, bool isDark)
@@ -484,6 +541,9 @@ public sealed class ThemeService
         // Glass on hero: translucent dark navy in dark (not near-white).
         SetBrush(res, "DashboardQuickActionBrush", isDark ? "#D0121B42" : "#F5FFFFFF");
         SetBrush(res, "DashboardQuickActionBorderBrush", isDark ? "#40FFFFFF" : "#22000000");
+        // مادة الأزرار نفسها تأتي من LiquidGlassOnBluePalette؛ هنا ألوان المحتوى فقط.
+        SetBrush(res, "DashboardHeroActionForegroundBrush", "#FFFFFFFF");
+        SetBrush(res, "DashboardHeroActionIconWellBrush", isDark ? "#26FFFFFF" : "#30FFFFFF");
         SetBrush(res, "DashboardQuickActionTitleBrush", isDark ? DarkText : "#212121");
         SetBrush(res, "DashboardQuickActionSubtitleBrush", isDark ? DarkTextSecondary : "#616161");
         SetBrush(res, "DashboardAlertTitleBrush", isDark ? "#FFB74D" : "#E65100");

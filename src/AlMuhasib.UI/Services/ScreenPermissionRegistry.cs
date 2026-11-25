@@ -365,6 +365,7 @@ public static class ScreenPermissionRegistry
         [typeof(PurchasesReportViewModel)] = "Reports",
         [typeof(ProfitReportViewModel)] = "Reports",
         [typeof(TopProductsReportViewModel)] = "Reports",
+        [typeof(ProductAnalyticsReportViewModel)] = "Reports",
         [typeof(ProductProfitMarginReportViewModel)] = "Reports",
         [typeof(MaterialNetProfitReportViewModel)] = "Reports",
         [typeof(LeastProfitMaterialsReportViewModel)] = "Reports",

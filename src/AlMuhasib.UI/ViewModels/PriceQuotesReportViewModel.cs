@@ -251,6 +251,7 @@ public partial class PriceQuotesReportViewModel : ReportViewModelBase
             RemainingAmount = 0m,
             GrandTotal = invoice.NetAmount,
             CurrencyLabel = AccountingCurrencyHelper.GetLabel(invoice.Currency),
+            UseSalesCardLayout = true,
             Items = invoice.Items.Select((item, i) => new InvoicePrintItem
             {
                 Number = i + 1,

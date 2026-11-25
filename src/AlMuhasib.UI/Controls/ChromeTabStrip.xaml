@@ -1,0 +1,190 @@
+<UserControl x:Class="AlMuhasib.UI.Controls.ChromeTabStrip"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:models="clr-namespace:AlMuhasib.UI.Models"
+             x:Name="Root"
+             SnapsToDevicePixels="True"
+             UseLayoutRounding="True">
+    <Grid>
+        <ListBox x:Name="TabsList"
+                 ItemsSource="{Binding ItemsSource, ElementName=Root}"
+                 SelectedItem="{Binding SelectedTab, ElementName=Root}"
+                 Style="{StaticResource ChromeTabListBox}"
+                 ItemContainerStyle="{StaticResource ChromeTabListBoxItem}"
+                 HorizontalContentAlignment="Left"
+                 VirtualizingPanel.IsVirtualizing="False"
+                 PreviewMouseLeftButtonDown="TabsList_PreviewMouseLeftButtonDown"
+                 PreviewMouseMove="TabsList_PreviewMouseMove"
+                 PreviewMouseLeftButtonUp="TabsList_PreviewMouseLeftButtonUp"
+                 PreviewMouseDown="TabsList_PreviewMouseDown"
+                 LostMouseCapture="TabsList_LostMouseCapture"
+                 PreviewKeyDown="TabsList_PreviewKeyDown">
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type models:DocumentTab}">
+                    <Grid Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}">
+                        <Grid.Style>
+                            <Style TargetType="Grid">
+                                <Setter Property="Opacity" Value="1"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsBeingDragged}" Value="True">
+                                        <Setter Property="Opacity" Value="0.35"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Style>
+                        <Grid.ContextMenu>
+                            <ContextMenu Opened="TabContextMenu_Opened">
+                                <MenuItem Header="إغلاق التبويب" Click="CloseTab_Click">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon Kind="Close" Width="16" Height="16"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="إغلاق التبويبات الأخرى" Click="CloseOtherTabs_Click"/>
+                                <MenuItem Header="إغلاق التبويبات على اليمين" Click="CloseTabsToTheRight_Click"/>
+                                <MenuItem Header="إغلاق الكل" Click="CloseAllTabs_Click"/>
+                                <Separator/>
+                                <MenuItem Header="تثبيت التبويب" Tag="pin" Click="PinTab_Click">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon Kind="PinOutline" Width="16" Height="16"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="فصل التبويب في نافذة مستقلة" Click="DetachTab_Click">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon Kind="OpenInNew" Width="16" Height="16"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="إعادة التبويب إلى النافذة الرئيسية" Tag="detached-only" Click="ReturnToMain_Click">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon Kind="Home" Width="16" Height="16"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="تحديث الصفحة" Tag="refresh" Click="RefreshTab_Click">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon Kind="Refresh" Width="16" Height="16"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <Separator Tag="main-only"/>
+                                <MenuItem Header="تكرار الصفحة" Tag="main-only"
+                                          Command="{Binding PlacementTarget.Tag.DuplicateTabCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                <MenuItem Header="فتح في تبويب جديد" Tag="main-only"
+                                          Command="{Binding PlacementTarget.Tag.OpenTabInNewTabCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                <Separator Tag="main-only"/>
+                                <MenuItem Header="تقسيم الشاشة" Tag="main-only"
+                                          ItemsSource="{Binding PlacementTarget.Tag.SplitScreenTargets, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon Kind="ViewSplitVertical" Width="16" Height="16"/>
+                                    </MenuItem.Icon>
+                                    <MenuItem.ItemContainerStyle>
+                                        <Style TargetType="MenuItem">
+                                            <Setter Property="Header" Value="{Binding Title}"/>
+                                            <Setter Property="Command"
+                                                    Value="{Binding PlacementTarget.Tag.SplitWithScreenCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                            <Setter Property="CommandParameter" Value="{Binding}"/>
+                                        </Style>
+                                    </MenuItem.ItemContainerStyle>
+                                </MenuItem>
+                                <MenuItem Header="تقسيم هذه الشاشة إلى نصفين" Tag="main-only"
+                                          Command="{Binding PlacementTarget.Tag.SplitThisScreenCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon Kind="CheckboxMultipleBlankOutline" Width="16" Height="16"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="عرض في النصف الآخر" Tag="main-only"
+                                          Command="{Binding PlacementTarget.Tag.ShowTabInOtherPaneCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                <MenuItem Header="تبديل الجانبين" Tag="main-only"
+                                          Command="{Binding PlacementTarget.Tag.SwapSplitPanesCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          Visibility="{Binding PlacementTarget.Tag.IsSplitViewActive, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                <MenuItem Header="إلغاء التقسيم" Tag="main-only"
+                                          Command="{Binding PlacementTarget.Tag.ExitSplitViewCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          Visibility="{Binding PlacementTarget.Tag.IsSplitViewActive, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                <Separator Tag="main-only"/>
+                                <MenuItem Header="إعادة فتح التبويب المغلق" Tag="main-only"
+                                          InputGestureText="Ctrl+Shift+T"
+                                          Command="{Binding PlacementTarget.Tag.ReopenClosedTabCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          IsEnabled="{Binding PlacementTarget.Tag.CanReopenClosedTab, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                            </ContextMenu>
+                        </Grid.ContextMenu>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="{Binding Icon}"
+                                                     Width="16" Height="16"
+                                                     Foreground="{DynamicResource ChromeTabSelectedForegroundBrush}"
+                                                     VerticalAlignment="Center"
+                                                     Margin="0,0,8,0"/>
+                            <TextBlock Text="{Binding Title}"
+                                       FontSize="13"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource ChromeTabForegroundBrush}"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxWidth="128"
+                                       VerticalAlignment="Center"/>
+                            <materialDesign:PackIcon Kind="ViewSplitVertical" Width="12" Height="12"
+                                                     Margin="6,0,0,0" VerticalAlignment="Center"
+                                                     Foreground="{DynamicResource HighlightBrush}"
+                                                     ToolTip="معروض في النصف الآخر">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsInSecondaryPane}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                        </StackPanel>
+                        <Button Grid.Column="1"
+                                Style="{StaticResource ChromeTabPinButton}"
+                                ToolTip="تثبيت التبويب (يفتح تلقائياً عند التشغيل)"
+                                PreviewMouseLeftButtonDown="Pin_PreviewMouseLeftButtonDown">
+                            <materialDesign:PackIcon Width="16" Height="16">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Kind" Value="PinOutline"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource ChromeTabForegroundBrush}"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsPinned}" Value="True">
+                                                <Setter Property="Kind" Value="Pin"/>
+                                                <Setter Property="Foreground" Value="#1565C0"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                        </Button>
+                        <Button Grid.Column="2"
+                                Style="{StaticResource ChromeTabCloseButton}"
+                                Visibility="{Binding CanClose, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                ToolTip="إغلاق التبويب"
+                                PreviewMouseLeftButtonDown="Close_PreviewMouseLeftButtonDown"/>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <Canvas x:Name="MarkerCanvas" IsHitTestVisible="False" Panel.ZIndex="20">
+            <Border x:Name="InsertMarker"
+                    Width="3"
+                    Height="28"
+                    CornerRadius="1.5"
+                    Background="{DynamicResource HighlightBrush}"
+                    Visibility="Collapsed"
+                    Canvas.Top="4"
+                    IsHitTestVisible="False"/>
+        </Canvas>
+    </Grid>
+</UserControl>

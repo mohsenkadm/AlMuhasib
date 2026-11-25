@@ -13,6 +13,7 @@ public static class ReportMenuCatalog
         ("sales-profit", "المبيعات والأرباح", PackIconKind.ChartLine, "#1565C0", "#E3F2FD", ScreenPermissionRegistry.Reports,
         [
             ("تقرير المبيعات", PackIconKind.CashRegister, typeof(SalesReportViewModel), ScreenPermissionRegistry.Reports),
+            ("تقرير المنتجات", PackIconKind.ChartBoxOutline, typeof(ProductAnalyticsReportViewModel), ScreenPermissionRegistry.Reports),
             ("تقرير المشتريات", PackIconKind.CartArrowDown, typeof(PurchasesReportViewModel), ScreenPermissionRegistry.Reports),
             ("تقرير الأرباح", PackIconKind.TrendingUp, typeof(ProfitReportViewModel), ScreenPermissionRegistry.Reports),
             ("أفضل المنتجات", PackIconKind.StarCircle, typeof(TopProductsReportViewModel), ScreenPermissionRegistry.Reports),

@@ -1,0 +1,419 @@
+<UserControl x:Class="AlMuhasib.UI.Views.ProductAnalyticsReportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+             xmlns:vm="clr-namespace:AlMuhasib.UI.ViewModels"
+             xmlns:controls="clr-namespace:AlMuhasib.UI.Controls"
+             xmlns:behaviors="clr-namespace:AlMuhasib.UI.Behaviors"
+             xmlns:converters="clr-namespace:AlMuhasib.UI.Converters"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance vm:ProductAnalyticsReportViewModel, IsDesignTimeCreatable=False}"
+             Style="{StaticResource PageStyle}"
+             FlowDirection="RightToLeft">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <Style TargetType="controls:ChartCard">
+            <Setter Property="Height" Value="420"/>
+            <Setter Property="Margin" Value="8"/>
+        </Style>
+        <Style x:Key="DetailPillButton" TargetType="Button">
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="MinWidth" Value="104"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="{DynamicResource DashboardKpiBlueLightBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="16" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.82"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <converters:HexToBrushConverter x:Key="HexBrush"/>
+        <converters:InverseBooleanConverter x:Key="InverseBool"/>
+        <converters:InverseBooleanToVisibilityConverter x:Key="InvBoolToVis"/>
+    </UserControl.Resources>
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="24,20,24,24">
+                <TextBlock Text="تقرير المنتجات" FontSize="24" FontWeight="Bold"/>
+                <TextBlock Text="{Binding CurrencyNote}" TextWrapping="Wrap" Margin="0,6,0,2"
+                           Foreground="{DynamicResource TextSecondaryBrush}"/>
+                <TextBlock Text="{Binding ProfitNote}" TextWrapping="Wrap" Margin="0,0,0,12"
+                           Foreground="{DynamicResource TextSecondaryBrush}"/>
+
+                <Border Style="{StaticResource FilterBar}" Margin="0,0,0,16">
+                    <WrapPanel>
+                        <DatePicker SelectedDate="{Binding DateFrom}" Style="{StaticResource FilledDatePicker}"
+                                    materialDesign:HintAssist.Hint="من تاريخ" Width="140" Margin="0,0,10,8"/>
+                        <DatePicker SelectedDate="{Binding DateTo}" Style="{StaticResource FilledDatePicker}"
+                                    materialDesign:HintAssist.Hint="إلى تاريخ" Width="140" Margin="0,0,10,8"/>
+                        <ComboBox ItemsSource="{Binding Warehouses}" SelectedValue="{Binding SelectedWarehouseId}"
+                                  SelectedValuePath="Id" DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}"
+                                  materialDesign:HintAssist.Hint="المستودع" Width="150" Margin="0,0,10,8"/>
+                        <ComboBox ItemsSource="{Binding Categories}" SelectedValue="{Binding SelectedCategoryId}"
+                                  SelectedValuePath="Id" DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}"
+                                  materialDesign:HintAssist.Hint="التصنيف" Width="150" Margin="0,0,10,8"/>
+                        <ComboBox ItemsSource="{Binding Suppliers}" SelectedValue="{Binding SelectedSupplierId}"
+                                  SelectedValuePath="Id" DisplayMemberPath="Name" Style="{StaticResource FilledComboBox}"
+                                  materialDesign:HintAssist.Hint="المورد" Width="160" Margin="0,0,10,8"/>
+                        <ComboBox ItemsSource="{Binding Activities}" SelectedItem="{Binding SelectedActivity}"
+                                  Style="{StaticResource FilledComboBox}" materialDesign:HintAssist.Hint="حالة النشاط"
+                                  Width="170" Margin="0,0,10,8"/>
+                        <ComboBox ItemsSource="{Binding Sorts}" SelectedItem="{Binding SelectedSort}"
+                                  Style="{StaticResource FilledComboBox}" materialDesign:HintAssist.Hint="الترتيب"
+                                  Width="140" Margin="0,0,10,8"/>
+                        <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource FilledTextBox}"
+                                 materialDesign:HintAssist.Hint="اسم أو باركود أو رمز" Width="180" Margin="0,0,10,8"/>
+                        <Button Content="تحديث" Style="{StaticResource PrimaryButton}" Command="{Binding LoadDataCommand}" Margin="0,0,8,8"/>
+                        <Button Content="إعادة تعيين" Style="{StaticResource FlatButton}" Command="{Binding ResetFiltersCommand}" Margin="0,0,8,8"/>
+                        <Button Content="Excel" Style="{StaticResource FlatButton}" Command="{Binding ExportToExcelCommand}" Margin="0,0,8,8"/>
+                        <Button Content="Excel كامل" Style="{StaticResource FlatButton}" Command="{Binding ExportFullToExcelCommand}" Margin="0,0,8,8"/>
+                        <Button Content="PDF" Style="{StaticResource FlatButton}" Command="{Binding ExportToPdfCommand}" Margin="0,0,8,8"/>
+                        <Button Content="طباعة" Style="{StaticResource FlatButton}" Command="{Binding PrintCommand}" Margin="0,0,8,8"/>
+                    </WrapPanel>
+                </Border>
+
+                <UniformGrid Columns="4" Margin="-6,0,-6,8">
+                    <controls:AnalyticsMetricCard Title="إجمالي المنتجات" TextValue="{Binding ProductCountText}" Icon="PackageVariant"
+                                                  IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"
+                                                  AccentBrush="#1565C0" Hint="ضمن الفلاتر الحالية"/>
+                    <controls:AnalyticsMetricCard Title="الكمية المباعة" TextValue="{Binding SoldQuantityText}" Icon="Cart"
+                                                  IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="#00796B" ValueForeground="#00796B"
+                                                  AccentBrush="#00796B" ComparisonValue="{Binding QuantityChange}" ComparisonLabel="{Binding ComparisonLabel}"
+                                                  Hint="قبل خصم المرتجعات"/>
+                    <controls:AnalyticsMetricCard Title="صافي المبيعات" TextValue="{Binding SalesText}" Icon="CashRegister"
+                                                  IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32" ValueForeground="#2E7D32"
+                                                  AccentBrush="#2E7D32" ComparisonValue="{Binding SalesChange}" ComparisonLabel="{Binding ComparisonLabel}"
+                                                  Hint="بعد المرتجعات والخصومات"/>
+                    <controls:AnalyticsMetricCard Title="قيمة المشتريات" TextValue="{Binding PurchasesText}" Icon="CartArrowDown"
+                                                  IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#6A1B9A" ValueForeground="#6A1B9A"
+                                                  AccentBrush="#6A1B9A" ComparisonValue="{Binding PurchaseChange}" ComparisonLabel="{Binding ComparisonLabel}"
+                                                  Hint="بعد مرتجع المشتريات"/>
+                    <controls:AnalyticsMetricCard Title="مجمل الربح" TextValue="{Binding ProfitText}" Icon="TrendingUp"
+                                                  IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#1B5E20" ValueForeground="#1B5E20"
+                                                  AccentBrush="#1B5E20" ComparisonValue="{Binding ProfitChange}" ComparisonLabel="{Binding ComparisonLabel}"
+                                                  Hint="{Binding ProfitHint}"/>
+                    <controls:AnalyticsMetricCard Title="هامش الربح" TextValue="{Binding MarginText}" Icon="Percent"
+                                                  IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0" ValueForeground="#1565C0"
+                                                  AccentBrush="#1565C0" Hint="مرجح على صافي المبيعات"/>
+                    <controls:AnalyticsMetricCard Title="قيمة المرتجعات" TextValue="{Binding ReturnsText}" Icon="KeyboardReturn"
+                                                  IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00" ValueForeground="#EF6C00"
+                                                  AccentBrush="#EF6C00" ComparisonValue="{Binding ReturnChange}" ComparisonLabel="{Binding ComparisonLabel}"
+                                                  Hint="مرتجعات المبيعات فقط"/>
+                    <controls:AnalyticsMetricCard Title="قيمة المخزون الحالي" TextValue="{Binding StockValueText}" Icon="Warehouse"
+                                                  IconBackground="{DynamicResource MutedIconBackgroundBrush}" IconForeground="{DynamicResource TextSecondaryBrush}"
+                                                  ValueForeground="{DynamicResource TextPrimaryBrush}" AccentBrush="#607D8B"
+                                                  Hint="الرصيد الحالي × متوسط التكلفة"/>
+                    <controls:AnalyticsMetricCard Title="الأكثر مبيعاً" TextValue="{Binding TopSellerText}" Icon="StarCircle" ValueFontSize="16"
+                                                  IconBackground="{DynamicResource DashboardKpiOrangeLightBrush}" IconForeground="#EF6C00"
+                                                  ValueForeground="{DynamicResource TextPrimaryBrush}" AccentBrush="#EF6C00"
+                                                  Hint="حسب صافي المبيعات"/>
+                    <controls:AnalyticsMetricCard Title="منتجات راكدة" TextValue="{Binding StagnantText}" Icon="PackageVariantClosed"
+                                                  IconBackground="{DynamicResource DashboardKpiRedLightBrush}" IconForeground="#C62828" ValueForeground="#C62828"
+                                                  AccentBrush="#C62828" ComparisonValue="{Binding StagnantChange}" ComparisonLabel="{Binding ComparisonLabel}"
+                                                  Hint="رصيد حالي بلا بيع خلال الفترة"/>
+                </UniformGrid>
+
+                <UniformGrid Columns="2" Margin="-8,4,-8,8" Visibility="{Binding HasData, Converter={StaticResource BoolToVis}}">
+                    <controls:ChartCard Title="حركة المبيعات" Subtitle="صافي المبيعات مقارنة بالفترة السابقة">
+                        <controls:ChartCard.ChartContent>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="0,0,0,8">
+                                    <RadioButton Content="المبالغ" IsChecked="{Binding TrendByQuantity, Converter={StaticResource InverseBool}}" Margin="0,0,16,0"/>
+                                    <RadioButton Content="الكميات" IsChecked="{Binding TrendByQuantity}"/>
+                                </StackPanel>
+                                <lvc:CartesianChart Series="{Binding TrendSeries}" XAxes="{Binding TrendXAxes}" YAxes="{Binding TrendYAxes}" Height="240" LegendPosition="Right"/>
+                            </StackPanel>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                    <controls:ChartCard Title="أكثر المنتجات" Subtitle="أفضل 10 أو 15">
+                        <controls:ChartCard.ChartContent>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <ComboBox SelectedIndex="{Binding TopMetric}" Width="140" Margin="0,0,8,0" Style="{StaticResource FilledComboBox}">
+                                        <ComboBoxItem Content="الكمية"/>
+                                        <ComboBoxItem Content="المبيعات"/>
+                                        <ComboBoxItem Content="الربح"/>
+                                    </ComboBox>
+                                    <ComboBox ItemsSource="{Binding TopCounts}" SelectedItem="{Binding ChartTopCount}" Width="80" Style="{StaticResource FilledComboBox}"/>
+                                </StackPanel>
+                                <lvc:CartesianChart Series="{Binding TopSeries}" XAxes="{Binding TopXAxes}" YAxes="{Binding TopYAxes}" Height="260"/>
+                            </StackPanel>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                    <controls:ChartCard Title="المبيعات حسب التصنيف">
+                        <controls:ChartCard.ChartContent>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <RadioButton Content="القيمة" IsChecked="{Binding CategoryByQuantity, Converter={StaticResource InverseBool}}" Margin="0,0,16,0"/>
+                                    <RadioButton Content="الكمية" IsChecked="{Binding CategoryByQuantity}"/>
+                                </StackPanel>
+                                <lvc:PieChart Series="{Binding CategorySeries}" Height="240" LegendPosition="Right"/>
+                            </StackPanel>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                    <controls:ChartCard Title="المنتجات الأعلى ربحاً" Subtitle="قيمة الربح وهامشه في الجدول">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:CartesianChart Series="{Binding ProfitSeries}" XAxes="{Binding ProfitXAxes}" YAxes="{Binding ProfitYAxes}" Height="260"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                    <controls:ChartCard Title="حالة المخزون" Subtitle="نافد ثم منخفض ثم راكد ثم متوفر">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:PieChart Series="{Binding StockSeries}" Height="240" LegendPosition="Right"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                    <controls:ChartCard Title="المبيعات مقابل المشتريات">
+                        <controls:ChartCard.ChartContent>
+                            <lvc:CartesianChart Series="{Binding CompareSeries}" XAxes="{Binding CompareXAxes}" YAxes="{Binding CompareYAxes}" Height="240" LegendPosition="Right"/>
+                        </controls:ChartCard.ChartContent>
+                    </controls:ChartCard>
+                </UniformGrid>
+
+                <StackPanel Margin="0,8,0,0" Visibility="{Binding HasData, Converter={StaticResource BoolToVis}}">
+                    <TextBlock Text="إحصائيات التصنيفات" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Text="مجمّعة من منتجات الفترة نفسها: المبيعات بعد المرتجعات والخصم، والربح بمتوسط تكلفة النظام، والمخزون بالرصيد الحالي."
+                               TextWrapping="Wrap" Margin="0,4,0,8" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                    <UniformGrid Columns="4" Margin="-6,0,-6,4">
+                        <controls:AnalyticsMetricCard Title="عدد التصنيفات" TextValue="{Binding CategoryCountText}" Icon="Shape"
+                                                      IconBackground="{DynamicResource DashboardKpiBlueLightBrush}" IconForeground="#1565C0"
+                                                      ValueForeground="#1565C0" AccentBrush="#1565C0" Hint="التصنيفات الظاهرة ضمن الفلاتر"/>
+                        <controls:AnalyticsMetricCard Title="الأعلى مبيعاً" TextValue="{Binding TopCategorySalesText}" ValueFontSize="16" Icon="Tag"
+                                                      IconBackground="{DynamicResource DashboardKpiGreenLightBrush}" IconForeground="#2E7D32"
+                                                      ValueForeground="{DynamicResource TextPrimaryBrush}" AccentBrush="#2E7D32"
+                                                      Hint="{Binding TopCategorySalesHint}"/>
+                        <controls:AnalyticsMetricCard Title="الأعلى ربحاً" TextValue="{Binding TopCategoryProfitText}" ValueFontSize="16" Icon="Finance"
+                                                      IconBackground="{DynamicResource DashboardKpiTealLightBrush}" IconForeground="#00796B"
+                                                      ValueForeground="{DynamicResource TextPrimaryBrush}" AccentBrush="#00796B"
+                                                      Hint="{Binding TopCategoryProfitHint}"/>
+                        <controls:AnalyticsMetricCard Title="الأعلى مخزوناً" TextValue="{Binding TopCategoryStockText}" ValueFontSize="16" Icon="Warehouse"
+                                                      IconBackground="{DynamicResource PrimaryHueLightBrush}" IconForeground="#6A1B9A"
+                                                      ValueForeground="{DynamicResource TextPrimaryBrush}" AccentBrush="#6A1B9A"
+                                                      Hint="{Binding TopCategoryStockHint}"/>
+                    </UniformGrid>
+                    <UniformGrid Columns="2" Margin="-8,0,-8,8">
+                        <controls:ChartCard Title="ربح التصنيفات" Subtitle="مجمل الربح، وأخرى تجمع ما بعد السبعة الأوائل">
+                            <controls:ChartCard.ChartContent>
+                                <lvc:CartesianChart Series="{Binding CategoryProfitSeries}" XAxes="{Binding CategoryProfitXAxes}" YAxes="{Binding CategoryProfitYAxes}" Height="250"/>
+                            </controls:ChartCard.ChartContent>
+                        </controls:ChartCard>
+                        <controls:ChartCard Title="مخزون التصنيفات" Subtitle="قيمة الرصيد الحالي × متوسط التكلفة">
+                            <controls:ChartCard.ChartContent>
+                                <lvc:CartesianChart Series="{Binding CategoryStockSeries}" XAxes="{Binding CategoryStockXAxes}" YAxes="{Binding CategoryStockYAxes}" Height="250"/>
+                            </controls:ChartCard.ChartContent>
+                        </controls:ChartCard>
+                        <controls:ChartCard Title="عدد المنتجات حسب التصنيف">
+                            <controls:ChartCard.ChartContent>
+                                <lvc:CartesianChart Series="{Binding CategoryCountSeries}" XAxes="{Binding CategoryCountXAxes}" YAxes="{Binding CategoryCountYAxes}" Height="250"/>
+                            </controls:ChartCard.ChartContent>
+                        </controls:ChartCard>
+                        <controls:ChartCard Title="مشتريات التصنيفات" Subtitle="قيمة المشتريات بعد المرتجعات">
+                            <controls:ChartCard.ChartContent>
+                                <lvc:CartesianChart Series="{Binding CategoryPurchaseSeries}" XAxes="{Binding CategoryPurchaseXAxes}" YAxes="{Binding CategoryPurchaseYAxes}" Height="250"/>
+                            </controls:ChartCard.ChartContent>
+                        </controls:ChartCard>
+                    </UniformGrid>
+                    <materialDesign:Card Style="{StaticResource ElevatedCard}" Padding="0" Margin="0,0,0,16">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="280"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="جدول التصنيفات" FontWeight="SemiBold" Margin="16,12,16,8"/>
+                            <DataGrid Grid.Row="1" ItemsSource="{Binding CategoryStats}" Style="{StaticResource ModernDataGrid}"
+                                      IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="التصنيف" Binding="{Binding Name}" Width="160"/>
+                                    <DataGridTextColumn Header="المنتجات" Binding="{Binding ProductCount, StringFormat=N0}" Width="90"/>
+                                    <DataGridTextColumn Header="صافي الكمية" Binding="{Binding NetQuantity, StringFormat=N2}" Width="110"/>
+                                    <DataGridTextColumn Header="المبيعات" Binding="{Binding SalesAmount, StringFormat=N0}" Width="120"/>
+                                    <DataGridTextColumn Header="المشتريات" Binding="{Binding PurchaseValue, StringFormat=N0}" Width="120"/>
+                                    <DataGridTextColumn Header="المرتجعات" Binding="{Binding ReturnValue, StringFormat=N0}" Width="110"/>
+                                    <DataGridTextColumn Header="الربح" Binding="{Binding GrossProfit, StringFormat=N0}" Width="110"/>
+                                    <DataGridTextColumn Header="الهامش %" Binding="{Binding MarginPercent, StringFormat=N1}" Width="90"/>
+                                    <DataGridTextColumn Header="قيمة المخزون" Binding="{Binding StockValue, StringFormat=N0}" Width="120"/>
+                                    <DataGridTextColumn Header="راكد" Binding="{Binding StagnantCount, StringFormat=N0}" Width="70"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </materialDesign:Card>
+                </StackPanel>
+
+                <TextBlock Text="تحليلات تشغيلية" FontSize="18" FontWeight="SemiBold" Margin="8,12,8,4"/>
+                <TextBlock Text="{Binding StockAgeNote}" TextWrapping="Wrap" Margin="8,0,8,8"
+                           Foreground="{DynamicResource TextSecondaryBrush}"/>
+                <ItemsControl ItemsSource="{Binding Insights}" Margin="0,0,0,12">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="3"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="8" CornerRadius="18" Padding="0"
+                                    Background="{DynamicResource CardBrush}"
+                                    BorderBrush="{DynamicResource CardBorderBrush}"
+                                    BorderThickness="1">
+                                <Grid MinHeight="210">
+                                    <Border Width="5" HorizontalAlignment="Right" CornerRadius="0,18,18,0"
+                                            Background="{Binding Accent, Converter={StaticResource HexBrush}}"/>
+                                    <StackPanel Margin="16,14,22,14">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Width="40" Height="40" CornerRadius="14"
+                                                    Background="{Binding AccentSoft, Converter={StaticResource HexBrush}}"
+                                                    VerticalAlignment="Center">
+                                                <materialDesign:PackIcon Kind="{Binding Icon}" Width="20" Height="20"
+                                                                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                         Foreground="{Binding Accent, Converter={StaticResource HexBrush}}"/>
+                                            </Border>
+                                            <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="15" FontWeight="SemiBold"
+                                                       Margin="12,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                        </Grid>
+                                        <ItemsControl ItemsSource="{Binding Lines}" Margin="0,12,0,0">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="0,0,0,7">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Border Width="26" Height="26" CornerRadius="13"
+                                                                Background="{Binding DataContext.AccentSoft, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource HexBrush}}"
+                                                                Visibility="{Binding Rank, Converter={StaticResource NullToCollapsedConverter}}">
+                                                            <TextBlock Text="{Binding Rank}" FontSize="11" FontWeight="Bold"
+                                                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                       Foreground="{Binding DataContext.Accent, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource HexBrush}}"/>
+                                                        </Border>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Name}" Margin="8,0,8,0"
+                                                                   VerticalAlignment="Center" TextWrapping="Wrap"
+                                                                   Foreground="{DynamicResource TextPrimaryBrush}"/>
+                                                        <Border Grid.Column="2" CornerRadius="10" Padding="8,3"
+                                                                VerticalAlignment="Center"
+                                                                Background="{Binding DataContext.AccentSoft, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource HexBrush}}"
+                                                                Visibility="{Binding HasValue, Converter={StaticResource BoolToVis}}">
+                                                            <TextBlock Text="{Binding Value}" FontSize="12" FontWeight="SemiBold"
+                                                                       Foreground="{Binding DataContext.Accent, RelativeSource={RelativeSource AncestorType=ItemsControl}, Converter={StaticResource HexBrush}}"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <materialDesign:Card Style="{StaticResource ElevatedCard}" Padding="0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="480"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <DockPanel Grid.Row="0" Margin="12,10,12,6">
+                            <Button x:Name="ColumnsButton" DockPanel.Dock="Left" Content="الأعمدة" Style="{StaticResource FlatButton}" Click="ColumnsButton_Click"/>
+                            <TextBlock Text="{Binding TableTotals}" VerticalAlignment="Center" Margin="12,0,0,0"
+                                       Foreground="{DynamicResource TextSecondaryBrush}"/>
+                        </DockPanel>
+                        <Popup x:Name="ColumnPopup" PlacementTarget="{Binding ElementName=ColumnsButton}" Placement="Bottom" StaysOpen="False">
+                            <Border Background="{DynamicResource CardBrush}" BorderBrush="{DynamicResource SubtleBorderBrush}"
+                                    BorderThickness="1" CornerRadius="12" Padding="12" MinWidth="180">
+                                <StackPanel x:Name="ColumnPanel"/>
+                            </Border>
+                        </Popup>
+                        <DataGrid x:Name="AnalyticsGrid" Grid.Row="1" ItemsSource="{Binding Rows}"
+                                  Style="{StaticResource ModernDataGrid}" IsReadOnly="True" AutoGenerateColumns="False"
+                                  CanUserSortColumns="True" FrozenColumnCount="1" RowHeight="48"
+                                  behaviors:DataGridColumnFilterBehavior.IsEnabled="True"
+                                  behaviors:DataGridColumnFilterBehavior.IsFilterPanelOpen="{Binding IsColumnFilterPanelOpen, Mode=TwoWay}"
+                                  behaviors:DataGridColumnFilterBehavior.FilterChangedCommand="{Binding ApplyColumnFiltersCommand}">
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="تفاصيل" Width="128" MinWidth="128"
+                                                        CellStyle="{StaticResource TableActionsCellStyle}">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Style="{StaticResource DetailPillButton}" ToolTip="تفاصيل المنتج"
+                                                    Command="{Binding DataContext.OpenProductCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="تفاصيل" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                    <materialDesign:PackIcon Kind="EyeOutline" Width="16" Height="16"
+                                                                             Margin="6,0,0,0" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="الرمز" Binding="{Binding Code}" Width="70"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Code"/>
+                                <DataGridTextColumn Header="الباركود" Binding="{Binding Barcode}" Width="120"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Barcode"/>
+                                <DataGridTextColumn Header="المنتج" Binding="{Binding ProductName}" Width="180"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ProductName"/>
+                                <DataGridTextColumn Header="التصنيف" Binding="{Binding CategoryName}" Width="110"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="CategoryName"/>
+                                <DataGridTextColumn Header="الوحدة" Binding="{Binding UnitName}" Width="80"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="UnitName"/>
+                                <DataGridTextColumn Header="المشترى" Binding="{Binding PurchasedQuantity, StringFormat=N2}" Width="90"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="PurchasedQuantity"/>
+                                <DataGridTextColumn Header="المباع" Binding="{Binding SoldQuantity, StringFormat=N2}" Width="80"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SoldQuantity"/>
+                                <DataGridTextColumn Header="المرتجع" Binding="{Binding ReturnQuantity, StringFormat=N2}" Width="80"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="ReturnQuantity"/>
+                                <DataGridTextColumn Header="صافي الكمية" Binding="{Binding NetQuantitySold, StringFormat=N2}" Width="100"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="NetQuantitySold"/>
+                                <DataGridTextColumn Header="متوسط الشراء" Binding="{Binding AveragePurchasePriceDisplay}" Width="110"/>
+                                <DataGridTextColumn Header="متوسط البيع" Binding="{Binding AverageSalePriceDisplay}" Width="100"/>
+                                <DataGridTextColumn Header="المبيعات" Binding="{Binding SalesAmount, StringFormat=N0}" Width="110"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="SalesAmount"/>
+                                <DataGridTextColumn Header="التكلفة" Binding="{Binding Cogs, StringFormat=N0}" Width="100"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="Cogs"/>
+                                <DataGridTextColumn Header="الربح" Binding="{Binding GrossProfit, StringFormat=N0}" Width="100"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="GrossProfit"/>
+                                <DataGridTextColumn Header="الهامش %" Binding="{Binding MarginPercent, StringFormat=N1}" Width="80"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="MarginPercent"/>
+                                <DataGridTextColumn Header="الرصيد" Binding="{Binding StockQuantity, StringFormat=N2}" Width="80"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StockQuantity"/>
+                                <DataGridTextColumn Header="قيمة المخزون" Binding="{Binding StockValue, StringFormat=N0}" Width="110"
+                                                    behaviors:DataGridColumnFilterBehavior.FilterPropertyPath="StockValue"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock Grid.Row="2" Text="لا توجد منتجات ضمن هذه الفلاتر." Margin="16" HorizontalAlignment="Center"
+                                   Visibility="{Binding HasData, Converter={StaticResource InvBoolToVis}}"/>
+                        <controls:PaginationBar Grid.Row="3"/>
+                    </Grid>
+                </materialDesign:Card>
+            </StackPanel>
+        </ScrollViewer>
+        <Border Background="#66000000" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+            <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}" Width="48" Height="48" IsIndeterminate="True"
+                         VerticalAlignment="Center" HorizontalAlignment="Center"/>
+        </Border>
+    </Grid>
+</UserControl>

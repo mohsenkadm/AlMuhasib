@@ -114,6 +114,7 @@ public static class DependencyInjection
         services.AddScoped<IMaintenanceService, MaintenanceService>();
         services.AddScoped<IInvestorService, InvestorService>();
         services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<IProductAnalyticsService, ProductAnalyticsService>();
         services.AddScoped<ISupervisoryReportService, SupervisoryReportService>();
         services.AddScoped<IPersonProfileService, PersonProfileService>();
         services.AddScoped<IUserActivityProfileService, UserActivityProfileService>();

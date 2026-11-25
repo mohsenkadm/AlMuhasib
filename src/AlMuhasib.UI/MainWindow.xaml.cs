@@ -57,6 +57,7 @@ public partial class MainWindow : Window
         PreviewMouseWheel += (_, _) => TouchActivity();
         StartIdleLockTimer();
         UpdateMaximizeIcon();
+        InitializeChromeTabHost();
     }
 
     private void TouchActivity() => _sessionActivity.RecordActivity();
@@ -90,6 +91,7 @@ public partial class MainWindow : Window
         currentUser.Clear();
 
         IsEnabled = false;
+        TabWindowManager.Instance.SetEnabled(false);
 
         try
         {
@@ -125,6 +127,7 @@ public partial class MainWindow : Window
         {
             if (CanSetAsOwner(this))
                 IsEnabled = true;
+            TabWindowManager.Instance.SetEnabled(true);
             _isSessionLocked = false;
             if (CanSetAsOwner(this))
                 _idleTimer?.Start();
@@ -318,8 +321,11 @@ public partial class MainWindow : Window
         {
             foreach (DocumentTab tab in e.OldItems)
             {
-                tab.ReleaseCachedView();
                 _tabViewLru.Remove(tab.Id);
+                if (tab.IsTransferring)
+                    continue;
+
+                tab.ReleaseCachedView();
             }
         }
         else if (e.Action == NotifyCollectionChangedAction.Reset)
@@ -491,27 +497,6 @@ public partial class MainWindow : Window
 
     private void KeyboardShortcutsCard_Click(object sender, MouseButtonEventArgs e) =>
         e.Handled = true;
-
-    private void ChromeTabClose_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-    {
-        if (sender is Button { Command: { } command, CommandParameter: { } parameter }
-            && command.CanExecute(parameter))
-        {
-            command.Execute(parameter);
-        }
-
-        // منع اختيار التبويب عند الضغط على زر الإغلاق فقط
-        e.Handled = true;
-    }
-
-    private void ChromeTabContextMenu_Opened(object sender, RoutedEventArgs e)
-    {
-        if (sender is not ContextMenu { PlacementTarget: FrameworkElement target })
-            return;
-
-        var tab = target.DataContext as DocumentTab;
-        _viewModel.PrepareTabContextMenu(tab);
-    }
 
     /// <summary>
     /// GridSplitter writes local Width values that break bindings; always reset via ClearValue.

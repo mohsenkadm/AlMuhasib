@@ -299,6 +299,7 @@ public partial class SalesReportViewModel : ReportViewModelBase
             GrandTotal = invoice.NetAmount,
             CompanyFeeAmount = row.CompanyFeeAmount > 0 ? row.CompanyFeeAmount : null,
             CurrencyLabel = AccountingCurrencyHelper.GetLabel(invoice.Currency),
+            UseSalesCardLayout = invoice.InvoiceType is not InvoiceType.Installment,
             Items = invoice.Items.Select((item, i) => new InvoicePrintItem
             {
                 Number = i + 1,

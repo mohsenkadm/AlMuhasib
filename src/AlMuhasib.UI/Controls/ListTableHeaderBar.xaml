@@ -8,25 +8,75 @@
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolVis"/>
-        <Style x:Key="HeaderIconButton" TargetType="Button" BasedOn="{StaticResource IconButton}">
-            <Setter Property="Width" Value="36"/>
-            <Setter Property="Height" Value="36"/>
+
+        <!-- زر أيقونة زجاجي بحجمه الأصلي. -->
+        <Style x:Key="HeaderGlassIconButton" TargetType="Button">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="MinWidth" Value="40"/>
+            <Setter Property="MinHeight" Value="40"/>
             <Setter Property="Margin" Value="4,0,0,0"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Opacity" Value="0.95"/>
-            <Style.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Opacity" Value="1"/>
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                    <Setter Property="Opacity" Value="0.4"/>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid x:Name="Bd" Width="40" Height="40" RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Grid.RenderTransform>
+                            <controls:LiquidGlassChrome Tone="Standard"
+                                                        ShadowStrength="0.34"
+                                                        IsHovered="{TemplateBinding IsMouseOver}"
+                                                        IsPressed="{TemplateBinding IsPressed}"
+                                                        IsFocusedGlass="{TemplateBinding IsKeyboardFocused}"/>
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.96" ScaleY="0.96"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.42"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </UserControl.Resources>
 
-    <Border Background="{DynamicResource PrimaryHueMidBrush}" Padding="16,10">
-        <Grid>
+    <!-- شريط منخفض الارتفاع فقط؛ الأيقونات بحجمها الكامل. -->
+    <Grid Margin="6,2,6,0" MinHeight="22" ClipToBounds="False">
+        <Grid x:Name="HeaderAtmosphere" IsHitTestVisible="False" ClipToBounds="True">
+            <Border CornerRadius="16" Background="{DynamicResource ListHeaderGlassAtmosphereBrush}"/>
+            <Ellipse Width="60" Height="60"
+                     HorizontalAlignment="Left" VerticalAlignment="Center"
+                     Margin="-8,0,0,0"
+                     Fill="{DynamicResource ListHeaderGlassOrbPrimaryBrush}"/>
+            <Ellipse Width="60" Height="60"
+                     HorizontalAlignment="Right" VerticalAlignment="Center"
+                     Margin="0,0,-8,0"
+                     Fill="{DynamicResource ListHeaderGlassOrbSecondaryBrush}"/>
+        </Grid>
+
+        <controls:LiquidGlassChrome Tone="Header"
+                                    CornerRadius="16"
+                                    ShadowStrength="0.7"
+                                    Accent="#281565C0"
+                                    controls:LiquidGlassChrome.BackdropSource="{Binding ElementName=HeaderAtmosphere}"/>
+
+        <Grid Margin="12,4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -34,7 +84,8 @@
 
             <TextBlock Grid.Column="0"
                        Text="{Binding Title, ElementName=Root}"
-                       FontSize="15" FontWeight="Bold" Foreground="White"
+                       FontSize="15" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextPrimaryBrush}"
                        VerticalAlignment="Center"
                        TextTrimming="CharacterEllipsis"/>
 
@@ -49,30 +100,32 @@
                     ActiveFilterCount="{Binding ActiveFilterCount, ElementName=Root}"
                     ClearFiltersCommand="{Binding ClearFiltersCommand, ElementName=Root}"
                     TargetDataGrid="{Binding TargetDataGrid, ElementName=Root}"
-                    OnDarkBackground="True"
+                    OnDarkBackground="False"
                     Margin="0,0,4,0"
                     VerticalAlignment="Center"/>
 
-                <Button Style="{StaticResource HeaderIconButton}"
+                <Button Style="{StaticResource HeaderGlassIconButton}"
                         Visibility="{Binding ShowExport, ElementName=Root, Converter={StaticResource BoolVis}}"
                         Command="{Binding ExportCommand, ElementName=Root}"
                         ToolTip="تصدير Excel">
-                    <md:PackIcon Kind="FileExcelOutline" Width="20" Height="20" Foreground="White"/>
+                    <md:PackIcon Kind="FileExcelOutline" Width="20" Height="20"
+                                 Foreground="{DynamicResource TextPrimaryBrush}"/>
                 </Button>
 
-                <Button Style="{StaticResource HeaderIconButton}"
+                <Button Style="{StaticResource HeaderGlassIconButton}"
                         Visibility="{Binding ShowPrint, ElementName=Root, Converter={StaticResource BoolVis}}"
                         Command="{Binding PrintCommand, ElementName=Root}"
                         ToolTip="طباعة">
-                    <md:PackIcon Kind="Printer" Width="20" Height="20" Foreground="White"/>
+                    <md:PackIcon Kind="Printer" Width="20" Height="20"
+                                 Foreground="{DynamicResource TextPrimaryBrush}"/>
                 </Button>
 
                 <controls:ListViewModeToggle
                     Visibility="{Binding ShowCardToggle, ElementName=Root, Converter={StaticResource BoolVis}}"
-                    OnDarkBackground="True"
+                    OnDarkBackground="False"
                     Margin="8,0,0,0"
                     VerticalAlignment="Center"/>
             </StackPanel>
         </Grid>
-    </Border>
+    </Grid>
 </UserControl>

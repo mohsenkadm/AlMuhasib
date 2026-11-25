@@ -3,7 +3,8 @@ namespace AlMuhasib.Core.Helpers;
 public enum PriceLabelSymbology
 {
     Ean13 = 0,
-    Ean8 = 1
+    Ean8 = 1,
+    Code128 = 2
 }
 
 /// <summary>تحقق وإنشاء أرقام EAN دون تعديل الباركود المخزّن للمنتج.</summary>
@@ -18,7 +19,12 @@ public static class EanBarcode
             return Invalid("لا يوجد باركود لهذا المنتج.");
 
         if (text.Any(ch => !char.IsDigit(ch)))
-            return Invalid("الباركود يحتوي على أحرف غير رقمية ولا يطابق معيار EAN.");
+            return Invalid(symbology == PriceLabelSymbology.Code128
+                ? "هذا النوع يقبل أرقاماً فقط، بلا أحرف."
+                : "الباركود يحتوي على أحرف غير رقمية ولا يطابق معيار EAN.");
+
+        if (symbology == PriceLabelSymbology.Code128)
+            return NormalizeCode128(text);
 
         var dataLength = symbology == PriceLabelSymbology.Ean8 ? 7 : 12;
         var fullLength = dataLength + 1;
@@ -39,6 +45,13 @@ public static class EanBarcode
         }
 
         return Invalid($"طول الباركود غير مناسب لـ {name}. المطلوب {dataLength} أرقام أو {fullLength} مع خانة التحقق.");
+    }
+
+    private static Result NormalizeCode128(string text)
+    {
+        if (text.Length > 80)
+            return Invalid("الحد الأقصى لهذا النوع 80 رقماً.");
+        return new Result(true, text, null);
     }
 
     public static char CheckDigit(string dataDigits)

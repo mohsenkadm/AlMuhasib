@@ -79,6 +79,21 @@ public class EanBarcodeTests
         var result = EanBarcode.Normalize("55A2345", PriceLabelSymbology.Ean8);
         Assert.False(result.IsValid);
     }
+
+    [Fact]
+    public void Code128_accepts_numbers_longer_than_13_without_a_check_digit()
+    {
+        var result = EanBarcode.Normalize("12345678901234567890", PriceLabelSymbology.Code128);
+        Assert.True(result.IsValid);
+        Assert.Equal("12345678901234567890", result.Code);
+    }
+
+    [Fact]
+    public void Code128_rejects_letters()
+    {
+        var result = EanBarcode.Normalize("12345ABC", PriceLabelSymbology.Code128);
+        Assert.False(result.IsValid);
+    }
 }
 
 public class PriceLabelFitTests

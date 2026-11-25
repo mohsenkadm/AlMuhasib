@@ -317,6 +317,7 @@ public partial class App : Application
         services.AddTransient<CashFlowReportViewModel>();
         services.AddTransient<BalanceSheetViewModel>();
         services.AddTransient<TopProductsReportViewModel>();
+        services.AddTransient<ProductAnalyticsReportViewModel>();
         services.AddTransient<ProductProfitMarginReportViewModel>();
         services.AddTransient<MaterialNetProfitReportViewModel>();
         services.AddTransient<LeastProfitMaterialsReportViewModel>();
@@ -1102,6 +1103,7 @@ public partial class App : Application
         TryStop(() => _serviceProvider.GetService<BackupSchedulerService>()?.Stop());
         TryStop(() => _serviceProvider.GetService<IPosFullscreenService>()?.Close());
         TryStop(() => _serviceProvider.GetService<IModuleDocumentWindowService>()?.ForceCloseAll());
+        TryStop(() => TabWindowManager.Instance.ForceCloseAllDetached());
         TryStop(() => _serviceProvider.GetService<IVoiceRecognitionService>()?.StopListening());
         TryStop(() => _serviceProvider.GetService<ISyncService>()?.StopAutoSync());
         TryStop(() => (_serviceProvider.GetService<IGoldScaleService>() as IDisposable)?.Dispose());

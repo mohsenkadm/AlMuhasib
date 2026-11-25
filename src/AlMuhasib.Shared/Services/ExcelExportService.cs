@@ -261,6 +261,12 @@ public class ExcelExportService : IExportService
 
     public void PrintInvoice(InvoicePrintModel m, string? preferredPrinter, bool showPreview)
     {
+        if (m.UseSalesCardLayout)
+        {
+            PrintModernInvoice(m, preferredPrinter, showPreview);
+            return;
+        }
+
         if (m.Schedule is { Count: > 0 } && m.Title.Contains("أقساط"))
         {
             PrintInstallmentInvoiceLikeReference(m);
@@ -899,7 +905,9 @@ public class ExcelExportService : IExportService
     /// </summary>
     private void PrintModernInvoice(InvoicePrintModel m, string? preferredPrinter = null, bool showPreview = true)
     {
-        var doc = ModernInvoiceDocumentBuilder.Build(m);
+        var doc = m.UseSalesCardLayout
+            ? SalesInvoiceCardDocumentBuilder.Build(m)
+            : ModernInvoiceDocumentBuilder.Build(m);
         var pageSize = ModernInvoiceDocumentBuilder.ResolvePageSize(m);
         DocumentPrintHelper.PrintDocument(doc, m.Title, pageSize, preferredPrinter, showPreview);
     }

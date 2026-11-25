@@ -19,9 +19,13 @@ internal static class InvoicePrintLayoutHelper
         return new ItemColumnLayout(showWarehouse, showDiscount, hideAmounts, compact);
     }
 
-    internal static string FormatItemName(InvoicePrintItem item, InvoicePrintModel model, bool includeWarehouseInDescription)
+    internal static string FormatItemName(
+        InvoicePrintItem item,
+        InvoicePrintModel model,
+        bool includeWarehouseInDescription,
+        bool includeNumber = true)
     {
-        var name = $"{item.Number}. {item.ItemName}";
+        var name = includeNumber ? $"{item.Number}. {item.ItemName}" : item.ItemName;
         if (includeWarehouseInDescription && !string.IsNullOrWhiteSpace(item.WarehouseName))
             name += $"\nالمخزن: {item.WarehouseName}";
         if (model.PharmacyUsageReceipt && !string.IsNullOrWhiteSpace(item.UsageInstructions))

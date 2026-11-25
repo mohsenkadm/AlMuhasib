@@ -293,7 +293,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private async Task CopyToSalesInvoiceAsync(int invoiceId)
     {
-        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(SalesInvoiceViewModel));
+        var existing = FindSessionTab(t => t.ViewModelType == typeof(SalesInvoiceViewModel));
         if (existing?.ViewModel is SalesInvoiceViewModel salesVm)
         {
             ActivateTab(existing);
@@ -313,7 +313,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     private async Task CopyToPurchaseInvoiceAsync(int invoiceId)
     {
-        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(PurchaseInvoiceViewModel));
+        var existing = FindSessionTab(t => t.ViewModelType == typeof(PurchaseInvoiceViewModel));
         if (existing?.ViewModel is PurchaseInvoiceViewModel purchaseVm)
         {
             ActivateTab(existing);
@@ -339,7 +339,7 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(SalesInvoiceViewModel));
+        var existing = FindSessionTab(t => t.ViewModelType == typeof(SalesInvoiceViewModel));
         if (existing?.ViewModel is SalesInvoiceViewModel salesVm)
         {
             ActivateTab(existing);
@@ -370,7 +370,7 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(PurchaseInvoiceViewModel));
+        var existing = FindSessionTab(t => t.ViewModelType == typeof(PurchaseInvoiceViewModel));
         if (existing?.ViewModel is PurchaseInvoiceViewModel purchaseVm)
         {
             ActivateTab(existing);
@@ -401,7 +401,7 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == typeof(InstallmentInvoiceViewModel));
+        var existing = FindSessionTab(t => t.ViewModelType == typeof(InstallmentInvoiceViewModel));
         if (existing?.ViewModel is InstallmentInvoiceViewModel installmentVm)
         {
             ActivateTab(existing);
@@ -442,7 +442,7 @@ public partial class MainWindowViewModel : ObservableObject
                     : "SaleInvoice";
 
         // فضّل تبويباً بنفس وضع الشاشة (مبيعات / مرتجع / تلف / عرض سعر) إن وُجد
-        var existing = OpenTabs.FirstOrDefault(t =>
+        var existing = FindSessionTab(t =>
             t.ViewModelType == typeof(SalesInvoiceViewModel)
             && t.ViewModel is SalesInvoiceViewModel svm
             && svm.IsReturnMode == isReturn
@@ -483,7 +483,7 @@ public partial class MainWindowViewModel : ObservableObject
             ? ScreenPermissionRegistry.PurchaseReturn
             : "PurchaseInvoice";
 
-        var existing = OpenTabs.FirstOrDefault(t =>
+        var existing = FindSessionTab(t =>
             t.ViewModelType == typeof(PurchaseInvoiceViewModel)
             && t.ViewModel is PurchaseInvoiceViewModel pvm
             && pvm.IsReturnMode == isReturn);
@@ -963,7 +963,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         if (activateIfExists)
         {
-            var existing = OpenTabs.FirstOrDefault(t => t.ViewModelType == viewModelType);
+            var existing = FindSessionTab(t => t.ViewModelType == viewModelType);
             if (existing is not null)
             {
                 ActivateTab(existing);
@@ -1039,11 +1039,29 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void ActivateTab(DocumentTab tab)
     {
+        if (!OpenTabs.Contains(tab))
+        {
+            TabWindowManager.Instance.TryActivate(tab);
+            return;
+        }
+
         _isTabSwitchInternal = true;
         SelectedTab = tab;
         _isTabSwitchInternal = false;
         ApplyActiveTabState(tab);
     }
+
+    /// <summary>Activates a tab on the main strip or, if it was detached, on its window.</summary>
+    public void ActivateSessionTab(DocumentTab tab)
+    {
+        if (OpenTabs.Contains(tab))
+            ActivateTab(tab);
+        else
+            TabWindowManager.Instance.TryActivate(tab);
+    }
+
+    private DocumentTab? FindSessionTab(Func<DocumentTab, bool> predicate) =>
+        OpenTabs.FirstOrDefault(predicate) ?? TabWindowManager.Instance.Find(predicate);
 
     private void ApplyActiveTabState(DocumentTab tab)
     {
@@ -1116,33 +1134,11 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void CloseTab(DocumentTab? tab)
     {
-        if (tab is null || !tab.CanClose)
+        if (tab is null || !OpenTabs.Contains(tab))
             return;
 
-        if (tab.ViewModel.HasUnsavedChanges)
-        {
-            if (tab.ViewModel.SupportsSaveBeforeLeave)
-            {
-                var choice = BeautifulMessageDialog.ShowSaveDiscardCancel(
-                    "لديك تغييرات غير محفوظة.\nهل تريد حفظها قبل إغلاق التبويب؟");
-
-                if (choice == UnsavedChangesDialogResult.Cancel)
-                    return;
-
-                if (choice == UnsavedChangesDialogResult.Save)
-                {
-                    var saved = UiTaskHelper.WaitWithMessagePump(tab.ViewModel.SavePendingChangesAsync());
-                    if (!saved)
-                        return;
-                }
-            }
-            else if (!BeautifulMessageDialog.ShowConfirm(
-                         "لديك تغييرات غير محفوظة. هل تريد إغلاق التبويب بدون حفظ؟",
-                         "إغلاق التبويب"))
-            {
-                return;
-            }
-        }
+        if (!ConfirmTabClose(tab))
+            return;
 
         var index = OpenTabs.IndexOf(tab);
         var wasSelected = SelectedTab == tab;
@@ -1173,6 +1169,104 @@ public partial class MainWindowViewModel : ObservableObject
             _ = OpenTabAsync(pending.Type, pending.Title, pending.Icon);
         }
     }
+
+    /// <summary>Same unsaved-changes prompt used when a tab or its detached window closes.</summary>
+    public bool ConfirmTabClose(DocumentTab? tab)
+    {
+        if (tab is null || !tab.CanClose)
+            return false;
+
+        if (!tab.ViewModel.HasUnsavedChanges)
+            return true;
+
+        if (tab.ViewModel.SupportsSaveBeforeLeave)
+        {
+            var choice = BeautifulMessageDialog.ShowSaveDiscardCancel(
+                "لديك تغييرات غير محفوظة.\nهل تريد حفظها قبل إغلاق التبويب؟");
+
+            if (choice == UnsavedChangesDialogResult.Cancel)
+                return false;
+
+            if (choice == UnsavedChangesDialogResult.Save)
+            {
+                var saved = UiTaskHelper.WaitWithMessagePump(tab.ViewModel.SavePendingChangesAsync());
+                if (!saved)
+                    return false;
+            }
+
+            return true;
+        }
+
+        return BeautifulMessageDialog.ShowConfirm(
+            "لديك تغييرات غير محفوظة. هل تريد إغلاق التبويب بدون حفظ؟",
+            "إغلاق التبويب");
+    }
+
+    public void ReorderOpenTab(DocumentTab tab, int newIndex)
+    {
+        var oldIndex = OpenTabs.IndexOf(tab);
+        if (oldIndex < 0)
+            return;
+
+        newIndex = Math.Clamp(newIndex, 0, OpenTabs.Count - 1);
+        if (oldIndex == newIndex)
+            return;
+
+        OpenTabs.Move(oldIndex, newIndex);
+    }
+
+    /// <summary>Drops a tab from the main strip without disposing it, so another window can take the same page.</summary>
+    public void RemoveOpenTabForTransfer(DocumentTab tab)
+    {
+        if (!OpenTabs.Contains(tab))
+            return;
+
+        var index = OpenTabs.IndexOf(tab);
+        var wasSelected = SelectedTab == tab;
+        tab.IsTransferring = true;
+        SyncSplitAfterTabClosed(tab);
+        OpenTabs.Remove(tab);
+
+        if (OpenTabs.Count == 0)
+        {
+            _ = OpenTabAsync(ActiveDashboardType, "لوحة التحكم", PackIconKind.ViewDashboard, activateIfExists: false);
+        }
+        else if (wasSelected)
+        {
+            ActivateTab(OpenTabs[Math.Min(index, OpenTabs.Count - 1)]);
+        }
+
+        UpdateTabCloseStates();
+        UpdateTabPinStates();
+    }
+
+    /// <summary>Puts an existing tab back on the main strip without creating a new view model.</summary>
+    public void AcceptTransferredOpenTab(DocumentTab tab, int index)
+    {
+        if (OpenTabs.Contains(tab))
+        {
+            ReorderOpenTab(tab, index);
+            tab.IsTransferring = false;
+            ActivateTab(tab);
+            return;
+        }
+
+        OpenTabs.Insert(Math.Clamp(index, 0, OpenTabs.Count), tab);
+        tab.IsTransferring = false;
+        ActivateTab(tab);
+        UpdateTabCloseStates();
+        UpdateTabPinStates();
+    }
+
+    public void DisposeDetachedTab(DocumentTab tab)
+    {
+        PushClosedTab(tab);
+        DeferTabScopeDispose(tab);
+    }
+
+    public void TogglePinFromHost(DocumentTab tab) => TogglePinTab(tab);
+
+    public void UpdatePinStatesFromHost() => UpdateTabPinStates();
 
     private static void DeferTabScopeDispose(DocumentTab tab)
     {
@@ -1271,9 +1365,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (moduleWindows?.TryCloseForViewModel(viewModel) == true)
             return;
 
-        var tab = OpenTabs.FirstOrDefault(t => ReferenceEquals(t.ViewModel, viewModel));
-        if (tab is not null)
-            CloseTab(tab);
+        TabWindowManager.Instance.TryCloseForViewModel(viewModel);
     }
 
     /// <summary>يفتح لوحة التحكم ثم التبويبات المثبتة المحفوظة في التفضيلات.</summary>
@@ -1348,6 +1440,8 @@ public partial class MainWindowViewModel : ObservableObject
         var pinned = _userPreferences.Current.PinnedMenuScreens;
         foreach (var tab in OpenTabs)
             tab.IsPinned = pinned.Contains(tab.ViewModelType.Name);
+        foreach (var tab in TabWindowManager.Instance.DetachedTabs())
+            tab.IsPinned = pinned.Contains(tab.ViewModelType.Name);
     }
 
     private NavigationMenuItem? FindMenuItemByPreferenceKey(string key) =>
@@ -1366,6 +1460,7 @@ public partial class MainWindowViewModel : ObservableObject
     public void CloseAllTabs()
     {
         ExitSplitView();
+        TabWindowManager.Instance.ForceCloseAllDetached();
         _serviceProvider.GetService<IModuleDocumentWindowService>()?.ForceCloseAll();
         foreach (var tab in OpenTabs.ToList())
         {
@@ -2072,6 +2167,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     private void CompleteApplicationExit()
     {
+        if (!TabWindowManager.Instance.TryCloseAllDetachedInteractive())
+            return;
+
         IsExitDialogOpen = false;
         IsExitBackupInProgress = false;
         IsExitConfirmed = true;
